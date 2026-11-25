@@ -2536,6 +2536,7 @@
       "set": "PIN festlegen",
       "change": "PIN ändern",
       "title": "Deine {{surface}}-PIN",
+      "row": "Deine PIN",
       "text": "Sechs Ziffern, mit denen du Aktionen genehmigst, um die du über {{surface}} bittest. Sie wird nie im Chat gesendet.",
       "save": "PIN speichern"
     }

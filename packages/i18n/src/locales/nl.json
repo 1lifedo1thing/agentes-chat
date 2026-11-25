@@ -2536,6 +2536,7 @@
       "set": "Pincode instellen",
       "change": "Pincode wijzigen",
       "title": "Je {{surface}}-pincode",
+      "row": "Je pincode",
       "text": "Zes cijfers die je typt om acties goed te keuren die je via {{surface}} vraagt. Hij wordt nooit in de chat verstuurd.",
       "save": "Pincode opslaan"
     }

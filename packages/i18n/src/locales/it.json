@@ -2621,6 +2621,7 @@
       "set": "Imposta PIN",
       "change": "Cambia PIN",
       "title": "Il tuo PIN di {{surface}}",
+      "row": "Il tuo PIN",
       "text": "Sei cifre che digiti per approvare le azioni che chiedi da {{surface}}. Non viene mai inviato nella chat.",
       "save": "Salva PIN"
     }

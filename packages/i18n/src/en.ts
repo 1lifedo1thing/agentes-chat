@@ -2725,6 +2725,8 @@ export const en = {
       set: "Set PIN",
       change: "Change PIN",
       title: "Your {{surface}} PIN",
+      /** The settings row's name, right under the app's own row: the app's name, which can be long, stays out of it. */
+      row: "Your PIN",
       text: "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat.",
       save: "Save PIN",
     },

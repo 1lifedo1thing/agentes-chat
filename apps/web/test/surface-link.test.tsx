@@ -420,6 +420,11 @@ describe("the outside chat app's row in Notificações", () => {
         expect(document.getElementById("notice-surface-status")?.textContent ?? null).toBe(
           links.length ? `${LONG_DISPLAY} · ${LONG_PROFILE}` : null,
         );
+        // The PIN row sits right under the app's own: its name leaves the app's out, so a long one can't wrap it to a
+        // third line beside its button.
+        const pin = document.getElementById("notice-surface-pin-help")?.closest(".settings-row");
+        expect(Boolean(pin)).toBe(links.length > 0);
+        expect(pin?.querySelector(".settings-row__label")?.textContent ?? "").not.toContain(LONG_SURFACE);
       }
       cleanup();
     }

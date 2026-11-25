@@ -2598,6 +2598,7 @@ export const ptBR = {
       set: "Definir PIN",
       change: "Trocar PIN",
       title: "Seu PIN do {{surface}}",
+      row: "Seu PIN",
       text: "Seis dígitos que você digita para aprovar ações que pedir pelo {{surface}}. Ele nunca é enviado no chat.",
       save: "Salvar PIN",
     },

@@ -2620,6 +2620,7 @@
       "set": "Elegir PIN",
       "change": "Cambiar PIN",
       "title": "Tu PIN de {{surface}}",
+      "row": "Tu PIN",
       "text": "Seis dígitos que escribes para aprobar las acciones que pides desde {{surface}}. Nunca se envía en el chat.",
       "save": "Guardar PIN"
     }

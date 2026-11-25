@@ -6314,6 +6314,9 @@
   "surface.pin.title": {
     "value": "Your {{surface}} PIN"
   },
+  "surface.pin.row": {
+    "value": "Your PIN"
+  },
   "surface.pin.text": {
     "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
   },

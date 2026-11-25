@@ -162,7 +162,7 @@ export function SurfacePrefRow() {
         <PrefRow
           id="notice-surface-pin"
           icon="lock"
-          label={t("surface.pin.title", { surface })}
+          label={t("surface.pin.row")}
           hint={t("surface.pin.text", { surface })}
           control={
             <Button size="sm" onClick={() => setPinOpen(1)}>

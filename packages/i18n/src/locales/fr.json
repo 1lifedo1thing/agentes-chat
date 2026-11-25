@@ -2621,6 +2621,7 @@
       "set": "Choisir un code PIN",
       "change": "Changer de code PIN",
       "title": "Ton code PIN {{surface}}",
+      "row": "Ton code PIN",
       "text": "Six chiffres que tu saisis pour approuver les actions que tu demandes depuis {{surface}}. Il n'est jamais envoyé dans le chat.",
       "save": "Enregistrer le code PIN"
     }

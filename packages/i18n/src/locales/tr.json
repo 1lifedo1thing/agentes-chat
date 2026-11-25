@@ -2536,6 +2536,7 @@
       "set": "PIN belirle",
       "change": "PIN'i değiştir",
       "title": "{{surface}} PIN'in",
+      "row": "PIN'in",
       "text": "{{surface}} üzerinden istediğin işlemleri onaylamak için girdiğin altı rakam. Sohbette asla gönderilmez.",
       "save": "PIN'i kaydet"
     }

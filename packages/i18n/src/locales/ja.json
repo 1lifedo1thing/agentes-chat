@@ -2453,6 +2453,7 @@
       "set": "PIN を設定",
       "change": "PIN を変更",
       "title": "{{surface}} の PIN",
+      "row": "PIN",
       "text": "{{surface}} から依頼した操作を承認するときに入力する 6 桁の数字です。チャットで送信されることはありません。",
       "save": "PIN を保存"
     }

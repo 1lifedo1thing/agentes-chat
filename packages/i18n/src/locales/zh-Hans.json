@@ -2453,6 +2453,7 @@
       "set": "设置 PIN",
       "change": "更改 PIN",
       "title": "你的 {{surface}} PIN",
+      "row": "你的 PIN",
       "text": "你在 {{surface}} 中请求的操作需要输入这六位数字来批准。它永远不会在聊天中发送。",
       "save": "保存 PIN"
     }

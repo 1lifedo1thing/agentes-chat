@@ -2705,6 +2705,7 @@
       "set": "Ustaw PIN",
       "change": "Zmień PIN",
       "title": "Twój PIN do {{surface}}",
+      "row": "Twój PIN",
       "text": "Sześć cyfr, które wpisujesz, aby zatwierdzać działania, o które prosisz w {{surface}}. Nigdy nie jest wysyłany na czacie.",
       "save": "Zapisz PIN"
     }
