@@ -262,6 +262,12 @@ export const machines = pgTable(
      * sign-in of the agent's owner. Only whoever connected it turns it on.
      */
     spillOwn: boolean().notNull().default(true),
+    /**
+     * "Use this computer for my agents' work" (ADR 0233 addendum): its owner's agents' fresh turns that aren't a
+     * person's reply (asks, routines, long work at its start) start here whenever it is free, before the line of
+     * their own computer. Only whoever connected it turns it on.
+     */
+    spillFirst: boolean().notNull().default(false),
     /** Retired by ADR 0233 (one switch, `spill_own`): nothing reads it. */
     spillOthers: boolean().notNull().default(false),
     /** Last known; trust it only with a recent `last_seen_at` (a replica may have died). */

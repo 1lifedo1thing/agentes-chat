@@ -3225,6 +3225,9 @@
       "set_notifications_off": "Deine Benachrichtigungen für <b>{{category}}</b> ausschalten",
       "set_my_timezone": "Deine Zeitzone auf <b>{{timezone}}</b> setzen",
       "set_my_timezone_workspace": "Wieder der Zeitzone des Workspace folgen",
+      "set_computer_help": "<b>{{computer}}</b> helfen lassen, wenn der Computer deiner Agenten voll oder weg ist",
+      "set_computer_help_first": "<b>{{computer}}</b> für die Arbeit deiner Agenten nutzen",
+      "set_computer_help_off": "<b>{{computer}}</b> nicht mehr für deine Agenten nutzen",
       "set_invitation_roles": "Rollen der Einladung von <b>{{email}}</b> ändern: {{change}}",
       "update_channel": "Kanal <b>#{{channel}}</b> ändern",
       "archive_channel": "<b>#{{channel}}</b> archivieren",
@@ -4097,6 +4100,9 @@
       "changed_set_notifications_off": "Deine Benachrichtigungen für <b>{{category}}</b> ausgeschaltet",
       "changed_set_my_timezone": "Deine Zeitzone auf <b>{{timezone}}</b> gesetzt",
       "changed_set_my_timezone_workspace": "Deine Zeitzone folgt wieder der des Workspace",
+      "changed_set_computer_help": "<b>{{computer}}</b> hilft jetzt, wenn der Computer deiner Agenten voll oder weg ist",
+      "changed_set_computer_help_first": "Die Arbeit deiner Agenten startet jetzt auf <b>{{computer}}</b>",
+      "changed_set_computer_help_off": "<b>{{computer}}</b> hilft deinen Agenten nicht mehr",
       "changed_set_invitation_roles": "Rollen der Einladung von <b>{{email}}</b> geändert: {{change}}",
       "changed_update_channel": "Kanal <b>#{{channel}}</b> geändert",
       "changed_archive_channel": "<b>#{{channel}}</b> archiviert",
@@ -12586,7 +12592,13 @@
     "rule": "Neue Arbeit startet, wenn der Computer freien Speicher hat. Menschen zuerst. Zusammen erwähnte Agenten starten nacheinander.",
     "spill": {
       "title": "Deine Computer",
-      "text": "Wenn dieser Computer voll oder weg ist, können deine Agenten auf einem deiner Computer starten. Missionen, Code-Sitzungen und Agenten mit Repositorys bleiben hier.",
+      "text": "Wenn dieser Computer voll oder weg ist, können deine Agenten auf einem deiner Computer starten. Einer, den du für ihre Arbeit nutzt, bekommt ihre Anfragen, Routinen und langen Arbeiten zuerst. Missionen, Code-Sitzungen und Agenten mit Repositorys bleiben hier.",
+      "use": {
+        "label": "Wie {{name}} hilft",
+        "off": "Hilft nicht",
+        "help": "Wenn dieser voll oder weg ist",
+        "first": "Für die Arbeit meiner Agenten"
+      },
       "plan": "dein {{plan}}-Abo"
     },
     "youFirst": "Du bist zuerst dran",
@@ -16583,6 +16595,8 @@
     "spillOwnHint": "Wenn der Computer deiner Agenten voll oder weg ist, können ihre Antworten, Anfragen und Routinen hier mit deiner Anmeldung denken.",
     "spillTeamHint": "Wenn der Computer eines Agenten voll oder weg ist, können seine Antworten, Anfragen und Routinen hier mit der Anmeldung seines Besitzers auf diesem Computer denken.",
     "spillWorkspaceOff": "Ein Admin hat das für den Workspace ausgeschaltet.",
+    "spillFirst": "Diesen Computer für die Arbeit meiner Agenten nutzen",
+    "spillFirstHint": "Anfragen, Routinen und lange Arbeiten deiner Agenten starten hier, sobald er frei ist, mit der KI, die du hier verbunden hast. Antworten an Personen starten hier nur, wenn der Computer des Teams voll oder weg ist.",
     "helpWorkspace": "Computer helfen, wenn der des Teams voll oder weg ist",
     "helpWorkspaceHint": "Jeder Computer hilft nur, wenn sein Besitzer es erlaubt. Aus: Keiner hilft, egal was sein Besitzer gewählt hat.",
     "connectedBy": "Verbunden von {{name}}",
@@ -18538,7 +18552,8 @@
     "spilled": {
       "full": "Hat auf {{to}} gedacht: {{from}} war voll.",
       "away": "Hat auf {{to}} gedacht: {{from}} war weg.",
-      "itsComputer": "sein Computer"
+      "itsComputer": "sein Computer",
+      "chosen": "Hat auf {{to}} gedacht, den sein Besitzer für die Arbeit seiner Agenten nutzt."
     },
     "modelStandIn": {
       "text": "{{plan}} hat {{from}} mit diesem Schlüssel abgelehnt. Ich habe mit {{to}} geantwortet, das damit funktioniert.",

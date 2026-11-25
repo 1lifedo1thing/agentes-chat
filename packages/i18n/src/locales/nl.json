@@ -3224,6 +3224,9 @@
       "set_notifications_off": "Je meldingen voor <b>{{category}}</b> uitzetten",
       "set_my_timezone": "Je tijdzone op <b>{{timezone}}</b> zetten",
       "set_my_timezone_workspace": "Weer de tijdzone van de werkruimte volgen",
+      "set_computer_help": "<b>{{computer}}</b> laten helpen als de computer van je agents vol of weg is",
+      "set_computer_help_first": "<b>{{computer}}</b> gebruiken voor het werk van je agents",
+      "set_computer_help_off": "<b>{{computer}}</b> niet meer gebruiken voor je agents",
       "set_invitation_roles": "Rollen die de uitnodiging van <b>{{email}}</b> geeft wijzigen: {{change}}",
       "update_channel": "Kanaal <b>#{{channel}}</b> wijzigen",
       "archive_channel": "<b>#{{channel}}</b> archiveren",
@@ -4097,6 +4100,9 @@
       "changed_set_notifications_off": "Je meldingen voor <b>{{category}}</b> uitgezet",
       "changed_set_my_timezone": "Je tijdzone op <b>{{timezone}}</b> gezet",
       "changed_set_my_timezone_workspace": "Je tijdzone volgt weer die van de werkruimte",
+      "changed_set_computer_help": "<b>{{computer}}</b> helpt nu als de computer van je agents vol of weg is",
+      "changed_set_computer_help_first": "Het werk van je agents start nu op <b>{{computer}}</b>",
+      "changed_set_computer_help_off": "<b>{{computer}}</b> helpt je agents niet meer",
       "changed_set_invitation_roles": "Rollen die de uitnodiging van <b>{{email}}</b> geeft gewijzigd: {{change}}",
       "changed_update_channel": "Kanaal <b>#{{channel}}</b> gewijzigd",
       "changed_archive_channel": "<b>#{{channel}}</b> gearchiveerd",
@@ -12658,7 +12664,13 @@
     "rule": "Nieuw werk start als de computer vrij geheugen heeft. Mensen gaan voor. Samen genoemde agenten starten een voor een.",
     "spill": {
       "title": "Je computers",
-      "text": "Als deze computer vol of weg is, kunnen je agents op een van jouw computers beginnen. Missies, codesessies en agents met repository's blijven hier.",
+      "text": "Als deze computer vol of weg is, kunnen je agents op een van jouw computers beginnen. Een computer die je voor hun werk gebruikt, krijgt hun verzoeken, routines en lang werk als eerste. Missies, codesessies en agents met repository's blijven hier.",
+      "use": {
+        "label": "Hoe {{name}} helpt",
+        "off": "Helpt niet",
+        "help": "Als deze vol of weg is",
+        "first": "Voor het werk van mijn agents"
+      },
       "plan": "je {{plan}}-abonnement"
     },
     "youFirst": "Jij bent eerst",
@@ -16651,6 +16663,8 @@
     "spillOwnHint": "Als de computer van je agents vol of weg is, kunnen hun antwoorden, vragen en routines hier denken met jouw aanmelding.",
     "spillTeamHint": "Als de computer van een agent vol of weg is, kunnen zijn antwoorden, vragen en routines hier denken met de aanmelding van zijn eigenaar op deze computer.",
     "spillWorkspaceOff": "Een admin heeft dit voor de workspace uitgezet.",
+    "spillFirst": "Deze computer gebruiken voor het werk van mijn agents",
+    "spillFirstHint": "Verzoeken, routines en lang werk van je agents starten hier zodra hij vrij is, met de AI die je hier hebt verbonden. Antwoorden aan mensen starten hier alleen als de computer van het team vol of weg is.",
     "helpWorkspace": "Computers helpen als die van het team vol of weg is",
     "helpWorkspaceHint": "Elke computer helpt alleen als zijn eigenaar het toestaat. Uit: geen enkele helpt, wat de eigenaar ook koos.",
     "connectedBy": "Gekoppeld door {{name}}",
@@ -18600,7 +18614,8 @@
     "spilled": {
       "full": "Dacht op {{to}}: {{from}} was vol.",
       "away": "Dacht op {{to}}: {{from}} was weg.",
-      "itsComputer": "zijn computer"
+      "itsComputer": "zijn computer",
+      "chosen": "Dacht op {{to}}, die de eigenaar gebruikt voor het werk van zijn agents."
     },
     "modelStandIn": {
       "text": "{{plan}} heeft {{from}} met deze sleutel geweigerd. Ik heb geantwoord met {{to}}, dat er wel mee werkt.",

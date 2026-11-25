@@ -30,6 +30,9 @@ export function ComputerSection({ device: d, name }: { device: ComputerDevice; n
   const spill = useDeviceMutation((api, orgId, own: boolean) =>
     api.devices.updateComputer(orgId, d.id, { spill: { own } }),
   );
+  const first = useDeviceMutation((api, orgId, on: boolean) =>
+    api.devices.updateComputer(orgId, d.id, { spill: { first: on } }),
+  );
   const helpOff = useDevices().data?.devicesHelp === false;
   const tasks = useDeviceMutation((api, orgId, maxTasks: number) =>
     api.devices.updateComputer(orgId, d.id, { maxTasks }),
@@ -55,6 +58,7 @@ export function ComputerSection({ device: d, name }: { device: ComputerDevice; n
   // What is being saved shows at once: a switch moves as it is tapped. Each change stays pending until the computers
   // are read again (`useDeviceMutation`), so the saved value takes over with no flicker.
   const spillOn = (spill.isPending ? spill.variables : undefined) ?? d.spill.own;
+  const firstOn = (first.isPending ? first.variables : undefined) ?? d.spill.first ?? false;
   const belongs = (mark.isPending ? mark.variables : undefined) ?? d.belongsToWorkspace;
   const pushing = (push.isPending ? push.variables : undefined) ?? d.taskRoom?.pushHarder ?? false;
   const tasksEditable = mayChangeTasks(d, meId ?? "", admin);
@@ -133,6 +137,23 @@ export function ComputerSection({ device: d, name }: { device: ComputerDevice; n
                 disabled={helpOff || (d.ownerUserId !== meId && !spillOn)}
                 onPress={() =>
                   spill.mutate(!spillOn, { onError: (err) => toast({ title: errorText(t, err), icon: "x" }) })
+                }
+              />
+            ) : null}
+            {/* Its owner's agents' work starts here first: only its owner chooses it, for their own agents. */}
+            {brought && d.ownerUserId === meId && !d.systemMode ? (
+              <GroupedRow
+                label={t("devices.spillFirst")}
+                labelLines={2}
+                hint={{
+                  name: t("common.about", { label: t("devices.spillFirst") }),
+                  text: t("devices.spillFirstHint"),
+                }}
+                {...(helpOff ? { sub: t("devices.spillWorkspaceOff"), subLines: 0 } : {})}
+                toggle={firstOn && !helpOff}
+                disabled={helpOff}
+                onPress={() =>
+                  first.mutate(!firstOn, { onError: (err) => toast({ title: errorText(t, err), icon: "x" }) })
                 }
               />
             ) : null}

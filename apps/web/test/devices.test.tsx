@@ -1191,6 +1191,21 @@ describe("A device's page", () => {
     expect(calls(state, "devices.updateComputer").map((c) => c.args.at(-1))).toEqual([{ spill: { own: false } }]);
   });
 
+  test("its owner may use their own computer for their agents' work; someone else's computer has no such switch", async () => {
+    const { state } = await open(`/org/${ORG_ID}/settings/devices/${MAC}`);
+    const first = screen().getByRole("switch", { name: "Use this computer for my agents' work" });
+    expect(first.getAttribute("aria-checked")).toBe("false");
+    await click(first);
+    await settle(4);
+    expect(calls(state, "devices.updateComputer").map((c) => c.args.at(-1))).toEqual([{ spill: { first: true } }]);
+    (globalThis as { geometrySnapshot?: () => void }).geometrySnapshot?.();
+  });
+
+  test("someone else's computer: no switch to use it for the viewer's agents' work", async () => {
+    await open(`/org/${ORG_ID}/settings/devices/${IMAC}`);
+    expect(screen().queryByRole("switch", { name: "Use this computer for my agents' work" })).toBeNull();
+  });
+
   test("an admin turns every computer's help off for the workspace from the devices list", async () => {
     const { state } = await open(`/org/${ORG_ID}/settings/devices`);
     const all = screen().getByRole("switch", { name: "Computers help when the team's is full or away" });

@@ -3104,6 +3104,9 @@
       "set_notifications_off": "<b>{{category}}</b>の通知をオフにする",
       "set_my_timezone": "タイムゾーンを<b>{{timezone}}</b>にする",
       "set_my_timezone_workspace": "ワークスペースのタイムゾーンに合わせる",
+      "set_computer_help": "エージェントのコンピューターが満杯か不在のとき、<b>{{computer}}</b> に手伝わせる",
+      "set_computer_help_first": "<b>{{computer}}</b> をエージェントの作業に使う",
+      "set_computer_help_off": "<b>{{computer}}</b> をエージェントに使うのをやめる",
       "set_invitation_roles": "<b>{{email}}</b>への招待で付与するロールを変更: {{change}}",
       "update_channel": "チャンネル<b>#{{channel}}</b>を変更",
       "archive_channel": "<b>#{{channel}}</b>をアーカイブ",
@@ -3933,6 +3936,9 @@
       "changed_set_notifications_off": "<b>{{category}}</b>の通知をオフにしました",
       "changed_set_my_timezone": "タイムゾーンを<b>{{timezone}}</b>にしました",
       "changed_set_my_timezone_workspace": "タイムゾーンをワークスペースに合わせる設定に戻しました",
+      "changed_set_computer_help": "エージェントのコンピューターが満杯か不在のとき、<b>{{computer}}</b> が手伝うようになりました",
+      "changed_set_computer_help_first": "エージェントの作業は <b>{{computer}}</b> で始まるようになりました",
+      "changed_set_computer_help_off": "<b>{{computer}}</b> はエージェントを手伝わなくなりました",
       "changed_set_invitation_roles": "<b>{{email}}</b>への招待で付与するロールを変更しました: {{change}}",
       "changed_update_channel": "チャンネル<b>#{{channel}}</b>を変更しました",
       "changed_archive_channel": "<b>#{{channel}}</b>をアーカイブしました",
@@ -12083,7 +12089,13 @@
     "rule": "新しい作業はコンピューターに空きメモリがあるときに始まります。人が優先です。一緒にメンションされたエージェントは1つずつ始まります。",
     "spill": {
       "title": "あなたのコンピューター",
-      "text": "このコンピューターが満杯または不在のとき、あなたのエージェントはあなたのコンピューターで始められます。ミッション、コードセッション、リポジトリを持つエージェントはここに残ります。",
+      "text": "このコンピューターが満杯または不在のとき、あなたのエージェントはあなたのコンピューターで始められます。エージェントの作業に使うコンピューターには、依頼、ルーティン、長い作業が先に回ります。ミッション、コードセッション、リポジトリを持つエージェントはここに残ります。",
+      "use": {
+        "label": "{{name}} の手伝い方",
+        "off": "手伝わない",
+        "help": "このコンピューターが満杯か不在のとき",
+        "first": "自分のエージェントの作業用"
+      },
       "plan": "あなたの{{plan}}プラン"
     },
     "youFirst": "あなたが先です",
@@ -15995,6 +16007,8 @@
     "spillOwnHint": "あなたのエージェントのコンピューターが満杯または不在のとき、その返信、依頼、ルーティンはあなたのサインインでここで考えられます。",
     "spillTeamHint": "エージェントのコンピューターが満杯または不在のとき、その返信、依頼、ルーティンはこのコンピューター上のオーナーのサインインでここで考えられます。",
     "spillWorkspaceOff": "管理者がワークスペース全体でこれをオフにしました。",
+    "spillFirst": "このコンピューターを自分のエージェントの作業に使う",
+    "spillFirstHint": "エージェントへの依頼、ルーティン、長い作業は、このコンピューターが空いていればここで、ここに接続した AI で始まります。人への返信がここで始まるのは、チームのコンピューターが満杯または不在のときだけです。",
     "helpWorkspace": "チームのコンピューターが満杯または不在のとき、ほかのコンピューターが手伝う",
     "helpWorkspaceHint": "各コンピューターはオーナーが許可した場合だけ手伝います。オフ：オーナーの選択に関係なく、どれも手伝いません。",
     "connectedBy": "{{name}}が接続",
@@ -17916,7 +17930,8 @@
     "spilled": {
       "full": "{{to}}で考えました：{{from}}が満杯でした。",
       "away": "{{to}}で考えました：{{from}}が不在でした。",
-      "itsComputer": "自分のコンピューター"
+      "itsComputer": "自分のコンピューター",
+      "chosen": "{{to}} で考えました。持ち主が自分のエージェントの作業に使っているコンピューターです。"
     },
     "modelStandIn": {
       "text": "{{plan}}がこのキーで{{from}}を拒否しました。このキーで使える{{to}}で返信しました。",

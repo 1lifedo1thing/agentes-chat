@@ -3657,6 +3657,7 @@ export const WORKSPACE_ACTION_IDS = [
   "continue_work",
   "update_workspace",
   "set_action_check",
+  "set_computer_help",
   "invite_people",
   "remove_ai_key",
 ] as const;
@@ -8941,8 +8942,10 @@ export interface ComputerDevice {
   /**
    * "Help when the team's computer is full or away": fresh turns of its owner's agents (anyone's, on one marked the
    * workspace's) may think here while their own computer is full or away. An older server also sent a retired `others`.
+   * `first`: "Use this computer for my agents' work", its owner's agents' asks, routines and long work start here first
+   * (absent: an older server).
    */
-  spill: { own: boolean };
+  spill: { own: boolean; first?: boolean };
   systemMode: boolean;
   audience: DeviceAudience;
   status: DeviceStatus;
@@ -9082,7 +9085,7 @@ export interface ComputerDeviceInput {
   belongsToWorkspace?: boolean;
   maxTasks?: number;
   pushHarder?: boolean;
-  spill?: { own?: boolean };
+  spill?: { own?: boolean; first?: boolean };
 }
 
 export interface PhoneDeviceInput {

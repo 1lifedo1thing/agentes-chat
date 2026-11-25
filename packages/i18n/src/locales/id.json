@@ -3104,6 +3104,9 @@
       "set_notifications_off": "Matikan notifikasimu untuk <b>{{category}}</b>",
       "set_my_timezone": "Atur zona waktumu ke <b>{{timezone}}</b>",
       "set_my_timezone_workspace": "Kembali ikuti zona waktu ruang kerja",
+      "set_computer_help": "Biarkan <b>{{computer}}</b> membantu saat komputer agenmu penuh atau tidak ada",
+      "set_computer_help_first": "Gunakan <b>{{computer}}</b> untuk pekerjaan agenmu",
+      "set_computer_help_off": "Berhenti memakai <b>{{computer}}</b> untuk agenmu",
       "set_invitation_roles": "Ubah peran yang diberikan undangan <b>{{email}}</b>: {{change}}",
       "update_channel": "Ubah kanal <b>#{{channel}}</b>",
       "archive_channel": "Arsipkan <b>#{{channel}}</b>",
@@ -3949,6 +3952,9 @@
       "changed_set_notifications_off": "Mematikan notifikasimu untuk <b>{{category}}</b>",
       "changed_set_my_timezone": "Mengatur zona waktumu ke <b>{{timezone}}</b>",
       "changed_set_my_timezone_workspace": "Zona waktumu kembali mengikuti ruang kerja",
+      "changed_set_computer_help": "<b>{{computer}}</b> kini membantu saat komputer agenmu penuh atau tidak ada",
+      "changed_set_computer_help_first": "Pekerjaan agenmu kini dimulai di <b>{{computer}}</b>",
+      "changed_set_computer_help_off": "<b>{{computer}}</b> tidak lagi membantu agenmu",
       "changed_set_invitation_roles": "Mengubah peran yang diberikan undangan <b>{{email}}</b>: {{change}}",
       "changed_update_channel": "Mengubah kanal <b>#{{channel}}</b>",
       "changed_archive_channel": "Mengarsipkan <b>#{{channel}}</b>",
@@ -12142,7 +12148,13 @@
     "rule": "Kerja baru mulai saat komputer punya memori kosong. Orang didahulukan. Agen yang disebut bersamaan mulai satu per satu.",
     "spill": {
       "title": "Komputermu",
-      "text": "Saat komputer ini penuh atau tidak ada, agenmu bisa mulai di salah satu komputermu. Misi, sesi kode, dan agen dengan repositori tetap di sini.",
+      "text": "Saat komputer ini penuh atau tidak ada, agenmu bisa mulai di salah satu komputermu. Komputer yang kamu pakai untuk pekerjaan mereka menerima permintaan, rutinitas, dan pekerjaan panjang mereka lebih dulu. Misi, sesi kode, dan agen dengan repositori tetap di sini.",
+      "use": {
+        "label": "Cara {{name}} membantu",
+        "off": "Tidak membantu",
+        "help": "Saat yang ini penuh atau tidak ada",
+        "first": "Untuk pekerjaan agen saya"
+      },
       "plan": "paket {{plan}} kamu"
     },
     "youFirst": "Kamu duluan",
@@ -16054,6 +16066,8 @@
     "spillOwnHint": "Saat komputer agenmu penuh atau tidak ada, balasan, permintaan, dan rutinitas mereka bisa berpikir di sini dengan login-mu.",
     "spillTeamHint": "Saat komputer sebuah agen penuh atau tidak ada, balasan, permintaan, dan rutinitasnya bisa berpikir di sini dengan login pemiliknya di komputer ini.",
     "spillWorkspaceOff": "Admin mematikan ini untuk workspace.",
+    "spillFirst": "Gunakan komputer ini untuk pekerjaan agen saya",
+    "spillFirstHint": "Permintaan, rutinitas, dan pekerjaan panjang agenmu dimulai di sini setiap kali komputer ini kosong, dengan AI yang kamu hubungkan di sini. Balasan untuk orang hanya dimulai di sini saat komputer tim penuh atau tidak ada.",
     "helpWorkspace": "Komputer membantu saat komputer tim penuh atau tidak ada",
     "helpWorkspaceHint": "Setiap komputer hanya membantu jika pemiliknya mengizinkan. Mati: tidak ada yang membantu, apa pun pilihan pemiliknya.",
     "connectedBy": "Dihubungkan oleh {{name}}",
@@ -17975,7 +17989,8 @@
     "spilled": {
       "full": "Berpikir di {{to}}: {{from}} sedang penuh.",
       "away": "Berpikir di {{to}}: {{from}} sedang tidak ada.",
-      "itsComputer": "komputernya"
+      "itsComputer": "komputernya",
+      "chosen": "Berpikir di {{to}}, yang dipakai pemiliknya untuk pekerjaan agennya."
     },
     "modelStandIn": {
       "text": "{{plan}} menolak {{from}} dengan kunci ini. Aku menjawab dengan {{to}}, yang berfungsi dengannya.",

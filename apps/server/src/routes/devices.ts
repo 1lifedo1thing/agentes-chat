@@ -127,9 +127,9 @@ const Computer = z
     memoryGb: z.number().nullable(),
     ownerUserId: z.string().nullable(),
     belongsToWorkspace: z.boolean(),
-    spill: z.object({ own: z.boolean() }).openapi({
+    spill: z.object({ own: z.boolean(), first: z.boolean() }).openapi({
       description:
-        "\"Help when the team's computer is full or away\" (`own`): while an agent's own computer is full or away, fresh turns of its owner's agents (anyone's, on a computer marked the workspace's) may think here, on a sign-in of the agent's owner.",
+        "\"Help when the team's computer is full or away\" (`own`): while an agent's own computer is full or away, fresh turns of its owner's agents (anyone's, on a computer marked the workspace's) may think here, on a sign-in of the agent's owner. \"Use this computer for my agents' work\" (`first`, implies `own`): its owner's agents' asks, routines and long work start here whenever it is free.",
     }),
     systemMode: z.boolean().openapi({ description: "Each agent works as its own OS user there (a server install)." }),
     audience: Audience,
@@ -337,7 +337,7 @@ export function deviceAppRoutes(deps: AppDeps) {
             name: z.string().min(1).max(80).optional(),
             audience: Audience.optional(),
             belongsToWorkspace: z.boolean().optional(),
-            spill: z.object({ own: z.boolean().optional() }).optional(),
+            spill: z.object({ own: z.boolean().optional(), first: z.boolean().optional() }).optional(),
             maxTasks: z.number().int().min(TASK_LIMIT_BOUNDS[0]).max(TASK_LIMIT_BOUNDS[1]).optional(),
             pushHarder: z.boolean().optional(),
           }),
@@ -357,7 +357,7 @@ export function deviceAppRoutes(deps: AppDeps) {
         input,
       );
       // Best effort: the switch is saved, and a turn that finds no CLI there says so later.
-      if (input.spill?.own === true && machineHub)
+      if ((input.spill?.own === true || input.spill?.first === true) && machineHub)
         await installHelpClis({ db, pubsub, hub: machineHub }, c.get("user").id, orgId, machineId).catch(() => []);
       return c.json(device, 200);
     },

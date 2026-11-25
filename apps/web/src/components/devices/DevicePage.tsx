@@ -497,6 +497,24 @@ function ComputerPage({ machineId }: { machineId: string }) {
               }
             />
           )}
+          {/* Its owner's agents' work starts here first: only its owner chooses it, and only for their own agents. */}
+          {owner && d.machineKind === "connected" && !d.systemMode && (
+            <PrefRow
+              id="dv-pc-first"
+              icon="move"
+              label={t("devices.spillFirst")}
+              hint={t("devices.spillFirstHint")}
+              status={helpOff ? t("devices.spillWorkspaceOff") : undefined}
+              control={
+                <Switch
+                  id="dv-pc-first-switch"
+                  checked={(d.spill.first ?? false) && !helpOff}
+                  disabled={helpOff}
+                  onCheckedChange={(first) => save({ id: d.id, spill: { first } })}
+                />
+              }
+            />
+          )}
           {admin && d.machineKind === "connected" && (
             <PrefRow
               id="dv-pc-belongs"
