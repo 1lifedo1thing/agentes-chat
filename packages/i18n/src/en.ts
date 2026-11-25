@@ -740,6 +740,10 @@ export const en = {
       confirmNo: "This wasn't me",
       done: "All set.",
       doneLead: "You're signed in to the agentes app. You can close this tab.",
+      /** Under "All set." once the browser hands the person back to the desktop app (and alone after a connector's sign-in). */
+      back: "Going back to the app.",
+      /** The button that opens the desktop app when the browser didn't, or the person dismissed its question. */
+      openApp: "Open the app",
       expired: "This request expired.",
       expiredLead: "Go back to the app and choose {{provider}} again.",
       handover: "Signing in with your account from the other device…",
@@ -1360,7 +1364,7 @@ export const en = {
         fileLead: "The file from any app we know. It is recognized on its own.",
         paths: {
           lead: "Choose how to bring them. You check everything before anything is made.",
-          best: "the most complete",
+          best: "The most complete",
           safe: "{{app}}'s keys, passwords and sessions never come, whichever way you pick.",
           command: {
             title: "With a command",
@@ -4745,6 +4749,8 @@ export const en = {
     available: "Available",
     working: "Working",
     waiting: "Waiting for you",
+    /** An agent idle a while (server `away`): never a person's "away", which reads as gone, nor asleep. */
+    idle: "Idle",
     lower: {
       online: "online",
       away: "away",
@@ -12984,6 +12990,9 @@ export const en = {
       not_reported: "{{computer}} is still checking which programs it has. This changes by itself when it's done.",
       /** The runner doesn't run this program on that computer's system (Cursor on Windows, for one). */
       system: "{{program}} doesn't run on {{computer}}'s system yet.",
+      /** The Antigravity CLI on Windows (ADR 0143). The button to use an API key follows. */
+      systemAntigravity:
+        "Gemini plans don't run on {{computer}} yet: on Windows the Antigravity CLI keeps its Google sign-in in the Credential Manager, which agentes.chat can't yet keep apart for each account. Use a Gemini API key instead.",
       /** Codex on a Windows computer where neither MXC nor Codex's own sandbox could start. */
       windows_sandbox:
         "{{computer}}'s Windows can't isolate {{program}}'s commands. Choose Claude or an API key instead, or update that computer to Windows\u00a011\u00a024H2 or newer, with its latest updates.",
@@ -19134,6 +19143,12 @@ export const en = {
       held: "Waiting for approval…",
       /** The agent's own words for its step (what it wrote before the call), quoted. */
       said: "“{{text}}”",
+    },
+    /** Under an agent at work, the last row of the conversation: what it did so far, a few lines, older ones as "+N". */
+    trail: {
+      label: "What {{name}} did so far",
+      earlier_one: "{{count}} earlier step",
+      earlier_other: "{{count}} earlier steps",
     },
     /** The working line while an agent asks another one (names come in bold). */
     consult: {

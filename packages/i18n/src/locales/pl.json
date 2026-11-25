@@ -734,6 +734,8 @@
       "confirmNo": "To nie ja",
       "done": "Wszystko gotowe.",
       "doneLead": "Zalogowano w aplikacji agentes. Możesz zamknąć tę kartę.",
+      "back": "Wracamy do aplikacji.",
+      "openApp": "Otwórz aplikację",
       "expired": "Ta prośba wygasła.",
       "expiredLead": "Wróć do aplikacji i ponownie wybierz {{provider}}.",
       "handover": "Logowanie twoim kontem z drugiego urządzenia…",
@@ -1285,7 +1287,7 @@
         "fileLead": "Plik z dowolnej znanej nam aplikacji. Zostanie rozpoznany automatycznie.",
         "paths": {
           "lead": "Wybierz, jak je przenieść. Sprawdzisz wszystko, zanim cokolwiek powstanie.",
-          "best": "najpełniejszy",
+          "best": "Najpełniejszy",
           "safe": "Klucze, hasła i sesje z {{app}} nigdy nie są przenoszone, żadną drogą.",
           "command": {
             "title": "Poleceniem",
@@ -4664,6 +4666,7 @@
     "available": "Dostępny",
     "working": "W pracy",
     "waiting": "Czeka na ciebie",
+    "idle": "Nieaktywny",
     "lower": {
       "online": "online",
       "away": "zaraz wracam",
@@ -13424,6 +13427,7 @@
       "home_only": "{{program}} jest zainstalowany na {{computer}} tylko dla roota, do którego agenci nie mają dostępu.",
       "not_reported": "{{computer}} wciąż sprawdza, jakie ma programy. To zmieni się samo, gdy skończy.",
       "system": "{{program}} nie działa jeszcze w systemie komputera {{computer}}.",
+      "systemAntigravity": "Plany Gemini nie działają jeszcze na komputerze {{computer}}: w Windows Antigravity CLI trzyma logowanie Google w Menedżerze poświadczeń, którego agentes.chat nie umie jeszcze rozdzielić na konta. Zamiast tego użyj klucza API Gemini.",
       "windows_sandbox": "Windows na komputerze {{computer}} nie może odizolować poleceń {{program}}. Wybierz zamiast tego Claude albo klucz API lub zaktualizuj ten komputer do Windows 11 24H2 lub nowszego, z najnowszymi aktualizacjami.",
       "no_computerCloud": "Gotowe, gdy tylko {{computer}} będzie gotowy."
     },
@@ -19697,6 +19701,14 @@
       "thinking": "Myśli…",
       "held": "Czeka na zatwierdzenie…",
       "said": "„{{text}}”"
+    },
+    "trail": {
+      "label": "Co {{name}} zrobił do tej pory",
+      "label_female": "Co {{name}} zrobiła do tej pory",
+      "earlier_one": "{{count}} wcześniejszy krok",
+      "earlier_few": "{{count}} wcześniejsze kroki",
+      "earlier_many": "{{count}} wcześniejszych kroków",
+      "earlier_other": "{{count}} wcześniejszego kroku"
     },
     "consult": {
       "asking": "{{from}} pyta: {{to}}",

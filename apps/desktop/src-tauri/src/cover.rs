@@ -59,6 +59,13 @@ fn window_points(window: &tauri::Window) -> tauri::Result<LogicalSize<f64>> {
 
 /// Adds the cover to the freshly made main window, showing (the splash).
 pub fn attach(app: &AppHandle, window: &tauri::Window) -> tauri::Result<()> {
+    // Covering from before the cover's web view exists: making it can take seconds (WebView2's first start), and a
+    // site that paints meanwhile must still find a cover to step aside from.
+    {
+        let mut shown = lock(app);
+        shown.covering = true;
+        shown.generation += 1;
+    }
     if OVER_THE_SITE {
         let size = window_points(window)?;
         let cover = WebviewBuilder::new(LABEL, WebviewUrl::App("cover.html".into()))
@@ -68,10 +75,20 @@ pub fn attach(app: &AppHandle, window: &tauri::Window) -> tauri::Result<()> {
             .background_color(SKY)
             .auto_resize();
         window.add_child(cover, LogicalPosition::new(0.0, 0.0), size)?;
+        // The site painted while the cover was being made: it steps aside at once.
+        if !lock(app).covering {
+            if let Some(cover) = app.get_webview(LABEL) {
+                let _ = cover.hide();
+                crate::bench::cover_gone();
+                main_window::keep_lights(app);
+                if window_is_key(app) {
+                    if let Some(site) = app.get_webview(main_window::LABEL) {
+                        let _ = site.set_focus();
+                    }
+                }
+            }
+        }
     }
-    let mut shown = lock(app);
-    shown.covering = true;
-    shown.generation += 1;
     Ok(())
 }
 
@@ -137,6 +154,7 @@ pub fn hide(app: &AppHandle) {
                 return; // shown again meanwhile
             }
             shown.covering = false;
+            crate::bench::cover_gone();
             let Some(cover) = &cover else { return };
             // Under the lock, so a `show` that comes now is queued after these and is never undone by them (both
             // only queue their changes on the event loop).
@@ -198,6 +216,7 @@ pub fn page_ready(app: AppHandle, webview: tauri::Webview, site: Option<bool>) -
     }
     if site == Some(true) {
         crate::vitals::painted();
+        crate::bench::painted(&app, &webview);
     }
     hide(&app);
     Ok(())

@@ -719,6 +719,8 @@
       "confirmNo": "Non sono stato io",
       "done": "Tutto pronto.",
       "doneLead": "Hai effettuato l'accesso all'app agentes. Puoi chiudere questa scheda.",
+      "back": "Ritorno all'app.",
+      "openApp": "Apri l'app",
       "expired": "Questa richiesta è scaduta.",
       "expiredLead": "Torna all'app e scegli di nuovo {{provider}}.",
       "handover": "Accesso con il tuo account dall'altro dispositivo…",
@@ -1257,7 +1259,7 @@
         "fileLead": "Il file di qualsiasi app che conosciamo. Viene riconosciuto da solo.",
         "paths": {
           "lead": "Scegli come portarli. Controlli tutto prima che venga creato qualcosa.",
-          "best": "il più completo",
+          "best": "Il più completo",
           "safe": "Chiavi, password e sessioni di {{app}} non arrivano mai, in nessun modo.",
           "command": {
             "title": "Con un comando",
@@ -4521,6 +4523,7 @@
     "available": "Disponibile",
     "working": "Al lavoro",
     "waiting": "Ti aspetta",
+    "idle": "Inattivo",
     "lower": {
       "online": "online",
       "away": "assente",
@@ -12983,6 +12986,7 @@
       "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano.",
       "not_reported": "{{computer}} sta ancora controllando quali programmi ha. Questo cambia da solo quando ha finito.",
       "system": "{{program}} non funziona ancora sul sistema di {{computer}}.",
+      "systemAntigravity": "I piani Gemini non funzionano ancora su {{computer}}: su Windows, Antigravity CLI tiene l'accesso Google in Gestione credenziali, che agentes.chat non riesce ancora a separare per ogni account. Usa invece una chiave API di Gemini.",
       "windows_sandbox": "Il Windows di {{computer}} non riesce a isolare i comandi di {{program}}. Scegli invece Claude o una chiave API, oppure aggiorna quel computer a Windows 11 24H2 o successivo, con gli ultimi aggiornamenti.",
       "no_computerCloud": "Pronto appena lo è {{computer}}."
     },
@@ -19127,6 +19131,12 @@
       "thinking": "Sta pensando…",
       "held": "In attesa di approvazione…",
       "said": "«{{text}}»"
+    },
+    "trail": {
+      "label": "Cosa ha fatto {{name}} finora",
+      "earlier_one": "{{count}} passo precedente",
+      "earlier_many": "{{count}} passi precedenti",
+      "earlier_other": "{{count}} passi precedenti"
     },
     "consult": {
       "asking": "{{from}} sta chiedendo a {{to}}",

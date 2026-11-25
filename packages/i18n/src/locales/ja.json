@@ -689,6 +689,8 @@
       "confirmNo": "心当たりがありません",
       "done": "準備完了です。",
       "doneLead": "agentesアプリにログインしました。このタブは閉じてかまいません。",
+      "back": "アプリに戻ります。",
+      "openApp": "アプリを開く",
       "expired": "このリクエストは期限切れです。",
       "expiredLead": "アプリに戻って、もう一度{{provider}}を選んでください。",
       "handover": "別のデバイスのアカウントでログインしています…",
@@ -4195,6 +4197,7 @@
     "available": "対応可能",
     "working": "作業中",
     "waiting": "あなたの対応待ち",
+    "idle": "非アクティブ",
     "lower": {
       "online": "オンライン",
       "away": "離席中",
@@ -11992,6 +11995,7 @@
       "home_only": "{{computer}} の {{program}} は root 専用にインストールされていて、エージェントからは届きません。",
       "not_reported": "{{computer}}は、入っているプログラムをまだ確認しています。終わりしだい自動で切り替わります。",
       "system": "{{program}}は{{computer}}のシステムではまだ動きません。",
+      "systemAntigravity": "{{computer}}ではGeminiプランはまだ使えません。WindowsではAntigravity CLIがGoogleのログインを資格情報マネージャーに保存し、agentes.chatはまだアカウントごとに分けられません。代わりにGemini APIキーを使ってください。",
       "windows_sandbox": "{{computer}}のWindowsでは{{program}}のコマンドを隔離できません。代わりにClaudeかAPIキーを選ぶか、そのコンピューターを最新の更新プログラムを適用したWindows 11 24H2以降に更新してください。",
       "no_computerCloud": "{{computer}}の準備ができ次第使えます。"
     },
@@ -17911,6 +17915,10 @@
       "thinking": "考えています…",
       "held": "承認を待っています…",
       "said": "「{{text}}」"
+    },
+    "trail": {
+      "label": "{{name}}がここまでにしたこと",
+      "earlier_other": "前の{{count}}ステップ"
     },
     "consult": {
       "asking": "{{from}}が{{to}}に質問しています",

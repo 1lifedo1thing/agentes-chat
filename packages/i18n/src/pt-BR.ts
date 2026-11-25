@@ -730,6 +730,8 @@ export const ptBR = {
       confirmNo: "Não fui eu",
       done: "Tudo certo.",
       doneLead: "Você entrou no app agentes. Pode fechar esta aba.",
+      back: "Voltando para o app.",
+      openApp: "Abrir o app",
       expired: "Esse pedido expirou.",
       expiredLead: "Volte ao app e escolha {{provider}} de novo.",
       handover: "Entrando com a sua conta do outro aparelho…",
@@ -1276,7 +1278,7 @@ export const ptBR = {
         fileLead: "O arquivo de qualquer app que a gente conhece. Ele é reconhecido sozinho.",
         paths: {
           lead: "Escolha como trazer. Você confere tudo antes de criar.",
-          best: "o mais completo",
+          best: "O mais completo",
           safe: "Chaves, senhas e sessões do {{app}} nunca vêm, por nenhum caminho.",
           command: {
             title: "Com um comando",
@@ -4607,6 +4609,8 @@ export const ptBR = {
     available: "Disponível",
     working: "Trabalhando",
     waiting: "Esperando você",
+    /** An agent idle a while (server `away`): never a person's "away", which reads as gone, nor asleep. */
+    idle: "Inativo",
     lower: {
       online: "online",
       away: "ausente",
@@ -12999,6 +13003,9 @@ export const ptBR = {
       home_only: "O {{program}} está instalado só para o root no {{computer}}, onde os agentes não chegam.",
       not_reported: "O {{computer}} ainda está vendo quais programas tem. Isto muda sozinho quando terminar.",
       system: "O {{program}} ainda não roda no sistema do {{computer}}.",
+      /** The Antigravity CLI on Windows (ADR 0143). The button to use an API key follows. */
+      systemAntigravity:
+        "Planos do Gemini ainda não rodam no {{computer}}: no Windows, o Antigravity CLI guarda o login do Google no Gerenciador de Credenciais, que o agentes.chat ainda não separa por conta. Use uma chave de API do Gemini no lugar.",
       /** Codex on a Windows computer where neither MXC nor Codex's own sandbox could start. */
       windows_sandbox:
         "O Windows do {{computer}} não consegue isolar os comandos do {{program}}. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia.",
@@ -18964,6 +18971,13 @@ export const ptBR = {
       held: "Esperando aprovação…",
       /** The agent's own words for its step (what it wrote before the call), quoted. */
       said: "“{{text}}”",
+    },
+    /** Under an agent at work, the last row of the conversation: what it did so far, a few lines, older ones as "+N". */
+    trail: {
+      label: "O que o {{name}} fez até agora",
+      label_female: "O que a {{name}} fez até agora",
+      earlier_one: "{{count}} passo antes",
+      earlier_other: "{{count}} passos antes",
     },
     /** The working line while an agent asks another one (names come in bold). */
     consult: {
