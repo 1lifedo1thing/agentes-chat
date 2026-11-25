@@ -15692,6 +15692,7 @@
       "openPrs": "{{name}} guarda le PR in attesa di revisione e ti dice in un messaggio diretto cosa guardare per primo.",
       "errors": "{{name}} controlla i nuovi errori e ti dice in un messaggio diretto cosa richiede attenzione.",
       "noAgent": "Dai accesso a un agente qui sopra e se ne occupa lui.",
+      "preparing": "Preparo la routine…",
       "who": "Chi lo fa",
       "when": "Quando",
       "on": "Crea la routine {{name}}",

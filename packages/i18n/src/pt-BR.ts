@@ -15536,6 +15536,8 @@ export const ptBR = {
       errors: "{{name}} confere os erros novos e te manda no privado o que precisa de atenção.",
       /** Nobody may read the mailbox yet: no routine is made. */
       noAgent: "Dê acesso a um agente acima e ele cuida disso para você.",
+      /** Its line while the routines and the agents load. */
+      preparing: "Preparando a rotina…",
       who: "Quem faz",
       when: "Quando",
       /** Its switch, for a screen reader. */

@@ -37231,6 +37231,9 @@
   "connectFlow.routine.noAgent": {
     "value": "Give an agent access above and it takes care of this for you."
   },
+  "connectFlow.routine.preparing": {
+    "value": "Getting the routine ready…"
+  },
   "connectFlow.routine.who": {
     "value": "Who does it"
   },

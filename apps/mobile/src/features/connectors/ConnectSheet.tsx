@@ -576,7 +576,8 @@ function DoneStep({
         wide
         label={waiting ? t("connectFlow.next") : t("connectFlow.done.ok")}
         disabled={!summary}
-        loading={save.isPending}
+        // Done waits for the routine's rows to load: pressed now, it would make nothing.
+        loading={save.isPending || (!waiting && offer.loading)}
         onPress={() => {
           if (waiting) return apply(waiting);
           startRoutine(offer);

@@ -15581,6 +15581,8 @@ export const en = {
       errors: "{{name}} checks the new errors and sends you in a DM what needs attention.",
       /** Nobody may read the mailbox yet: no routine is made. */
       noAgent: "Give an agent access above and it takes care of this for you.",
+      /** Its line while the routines and the agents load. */
+      preparing: "Getting the routine ready…",
       who: "Who does it",
       when: "When",
       /** Its switch, for a screen reader. */

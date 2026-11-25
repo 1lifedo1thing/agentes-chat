@@ -15214,6 +15214,7 @@
       "openPrs": "{{name}} bekijkt de PR's die op een review wachten en zegt je in een DM waar je eerst naar moet kijken.",
       "errors": "{{name}} controleert de nieuwe fouten en zegt je in een DM wat aandacht nodig heeft.",
       "noAgent": "Geef hierboven een agent toegang en die regelt dit voor je.",
+      "preparing": "Routine wordt klaargezet…",
       "who": "Wie het doet",
       "when": "Wanneer",
       "on": "De routine {{name}} maken",

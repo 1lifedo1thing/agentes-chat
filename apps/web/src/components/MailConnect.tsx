@@ -851,8 +851,8 @@ function WhoStep({
         </Button>
         <Button
           variant="primary"
-          disabled={!agents.isSuccess || grant.isPending}
-          loading={grant.isPending}
+          disabled={!agents.isSuccess || grant.isPending || (offersRoutine && offer.loading)}
+          loading={grant.isPending || (offersRoutine && offer.loading)}
           onClick={() => grant.mutate()}
         >
           {granted.length > 0 ? t("connectFlow.next") : t("connectFlow.grant")}

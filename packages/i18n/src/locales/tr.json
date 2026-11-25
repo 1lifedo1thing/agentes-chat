@@ -15076,6 +15076,7 @@
       "openPrs": "{{name}} inceleme bekleyen PR'lara bakar ve önce neye bakacağınızı size doğrudan mesajla söyler.",
       "errors": "{{name}} yeni hataları kontrol eder ve neyin ilgi gerektirdiğini size doğrudan mesajla söyler.",
       "noAgent": "Yukarıda bir ajana erişim verin, bununla o ilgilensin.",
+      "preparing": "Rutin hazırlanıyor…",
       "who": "Kim yapacak",
       "when": "Ne zaman",
       "on": "{{name}} rutinini oluştur",

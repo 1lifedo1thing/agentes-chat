@@ -14,7 +14,7 @@ import {
 } from "@agenteschat/client/lib/connect-routines";
 import { capitalize } from "@agenteschat/client/lib/format";
 import { browserTimezone } from "@agenteschat/client/lib/routines";
-import { Icon, Select, Switch } from "@agenteschat/ui";
+import { Icon, Select, Skeleton, SkeletonGroup, Switch } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -32,6 +32,11 @@ import { useToast } from "@/lib/toast";
  */
 export interface RoutineOffer {
   routine: ConnectRoutine | null;
+  /**
+   * The app brings one, but whether it was made already or who may run it isn't known yet (the routines or the agents
+   * are on their way): its line shows what it is with the rest loading, and Done waits.
+   */
+  loading: boolean;
   /** Who it may run as, the suggested one first among equals (`connectRoutineAgents`). */
   agents: Agent[];
   agent: Agent | null;
@@ -43,23 +48,33 @@ export interface RoutineOffer {
   setRule: (index: number) => void;
 }
 
-export function useRoutineOffer(app: string | null | undefined, agents: readonly Agent[] | undefined): RoutineOffer {
+export function useRoutineOffer(
+  app: string | null | undefined,
+  agents: readonly Agent[] | undefined,
+  /** The agents are still on their way (`agents` is then empty). */
+  agentsPending = false,
+): RoutineOffer {
   const { t } = useTranslation();
   const { org } = useOrg();
   const routines = useRoutines(org.id);
   const found = connectRoutineOf(app);
-  // Only once the list says it isn't made: a routine never offered twice.
-  const routine = found && routines.data && !connectRoutineMade(t, found, routines.data) ? found : null;
+  const loading = Boolean(found) && (routines.isPending || agentsPending);
+  // Shown while it loads; then only once the list says it isn't made (a routine is never offered twice). The list
+  // failing to come leaves it out.
+  const routine = found && (loading || (routines.data && !connectRoutineMade(t, found, routines.data))) ? found : null;
   const mine = useMemo(() => connectRoutineAgents(agents ?? []), [agents]);
   const [on, setOn] = useState(true);
   const [picked, setAgent] = useState<string | null>(null);
   const [rule, setRule] = useState(0);
   const agent = mine.find((a) => a.id === picked) ?? (routine ? suggestedAgent(mine) : null);
-  return { routine, agents: mine, agent, on, rule, setOn, setAgent, setRule };
+  return { routine, loading, agents: mine, agent, on, rule, setOn, setAgent, setRule };
 }
 
-/** Whether Done (or Continue) makes it: on, with an agent. */
-export const offerTaken = (o: RoutineOffer) => Boolean(o.routine && o.agent && o.on);
+/** The switch while the line loads: it shows on, and does nothing yet. */
+const waitsToLoad = () => {};
+
+/** Whether Done (or Continue) makes it: loaded, on, with an agent. */
+export const offerTaken = (o: RoutineOffer) => Boolean(o.routine && !o.loading && o.agent && o.on);
 
 function useZone() {
   const { me } = useOrg();
@@ -125,8 +140,30 @@ export function RoutineOfferRow({ offer, waitsForAccess = false }: { offer: Rout
   const id = useId();
   const timezone = useZone();
   const { routine, agent } = offer;
-  if (!routine || (!agent && !waitsForAccess)) return null;
+  if (!routine) return null;
   const name = connectRoutineName(t, routine);
+  const icon = <Icon name={routine.apps === "mailbox" ? "mail" : "repeat"} size={18} />;
+  if (offer.loading)
+    // What it is at once, who and when as their shapes (the selects' size, no jump when they land); Done waits.
+    return (
+      <SkeletonGroup label={t("connectFlow.routine.preparing")} className="cflow-routine">
+        <div className="cflow-routine__head">
+          <span className="cflow-routine__icon">{icon}</span>
+          <span className="cflow-routine__words">
+            <b>{name}</b>
+            <span className="cflow-routine__wait">
+              <Skeleton width="72%" />
+            </span>
+          </span>
+          <Switch checked disabled onCheckedChange={waitsToLoad} aria-label={t("connectFlow.routine.on", { name })} />
+        </div>
+        <div className="ac-props cflow-routine__props">
+          <Skeleton shape="block" width={112} className="cflow-routine__select" />
+          <Skeleton shape="block" width={248} className="cflow-routine__select" />
+        </div>
+      </SkeletonGroup>
+    );
+  if (!agent && !waitsForAccess) return null;
   const on = offer.on && Boolean(agent);
   const today = todayYmd();
   const when = connectRoutineRules(routine).map((r, i) => ({
@@ -139,9 +176,7 @@ export function RoutineOfferRow({ offer, waitsForAccess = false }: { offer: Rout
   return (
     <section className="cflow-routine" data-off={on ? undefined : ""}>
       <label className="cflow-routine__head" htmlFor={id}>
-        <span className="cflow-routine__icon">
-          <Icon name={routine.apps === "mailbox" ? "mail" : "repeat"} size={18} />
-        </span>
+        <span className="cflow-routine__icon">{icon}</span>
         <span className="cflow-routine__words">
           <b>{name}</b>
           <span className="small muted">

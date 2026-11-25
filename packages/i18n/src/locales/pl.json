@@ -16207,6 +16207,7 @@
       "openPrs": "{{name}} sprawdza PR czekające na przegląd i pisze Ci w wiadomości bezpośredniej, na co spojrzeć najpierw.",
       "errors": "{{name}} sprawdza nowe błędy i pisze Ci w wiadomości bezpośredniej, co wymaga uwagi.",
       "noAgent": "Daj dostęp agentowi powyżej, a on się tym zajmie.",
+      "preparing": "Przygotowuję rutynę…",
       "who": "Kto to robi",
       "when": "Kiedy",
       "on": "Utwórz rutynę {{name}}",

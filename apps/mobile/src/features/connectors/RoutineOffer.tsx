@@ -28,6 +28,8 @@ import { pickOne } from "../shared/PickerSheet";
  */
 export interface RoutineOffer {
   routine: ConnectRoutine | null;
+  /** The app brings one, but the routines or the agents are on their way: its rows wait, and so does Done. */
+  loading: boolean;
   agents: Agent[];
   agent: Agent | null;
   on: boolean;
@@ -43,14 +45,16 @@ export function useRoutineOffer(app: string | null | undefined): RoutineOffer {
   const dir = useDirectory();
   const routines = useRoutines(orgId);
   const found = connectRoutineOf(app);
-  const routine = found && routines.data && !connectRoutineMade(t, found, routines.data) ? found : null;
+  const loading = Boolean(found) && (routines.isPending || dir.loading);
+  // Shown while it loads; then only once the list says it isn't made. The list failing to come leaves it out.
+  const routine = found && (loading || (routines.data && !connectRoutineMade(t, found, routines.data))) ? found : null;
   // Every agent uses a catalog app once it is connected: the offer keeps those I make routines for.
   const mine = useMemo(() => connectRoutineAgents(dir.agents), [dir.agents]);
   const [on, setOn] = useState(true);
   const [picked, setAgent] = useState<string | null>(null);
   const [rule, setRule] = useState(0);
   const agent = mine.find((a) => a.id === picked) ?? (routine ? suggestedAgent(mine) : null);
-  return { routine, agents: mine, agent, on, rule, setOn, setAgent, setRule };
+  return { routine, loading, agents: mine, agent, on, rule, setOn, setAgent, setRule };
 }
 
 /** Makes the routine and starts its first run at once, then says so with Undo; it outlives the sheet. */
@@ -63,7 +67,7 @@ export function useStartRoutine() {
   const timezone = useMyZone();
   return (offer: RoutineOffer) => {
     const { routine, agent } = offer;
-    if (!routine || !agent || !offer.on) return;
+    if (!routine || !agent || !offer.on || offer.loading) return;
     const rules = connectRoutineRules(routine);
     const rule = rules[offer.rule] ?? rules[0];
     if (!rule) return;
@@ -101,8 +105,18 @@ export function RoutineOfferGroup({ offer }: { offer: RoutineOffer }) {
   const { t, i18n } = useTranslation();
   const timezone = useMyZone();
   const { routine, agent } = offer;
-  if (!routine || !agent) return null;
+  if (!routine) return null;
   const name = connectRoutineName(t, routine);
+  if (offer.loading)
+    // What it is at once, its switch and rows waiting until who may run it is known.
+    return (
+      <GroupedList>
+        <GroupedRow icon="clock" label={name} sub={t("connectFlow.routine.preparing")} media toggle disabled />
+        <GroupedRow label={t("connectFlow.routine.who")} menu disabled />
+        <GroupedRow label={t("connectFlow.routine.when")} menu disabled />
+      </GroupedList>
+    );
+  if (!agent) return null;
   const today = todayYmd();
   const rules = connectRoutineRules(routine).map((r) =>
     capitalize(ruleSentence(t, i18n.language, connectRule(r, timezone, today), new Date(), false), i18n.language),

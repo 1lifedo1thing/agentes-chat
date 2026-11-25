@@ -1124,7 +1124,7 @@ function DoneStep({ item, onAdjust, onClose }: { item: ConnectedItem; onAdjust: 
   const waiting = item.pending > 0 ? item.server : null;
   const agents = useAgents(org.id);
   // Every agent uses a catalog app once it is connected; a server still waiting for its tools brings nothing yet.
-  const offer = useRoutineOffer(waiting ? null : item.def?.id, agents.data);
+  const offer = useRoutineOffer(waiting ? null : item.def?.id, agents.data, agents.isPending);
   const startRoutine = useStartRoutine();
   return (
     <ConnectedDone
@@ -1136,24 +1136,31 @@ function DoneStep({ item, onAdjust, onClose }: { item: ConnectedItem; onAdjust: 
         onClose();
       }}
       primary={
-        waiting && (
-          <Button
-            variant="primary"
-            disabled={save.isPending}
-            loading={save.isPending}
-            onClick={() =>
-              save.mutate(
-                {
-                  id: waiting.id,
-                  label: waiting.label,
-                  tools: reviewDecisions(reviewToolsOf(t, waiting), {}, new Set()),
-                },
-                { onSuccess: onClose },
-              )
-            }
-          >
-            {t("connectFlow.next")}
+        // Done waits for the routine's line to load: pressed now, it would make nothing.
+        offer.loading && !waiting ? (
+          <Button variant="primary" loading>
+            {t("connectFlow.done.ok")}
           </Button>
+        ) : (
+          waiting && (
+            <Button
+              variant="primary"
+              disabled={save.isPending}
+              loading={save.isPending}
+              onClick={() =>
+                save.mutate(
+                  {
+                    id: waiting.id,
+                    label: waiting.label,
+                    tools: reviewDecisions(reviewToolsOf(t, waiting), {}, new Set()),
+                  },
+                  { onSuccess: onClose },
+                )
+              }
+            >
+              {t("connectFlow.next")}
+            </Button>
+          )
         )
       }
     >

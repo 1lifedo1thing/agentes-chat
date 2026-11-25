@@ -85,6 +85,31 @@ describe("the routine an app brings, at the end of connecting it (ADR 0242)", ()
     expect(document.body.textContent).toContain("Rotina desfeita");
   });
 
+  test("while the routines come, its line loads in place and Done waits; then both are there", async () => {
+    const { api } = workspace();
+    const list = api.routines.list;
+    let arrive = () => {};
+    const arrived = new Promise<void>((resolve) => {
+      arrive = resolve;
+    });
+    api.routines.list = async (orgId) => {
+      await arrived;
+      return list(orgId);
+    };
+    const dialog = await connected(api);
+    // What it is, at once; who and when as their shapes; Done held.
+    expect(within(dialog).getByText(ROUTINE)).toBeTruthy();
+    expect(within(dialog).getByRole("status", { name: "Preparando a rotina…" })).toBeTruthy();
+    expect(within(dialog).queryByRole("combobox", { name: "Quem faz" })).toBeNull();
+    expect((within(dialog).getByRole("button", { name: "Pronto" }) as HTMLButtonElement).disabled).toBe(true);
+
+    await act(async () => arrive());
+    await settle(6);
+    expect(within(dialog).queryByRole("status", { name: "Preparando a rotina…" })).toBeNull();
+    expect(within(dialog).getByRole("combobox", { name: "Quem faz" }).textContent).toContain("Ada");
+    expect((within(dialog).getByRole("button", { name: "Pronto" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
   test("another agent and another time, picked on the spot", async () => {
     const { api } = workspace();
     const dialog = await connected(api);

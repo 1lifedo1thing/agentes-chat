@@ -15146,6 +15146,7 @@
       "openPrs": "{{name}} schaut sich die PRs an, die auf ein Review warten, und sagt dir per Direktnachricht, was zuerst dran ist.",
       "errors": "{{name}} prüft die neuen Fehler und sagt dir per Direktnachricht, was Aufmerksamkeit braucht.",
       "noAgent": "Gib oben einem Agenten Zugriff, dann kümmert er sich darum.",
+      "preparing": "Routine wird vorbereitet…",
       "who": "Wer es macht",
       "when": "Wann",
       "on": "Routine {{name}} erstellen",

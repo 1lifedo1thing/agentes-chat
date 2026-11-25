@@ -5783,6 +5783,22 @@ html:not([data-pointer]) .cflow__more summary:focus-visible {
 .cflow-routine[data-off] .cflow-routine__words b {
   color: var(--ink-muted);
 }
+/* Loading: the sentence's line and the two selects as their shapes, at their size. */
+.cflow-routine__wait {
+  display: flex;
+  align-items: center;
+  height: 20px;
+}
+.cflow-routine__select {
+  height: var(--control-h-sm);
+  border-radius: var(--control-r-sm);
+}
+/* Who and when land softly where their shapes were. */
+@media (prefers-reduced-motion: no-preference) {
+  .cflow-routine:not(.ac-skeleton-group) .cflow-routine__props {
+    animation: ac-fade-in var(--dur-fast) ease-out;
+  }
+}
 
 /* Email (ADR 0038): app password help, hosts under "Avançado", actions by level, address lists, the agent's rules. */
 .mail-howto {
