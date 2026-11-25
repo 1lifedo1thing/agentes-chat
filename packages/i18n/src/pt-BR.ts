@@ -13097,7 +13097,7 @@ export const ptBR = {
     /** The viewer's own computers that may take their replies while this one is full (`machines.spill_own`). */
     spill: {
       title: "Seus computadores",
-      text: "Quando este computador estiver cheio, as respostas para você podem começar num computador seu. Trabalhos longos e os arquivos dos agentes continuam aqui.",
+      text: "Quando este computador estiver cheio ou fora, seus agentes podem começar num computador seu. Missões, sessões de código e agentes com repositórios continuam aqui.",
       /** The viewer's own sign-in there, "Claude Max". */
       plan: "seu plano {{plan}}",
     },
@@ -16494,7 +16494,7 @@ export const ptBR = {
     device: {
       notLinkMaker: "Só quem gerou o link pode deixar este computador entrar.",
       widenForbidden: "Admins só podem restringir quem usa o dispositivo de outra pessoa.",
-      spillOwnerOnly: "Só quem conectou este computador pode deixar respostas pensarem nele. Você pode desligar.",
+      spillOwnerOnly: "Só quem conectou este computador pode ligar a ajuda dele. Você pode desligar.",
       tasksOwnerOnly: "Só quem conectou este computador pode mudar quantas tarefas ele roda ao mesmo tempo.",
       tasksCloud: "A Cloud dimensiona sozinha o espaço deste computador para tarefas.",
       notHome: "Os agentes moram no computador do workspace e usam este quando o citam pelo nome.",
@@ -16663,6 +16663,11 @@ export const ptBR = {
       line: "IP de saída {{ip}}",
       hint: "O endereço que os sites veem quando os agentes navegam. Ele acompanha as mudanças de rede do computador.",
       waiting: "Reconectando a internet dos agentes. As conexões deles esperam até ela voltar.",
+    },
+    moving: {
+      short: "Mudando de servidor",
+      line: "Mudando de servidor… volta em alguns minutos",
+      named: "{{computer}} está mudando de servidor… volta em alguns minutos",
     },
     online: "Online",
     offline: "Offline",
@@ -16922,11 +16927,15 @@ export const ptBR = {
       "Mais tarefas ao mesmo tempo: só 0,5 GB de memória fica livre e o processador ocupado não as segura. Os seus apps podem ficar lentos.",
     belongs: "Pertence ao workspace",
     belongsHint: "Ele fica quando quem o conectou sai, e todos podem usá-lo enquanto ninguém for dono dele.",
-    spillOwn: "Suas respostas podem pensar aqui",
-    spillOwnHint: "Quando o computador de um agente estiver cheio, as respostas dele para você começam aqui.",
-    spillOthers: "Agentes de outras pessoas podem pensar aqui",
-    spillOthersHint:
-      "Quando o computador de um agente estiver cheio, as respostas dele para outras pessoas também podem começar aqui.",
+    spillOwn: "Ajudar quando o computador da equipe estiver cheio ou fora",
+    spillOwnHint:
+      "Quando o computador dos seus agentes estiver cheio ou fora, as respostas, os pedidos e as rotinas deles podem pensar aqui com o seu login.",
+    spillTeamHint:
+      "Quando o computador de um agente estiver cheio ou fora, as respostas, os pedidos e as rotinas dele podem pensar aqui com o login do dono dele neste computador.",
+    spillWorkspaceOff: "Um admin desativou isso para o workspace.",
+    helpWorkspace: "Computadores ajudam quando o da equipe estiver cheio ou fora",
+    helpWorkspaceHint:
+      "Cada computador só ajuda se o dono permitir. Com isto desativado, nenhum ajuda, seja qual for a escolha do dono.",
     connectedBy: "Conectado por {{name}}",
     downloadFor: "Baixar para {{system}}",
     downloadApp: "Baixar o app",
@@ -18929,6 +18938,11 @@ export const ptBR = {
       limit: "Respondi com {{via}}: {{plan}} chegou ao limite.",
       cant: "Respondi com {{via}}: {{plan}} não consegue pensar agora.",
       change: "Trocar",
+    },
+    spilled: {
+      full: "Pensou em {{to}}: {{from}} estava cheio.",
+      away: "Pensou em {{to}}: {{from}} estava fora.",
+      itsComputer: "o computador dele",
     },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
@@ -21156,6 +21170,7 @@ export const ptBR = {
       offline: "O {{computer}} está offline",
       offlineHelpPlain: "O {{name}} espera o computador voltar.",
       offlineHelpPlain_female: "A {{name}} espera o computador voltar.",
+      helping: "Enquanto isso, o trabalho novo pode pensar em {{names}}.",
       noRoom: "O {{computer}} já mostra o máximo de telas que consegue. Tente de novo daqui a pouco.",
       unavailable: "A tela do {{name}} não pode ser mostrada agora",
       unavailable_female: "A tela da {{name}} não pode ser mostrada agora",

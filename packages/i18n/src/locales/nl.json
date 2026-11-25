@@ -12643,7 +12643,7 @@
     "rule": "Nieuw werk start als de computer vrij geheugen heeft. Mensen gaan voor. Samen genoemde agenten starten een voor een.",
     "spill": {
       "title": "Je computers",
-      "text": "Als deze computer vol is, kunnen antwoorden voor jou op een van jouw computers starten. Lange taken en de bestanden van de agenten blijven hier.",
+      "text": "Als deze computer vol of weg is, kunnen je agents op een van jouw computers beginnen. Missies, codesessies en agents met repository's blijven hier.",
       "plan": "je {{plan}}-abonnement"
     },
     "youFirst": "Jij bent eerst",
@@ -16190,7 +16190,7 @@
     "device": {
       "notLinkMaker": "Alleen wie de link heeft gemaakt, kan deze computer laten deelnemen.",
       "widenForbidden": "Admins kunnen alleen beperken wie iemands eigen apparaat mag gebruiken.",
-      "spillOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan antwoorden hier laten denken. Uitzetten kan wel.",
+      "spillOwnerOnly": "Alleen wie deze computer heeft gekoppeld kan zijn hulp aanzetten. Jij kunt hem uitzetten.",
       "tasksOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan wijzigen hoeveel taken hij tegelijk uitvoert.",
       "tasksCloud": "De Cloud bepaalt zelf hoeveel ruimte deze computer heeft voor taken.",
       "notHome": "Agents wonen op de computer van de workspace en gebruiken deze als ze hem bij naam noemen."
@@ -16344,6 +16344,11 @@
       "line": "Uitgaand IP {{ip}}",
       "hint": "Het adres dat websites zien als de agents browsen. Het verandert mee met het netwerk van de computer.",
       "waiting": "Het internet van de agents wordt opnieuw verbonden. Hun verbindingen wachten tot het terug is."
+    },
+    "moving": {
+      "short": "Verhuist van server",
+      "line": "Verhuist naar een nieuwe server… over een paar minuten terug",
+      "named": "{{computer}} verhuist naar een nieuwe server… over een paar minuten terug"
     },
     "online": "Online",
     "offline": "Offline",
@@ -16618,10 +16623,12 @@
     "pushHarderHint": "Meer taken tegelijk: er blijft maar 0,5 GB geheugen vrij en een drukke processor houdt ze niet tegen. Je eigen apps kunnen trager worden.",
     "belongs": "Hoort bij de werkruimte",
     "belongsHint": "Het blijft als de persoon die het koppelde vertrekt, en iedereen kan het gebruiken zolang niemand de eigenaar is.",
-    "spillOwn": "Jouw antwoorden kunnen hier denken",
-    "spillOwnHint": "Als de computer van een agent vol is, starten zijn antwoorden voor jou hier.",
-    "spillOthers": "Agenten van anderen kunnen hier denken",
-    "spillOthersHint": "Als de computer van een agent vol is, kunnen zijn antwoorden voor andere mensen ook hier starten.",
+    "spillOwn": "Helpen als de computer van het team vol of weg is",
+    "spillOwnHint": "Als de computer van je agents vol of weg is, kunnen hun antwoorden, vragen en routines hier denken met jouw aanmelding.",
+    "spillTeamHint": "Als de computer van een agent vol of weg is, kunnen zijn antwoorden, vragen en routines hier denken met de aanmelding van zijn eigenaar op deze computer.",
+    "spillWorkspaceOff": "Een admin heeft dit voor de workspace uitgezet.",
+    "helpWorkspace": "Computers helpen als die van het team vol of weg is",
+    "helpWorkspaceHint": "Elke computer helpt alleen als zijn eigenaar het toestaat. Uit: geen enkele helpt, wat de eigenaar ook koos.",
     "connectedBy": "Gekoppeld door {{name}}",
     "downloadFor": "Downloaden voor {{system}}",
     "downloadApp": "De app downloaden",
@@ -18565,6 +18572,11 @@
       "limit": "Beantwoord met {{via}}: {{plan}} heeft zijn limiet bereikt.",
       "cant": "Beantwoord met {{via}}: {{plan}} kan nu niet denken.",
       "change": "Wijzigen"
+    },
+    "spilled": {
+      "full": "Dacht op {{to}}: {{from}} was vol.",
+      "away": "Dacht op {{to}}: {{from}} was weg.",
+      "itsComputer": "zijn computer"
     },
     "modelStandIn": {
       "text": "{{plan}} heeft {{from}} met deze sleutel geweigerd. Ik heb geantwoord met {{to}}, dat er wel mee werkt.",
@@ -20588,6 +20600,7 @@
       "offline": "{{computer}} is offline",
       "offlineHelpPlain": "{{name}} wacht tot de computer terug is.",
       "offlineHelpPlain_female": "{{name}} wacht tot de computer terug is.",
+      "helping": "Ondertussen kan nieuw werk op {{names}} denken.",
       "noRoom": "{{computer}} toont al zoveel schermen als hij kan. Probeer het zo opnieuw.",
       "unavailable": "Het scherm van {{name}} kan nu niet getoond worden",
       "unavailable_female": "Het scherm van {{name}} kan nu niet getoond worden",

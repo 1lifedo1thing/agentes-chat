@@ -5301,6 +5301,8 @@ export interface Machine {
    * from an older server: not in standby.
    */
   standby?: boolean;
+  /** The workspace's own computer is away moving to another server: back in a few minutes. Absent: not moving. */
+  moving?: boolean;
   /**
    * Why it is offline, from its runner's last close: `unresponsive` (no network, or too busy to answer), `stopped`
    * (its runner stopped), `dropped` (the link dropped). Null or absent: online, the workspace's own, or unknown.
@@ -5533,6 +5535,8 @@ export interface MachineOutage {
   /** The workspace's own computer (ADR 0056 §10). */
   managed?: boolean;
   offlineSince: string;
+  /** The workspace's own computer is away moving to another server: it comes back by itself. Absent: not moving. */
+  moving?: boolean;
   agents: OutageAgent[];
   /** Runs parked until the computer (or another one) can take them. */
   waitingRuns: number;
@@ -5677,6 +5681,8 @@ export interface UsageQueueClosedRow {
 export interface ComputerQueue {
   machineId: string;
   name: string;
+  /** It is away moving to another server: the line waits for it. Absent: not moving. */
+  moving?: boolean;
   working: QueueWorking[];
   waiting: QueueWaiting[];
 }
@@ -8069,6 +8075,8 @@ export interface TaskWait {
   since?: string | null;
   /** You may press Continuar agora. */
   canContinue: boolean;
+  /** Its computer is away moving to another server: it comes back by itself. */
+  moving?: boolean;
 }
 
 /** A computer with turns running or waiting for room (counts only). */
@@ -8878,6 +8886,8 @@ export type DeviceStatus =
   | { kind: "needs_you"; reason: string }
   | { kind: "preparing"; reason: string }
   | { kind: "paused"; until: string | null }
+  /** The workspace's own computer, away while it moves to another server, since `since`. */
+  | { kind: "moving"; since: string }
   /** `cause`: a computer's, as `Machine.offlineCause`; absent: unknown. */
   | { kind: "offline"; lastSeenAt: string | null; withHost?: boolean; cause?: MachineOfflineCause }
   | { kind: "unsupported"; reason: string };
@@ -8911,8 +8921,11 @@ export interface ComputerDevice {
   memoryGb: number | null;
   ownerUserId: string | null;
   belongsToWorkspace: boolean;
-  /** While an agent's own computer is full, replies people wait on may think here: to its owner, to anyone else. */
-  spill: { own: boolean; others: boolean };
+  /**
+   * "Help when the team's computer is full or away": fresh turns of its owner's agents (anyone's, on one marked the
+   * workspace's) may think here while their own computer is full or away. An older server also sent a retired `others`.
+   */
+  spill: { own: boolean };
   systemMode: boolean;
   audience: DeviceAudience;
   status: DeviceStatus;
@@ -8948,6 +8961,8 @@ export interface DeviceJoinRequest {
 export interface DevicesList {
   devices: ComputerDevice[];
   requests: DeviceJoinRequest[];
+  /** People's computers may help when the workspace's is full or away (an admin's switch). Absent from an older server: on. */
+  devicesHelp?: boolean;
 }
 
 /** A one-line install: works once, for a few minutes, and the computer still asks to join. */
@@ -9050,7 +9065,7 @@ export interface ComputerDeviceInput {
   belongsToWorkspace?: boolean;
   maxTasks?: number;
   pushHarder?: boolean;
-  spill?: { own?: boolean; others?: boolean };
+  spill?: { own?: boolean };
 }
 
 export interface PhoneDeviceInput {
