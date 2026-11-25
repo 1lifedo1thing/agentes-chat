@@ -2033,8 +2033,8 @@ async function executeRunInner(
     ctx.loadedGroups = [EVERY_TOOL];
   }
   const every = listsEveryTool(ctx);
-  // Independent reads together: the trigger, and the tools it may use.
-  const [triggerRows, granted] = await Promise.all([
+  // Independent reads together: the trigger, the tools it may use, and whether a new run's agent can think.
+  const [triggerRows, granted, ai] = await Promise.all([
     !needsContext
       ? Promise.resolve([])
       : topTrigger
@@ -2044,6 +2044,9 @@ async function executeRunInner(
             .from(schema.messages)
             .where(and(eq(schema.messages.orgId, run.orgId), eq(schema.messages.id, run.triggerMessageId))),
     deps.tools ? deps.tools.granted(ctx, heldBack) : Promise.resolve([]),
+    needsContext && agent && !agent.archivedAt
+      ? agentAiState({ db, gateway: deps.gateway, machines: deps.machines }, agent, run)
+      : null,
   ]);
   prof.part("tools_granted");
   let tools = presentTools(granted, isSensitive, ctx.loadedGroups);
@@ -2066,8 +2069,7 @@ async function executeRunInner(
   if (ctx.codeSession?.unavailable && isComputerBrain(agent.brain)) return fail("code_session_unavailable");
   // A new run that can't think (no key, a computer brain signed out or missing) fails here,
   // before the judges below, any context or a model call.
-  if (needsContext) {
-    const ai = await agentAiState({ db, gateway: deps.gateway, machines: deps.machines }, agent, run);
+  if (ai) {
     if (ai.state === "no_ai") return failNoAi(ai.reason ?? "no_key", ai.own, undefined, undefined, ai);
     prof.part("ai_state");
     // Somebody waits on a conversation's run: its CLI starts while the turn is built. Not for a routine's or
@@ -2646,13 +2648,6 @@ async function executeRunInner(
     // The tools the context names are core ones: listed whatever groups the judge loads, so it needn't wait for it.
     // A connector's tool of the same name could come with a group: then it waits.
     if (judging && !granted.every((t) => isCore(t) || !CONTEXT_TOOLS.includes(t.name))) await judging;
-    const pending: { label: string; reason: string }[] = deps.tools
-      ? await pendingConnectors(db, run.orgId, new Set(granted.map((t) => t.name))).catch(() => [])
-      : [];
-    // Skills: only names and descriptions here; the body loads with `load_skill` (progressive disclosure).
-    const skillList = tools.some((t) => t.name === "load_skill")
-      ? await enabledSkills(db, run.orgId, agent.id, run.id)
-      : [];
     // A routine's instructions name what it checks; the wiki stays one `read_wiki_page` away.
     const searchesWiki = tools.some((t) => t.name === "read_wiki_page") && !viaRoutine;
     // Only the kinds searched below: with vectors for the wiki alone, a run that doesn't search it pays for none.
@@ -2665,26 +2660,34 @@ async function executeRunInner(
         )
       : undefined;
     const personBehind = () => runAuthority(db, run).then((a) => a.personId);
-    // Limited to some GitHub repositories: which ones, and where to start.
-    const repositories = granted.some((t) => t.scope.startsWith("github:"))
-      ? repositoriesPrompt(await agentRepositoryList(db, run.orgId, agent.id).catch(() => []))
-      : "";
-    // Its shared browser profiles (ADR 0110), by name.
-    // Granted, not listed: on demand (ADR 0043) the tool is one `use_tool` away, and `promptKey` must not follow tool groups.
-    const browsers = granted.some((t) => t.name === "browser_profile")
-      ? browsersPrompt(await agentBrowserProfiles(db, run.orgId, agent.id), agent.browserProfileId)
-      : "";
-    // Listed in every run of the agent (`EVERY_TOOL`): the prompt speaks of them only where they apply.
-    const [workApplies, choicesApply, sayNowHere, codeHere] = await Promise.all([
-      every ? workMayStart(ctx) : true,
-      every ? someoneAnswers(ctx) : true,
-      // Listed in every run with an id: the line before slow work is spoken of only where people read it as it goes.
-      tools.some((t) => t.name === SAY_NOW_TOOL) ? sayNowApplies(db, run, sealedAtClaim).catch(() => false) : false,
-      // A session is suggested to a person's request outside one (ADR 0215 §11): spoken of only there.
-      tools.some((t) => t.name === SUGGEST_CODE_SESSION_TOOL)
-        ? codeSuggestionApplies(db, run).catch(() => false)
-        : false,
-    ]);
+    const [pending, skillList, repositories, browsers, workApplies, choicesApply, sayNowHere, codeHere] =
+      await Promise.all([
+        deps.tools
+          ? pendingConnectors(db, run.orgId, new Set(granted.map((t) => t.name))).catch(() => [])
+          : ([] as { label: string; reason: string }[]),
+        // Skills: only names and descriptions here; the body loads with `load_skill` (progressive disclosure).
+        tools.some((t) => t.name === "load_skill") ? enabledSkills(db, run.orgId, agent.id, run.id) : [],
+        // Limited to some GitHub repositories: which ones, and where to start.
+        granted.some((t) => t.scope.startsWith("github:"))
+          ? agentRepositoryList(db, run.orgId, agent.id)
+              .catch(() => [])
+              .then(repositoriesPrompt)
+          : "",
+        // Its shared browser profiles (ADR 0110), by name. Granted, not listed: on demand (ADR 0043) the tool is one
+        // `use_tool` away, and `promptKey` must not follow tool groups.
+        granted.some((t) => t.name === "browser_profile")
+          ? agentBrowserProfiles(db, run.orgId, agent.id).then((p) => browsersPrompt(p, agent.browserProfileId))
+          : "",
+        // Listed in every run of the agent (`EVERY_TOOL`): the prompt speaks of them only where they apply.
+        every ? workMayStart(ctx) : true,
+        every ? someoneAnswers(ctx) : true,
+        // Listed in every run with an id: the line before slow work is spoken of only where people read it as it goes.
+        tools.some((t) => t.name === SAY_NOW_TOOL) ? sayNowApplies(db, run, sealedAtClaim).catch(() => false) : false,
+        // A session is suggested to a person's request outside one (ADR 0215 §11): spoken of only there.
+        tools.some((t) => t.name === SUGGEST_CODE_SESSION_TOOL)
+          ? codeSuggestionApplies(db, run).catch(() => false)
+          : false,
+      ]);
     const [context, memory, wikiPages, rules] = await Promise.all([
       buildRunContext(db, run, agent, {
         maxMessages: deps.contextMessages,
