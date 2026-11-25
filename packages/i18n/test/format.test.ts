@@ -112,5 +112,6 @@ test("formatSpan: how long something lasted, to the minute, in the language's ow
   expect(formatSpan("en", 42 * 60_000)).toBe("42 min");
   expect(formatSpan("en", 120 * 60_000)).toBe("2 hr");
   expect(formatSpan("pt-BR", 125 * 60_000)).toBe("2 h 5 min");
-  expect(formatSpan("ja", 125 * 60_000)).toBe("2時間 5分");
+  // ICU's data spaces Japanese units differently by platform.
+  expect(formatSpan("ja", 125 * 60_000)).toMatch(/^2 ?時間 5 ?分$/);
 });

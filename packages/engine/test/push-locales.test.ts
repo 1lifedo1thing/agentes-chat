@@ -88,7 +88,8 @@ test("a computer that isn't answering, and back with how long it was away (ADR 0
     title: "Workspace computer voltou",
     body: "Ficou fora por 2 h 5 min. O trabalho que esperava continua agora.",
   });
-  expect(push("ja", "computer_back", 125 * 60_000).body).toContain("2時間 5分");
+  // ICU's data spaces Japanese units differently by platform: the units are what matter.
+  expect(push("ja", "computer_back", 125 * 60_000).body).toMatch(/^2 ?時間 5 ?分/);
 });
 
 test("a language without a word says it in English", () => {
