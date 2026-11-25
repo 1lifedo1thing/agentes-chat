@@ -15155,6 +15155,7 @@
       "leads": "{{name}} sieht, wer ins CRM gekommen ist, und sagt dir per Direktnachricht, mit wem du anfangen solltest.",
       "tickets": "{{name}} findet Tickets, die auf eine Antwort warten, und schickt sie dir per Direktnachricht, mit einem Antwortvorschlag.",
       "late": "{{name}} findet überfällige Aufgaben und sagt dir per Direktnachricht, wer sich um jede kümmert.",
+      "traffic": "{{name}} schaut sich die Zahlen der Website an und sagt dir per Direktnachricht, was sich gegenüber der Vorwoche geändert hat.",
       "openPrs": "{{name}} schaut sich die PRs an, die auf ein Review warten, und sagt dir per Direktnachricht, was zuerst dran ist.",
       "errors": "{{name}} prüft die neuen Fehler und sagt dir per Direktnachricht, was Aufmerksamkeit braucht.",
       "noAgent": "Gib oben einem Agenten Zugriff, dann kümmert er sich darum.",

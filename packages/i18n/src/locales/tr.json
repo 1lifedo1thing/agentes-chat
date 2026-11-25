@@ -15085,6 +15085,7 @@
       "leads": "{{name}} CRM'e kimlerin geldiğine bakar ve size doğrudan mesajla kimden başlayacağınızı söyler.",
       "tickets": "{{name}} yanıt bekleyen talepleri bulur ve önerilen bir yanıtla size doğrudan mesajla gönderir.",
       "late": "{{name}} geciken görevleri bulur ve her biriyle kimin ilgilendiğini size doğrudan mesajla söyler.",
+      "traffic": "{{name}} sitenin rakamlarına bakar ve önceki haftaya göre neyin değiştiğini size doğrudan mesajla söyler.",
       "openPrs": "{{name}} inceleme bekleyen PR'lara bakar ve önce neye bakacağınızı size doğrudan mesajla söyler.",
       "errors": "{{name}} yeni hataları kontrol eder ve neyin ilgi gerektirdiğini size doğrudan mesajla söyler.",
       "noAgent": "Yukarıda bir ajana erişim verin, bununla o ilgilensin.",

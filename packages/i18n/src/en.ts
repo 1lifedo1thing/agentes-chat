@@ -15607,6 +15607,7 @@ export const en = {
       leads: "{{name}} sees who came into the CRM and sends you in a DM who to start with.",
       tickets: "{{name}} finds tickets waiting for a reply and sends them to you in a DM, with a suggested reply.",
       late: "{{name}} finds overdue tasks and sends you in a DM who looks after each one.",
+      traffic: "{{name}} looks at your site's numbers and sends you in a DM what changed against the week before.",
       openPrs: "{{name}} looks at the PRs waiting for review and sends you in a DM what to look at first.",
       errors: "{{name}} checks the new errors and sends you in a DM what needs attention.",
       /** Nobody may read the mailbox yet: no routine is made. */

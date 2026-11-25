@@ -15560,6 +15560,7 @@ export const ptBR = {
       leads: "{{name}} vê quem chegou no CRM e te manda no privado por quem começar.",
       tickets: "{{name}} procura chamados esperando resposta e te manda no privado, com sugestão de resposta.",
       late: "{{name}} procura tarefas atrasadas e te manda no privado quem cuida de cada uma.",
+      traffic: "{{name}} olha os números do site e te manda no privado o que mudou contra a semana anterior.",
       openPrs: "{{name}} vê os PRs esperando revisão e te manda no privado o que olhar primeiro.",
       errors: "{{name}} confere os erros novos e te manda no privado o que precisa de atenção.",
       /** Nobody may read the mailbox yet: no routine is made. */

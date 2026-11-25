@@ -15678,6 +15678,7 @@
       "leads": "{{name}} voit qui est arrivé dans le CRM et vous dit en message direct par qui commencer.",
       "tickets": "{{name}} trouve les tickets qui attendent une réponse et vous les envoie en message direct, avec une réponse suggérée.",
       "late": "{{name}} trouve les tâches en retard et vous dit en message direct qui s'occupe de chacune.",
+      "traffic": "{{name}} regarde les chiffres du site et vous dit en message direct ce qui a changé par rapport à la semaine précédente.",
       "openPrs": "{{name}} regarde les PR en attente de relecture et vous dit en message direct quoi regarder en premier.",
       "errors": "{{name}} vérifie les nouvelles erreurs et vous dit en message direct ce qui demande de l'attention.",
       "noAgent": "Donnez accès à un agent ci-dessus et il s'en occupe pour vous.",

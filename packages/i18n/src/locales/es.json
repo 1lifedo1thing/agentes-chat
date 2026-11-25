@@ -15604,6 +15604,7 @@
       "leads": "{{name}} ve quién llegó al CRM y te dice por MD por quién empezar.",
       "tickets": "{{name}} busca tickets que esperan respuesta y te los manda por MD, con una respuesta sugerida.",
       "late": "{{name}} busca tareas atrasadas y te dice por MD quién se ocupa de cada una.",
+      "traffic": "{{name}} mira los números del sitio y te dice por MD qué cambió respecto a la semana anterior.",
       "openPrs": "{{name}} mira los PRs que esperan revisión y te dice por MD qué mirar primero.",
       "errors": "{{name}} revisa los errores nuevos y te dice por MD qué necesita atención.",
       "noAgent": "Da acceso a un agente arriba y él se encarga de esto por ti.",

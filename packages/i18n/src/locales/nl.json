@@ -15223,6 +15223,7 @@
       "leads": "{{name}} ziet wie er in het CRM is binnengekomen en zegt je in een DM met wie je begint.",
       "tickets": "{{name}} zoekt tickets die op een antwoord wachten en stuurt ze je in een DM, met een voorgesteld antwoord.",
       "late": "{{name}} zoekt achterstallige taken en zegt je in een DM wie elke taak oppakt.",
+      "traffic": "{{name}} bekijkt de cijfers van de site en zegt je in een DM wat er veranderde ten opzichte van de week ervoor.",
       "openPrs": "{{name}} bekijkt de PR's die op een review wachten en zegt je in een DM waar je eerst naar moet kijken.",
       "errors": "{{name}} controleert de nieuwe fouten en zegt je in een DM wat aandacht nodig heeft.",
       "noAgent": "Geef hierboven een agent toegang en die regelt dit voor je.",
