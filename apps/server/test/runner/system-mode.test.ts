@@ -535,6 +535,8 @@ test("a system-mode runner (root) without workers does no agent work; machine-le
     "phone.repair",
     // A problem report reads the runner's own log and state: root's.
     "report.collect",
+    // Lending the computer's internet dials a data socket, which needs the machine token only root holds (ADR 0237).
+    "egress.dial",
   ]);
   const install = { op: "cli.install", action: "start", tool: "claude" } as unknown as MachineRequest;
   const installer = { ...ctx, cliInstall: () => ({ install: { tool: "claude" as const, state: "running" as const } }) };

@@ -29,6 +29,7 @@ import { resolveForAgent } from "./paths";
 import { resetFromWords } from "./plan-usage";
 import type { Spawn } from "./scope-gate";
 import { agentSecrets } from "./secrets";
+import { turnZoneEnv } from "./turn-zone";
 
 /**
  * The Antigravity branch of `brain.turn` (protocol 44, ADR 0143): one agent turn as one run of Google's Antigravity
@@ -67,6 +68,8 @@ const KILL_GRACE_MS = 5000;
 export interface AntigravityBrainTurnRequest {
   runId: string;
   kind: "antigravity";
+  /** The zone of the turn's "Now" (`turnZoneEnv`). */
+  timeZone?: string;
   session: { id: string; resume: boolean };
   cwd?: string;
   model?: string;
@@ -246,10 +249,6 @@ export interface AntigravityTurnOptions {
 export async function runAntigravityTurn(input: AntigravityTurnInput, opts: AntigravityTurnOptions): Promise<void> {
   const fail = (code: string, message: string, retryable?: boolean) =>
     opts.emit({ type: "error", code, message, ...(retryable ? { retryable } : {}) });
-  // On Windows the CLI keeps its sign-in in the one Credential Manager of the computer's user (ADR 0143).
-  if ((opts.platform ?? process.platform) === "win32") {
-    return fail("unsupported", "Gemini plans don't think on Windows computers yet.");
-  }
   try {
     prepareAgyHome(input.account.home, opts.mcpCommand);
     if (input.chat) {
@@ -273,7 +272,7 @@ export async function runAntigravityTurn(input: AntigravityTurnInput, opts: Anti
     ...(opts.socketPath ? { [CODEX_MCP_ENV[1]]: opts.socketPath } : {}),
     ...(opts.runnerHome ? { [CODEX_MCP_ENV[2]]: opts.runnerHome } : {}),
   };
-  const env = accountEnv("antigravity", input.account.home, base);
+  const env = accountEnv("antigravity", input.account.home, base, opts.platform);
   const clean = (text: string) => (opts.redact ? opts.redact(text) : text);
   const hold = opts.redact ? (opts.redactHold ?? 0) : 0;
 
@@ -294,7 +293,9 @@ export async function runAntigravityTurn(input: AntigravityTurnInput, opts: Anti
         cwd: input.cwd,
         env,
         stdio: ["ignore", "pipe", "pipe"],
-        detached: true,
+        // Its own process group (posix). On Windows that would open a console window of its own.
+        detached: (opts.platform ?? process.platform) !== "win32",
+        windowsHide: true,
       });
     } catch (err) {
       return fail("antigravity_failed", err instanceof Error ? err.message : String(err));
@@ -572,7 +573,8 @@ export async function handleAntigravityBrainTurn(
         signal: scope.signal,
         runnerHome: ctx.runnerHome,
         ...(ctx.mcp ? { mcpCommand: ctx.mcp.command, socketPath: ctx.mcp.socketPath } : {}),
-        ...(secrets ? { env: secrets.env, redact: secrets.redact, redactHold: secrets.hold } : {}),
+        env: { ...secrets?.env, ...turnZoneEnv(req.timeZone) },
+        ...(secrets ? { redact: secrets.redact, redactHold: secrets.hold } : {}),
         ...(ctx.bin ? { bin: ctx.bin } : {}),
         ...(ctx.spawn ? { spawn: ctx.spawn } : {}),
         ...(ctx.platform ? { platform: ctx.platform } : {}),

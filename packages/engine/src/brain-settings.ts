@@ -4,12 +4,14 @@ import {
   AGY_COPY_PROTOCOL,
   ANTIGRAVITY_MAC_PROTOCOL,
   ANTIGRAVITY_PROTOCOL,
+  ANTIGRAVITY_WINDOWS_PROTOCOL,
   BRAIN_PROTOCOL,
   type BrainEffort,
   type BrainSpeed,
   CODEX_WINDOWS_PROTOCOL,
   CURSOR_PROTOCOL,
   GROK_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
   isBrainEffort,
   isBrainSpeed,
   OPENCODE_ACP_PROTOCOL,
@@ -48,6 +50,7 @@ import {
   ANTIGRAVITY_NEON_CLI,
   ANTIGRAVITY_NEW_MODEL,
   ANTIGRAVITY_PAID_MODEL,
+  accountOnlyBrain,
   antigravityBaseModel,
   claudeCodeModel,
   cliVersionAtLeast,
@@ -526,8 +529,14 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
   // On Windows a runner before `OPENCODE_ACP_PROTOCOL` refuses every OpenCode turn.
   else if (kind === "opencode" && machine.os === "windows" && machine.protocol < OPENCODE_ACP_PROTOCOL)
     reason = "runner_old";
+  // On Windows a runner before `GROK_WINDOWS_PROTOCOL` refuses every Grok turn.
+  else if (kind === "grok" && machine.os === "windows" && machine.protocol < GROK_WINDOWS_PROTOCOL)
+    reason = "runner_old";
   // On a Mac a runner before `ANTIGRAVITY_MAC_PROTOCOL` refuses every Gemini sign-in and turn.
   else if (kind === "antigravity" && machine.os === "darwin" && machine.protocol < ANTIGRAVITY_MAC_PROTOCOL)
+    reason = "runner_old";
+  // On Windows a runner before `ANTIGRAVITY_WINDOWS_PROTOCOL` refuses every Gemini sign-in and turn.
+  else if (kind === "antigravity" && machine.os === "windows" && machine.protocol < ANTIGRAVITY_WINDOWS_PROTOCOL)
     reason = "runner_old";
   else if (!brainRunsOn(kind, machine.os)) reason = "system";
   else if (!machine.executors?.[kind] && !(kind === "antigravity" && bringsAgy(machine)))
@@ -546,21 +555,25 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
 }
 
 /**
- * A computer whose runner brings its own Antigravity CLI (`AGY_COPY_PROTOCOL`, ADR 0143): outside system mode, on macOS
- * and Linux, never the workspace's own (its image brings it). There Gemini can be connected with no CLI installed: the
- * runner downloads it as the first sign-in starts.
+ * A computer whose runner brings its own Antigravity CLI (`AGY_COPY_PROTOCOL`, ADR 0143): outside system mode, on macOS,
+ * Linux and Windows (`ANTIGRAVITY_WINDOWS_PROTOCOL`), never the workspace's own (its image brings it). There Gemini can
+ * be connected with no CLI installed: the runner downloads it as the first sign-in starts.
  */
 const bringsAgy = (machine: MachineLike) =>
   machine.protocol >= AGY_COPY_PROTOCOL &&
   machine.kind !== "managed" &&
   machine.executors?.mode !== "system" &&
-  (machine.os === "darwin" || machine.os === "linux");
+  (machine.os === "darwin" ||
+    machine.os === "linux" ||
+    (machine.os === "windows" && machine.protocol >= ANTIGRAVITY_WINDOWS_PROTOCOL));
 
 /** "Usar um computador": the agent's machine as the brain section shows it. */
 export interface BrainComputer {
   machineId: string;
   name: string;
   online: boolean;
+  /** Its system (`machines.os`): the apps name it where a plan doesn't run there (`brainRunsOn`). */
+  os: string;
 }
 
 /** A computer the caller may give the agent, with what it offers (the page moves the agent to one that has a brain). */
@@ -772,7 +785,7 @@ async function candidateMachines(
         (admin || m.kind !== "connected" || m.pairedByUserId === userId || m.id === current) &&
         (mayBeHome(m) || m.id === current),
     )
-    .map((m) => ({ machineId: m.id, name: m.name, online: shownOnline(m), options: brainOptions(m) }));
+    .map((m) => ({ machineId: m.id, name: m.name, online: shownOnline(m), os: m.os, options: brainOptions(m) }));
 }
 
 async function agentMachine(db: Database, orgId: string, machineId: string | null) {
@@ -797,7 +810,9 @@ function view(
     effectiveModel: brain === "model" ? null : (agent.brainModel ?? defaultBrainModel(brain)),
     fallback: false,
     extraUsage: paysExtraUsage(agent),
-    computer: machine ? { machineId: machine.id, name: machine.name, online: shownOnline(machine) } : null,
+    computer: machine
+      ? { machineId: machine.id, name: machine.name, online: shownOnline(machine), os: machine.os }
+      : null,
     options: brainOptions(machine, { chat: isRightHand(agent) }),
     machines,
     canEdit: true,
@@ -1107,6 +1122,9 @@ async function setPersonalSignIn(
   current: Awaited<ReturnType<typeof personalBrain>>,
   audit: (to: unknown) => Promise<unknown>,
 ): Promise<AgentBrainView> {
+  if (accountOnlyBrain(brain)) {
+    throw new ValidationError("Choose an account of this brain", "account.invalid", { brain });
+  }
   const { db } = deps;
   // The computers they paired, the one it already uses first: the first where this plan is available.
   const theirs = await db
@@ -1609,11 +1627,23 @@ async function nextBrainAccount(
   options: { move: boolean; admin: boolean },
 ): Promise<{ id: string | null; lent?: boolean; from?: { accountId: string; agentId: string } }> {
   const kept = changed ? null : agent.brainAccountId;
-  if (input === undefined) return { id: kept };
+  if (input === undefined) {
+    if (kept === null && accountOnlyBrain(brain)) {
+      throw new ValidationError("Choose an account of this brain on the agent's computer", "account.invalid", {
+        brain,
+      });
+    }
+    return { id: kept };
+  }
   if (input !== null && typeof input !== "string") {
     throw new ValidationError("Choose an account on the agent's computer", "account.invalid");
   }
   const wanted = input || null;
+  if (wanted === null && accountOnlyBrain(brain)) {
+    throw new ValidationError("Choose an account of this brain on the agent's computer", "account.invalid", {
+      brain,
+    });
+  }
   if (wanted === kept) return { id: kept };
   const owner = agent.ownerUserId;
   const chooses = options.admin || owner === userId;
@@ -2075,6 +2105,8 @@ export interface AiComputer {
   machineId: string;
   name: string;
   online: boolean;
+  /** Its system (`machines.os`), as `BrainComputer.os`. */
+  os: string;
   /** The caller connected it. */
   mine: boolean;
   /** The caller adds accounts there (they connected it, or nobody did), on a runner that knows accounts. */
@@ -2154,6 +2186,7 @@ export async function listAiAccounts(deps: BrainDeps, userId: string, orgId: str
         machineId: m.id,
         name: m.name,
         online: shownOnline(m),
+        os: m.os,
         mine: m.pairedByUserId === userId,
         canAdd: mayAddAccounts(m, userId) && m.protocol >= ACCOUNTS_PROTOCOL,
         keys: m.protocol >= PLAN_KEYS_PROTOCOL,

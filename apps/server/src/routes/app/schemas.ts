@@ -694,15 +694,6 @@ export const Agent = z
   })
   .openapi("Agent");
 
-/** A named group of channels in the sidebar, the same for everyone in the organization. */
-export const ChannelCategory = z
-  .object({
-    id: z.uuid(),
-    name: z.string(),
-    position: z.number().int().openapi({ description: "Order in the sidebar, from 0." }),
-  })
-  .openapi("ChannelCategory");
-
 export const Channel = z
   .object({
     id: z.uuid(),
@@ -722,12 +713,12 @@ export const Channel = z
       .optional()
       .openapi({ description: "The channel's creator: may manage its members, like admins." }),
     createdAt: z.string(),
-    categoryId: z
+    groupId: z
       .uuid()
       .nullable()
       .optional()
-      .openapi({ description: "Its sidebar category; null: on top, with none." }),
-    position: z.number().int().optional().openapi({ description: "Order inside its category, from 0." }),
+      .openapi({ description: "Its sector (`agent-groups`, ADR 0240); null: under Canais, in none." }),
+    position: z.number().int().optional().openapi({ description: "Order inside its sector, from 0." }),
     replyInThreads: z.boolean().optional().openapi({
       description:
         "Agents asked in its main timeline answer in the thread under that message, which then shows as one line (ADR 0214). Regular channels only.",

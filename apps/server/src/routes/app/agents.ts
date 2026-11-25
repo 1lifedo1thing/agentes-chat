@@ -901,6 +901,10 @@ export function agentRoutes(deps: AppDeps) {
                     routine: z.boolean().openapi({ description: "A routine's work: no conversation holds it." }),
                     count: z.number().int().openapi({ description: "How many runs it has on." }),
                     at: z.string().optional().openapi({ description: "With `later`: when it comes back (ISO)." }),
+                    private: z.literal(true).optional().openapi({
+                      description:
+                        "Its conversation is one you don't read (someone else's DM, a private channel you're not in): no place to open.",
+                    }),
                   })
                   .nullable()
                   .openapi({
@@ -1787,10 +1791,20 @@ export function agentRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/agent-groups",
       tags,
       security,
-      summary: "Add a group after the others, with these agents in it in order (owners and admins)",
+      summary: "Add a group after the others, with these agents and channels in it in order (owners and admins)",
       request: {
         params: OrgParams,
-        body: body(z.object({ name: GroupName, agentIds: z.array(z.uuid()).max(200).optional(), ...GroupLook })),
+        body: body(
+          z.object({
+            name: GroupName,
+            agentIds: z.array(z.uuid()).max(200).optional(),
+            channelIds: z.array(z.uuid()).max(200).optional().openapi({
+              description:
+                "Channels it takes (ADR 0240): each one the caller may move (who manages channels, its creator).",
+            }),
+            ...GroupLook,
+          }),
+        ),
       },
       responses: { 201: json(Groups, "Created"), ...errors },
     }),

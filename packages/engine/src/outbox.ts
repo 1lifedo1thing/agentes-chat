@@ -864,6 +864,7 @@ export const UNREPEATABLE_JOB_KINDS = [
   "threads.assess",
   "routine.run",
   "machine.tasks_offline",
+  "machine.down_notice",
   "live-activity.refresh",
   "context.consolidate",
   "team_watch.check",
