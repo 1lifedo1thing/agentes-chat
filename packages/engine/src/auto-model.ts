@@ -38,7 +38,7 @@ export type AutoEffort = "low" | "medium" | "high";
 export const AUTO_EFFORTS: readonly AutoEffort[] = ["low", "medium", "high"];
 
 /** The judge answers within this, or the run starts on the medium tier with medium effort. */
-export const AUTO_MODEL_TIMEOUT_MS = 1500;
+export const AUTO_MODEL_TIMEOUT_MS = 800;
 
 /** What the judge decided for a run (or why it fell back). */
 export interface AutoChoice {

@@ -250,10 +250,8 @@ export interface JobDeps extends RunExecutorDeps {
      * on the Cloud (`isAgentesCloud`), where Jev is ours. Absent: no plan step.
      */
     plans?: { hub: Pick<MachineCaller, "call" | "status">; publicUrl: string };
-    /** How long a person's message waits for their next one (`ROUTER_QUIET_MS` on a server); absent: no wait. */
+    /** A person's messages this close are one request to the router (`ROUTER_QUIET_MS` on a server). */
     quietMs?: number;
-    /** The wait ends early when the person isn't typing (token-trim B11). */
-    quietByTyping?: boolean;
   };
 }
 
@@ -316,7 +314,6 @@ export function messageRouter(deps: JobDeps): RouterDeps | null {
     outOfOffice: (orgId, ids) => outOfOfficeIds(deps.db, orgId, ids),
     routing: { jev: () => jevPicks(jev?.key), smallModel, plans },
     quietMs: router.quietMs,
-    quietByTyping: router.quietByTyping,
     pubsub: deps.pubsub,
     // Jev bills the platform: past the workspace's platform AI for the month, its own small model picks, else only
     // @mentions start agents.
@@ -333,8 +330,8 @@ async function jevPicks(key: JevKeySource | undefined): Promise<boolean> {
 
 /** Every outbox job kind the core knows. Modules can add more through the server's worker options. */
 export function createJobHandlers(deps: JobDeps): JobHandlers {
-  // Listening from now on, so typing sent while a run reads its context (before its quiet window) counts.
-  if (deps.quietByTyping || deps.router?.quietByTyping) typingLogFor(deps.pubsub);
+  // Listening from now on, so typing sent while a run reads its context (before its first model call) counts.
+  if (deps.quietMs) typingLogFor(deps.pubsub);
   const routing = messageRouter(deps);
 
   // An agent's @mention is credit or a reference: it wakes the other agent only when it plainly asks it something.
