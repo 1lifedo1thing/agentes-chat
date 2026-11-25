@@ -25,9 +25,9 @@ import { type BrakeReport, brakeWakes, callableAgents, LATER_JOB, notCallableWhy
 import { HANDOFF_REMIND_JOB, remindBrowserHandoff } from "./browser/handoff";
 import { typingLogFor } from "./burst";
 import { CHANNEL_DELETE_JOB, purgeChannel } from "./channel-deletion";
+import { announceJoins, CHANNEL_JOINED_JOB } from "./channel-joins";
 import { tellChannelLead } from "./channel-lead";
 import { COMPUTER_DOWN_JOB, noticeComputerDown } from "./computer-down";
-import { announceJoins, CHANNEL_JOINED_JOB } from "./channel-joins";
 import { crowdedAgents, publishQueueChanged } from "./computer-queue";
 import { forgetComposioAccount } from "./connectors/composio";
 import { CONNECTOR_FORGET_JOB, type ConnectorDeps } from "./connectors/connections";

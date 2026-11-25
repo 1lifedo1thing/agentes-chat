@@ -440,7 +440,13 @@ function Home() {
                 ? sectors.map((section) => {
                     const closed = sectorsFold.collapsed.includes(section.key);
                     const rowOf = (r: ConversationRow, i: number, kept = false) => (
-                      <LandRow key={r.key} land={load.landing} fresh={fresh.has(r.key)} index={2 + i} moves={section.rows.length <= MOVING_ROWS}>
+                      <LandRow
+                        key={r.key}
+                        land={load.landing}
+                        fresh={fresh.has(r.key)}
+                        index={2 + i}
+                        moves={section.rows.length <= MOVING_ROWS}
+                      >
                         {/* A sector's channels follow its agents under a hairline from edge to edge (ADR 0240). */}
                         {!kept && i > 0 && i === section.channelsFrom ? <SectorLine /> : null}
                         <HomeRow

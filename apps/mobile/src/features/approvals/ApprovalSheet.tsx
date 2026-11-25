@@ -1,4 +1,11 @@
-import { ApiError, type Approval, useApproval, useApprovals, useChannels, useDecideApproval } from "@agenteschat/client";
+import {
+  ApiError,
+  type Approval,
+  useApproval,
+  useApprovals,
+  useChannels,
+  useDecideApproval,
+} from "@agenteschat/client";
 import { approvalLine } from "@agenteschat/client/lib/approval-card";
 import { aheadPhase } from "@agenteschat/client/lib/approval-kind";
 import { approvalEffects } from "@agenteschat/client/lib/approval-review";

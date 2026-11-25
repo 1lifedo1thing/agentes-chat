@@ -17,8 +17,8 @@ import {
 import { resolveChannelAgentAsks } from "./admin-asks";
 import { managesAgent, OWNER_COLUMNS, ownsAgent, REACH_COLUMNS } from "./audience";
 import { caches } from "./cache";
-import { endOfSector, requireSectorInOrg } from "./channel-sectors";
 import { noteJoined, writeLeftLine } from "./channel-joins";
+import { endOfSector, requireSectorInOrg } from "./channel-sectors";
 import { wordsOf } from "./confidential";
 import { ConflictError, ForbiddenError, isUniqueViolation, NotFoundError, ValidationError } from "./errors";
 import { publishChannelEvent, publishChannelsChanged, publishOrgEvent, publishUserEvent } from "./events";
