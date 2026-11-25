@@ -115,22 +115,32 @@ describe("MillionSend sender", () => {
     expect((await reply(403, "sending_paused", "paused"))?.recipient).toBeUndefined();
   });
 
-  test("removeSuppression: DELETE /suppressions/{email}; 404 held nothing back; 5xx retries", async () => {
+  test("removeSuppression lifts a bounce alone: GET, then DELETE /suppressions/{email}; 404 held nothing back; 5xx retries", async () => {
     const calls: { url: string; method?: string }[] = [];
-    const answer = (status: number) =>
+    const answer = (status: number, origin = "bounce") =>
       createMillionSendSender({
         apiKey: "k",
         from: "f@x.y",
         fetch: (async (url: string, init: RequestInit) => {
           calls.push({ url, method: init.method });
-          return Response.json({ object: "suppression", deleted: true }, { status });
+          return Response.json(
+            init.method === "GET" ? { object: "suppression", origin } : { object: "suppression", deleted: true },
+            { status },
+          );
         }) as unknown as typeof fetch,
       });
     expect(await answer(200).removeSuppression?.("ana+x@example.com")).toBe(true);
-    expect(calls[0]).toEqual({
-      url: "https://api.millionsend.com/suppressions/ana%2Bx%40example.com",
-      method: "DELETE",
-    });
+    const url = "https://api.millionsend.com/suppressions/ana%2Bx%40example.com";
+    expect(calls).toEqual([
+      { url, method: "GET" },
+      { url, method: "DELETE" },
+    ]);
+    // A complaint, an unsubscribe or one made by hand stays: nothing is deleted.
+    for (const origin of ["complaint", "unsubscribe", "manual"]) {
+      calls.length = 0;
+      expect(await answer(200, origin).removeSuppression?.("ana@example.com")).toBe(false);
+      expect(calls.map((c) => c.method)).toEqual(["GET"]);
+    }
     expect(await answer(404).removeSuppression?.("ana@example.com")).toBe(false);
     const error = await answer(503)
       .removeSuppression?.("ana@example.com")

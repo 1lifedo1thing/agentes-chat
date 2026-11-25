@@ -832,6 +832,20 @@ describe("outbox delivery", () => {
     await deliverQueuedEmail(f.db, plain, job, art, log);
     expect(said.length).toBe(1);
     expect(await undelivered()).toBeNull();
+
+    // A provider that won't lift it (403) still gets the email, whose refusal marks the account; a 5xx retries.
+    const refusing = createFakeEmailSender();
+    refusing.refused.set(email, "suppressed");
+    refusing.removeSuppression = async () => {
+      throw new EmailError("forbidden", false, 403);
+    };
+    await expect(deliverQueuedEmail(f.db, refusing, job, art, log)).rejects.toThrow("refused");
+    expect(said.at(-1)).toEqual({ jobId: job.id, kind: "password_reset", lifted: "refused 403" });
+    expect(await undelivered()).toBe("suppressed");
+    refusing.removeSuppression = async () => {
+      throw new EmailError("down", true, 503);
+    };
+    await expect(deliverQueuedEmail(f.db, refusing, job, art, log)).rejects.toThrow("down");
   });
 
   test("attached pictures go with the message as inline parts", async () => {

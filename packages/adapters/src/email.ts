@@ -46,8 +46,8 @@ export interface EmailSender {
   /** Creates or updates a contact in the provider's list; absent = the provider keeps no contacts. */
   saveContact?(contact: EmailContact): Promise<void>;
   /**
-   * Lets the provider mail this one address again after it stopped (an earlier bounce or complaint); true when it had
-   * stopped. Absent = the provider keeps no such list.
+   * Lets the provider mail this one address again after it stopped because of an earlier bounce; true when it lifted
+   * such a stop. A complaint or an unsubscribe stays. Absent = the provider keeps no such list.
    */
   removeSuppression?(address: string): Promise<boolean>;
 }
@@ -138,27 +138,35 @@ export function createMillionSendSender(options: {
       }
       return { id: body.id };
     },
-    /** `DELETE /suppressions/{email}`; a 404 is an address it wasn't holding back. */
+    /**
+     * `GET`, then `DELETE /suppressions/{email}`, only for an `origin: "bounce"`: a complaint, an unsubscribe or a
+     * suppression made by hand is the recipient's or the operator's choice, which a resend never overrides. A 404 is
+     * an address it wasn't holding back.
+     */
     async removeSuppression(address) {
-      let res: Response;
-      try {
-        res = await http(`${base}/suppressions/${encodeURIComponent(address)}`, {
-          method: "DELETE",
-          headers: { authorization: `Bearer ${options.apiKey}` },
-        });
-      } catch (error) {
-        throw new EmailError(`could not reach MillionSend: ${String(error)}`, true);
-      }
-      if (res.status === 404) return false;
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { message?: string; name?: string };
-        throw new EmailError(
-          `MillionSend refused the suppression removal (${res.status}${body.name ? ` ${body.name}` : ""}): ${body.message ?? ""}`.trim(),
-          res.status === 429 || res.status >= 500,
-          res.status,
-        );
-      }
-      return true;
+      const call = async (method: "GET" | "DELETE") => {
+        let res: Response;
+        try {
+          res = await http(`${base}/suppressions/${encodeURIComponent(address)}`, {
+            method,
+            headers: { authorization: `Bearer ${options.apiKey}` },
+          });
+        } catch (error) {
+          throw new EmailError(`could not reach MillionSend: ${String(error)}`, true);
+        }
+        if (res.status === 404) return null;
+        const body = (await res.json().catch(() => ({}))) as { message?: string; name?: string; origin?: string };
+        if (!res.ok) {
+          throw new EmailError(
+            `MillionSend refused the suppression ${method === "GET" ? "lookup" : "removal"} (${res.status}${body.name ? ` ${body.name}` : ""}): ${body.message ?? ""}`.trim(),
+            res.status === 429 || res.status >= 500,
+            res.status,
+          );
+        }
+        return body;
+      };
+      if ((await call("GET"))?.origin !== "bounce") return false;
+      return (await call("DELETE")) !== null;
     },
     /**
      * `POST /contacts`; an existing contact (409) gets its properties merged with `PATCH /contacts/{email}`. A null

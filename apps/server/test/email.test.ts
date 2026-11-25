@@ -278,7 +278,7 @@ test("an invitation the mail provider won't deliver says so on its row; sending 
   expect((await list()).find((i) => i.email === "bia@example.com")?.undelivered).toBe("rejected");
 });
 
-test("a confirmation email the provider won't deliver: /me names why, and a new link lifts the suppression", async () => {
+test("a confirmation email the provider won't deliver: /me names why, and a new link the person asks for lifts the suppression", async () => {
   t = await createTestServer({ unconfirmedSignUps: true, env: { ALLOW_SIGNUP: "true" } });
   t.email.refused.set("ana@example.com", "suppressed");
   const ana = browser(t);
@@ -289,6 +289,16 @@ test("a confirmation email the provider won't deliver: /me names why, and a new 
   expect((await me()).emailUndelivered).toBe("suppressed");
 
   // A new second makes a new link (links are stamped to the second).
+  await Bun.sleep(1000 - (Date.now() % 1000));
+  // Asked for by someone signed out, a link goes as always and lifts nothing.
+  const stranger = browser(t);
+  expect((await stranger("/api/auth/send-verification-email", { json: { email: "ana@example.com" } })).status).toBe(
+    200,
+  );
+  await t.drain();
+  expect(t.email.unsuppressed).toEqual([]);
+  expect((await me()).emailUndelivered).toBe("suppressed");
+
   await Bun.sleep(1000 - (Date.now() % 1000));
   expect((await ana("/api/auth/send-verification-email", { json: { email: "ana@example.com" } })).status).toBe(200);
   await t.drain();

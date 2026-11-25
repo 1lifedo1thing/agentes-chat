@@ -1531,7 +1531,12 @@ export async function deliverQueuedEmail(
   const kind = (job.payload.template as EmailTemplate | undefined)?.kind;
   if (job.payload.unsuppress === true && sender.removeSuppression) {
     for (const address of to) {
-      const lifted = await sender.removeSuppression(address).catch(rethrowEmailError);
+      // A provider that won't lift it (a key without the right, say) still gets the email, whose refusal then marks
+      // the row as before; only a failure a retry may change retries the job.
+      const lifted = await sender.removeSuppression(address).catch((error: unknown) => {
+        if (error instanceof EmailError && !error.retryable) return `refused ${error.status ?? ""}`.trim();
+        throw error;
+      });
       log?.info("email: asked the provider to mail an address again before sending to it", {
         jobId: job.id,
         kind,
