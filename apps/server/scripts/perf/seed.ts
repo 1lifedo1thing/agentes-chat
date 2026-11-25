@@ -112,8 +112,9 @@ const stop = await serve();
 const owner = session();
 const { token } = await owner("/api/auth/owner-key", { json: { key: ownerKey, ...OWNER } });
 await owner("/api/auth/sign-in/one-time-token", { json: { token } });
+// Set up, as its owner left the onboarding: one never finished opens the onboarding instead of the workspace.
 const created = await owner("/api/app/organizations", {
-  json: { name: "Acme Labs", context: "Acme Labs builds developer tools. The team ships every week." },
+  json: { name: "Acme Labs", context: "Acme Labs builds developer tools. The team ships every week.", finished: true },
 });
 const orgId: string = created.organization.id;
 const generalId: string = created.generalChannelId;
