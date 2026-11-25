@@ -1,6 +1,7 @@
 import { useMe } from "@agenteschat/client";
 import { membershipIn, settingUp } from "@agenteschat/client/lib/guards";
 import { can } from "@agenteschat/client/lib/permissions";
+import { MorphRoom } from "@agenteschat/ui";
 import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { requireUserIn } from "@/app/guards";
@@ -166,13 +167,14 @@ function OrgLayout() {
                     says so (ADR 0088 §7), in the Criar agente flow too: its work stopped, nothing else is news. */}
                         <div className={focused ? "shell__work shell__work--bare" : "shell__work"}>
                           {membership.deletion && <DeletingBanner />}
+                          {/* Coming or going, the page glides under them: nothing pushes it in one frame. */}
                           {!focused && !membership.deletion && (
-                            <>
+                            <MorphRoom pace="panel" className="shell__notices">
                               <ConfirmEmailBanner />
                               <HoldBanner />
                               <ComputerSetupNotice />
                               <OutageNotices />
-                            </>
+                            </MorphRoom>
                           )}
                           <div className="shell__pages">
                             <ComputerDialogProvider>

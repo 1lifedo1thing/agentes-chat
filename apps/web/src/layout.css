@@ -249,9 +249,14 @@ p {
   border-bottom: 1px solid var(--line);
   background: var(--surface-raised);
 }
+/* The notices on top of the work area (`MorphRoom`): their room glides, never shrinks. */
+.shell__notices {
+  flex: none;
+}
 /* On the paper above the work's sheet: each notice is its own rounded card, 8px clear of the sheet, never a square
    strip over the sheet's rounded corners. */
-.shell__work > .outages {
+.shell__work > .outages,
+.shell__notices > .ac-morph__in > .outages {
   margin-bottom: 8px;
   border-bottom: 0;
   border-radius: var(--radius-section) var(--radius-section) var(--radius-section) 4px;

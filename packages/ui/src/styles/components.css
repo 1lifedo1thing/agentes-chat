@@ -5309,7 +5309,8 @@ html:not([data-pointer]) .ac-switch:focus-visible {
 /*
  * Motion (2026-10): enters and exits, 120–200 ms (`--dur-fast`, `--dur-base`; a side panel's slide `--dur-panel`), ease-out,
  * exits faster than entrances, opacity and transform only (no layout shift). Nothing moves with
- * prefers-reduced-motion. What people do by keyboard many times a day (⌘K) has none.
+ * prefers-reduced-motion: what arrives only fades in (120ms). What people do by keyboard many times a day (⌘K) has
+ * none. A size change in place is `useMorph` and `MorphRoom` (motion.tsx).
  */
 @media (prefers-reduced-motion: no-preference) {
   .ac-dialog__scrim[data-state="open"] {
@@ -5406,6 +5407,40 @@ html:not([data-pointer]) .ac-switch:focus-visible {
   .ac-hint__bubble[data-state="open"][data-side="right"] {
     animation-name: ac-pop-right;
   }
+}
+/*
+ * What arrives after a click (the team's first tasks, its waving faces): fades and rises 6px as a 2px blur clears, in
+ * turn (`--arrive-delay`), and takes no click until it is in, so a quick second click lands on nothing. Under reduced
+ * motion it only fades in (120ms).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .ac-arrive {
+    animation: ac-arrive var(--dur-base) var(--out) var(--arrive-delay, 0ms) backwards;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ac-arrive {
+    animation: ac-fade-in 120ms ease-out;
+  }
+}
+@keyframes ac-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(2px);
+    pointer-events: none;
+  }
+  99% {
+    pointer-events: none;
+  }
+}
+/* `MorphRoom`: its inner box holds its parts' margins (what is measured is what it takes); empty, it takes no room once
+   its room has closed (`data-closing` while it glides shut). */
+.ac-morph__in {
+  display: flow-root;
+}
+.ac-morph:not([data-closing]):has(> .ac-morph__in:empty) {
+  display: none;
 }
 @keyframes ac-dialog-out {
   to {
