@@ -300,7 +300,7 @@ const PEOPLE = [
   "Divya Rao",
   "Erik Lund",
   "Fatima Zahra",
-  "Gabriel Costa",
+  "Gabriel Moreno",
   "Hana Sato",
   "Ivan Petrov",
   "Jonas Berg",
