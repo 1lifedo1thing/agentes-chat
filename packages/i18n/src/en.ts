@@ -12130,7 +12130,7 @@ export const en = {
   code: {
     ranSummary_one: "Ran {{count}} line of {{language}} · output {{size}}",
     ranSummary_other: "Ran {{count}} lines of {{language}} · output {{size}}",
-    show: "See {{name}}'s code",
+    see: "See code",
     hide: "Hide code",
     running: "{{name}} is running",
     source: "Code ({{language}})",

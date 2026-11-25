@@ -11194,8 +11194,7 @@
   },
   "code": {
     "ranSummary_other": "Menjalankan {{count}} baris {{language}} · output {{size}}",
-    "show": "Lihat kode {{name}}",
-    "show_female": "Lihat kode {{name}}",
+    "see": "Lihat kode",
     "hide": "Sembunyikan kode",
     "running": "{{name}} sedang menjalankan",
     "source": "Kode ({{language}})",

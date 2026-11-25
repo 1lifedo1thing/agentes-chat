@@ -11592,7 +11592,7 @@
   "code": {
     "ranSummary_one": "{{count}} Zeile {{language}} ausgeführt · Ausgabe {{size}}",
     "ranSummary_other": "{{count}} Zeilen {{language}} ausgeführt · Ausgabe {{size}}",
-    "show": "Code von {{name}} ansehen",
+    "see": "Code ansehen",
     "hide": "Code ausblenden",
     "running": "{{name}} führt aus",
     "source": "Code ({{language}})",

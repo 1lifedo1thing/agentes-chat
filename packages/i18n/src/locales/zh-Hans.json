@@ -11208,8 +11208,7 @@
   },
   "code": {
     "ranSummary_other": "运行了 {{count}} 行 {{language}} 代码 · 输出 {{size}}",
-    "show": "查看 {{name}} 的代码",
-    "show_female": "查看 {{name}} 的代码",
+    "see": "查看代码",
     "hide": "隐藏代码",
     "running": "{{name}} 正在运行",
     "source": "代码（{{language}}）",

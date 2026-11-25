@@ -11131,7 +11131,7 @@
   },
   "code": {
     "ranSummary_other": "{{language}} 코드 {{count}}줄 실행 · 출력 {{size}}",
-    "show": "{{name}}의 코드 보기",
+    "see": "코드 보기",
     "hide": "코드 숨기기",
     "running": "{{name}} 실행 중",
     "source": "코드({{language}})",

@@ -11528,7 +11528,7 @@
   "code": {
     "ranSummary_one": "{{count}} satır {{language}} çalıştırıldı · çıktı {{size}}",
     "ranSummary_other": "{{count}} satır {{language}} çalıştırıldı · çıktı {{size}}",
-    "show": "{{name}} tarafından çalıştırılan kodu gör",
+    "see": "Kodu gör",
     "hide": "Kodu gizle",
     "running": "{{name}} çalıştırıyor",
     "source": "Kod ({{language}})",
