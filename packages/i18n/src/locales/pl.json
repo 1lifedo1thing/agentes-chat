@@ -17167,6 +17167,8 @@
       "notLinkMaker": "Tylko osoba, która utworzyła link, może wpuścić ten komputer.",
       "widenForbidden": "Administratorzy mogą tylko zawęzić, kto korzysta z czyjegoś własnego urządzenia.",
       "spillOwnerOnly": "Tylko osoba, która podłączyła ten komputer, może pozwolić odpowiedziom myśleć na nim. Ty możesz to wyłączyć.",
+      "shareOwnerOnly": "Tylko osoba, która podłączyła ten komputer, może pozwolić agentom korzystać z jego internetu. Ty możesz to wyłączyć.",
+      "shareConnectedOnly": "Internetem z agentami może dzielić się tylko komputer, który ktoś podłączył.",
       "tasksOwnerOnly": "Tylko osoba, która podłączyła ten komputer, może zmienić, ile zadań wykonuje naraz.",
       "tasksCloud": "Cloud sam ustala, ile miejsca na zadania ma ten komputer.",
       "notHome": "Agenci działają na komputerze workspace i używają tego, gdy podadzą jego nazwę."
@@ -17321,7 +17323,10 @@
       "restart": "Sesje komputera uruchamiają się ponownie, aby zastosować sieć. Nowa praca czeka, aż to się skończy.",
       "line": "IP wyjściowe {{ip}}",
       "hint": "Adres, który widzą strony, gdy agenci przeglądają sieć. Zmienia się razem z siecią komputera.",
-      "waiting": "Ponownie łączymy agentów z internetem. Ich połączenia czekają, aż wróci."
+      "waiting": "Ponownie łączymy agentów z internetem. Ich połączenia czekają, aż wróci.",
+      "via": "Agenci korzystają z internetu komputera {{name}}",
+      "viaBy": "Agenci korzystają z internetu komputera {{name}} ({{person}})",
+      "viaHint": "Strony widzą lokalizację tego komputera. Osoba, która go podłączyła, może to wyłączyć na jego stronie."
     },
     "online": "Online",
     "offline": "Offline",
@@ -17602,6 +17607,12 @@
     "spillOwnHint": "Gdy komputer agenta jest pełny, jego odpowiedzi dla ciebie zaczynają się tutaj.",
     "spillOthers": "Agenci innych osób mogą myśleć tutaj",
     "spillOthersHint": "Gdy komputer agenta jest pełny, jego odpowiedzi dla innych osób też mogą zacząć się tutaj.",
+    "shareInternet": "Agenci korzystają z internetu tego komputera",
+    "shareInternetHint": "Strony otwierane przez agentów przechodzą przez połączenie tego komputera, więc widzą Twoją lokalizację. Tylko strony internetowe, do 5 GB dziennie i nigdy nic w Twojej własnej sieci. Gdy ten komputer jest offline, agenci korzystają ze zwykłego połączenia.",
+    "shareInternetInUse": "Teraz w użyciu",
+    "shareInternetOther": "Agenci korzystają teraz z komputera {{name}}",
+    "shareInternetPick": "Użyj tego",
+    "shareInternetJoin": "Agenci będą też otwierać strony przez internet tego komputera, więc strony zobaczą Twoją lokalizację. Możesz to wyłączyć na jego stronie.",
     "connectedBy": "Podłączone przez: {{name}}",
     "downloadFor": "Pobierz na {{system}}",
     "downloadApp": "Pobierz aplikację",

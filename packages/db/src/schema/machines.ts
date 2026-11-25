@@ -257,6 +257,18 @@ export const machines = pgTable(
      */
     spillOwn: boolean().notNull().default(true),
     spillOthers: boolean().notNull().default(false),
+    /**
+     * ADR 0237, a person's computer (`connected`): its owner lets the workspace's own computer's web traffic go out
+     * through this computer's internet. Computers paired before the choice was shown start with it off.
+     */
+    egressShare: boolean().notNull().default(true),
+    /** When it was last turned on or picked: the newest online one carries the traffic. Null: since it was paired. */
+    egressShareAt: timestamp({ withTimezone: true }),
+    /**
+     * The workspace's own computer (`managed`): the lent computer that carried its last connection, and when (written
+     * at most once a minute per server process). The apps say whose internet it uses while that is recent.
+     */
+    egressVia: jsonb().$type<{ machineId: string; at: string }>(),
     /** Last known; trust it only with a recent `last_seen_at` (a replica may have died). */
     online: boolean().notNull().default(false),
     /** The server process holding its socket. */

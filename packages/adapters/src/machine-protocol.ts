@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 78;
+export const MACHINE_PROTOCOL_VERSION = 79;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -1722,6 +1722,8 @@ export interface StreamHello {
   type: "stream.hello";
   token: string;
   streamId: string;
+  /** `EGRESS_SHARE_PROTOCOL`: the workspace's computer asks for a connection there through a lent one. */
+  egress?: { host: string; port: number };
 }
 
 /**
@@ -2503,6 +2505,38 @@ export const AGY_COPY_PROTOCOL = 76;
  */
 export const TASK_ROOM_PROTOCOL = 78;
 
+/**
+ * Protocol 79 (ADR 0237): a person's computer may lend its internet connection to its workspace's own computer.
+ * `egress.dial` asks it to open one TCP connection to `host`:`port` (`EGRESS_SHARE`'s ports only, a name it resolves
+ * itself or a public address, never one on its own network) and to carry its bytes on a data socket it dials for
+ * `streamId`; it answers once that socket is ready. A data socket's `stream.hello` may carry `egress`: the workspace's
+ * computer asks the server for such a connection, and the server answers `stream.ready` once a lent connection
+ * carries it, or closes the socket (`STREAM_CLOSE.unreachable`: none is lent now; `refused`: that destination isn't
+ * carried). The server asks no older runner, and `welcome.egressRelay` goes to the workspace's computer alone.
+ */
+export const EGRESS_SHARE_PROTOCOL = 79;
+/** What a lent connection carries, at most. */
+export const EGRESS_SHARE = {
+  /** The web only: anything else leaves the workspace's computer its usual way. */
+  ports: [80, 443] as readonly number[],
+  /** Bytes both ways a day (UTC) the lending computer carries before it refuses new connections until the next. */
+  dailyBytes: 5 * 1024 ** 3,
+  /** Connections open at once through one lending computer. */
+  open: 256,
+  /** How long the lending computer waits to reach the destination. */
+  connectMs: 10_000,
+} as const;
+/** A host `egress.dial` takes: a DNS name or an IP literal, short and plain. */
+export const isEgressHost = (v: unknown): v is string =>
+  typeof v === "string" &&
+  v.length > 0 &&
+  v.length <= 253 &&
+  (/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.?$/.test(v) ||
+    /^[0-9A-Fa-f:.]+$/.test(v));
+/** A target `stream.hello` or `egress.dial` names: a host as `isEgressHost` and one of `EGRESS_SHARE.ports`. */
+export const isEgressTarget = (v: unknown): v is { host: string; port: number } =>
+  isObject(v) && isEgressHost(v.host) && typeof v.port === "number" && EGRESS_SHARE.ports.includes(v.port);
+
 /** About how many more background tasks fit on the computer now, and what decides it. */
 export interface TaskRoomReport {
   more: number;
@@ -3056,6 +3090,8 @@ export type MachineRequest = (
   | { op: "phone.repair"; serial: string }
   /** `PROBLEM_REPORT_PROTOCOL`: facts and the scrubbed log tail for a problem report. */
   | { op: "report.collect" }
+  /** `EGRESS_SHARE_PROTOCOL`: one connection to `host`:`port`, its bytes on the data socket `streamId`. */
+  | { op: "egress.dial"; streamId: string; host: string; port: number }
 ) & {
   agent?: AgentScope;
   /** Protocol 34: a `browser.*` op in this browser profile's session instead of the agent's (ADR 0110). */
@@ -3140,6 +3176,7 @@ export const MACHINE_OPS: readonly MachineOp[] = [
   "xcode.open",
   "phone.repair",
   "report.collect",
+  "egress.dial",
 ];
 
 /** What each op answers with `ok: true`. */
@@ -3315,6 +3352,7 @@ export interface MachineReplies {
   "xcode.open": { opened: boolean };
   "phone.repair": { repairing: boolean };
   "report.collect": RunnerReportParts;
+  "egress.dial": { connected: true };
 }
 
 /** An element numbered on a `browser.capture` image: its ref and box (CSS pixels). */
@@ -3411,6 +3449,11 @@ export type ServerFrame =
       heartbeatMs: number;
       /** Only the workspace’s managed computer observes its agents’ public route. */
       observeEgress?: boolean;
+      /**
+       * `EGRESS_SHARE_PROTOCOL`, the workspace's managed computer alone: it offers its network guard a local SOCKS5
+       * socket whose connections go out through a computer a person lent (ADR 0237).
+       */
+      egressRelay?: boolean;
       /**
        * The server runs each `mcp.call` once per `callId` and answers a copy with the first answer: a call cut by
        * a reconnect may be sent again. Absent (older servers): sent again it would run twice.
@@ -4885,10 +4928,13 @@ export const isStreamId = (v: unknown): v is string => typeof v === "string" && 
 
 /** A data socket's `stream.hello` (server side); null when it isn't one. The token is checked by the caller. */
 export function parseStreamHello(raw: string): StreamHello | null {
-  const f = smallJson(raw, 512);
+  // Room for the longest token and an `egress` host (253), never for padding.
+  const f = smallJson(raw, 640);
   if (!isObject(f) || f.type !== "stream.hello" || !isStreamId(f.streamId)) return null;
   if (!isString(f.token) || !f.token.startsWith(MACHINE_TOKEN_PREFIX) || f.token.length > 200) return null;
-  return { type: "stream.hello", token: f.token, streamId: f.streamId };
+  if (f.egress !== undefined && !isEgressTarget(f.egress)) return null;
+  const egress = f.egress === undefined ? {} : { egress: { host: f.egress.host, port: f.egress.port } };
+  return { type: "stream.hello", token: f.token, streamId: f.streamId, ...egress };
 }
 
 /** A terminal's size within `STREAM_LIMITS` (whole columns and rows). */

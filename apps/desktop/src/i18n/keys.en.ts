@@ -511,6 +511,12 @@ export const desktopEn = {
     done: "Connected to {{org}}",
     /** Once it's in: one switch, off, that lets the whole workspace use it (Preferences › This Mac holds the rest). */
     share: "Let the whole workspace use it",
+    /** A workspace with its own computer opens websites through this one's internet (ADR 0237); on by default. */
+    internet: "Agents use this computer's internet",
+    internetOn: "Websites the agents open see your location",
+    internetOff: "Off: agents use their usual connection",
+    internetHint:
+      "The workspace's agents open websites through this computer's connection. Only websites, up to 5 GB a day, and never anything on your own network. While this computer is offline, they use their usual connection.",
     shareOff: "Only you for now",
     shareHint: "Everyone's agents in {{org}} can run tasks on it, as your user.",
     addFolders: "Add folders",

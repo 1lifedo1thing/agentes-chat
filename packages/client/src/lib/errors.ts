@@ -136,6 +136,8 @@ const KNOWN = {
   "device.not_link_maker": "errors.device.notLinkMaker",
   "device.widen_forbidden": "errors.device.widenForbidden",
   "device.spill_owner_only": "errors.device.spillOwnerOnly",
+  "device.share_owner_only": "errors.device.shareOwnerOnly",
+  "device.share_connected_only": "errors.device.shareConnectedOnly",
   "device.tasks_owner_only": "errors.device.tasksOwnerOnly",
   "device.tasks_cloud": "errors.device.tasksCloud",
   "device.not_home": "errors.device.notHome",

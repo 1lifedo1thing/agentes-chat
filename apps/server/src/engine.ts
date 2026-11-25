@@ -49,6 +49,7 @@ import {
   createDesktopPointers,
   createDesktopToolSource,
   createDeviceToolSource,
+  createEgressRelay,
   createFeedbackToolSource,
   createFindAgentToolSource,
   createFollowUpToolSource,
@@ -675,6 +676,7 @@ export function buildEngine(o: EngineOptions) {
   // Agents' desktops and terminals (ADR 0058): each person's stream paired with the runner's data socket for it,
   // its access checked again while open; control changing hands closes the views it hides. Where sessions are
   // screened no terminal opens: a shell nobody screens would be the way around it.
+  const egressRelay = createEgressRelay({ db, hub: machineHub, log: o.log });
   const streams = createStreamBroker({
     db,
     hub: machineHub,
@@ -694,7 +696,9 @@ export function buildEngine(o: EngineOptions) {
     recheck: (stream) => recheckStream(db, stream),
     reauthorize: (stream, mode) => reauthorizeStream(db, stream, mode),
     // An agent browser's live view has a data socket of its own too (ADR 0040 §7.1).
-    claim: (streamId, machineId, socket) => browserLive.claimView(streamId, machineId, socket),
+    // So does a lent connection's either side (ADR 0237).
+    claim: (streamId, machineId, socket, hello) =>
+      egressRelay.claim(hello, machineId, socket) ?? browserLive.claimView(streamId, machineId, socket),
     onReady: (stream) => {
       desktopPointers.opened(stream);
       return sessions?.ready(stream);

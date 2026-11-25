@@ -16002,6 +16002,8 @@
       "notLinkMaker": "Bu bilgisayarı yalnızca bağlantıyı oluşturan kişi katılmaya izin verebilir.",
       "widenForbidden": "Yöneticiler birinin kendi cihazını kimin kullanabileceğini yalnızca daraltabilir.",
       "spillOwnerOnly": "Yanıtların bu bilgisayarda düşünmesine yalnızca onu bağlayan kişi izin verebilir. Kapatmak senin elinde.",
+      "shareOwnerOnly": "Ajanların bu bilgisayarın internetini kullanmasına yalnızca onu bağlayan kişi izin verebilir. Sen kapatabilirsin.",
+      "shareConnectedOnly": "İnternetini ajanlarla yalnızca birinin bağladığı bir bilgisayar paylaşabilir.",
       "tasksOwnerOnly": "Bu bilgisayarın aynı anda kaç görev çalıştıracağını yalnızca onu bağlayan kişi değiştirebilir.",
       "tasksCloud": "Bu bilgisayarın görevler için yerini Cloud kendisi belirler.",
       "notHome": "Ajanlar workspace bilgisayarında yaşar ve adını söylediklerinde bunu kullanır."
@@ -16154,7 +16156,10 @@
       "restart": "Bilgisayar oturumları ağı uygulamak için yeniden başlıyor. Yeni işler bu bitene kadar bekler.",
       "line": "Çıkış IP’si {{ip}}",
       "hint": "Ajanlar gezinirken sitelerin gördüğü adres. Bilgisayarın ağı değişince güncellenir.",
-      "waiting": "Ajanların internet bağlantısı yeniden kuruluyor. Bağlantıları geri gelene kadar bekler."
+      "waiting": "Ajanların internet bağlantısı yeniden kuruluyor. Bağlantıları geri gelene kadar bekler.",
+      "via": "Ajanlar {{name}} bilgisayarının internetini kullanıyor",
+      "viaBy": "Ajanlar {{name}} ({{person}}) bilgisayarının internetini kullanıyor",
+      "viaHint": "Siteler o bilgisayarın konumunu görür. Onu bağlayan kişi bunu sayfasından kapatabilir."
     },
     "online": "Çevrimiçi",
     "offline": "Çevrimdışı",
@@ -16433,6 +16438,12 @@
     "spillOwnHint": "Bir ajanın bilgisayarı dolduğunda sana gelen yanıtları burada başlar.",
     "spillOthers": "Başkalarının ajanları burada düşünebilir",
     "spillOthersHint": "Bir ajanın bilgisayarı dolduğunda başkalarına gelen yanıtları da burada başlayabilir.",
+    "shareInternet": "Ajanlar bu bilgisayarın internetini kullanır",
+    "shareInternetHint": "Ajanların açtığı siteler bu bilgisayarın bağlantısından geçer, bu yüzden konumunu görür. Yalnızca web siteleri, günde en fazla 5 GB, ve kendi ağındaki hiçbir şey asla. Bu bilgisayar çevrimdışıyken ajanlar her zamanki bağlantılarını kullanır.",
+    "shareInternetInUse": "Şu an kullanılıyor",
+    "shareInternetOther": "Ajanlar şu an {{name}} kullanıyor",
+    "shareInternetPick": "Bunu kullan",
+    "shareInternetJoin": "Ajanlar siteleri bu bilgisayarın interneti üzerinden de açacak, bu yüzden siteler konumunu görecek. Bunu sayfasından kapatabilirsin.",
     "connectedBy": "Bağlayan: {{name}}",
     "downloadFor": "{{system}} için indir",
     "downloadApp": "Uygulamayı indir",

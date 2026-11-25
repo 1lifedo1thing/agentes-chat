@@ -267,6 +267,20 @@ export function tasksAutoText(t: TFunction, d: ComputerDevice): string | null {
     : t("devices.tasksAutoFull", { running });
 }
 
+/**
+ * ADR 0237, under "Agents use this computer's internet": in use now, or which computer the agents use instead (the
+ * computer that lends now, `lending`, from the same list). Null: nothing to say.
+ */
+export function shareInternetText(t: TFunction, d: ComputerDevice, lending: ComputerDevice | null): string | null {
+  if (!d.shareInternet?.on) return null;
+  if (d.shareInternet.inUse) return t("devices.shareInternetInUse");
+  return lending && lending.id !== d.id ? t("devices.shareInternetOther", { name: lending.name }) : null;
+}
+
+/** The computer of a devices list whose internet the workspace's computer uses now (ADR 0237), if any. */
+export const lendingDevice = (devices: readonly ComputerDevice[] | undefined) =>
+  devices?.find((x) => x.shareInternet?.inUse) ?? null;
+
 /** A computer in the line's "More computers" list: "Online · macOS · 16 GB · your Claude Max plan" (`plan`: the viewer's there). */
 export const spillDeviceText = (t: TFunction, d: ComputerDevice, plan: string | null) =>
   [statusPill(t, d.status), computerLine(t, d), plan && t("queue.spill.plan", { plan })].filter(Boolean).join(" · ");

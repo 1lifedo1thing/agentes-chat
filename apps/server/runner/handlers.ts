@@ -40,6 +40,7 @@ import type { BrowserViews } from "./browser-views";
 import { allowedMerge, commandApproval, mergeOf, ownBranches } from "./command-gate";
 import type { DesktopManager } from "./desktop";
 import { type DesktopSessions, hostMemAvailable, MIN_FREE_BYTES } from "./desktop-session";
+import type { EgressShare } from "./egress-share";
 import { RunnerError, toMachineError } from "./errors";
 import { runCommand } from "./exec";
 import { type CacheFill, type CloneSlots, gitSync } from "./git";
@@ -174,6 +175,7 @@ export const NEW_WORK_OPS: ReadonlySet<string> = new Set([
   "phone.record",
   "phone.screenshot",
   "phone.logs",
+  "egress.dial",
 ]);
 
 /**
@@ -271,6 +273,8 @@ export const OP_ROUTES: Readonly<Record<MachineOp, "machine" | "agent">> = {
   "cli.install": "machine",
   // Reads the runner's own log and state: root's.
   "report.collect": "machine",
+  // Root's: its data socket needs the machine token, and the connection is the computer's, not an agent's.
+  "egress.dial": "machine",
 };
 
 type AccessRequestOp = Extract<MachineRequest, { op: "access.request" }>;
@@ -401,6 +405,8 @@ export interface HandlerContext {
   xcodeOpen?: () => Promise<MachineReplies["xcode.open"]>;
   /** `PROBLEM_REPORT_PROTOCOL`: what a problem report adds from this computer. */
   reportParts?: () => MachineReplies["report.collect"];
+  /** `EGRESS_SHARE_PROTOCOL`: this computer's internet lent to its workspace's own computer (ADR 0237). */
+  egressShare?: EgressShare;
 }
 
 export interface RequestScope {
@@ -766,6 +772,11 @@ async function routeRequest(ctx: HandlerContext, req: MachineRequest, scope: Req
     return handleDesktop(ctx, req);
   }
   if (req.op === "stream.open") return handleStream(ctx, req, scope);
+  if (req.op === "egress.dial") {
+    const { egressShare, streams } = ctx;
+    if (!egressShare || !streams) throw new RunnerError("bad_request", "This runner lends no connection");
+    return egressShare.dial(req, (streamId) => streams.dial(streamId, "egress", scope.signal));
+  }
   if (req.op === "secret" && ctx.systemMode?.()) {
     if (!ctx.workers?.secret) throw new RunnerError("not_allowed", "The root secret broker is unavailable");
     return ctx.workers.secret(req, scope);

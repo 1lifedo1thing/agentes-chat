@@ -115,6 +115,8 @@ import { type ConnectionOutcome, type Dial, RunnerConnection } from "./connectio
 import { DesktopManager } from "./desktop";
 import { DesktopSessions, type DesktopUser, runnerUser, systemDesktopUser } from "./desktop-session";
 import { EgressObservation, probeEgress } from "./egress";
+import { EGRESS_RELAY_SOCKET, startEgressRelay } from "./egress-relay";
+import { EGRESS_SHARE_FILE, EgressShare } from "./egress-share";
 import { NetworkChangingError, RUNNER_VERSION, RunnerError } from "./errors";
 import { cachedExecutors, EXECUTORS_TTL_MS, type ExecutorRun, inHomeDirs } from "./executors";
 import { systemGitCache } from "./git";
@@ -471,6 +473,9 @@ export class RunnerDaemon implements RequestObserver {
   private egress = new EgressObservation();
   private probingEgress = false;
   private observeEgress = false;
+  /** ADR 0237: what this computer lends (a person's), and the socket the workspace's own computer offers its guard. */
+  private egressShare: EgressShare | undefined;
+  private egressRelay: { close(): void } | null = null;
   private refusedNetworkKey: string | null = null;
   private networkWriteFailed = false;
   private egressGeneration = 0;
@@ -1437,6 +1442,7 @@ export class RunnerDaemon implements RequestObserver {
       numbered: this.desktopRefsGiven,
       log,
     });
+    this.egressShare ??= new EgressShare({ file: path.join(home, EGRESS_SHARE_FILE) });
     const streams = new DataSockets({
       url: connectUrl(config.server, "stream"),
       token: config.token,
@@ -1709,6 +1715,7 @@ export class RunnerDaemon implements RequestObserver {
       cliInstall: (req) => this.cliInstaller().handle(req),
       xcodeOpen: () => this.iphoneSetup().open("xcode"),
       reportParts: () => this.reportParts(),
+      egressShare: this.egressShare,
     };
     // `hello` lists the accounts it already knows; a fresh look (each runs its CLI) never delays connecting:
     // it lands in `hello` if it finishes first, else comes after as `accounts.changed`. Nothing reaches the
@@ -1766,6 +1773,13 @@ export class RunnerDaemon implements RequestObserver {
       },
       onWelcome: (welcome) => {
         this.observeEgress = welcome.observeEgress;
+        this.egressRelay?.close();
+        this.egressRelay = welcome.egressRelay
+          ? startEgressRelay({
+              path: path.join(home, EGRESS_RELAY_SOCKET),
+              dial: (streamId, target) => streams.dial(streamId, "egress", undefined, target),
+            })
+          : null;
         this.sentNetworkTransition = "";
         this.observeNetwork();
         this.egressGeneration++;
@@ -2058,6 +2072,8 @@ export class RunnerDaemon implements RequestObserver {
   }
 
   private async closeSession(s: Session) {
+    this.egressRelay?.close();
+    this.egressRelay = null;
     this.egressGeneration++;
     this.egress.reset();
     s.connection.stop();

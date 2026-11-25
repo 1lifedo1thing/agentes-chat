@@ -230,6 +230,14 @@ export const Machine = z
       .nullable()
       .optional(),
     egress: z.object({ ip: z.string(), country: z.string().optional(), at: z.string() }).nullable().optional(),
+    egressVia: z
+      .object({ machineId: z.string(), name: z.string(), userName: z.string().nullable() })
+      .nullable()
+      .optional()
+      .openapi({
+        description:
+          "The workspace's own computer: the person's computer whose internet its agents' web traffic uses now (ADR 0237), and who connected it. Null: its usual way out.",
+      }),
     egressWaiting: z.boolean().optional().openapi({
       description:
         "The workspace's own computer, online, has its agents waiting for their way out: its network sends them only through a proxy and none works now, so their connections are refused for a while. A change comes as `machine.updated`.",

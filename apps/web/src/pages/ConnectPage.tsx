@@ -1,5 +1,5 @@
 import type { Machine } from "@agenteschat/client";
-import { ApiError, useConfirmDevice, useDenyDevice, useMachineDevice, useMe } from "@agenteschat/client";
+import { ApiError, useConfirmDevice, useDenyDevice, useMachineDevice, useMachines, useMe } from "@agenteschat/client";
 import { workspaceLabel, workspaceNotes } from "@agenteschat/client/lib/deletion";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { relativeTime } from "@agenteschat/client/lib/format";
@@ -56,6 +56,9 @@ export function ConnectPage({ code }: { code: string }) {
   const [name, setName] = useState("");
   /** Spill-over for other people's turns (`spill.others`): off unless the person turns it on here. */
   const [others, setOthers] = useState(false);
+  /** Its internet for the workspace's own computer (ADR 0237): on unless the person turns it off here. */
+  const [lend, setLend] = useState(true);
+  const lends = useMachines(orgId ?? "", !!orgId).data?.some((m) => m.kind === "managed") === true;
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [expired, setExpired] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -206,7 +209,13 @@ export function ConnectPage({ code }: { code: string }) {
               { orgId: org.id, userCode: code, ...(clean ? { name: clean } : {}) },
               {
                 onSuccess: (machine) => {
-                  if (others) spill.mutate({ id: machine.id, spill: { others: true } });
+                  if (others || (lends && !lend)) {
+                    spill.mutate({
+                      id: machine.id,
+                      ...(others ? { spill: { others: true } } : {}),
+                      ...(lends && !lend ? { shareInternet: false } : {}),
+                    });
+                  }
                   setOutcome({
                     kind: "confirmed",
                     machine,
@@ -278,6 +287,15 @@ export function ConnectPage({ code }: { code: string }) {
                 hint={t("devices.spillOthersHint")}
                 control={<Switch checked={others} onCheckedChange={setOthers} />}
               />
+              {lends && (
+                <PrefRow
+                  id="connect-internet"
+                  icon="globe"
+                  label={t("devices.shareInternet")}
+                  hint={t("devices.shareInternetHint")}
+                  control={<Switch checked={lend} onCheckedChange={setLend} />}
+                />
+              )}
             </Locked>
           )}
           {error && <Alert>{error}</Alert>}

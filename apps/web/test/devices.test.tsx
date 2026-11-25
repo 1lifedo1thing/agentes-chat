@@ -1177,6 +1177,41 @@ describe("A device's page", () => {
     expect(calls(state, "devices.updateComputer").map((c) => c.args.at(-1))).toEqual([{ spill: { own: false } }]);
   });
 
+  test("agents use this computer's internet: on, says which computer they use now, picks this one, turns off", async () => {
+    const { state } = await open(`/org/${ORG_ID}/settings/devices/${MAC}`, (devices) => {
+      const list = acmeDevices();
+      for (const d of list.devices) {
+        if (d.id === MAC) d.shareInternet = { on: true, inUse: false };
+        if (d.id === IMAC) d.shareInternet = { on: true, inUse: true };
+      }
+      devices.set(list);
+    });
+    expect(screen().getByText("Agents use Ana's iMac now")).toBeTruthy();
+    await click(screen().getByRole("button", { name: "Use this one" }));
+    await settle(4);
+    const internet = screen().getByRole("switch", { name: "Agents use this computer's internet" });
+    expect(internet.getAttribute("aria-checked")).toBe("true");
+    await click(internet);
+    await settle(4);
+    expect(calls(state, "devices.updateComputer").map((c) => c.args.at(-1))).toEqual([
+      { shareInternet: true },
+      { shareInternet: false },
+    ]);
+    (globalThis as { geometrySnapshot?: () => void }).geometrySnapshot?.();
+  });
+
+  test("someone else's computer that lends its internet: an admin may turn it off, never on", async () => {
+    await open(`/org/${ORG_ID}/settings/devices/${IMAC}`, (devices) => {
+      const list = acmeDevices();
+      for (const d of list.devices) if (d.id === IMAC) d.shareInternet = { on: false, inUse: false };
+      devices.set(list);
+    });
+    const internet = screen().getByRole("switch", { name: "Agents use this computer's internet" });
+    expect(internet.getAttribute("aria-checked")).toBe("false");
+    expect(internet.hasAttribute("disabled")).toBe(true);
+    expect(screen().queryByRole("button", { name: "Use this one" })).toBeNull();
+  });
+
   test("Only some people or roles: the picker opens with nobody yet, and the first pick is what saves", async () => {
     const { state } = await open(`/org/${ORG_ID}/settings/devices/${MAC}`);
     const select = screen().getByRole("combobox", { name: "Who can use it" });

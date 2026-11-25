@@ -22,6 +22,7 @@ import {
   computerState,
   desktopTargetOf,
   downloadHref,
+  egressViaText,
   folderName,
   foldersOfAgent,
   formatUserCode,
@@ -750,4 +751,18 @@ describe("one click where a tool is off (ADR 0036 §8)", () => {
     expect(browserNoAnswerMessage("the computer Desk did not answer within 120 s")).toBe(false);
     expect(browserNoAnswerMessage(null)).toBe(false);
   });
+});
+
+test("whose internet the workspace's computer uses: the computer and who connected it, only while it is online", () => {
+  const t = ((key: string, o?: Record<string, unknown>) => `${key}${o ? JSON.stringify(o) : ""}`) as never;
+  const via = { machineId: "m-ana", name: "Ana's iMac", userName: "Ana" };
+  expect(egressViaText(t, { kind: "managed", online: true, egressVia: via })).toBe(
+    'machines.egress.viaBy{"name":"Ana\'s iMac","person":"Ana"}',
+  );
+  expect(egressViaText(t, { kind: "managed", online: true, egressVia: { ...via, userName: null } })).toBe(
+    'machines.egress.via{"name":"Ana\'s iMac"}',
+  );
+  expect(egressViaText(t, { kind: "managed", online: false, egressVia: via })).toBeNull();
+  expect(egressViaText(t, { kind: "connected", online: true, egressVia: via })).toBeNull();
+  expect(egressViaText(t, { kind: "managed", online: true, egressVia: null })).toBeNull();
 });

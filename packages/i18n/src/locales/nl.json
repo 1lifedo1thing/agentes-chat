@@ -16140,6 +16140,8 @@
       "notLinkMaker": "Alleen wie de link heeft gemaakt, kan deze computer laten deelnemen.",
       "widenForbidden": "Admins kunnen alleen beperken wie iemands eigen apparaat mag gebruiken.",
       "spillOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan antwoorden hier laten denken. Uitzetten kan wel.",
+      "shareOwnerOnly": "Alleen wie deze computer heeft verbonden, kan agents het internet ervan laten gebruiken. Jij kunt het uitzetten.",
+      "shareConnectedOnly": "Alleen een computer die iemand heeft verbonden, kan zijn internet met de agents delen.",
       "tasksOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan wijzigen hoeveel taken hij tegelijk uitvoert.",
       "tasksCloud": "De Cloud bepaalt zelf hoeveel ruimte deze computer heeft voor taken.",
       "notHome": "Agents wonen op de computer van de workspace en gebruiken deze als ze hem bij naam noemen."
@@ -16292,7 +16294,10 @@
       "restart": "De sessies van de computer starten opnieuw om het netwerk toe te passen. Nieuw werk wacht tot dit klaar is.",
       "line": "Uitgaand IP {{ip}}",
       "hint": "Het adres dat websites zien als de agents browsen. Het verandert mee met het netwerk van de computer.",
-      "waiting": "Het internet van de agents wordt opnieuw verbonden. Hun verbindingen wachten tot het terug is."
+      "waiting": "Het internet van de agents wordt opnieuw verbonden. Hun verbindingen wachten tot het terug is.",
+      "via": "Agents gebruiken het internet van {{name}}",
+      "viaBy": "Agents gebruiken het internet van {{name}} ({{person}})",
+      "viaHint": "Websites zien de locatie van die computer. Wie hem heeft verbonden, kan het op zijn pagina uitzetten."
     },
     "online": "Online",
     "offline": "Offline",
@@ -16571,6 +16576,12 @@
     "spillOwnHint": "Als de computer van een agent vol is, starten zijn antwoorden voor jou hier.",
     "spillOthers": "Agenten van anderen kunnen hier denken",
     "spillOthersHint": "Als de computer van een agent vol is, kunnen zijn antwoorden voor andere mensen ook hier starten.",
+    "shareInternet": "Agents gebruiken het internet van deze computer",
+    "shareInternetHint": "Websites die de agents openen, gaan via de verbinding van deze computer en zien dus jouw locatie. Alleen websites, tot 5 GB per dag, en nooit iets op je eigen netwerk. Zolang deze computer offline is, gebruiken de agents hun gewone verbinding.",
+    "shareInternetInUse": "Nu in gebruik",
+    "shareInternetOther": "Agents gebruiken nu {{name}}",
+    "shareInternetPick": "Deze gebruiken",
+    "shareInternetJoin": "De agents openen ook websites via het internet van deze computer, dus websites zien jouw locatie. Je kunt het op zijn pagina uitzetten.",
     "connectedBy": "Gekoppeld door {{name}}",
     "downloadFor": "Downloaden voor {{system}}",
     "downloadApp": "De app downloaden",

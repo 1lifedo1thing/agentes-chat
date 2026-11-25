@@ -16483,6 +16483,9 @@ export const en = {
       notLinkMaker: "Only the person who made the link can let this computer join.",
       widenForbidden: "Admins can only narrow who can use someone's own device.",
       spillOwnerOnly: "Only the person who connected this computer can let replies think on it. You can turn it off.",
+      shareOwnerOnly:
+        "Only the person who connected this computer can let agents use its internet. You can turn it off.",
+      shareConnectedOnly: "Only a computer someone connected can share its internet with the agents.",
       tasksOwnerOnly: "Only the person who connected this computer can change how many tasks it runs at once.",
       tasksCloud: "The Cloud sizes this computer's room for tasks itself.",
       notHome: "Agents live on the workspace computer and use this one when they name it.",
@@ -16657,6 +16660,10 @@ export const en = {
       line: "Exit IP {{ip}}",
       hint: "The address websites see when the agents browse. It updates when the computer’s network changes.",
       waiting: "Reconnecting the agents’ internet. Their connections wait until it’s back.",
+      /** The workspace's computer opens websites through a person's computer's internet (ADR 0237). */
+      via: "Agents use the internet of {{name}}",
+      viaBy: "Agents use the internet of {{name}} ({{person}})",
+      viaHint: "Websites see that computer’s location. Its owner can turn it off on its page.",
     },
     online: "Online",
     offline: "Offline",
@@ -16925,6 +16932,16 @@ export const en = {
     spillOwnHint: "When an agent's computer is full, its replies to you start here.",
     spillOthers: "Other people's agents can think here",
     spillOthersHint: "When an agent's computer is full, its replies to other people can start here too.",
+    /** A person's computer lends its internet to the workspace's own computer (ADR 0237). */
+    shareInternet: "Agents use this computer's internet",
+    shareInternetHint:
+      "Websites the agents open go out through this computer's connection, so they see your location. Only websites, up to 5 GB a day, and never anything on your own network. While this computer is offline, the agents use their usual connection.",
+    shareInternetInUse: "In use now",
+    shareInternetOther: "Agents use {{name}} now",
+    shareInternetPick: "Use this one",
+    /** Under Let it join, in a workspace with its own computer. */
+    shareInternetJoin:
+      "The agents will also open websites through this computer's internet, so sites see your location. You can turn it off on its page.",
     connectedBy: "Connected by {{name}}",
     downloadFor: "Download for {{system}}",
     downloadApp: "Download the app",

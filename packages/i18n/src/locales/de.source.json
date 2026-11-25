@@ -6227,6 +6227,21 @@
   "surface.page.back": {
     "value": "Go back to {{surface}}. Your assistant goes on there."
   },
+  "surface.page.setFirst": {
+    "value": "Set your PIN first"
+  },
+  "surface.page.setFirstLead": {
+    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page."
+  },
+  "surface.page.setFirstLeadEmail": {
+    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page."
+  },
+  "surface.page.openApp": {
+    "value": "Choose it in the app"
+  },
+  "surface.page.emailMe": {
+    "value": "Email me a link"
+  },
   "surface.pinReset.title": {
     "value": "Choose your PIN"
   },
@@ -6256,6 +6271,21 @@
   },
   "surface.forwardedTip": {
     "value": "{{person}} forwarded this from {{surface}}. The words are someone else's."
+  },
+  "surface.pin.set": {
+    "value": "Set PIN"
+  },
+  "surface.pin.change": {
+    "value": "Change PIN"
+  },
+  "surface.pin.title": {
+    "value": "Your {{surface}} PIN"
+  },
+  "surface.pin.text": {
+    "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
+  },
+  "surface.pin.save": {
+    "value": "Save PIN"
   },
   "team.title": {
     "value": "Team"
@@ -38563,6 +38593,12 @@
   "errors.surface.pinResetGone": {
     "value": "This link was already used or ran out. Ask for a new one with “Forgot your PIN?”."
   },
+  "errors.surface.pinUnset": {
+    "value": "Set your PIN first. Choose it in the app, signed in."
+  },
+  "errors.surface.emailUnverified": {
+    "value": "Your email address isn't verified yet. Choose your PIN in the app instead."
+  },
   "errors.wallpaper.notYours": {
     "value": "That photo isn't yours."
   },
@@ -39403,6 +39439,12 @@
   "errors.device.spillOwnerOnly": {
     "value": "Only the person who connected this computer can let replies think on it. You can turn it off."
   },
+  "errors.device.shareOwnerOnly": {
+    "value": "Only the person who connected this computer can let agents use its internet. You can turn it off."
+  },
+  "errors.device.shareConnectedOnly": {
+    "value": "Only a computer someone connected can share its internet with the agents."
+  },
   "errors.device.tasksOwnerOnly": {
     "value": "Only the person who connected this computer can change how many tasks it runs at once."
   },
@@ -39771,6 +39813,15 @@
   },
   "machines.egress.waiting": {
     "value": "Reconnecting the agents’ internet. Their connections wait until it’s back."
+  },
+  "machines.egress.via": {
+    "value": "Agents use the internet of {{name}}"
+  },
+  "machines.egress.viaBy": {
+    "value": "Agents use the internet of {{name}} ({{person}})"
+  },
+  "machines.egress.viaHint": {
+    "value": "Websites see that computer’s location. Its owner can turn it off on its page."
   },
   "machines.online": {
     "value": "Online"
@@ -40490,6 +40541,24 @@
   },
   "devices.spillOthersHint": {
     "value": "When an agent's computer is full, its replies to other people can start here too."
+  },
+  "devices.shareInternet": {
+    "value": "Agents use this computer's internet"
+  },
+  "devices.shareInternetHint": {
+    "value": "Websites the agents open go out through this computer's connection, so they see your location. Only websites, up to 5 GB a day, and never anything on your own network. While this computer is offline, the agents use their usual connection."
+  },
+  "devices.shareInternetInUse": {
+    "value": "In use now"
+  },
+  "devices.shareInternetOther": {
+    "value": "Agents use {{name}} now"
+  },
+  "devices.shareInternetPick": {
+    "value": "Use this one"
+  },
+  "devices.shareInternetJoin": {
+    "value": "The agents will also open websites through this computer's internet, so sites see your location. You can turn it off on its page."
   },
   "devices.connectedBy": {
     "value": "Connected by {{name}}"
@@ -56478,41 +56547,5 @@
   },
   "live.sheet.fn.YEARFRAC": {
     "value": "The share of a year between two dates"
-  },
-  "surface.page.setFirst": {
-    "value": "Set your PIN first"
-  },
-  "surface.page.setFirstLead": {
-    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page."
-  },
-  "surface.page.setFirstLeadEmail": {
-    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page."
-  },
-  "surface.page.openApp": {
-    "value": "Choose it in the app"
-  },
-  "surface.page.emailMe": {
-    "value": "Email me a link"
-  },
-  "surface.pin.set": {
-    "value": "Set PIN"
-  },
-  "surface.pin.change": {
-    "value": "Change PIN"
-  },
-  "surface.pin.title": {
-    "value": "Your {{surface}} PIN"
-  },
-  "surface.pin.text": {
-    "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
-  },
-  "surface.pin.save": {
-    "value": "Save PIN"
-  },
-  "errors.surface.pinUnset": {
-    "value": "Set your PIN first. Choose it in the app, signed in."
-  },
-  "errors.surface.emailUnverified": {
-    "value": "Your email address isn't verified yet. Choose your PIN in the app instead."
   }
 }

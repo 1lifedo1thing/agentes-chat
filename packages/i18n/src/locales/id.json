@@ -15546,6 +15546,8 @@
       "notLinkMaker": "Hanya orang yang membuat tautan ini yang bisa mengizinkan komputer ini bergabung.",
       "widenForbidden": "Admin hanya bisa mempersempit siapa yang boleh memakai perangkat milik seseorang.",
       "spillOwnerOnly": "Hanya orang yang menghubungkan komputer ini yang bisa membiarkan balasan berpikir di sini. Kamu bisa mematikannya.",
+      "shareOwnerOnly": "Hanya orang yang menghubungkan komputer ini yang bisa mengizinkan agen memakai internetnya. Kamu bisa mematikannya.",
+      "shareConnectedOnly": "Hanya komputer yang dihubungkan seseorang yang bisa berbagi internet dengan agen.",
       "tasksOwnerOnly": "Hanya orang yang menghubungkan komputer ini yang bisa mengubah berapa tugas yang dijalankannya sekaligus.",
       "tasksCloud": "Cloud menentukan sendiri ruang komputer ini untuk tugas.",
       "notHome": "Agen tinggal di komputer workspace dan memakai komputer ini saat menyebut namanya."
@@ -15697,7 +15699,10 @@
       "restart": "Sesi komputer sedang dimulai ulang untuk menerapkan jaringan. Pekerjaan baru menunggu sampai selesai.",
       "line": "IP keluar {{ip}}",
       "hint": "Alamat yang dilihat situs saat agen menjelajah. Alamat ini ikut berubah saat jaringan komputer berubah.",
-      "waiting": "Menyambungkan ulang internet agen. Koneksi mereka menunggu sampai kembali."
+      "waiting": "Menyambungkan ulang internet agen. Koneksi mereka menunggu sampai kembali.",
+      "via": "Agen memakai internet {{name}}",
+      "viaBy": "Agen memakai internet {{name}} ({{person}})",
+      "viaHint": "Situs melihat lokasi komputer itu. Orang yang menghubungkannya bisa mematikannya di halamannya."
     },
     "online": "Online",
     "offline": "Offline",
@@ -15975,6 +15980,12 @@
     "spillOwnHint": "Saat komputer agen penuh, balasannya untukmu mulai di sini.",
     "spillOthers": "Agen orang lain bisa berpikir di sini",
     "spillOthersHint": "Saat komputer agen penuh, balasannya untuk orang lain juga bisa mulai di sini.",
+    "shareInternet": "Agen memakai internet komputer ini",
+    "shareInternetHint": "Situs yang dibuka agen lewat koneksi komputer ini, jadi situs melihat lokasimu. Hanya situs web, sampai 5 GB per hari, dan tidak pernah apa pun di jaringanmu sendiri. Selama komputer ini offline, agen memakai koneksi biasa mereka.",
+    "shareInternetInUse": "Sedang dipakai",
+    "shareInternetOther": "Agen sedang memakai {{name}}",
+    "shareInternetPick": "Pakai yang ini",
+    "shareInternetJoin": "Agen juga akan membuka situs lewat internet komputer ini, jadi situs melihat lokasimu. Kamu bisa mematikannya di halamannya.",
     "connectedBy": "Dihubungkan oleh {{name}}",
     "downloadFor": "Unduh untuk {{system}}",
     "downloadApp": "Unduh aplikasinya",

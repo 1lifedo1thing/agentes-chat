@@ -5267,6 +5267,11 @@ export interface Machine {
   egress?: { ip: string; country?: string; at: string } | null;
   networkTransition?: { state: "draining" | "restart_required"; deadline: string; agents: string[] } | null;
   /**
+   * ADR 0237, the workspace's own computer: the person's computer whose internet its agents' web traffic uses now, and
+   * who connected it. Null or absent: its usual way out.
+   */
+  egressVia?: { machineId: string; name: string; userName: string | null } | null;
+  /**
    * The workspace's own computer, online, has its agents waiting for their way out: none of the proxies its network
    * requires works now, so their connections are refused for a while. Absent from an older server: they don't wait.
    */
@@ -8884,6 +8889,11 @@ export interface ComputerDevice {
   belongsToWorkspace: boolean;
   /** While an agent's own computer is full, replies people wait on may think here: to its owner, to anyone else. */
   spill: { own: boolean; others: boolean };
+  /**
+   * ADR 0237: whether its owner lends its internet to the workspace's own computer, and whether that computer goes out
+   * through it now. Null (or absent from an older server): nothing to lend to.
+   */
+  shareInternet?: { on: boolean; inUse: boolean } | null;
   systemMode: boolean;
   audience: DeviceAudience;
   status: DeviceStatus;
@@ -9021,6 +9031,8 @@ export interface ComputerDeviceInput {
   belongsToWorkspace?: boolean;
   maxTasks?: number;
   pushHarder?: boolean;
+  /** ADR 0237: lend its internet to the workspace's own computer (its owner); on again picks it first. */
+  shareInternet?: boolean;
   spill?: { own?: boolean; others?: boolean };
 }
 

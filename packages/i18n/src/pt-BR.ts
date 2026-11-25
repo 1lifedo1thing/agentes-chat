@@ -16428,6 +16428,9 @@ export const ptBR = {
       notLinkMaker: "Só quem gerou o link pode deixar este computador entrar.",
       widenForbidden: "Admins só podem restringir quem usa o dispositivo de outra pessoa.",
       spillOwnerOnly: "Só quem conectou este computador pode deixar respostas pensarem nele. Você pode desligar.",
+      shareOwnerOnly:
+        "Só quem conectou este computador pode deixar os agentes usarem a internet dele. Você pode desligar.",
+      shareConnectedOnly: "Só um computador que alguém conectou pode compartilhar a internet com os agentes.",
       tasksOwnerOnly: "Só quem conectou este computador pode mudar quantas tarefas ele roda ao mesmo tempo.",
       tasksCloud: "A Cloud dimensiona sozinha o espaço deste computador para tarefas.",
       notHome: "Os agentes moram no computador do workspace e usam este quando o citam pelo nome.",
@@ -16596,6 +16599,9 @@ export const ptBR = {
       line: "IP de saída {{ip}}",
       hint: "O endereço que os sites veem quando os agentes navegam. Ele acompanha as mudanças de rede do computador.",
       waiting: "Reconectando a internet dos agentes. As conexões deles esperam até ela voltar.",
+      via: "Agentes usam a internet de {{name}}",
+      viaBy: "Agentes usam a internet de {{name}} ({{person}})",
+      viaHint: "Os sites veem a localização desse computador. Quem o conectou pode desligar na página dele.",
     },
     online: "Online",
     offline: "Offline",
@@ -16860,6 +16866,14 @@ export const ptBR = {
     spillOthers: "Agentes de outras pessoas podem pensar aqui",
     spillOthersHint:
       "Quando o computador de um agente estiver cheio, as respostas dele para outras pessoas também podem começar aqui.",
+    shareInternet: "Agentes usam a internet deste computador",
+    shareInternetHint:
+      "Os sites que os agentes abrem passam pela conexão deste computador, então veem a sua localização. Só sites, até 5 GB por dia, e nunca nada da sua própria rede. Enquanto este computador estiver offline, os agentes usam a conexão de sempre.",
+    shareInternetInUse: "Em uso agora",
+    shareInternetOther: "Agentes usam {{name}} agora",
+    shareInternetPick: "Usar este",
+    shareInternetJoin:
+      "Os agentes também vão abrir sites pela internet deste computador, então os sites veem a sua localização. Você pode desligar na página dele.",
     connectedBy: "Conectado por {{name}}",
     downloadFor: "Baixar para {{system}}",
     downloadApp: "Baixar o app",

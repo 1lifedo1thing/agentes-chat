@@ -14694,6 +14694,10 @@ html:not([data-pointer]) .ac-typing__see:focus-visible {
 .settings-row--acts {
   row-gap: var(--space-2);
 }
+/* Several controls in that group (a button beside its switch) keep a gap between them. */
+.settings-row--acts > .settings-row__end {
+  gap: var(--space-2);
+}
 .settings-row__lead {
   display: flex;
   align-items: center;

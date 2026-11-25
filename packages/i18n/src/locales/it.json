@@ -16635,6 +16635,8 @@
       "notLinkMaker": "Solo chi ha creato il link può far entrare questo computer.",
       "widenForbidden": "Gli admin possono solo restringere chi usa il dispositivo personale di qualcuno.",
       "spillOwnerOnly": "Solo chi ha collegato questo computer può lasciare che le risposte pensino qui. Tu puoi disattivarlo.",
+      "shareOwnerOnly": "Solo chi ha collegato questo computer può far usare la sua connessione internet agli agenti. Tu puoi disattivarla.",
+      "shareConnectedOnly": "Solo un computer collegato da qualcuno può condividere la sua connessione internet con gli agenti.",
       "tasksOwnerOnly": "Solo chi ha collegato questo computer può cambiare quante attività esegue in contemporanea.",
       "tasksCloud": "Il Cloud dimensiona da solo lo spazio di questo computer per le attività.",
       "notHome": "Gli agenti vivono sul computer del workspace e usano questo quando lo nominano."
@@ -16788,7 +16790,10 @@
       "restart": "Le sessioni del computer si stanno riavviando per applicare la rete. Il nuovo lavoro aspetta che finisca.",
       "line": "IP di uscita {{ip}}",
       "hint": "L’indirizzo che i siti vedono quando gli agenti navigano. Si aggiorna quando cambia la rete del computer.",
-      "waiting": "Gli agenti si stanno ricollegando a internet. Le loro connessioni aspettano che torni."
+      "waiting": "Gli agenti si stanno ricollegando a internet. Le loro connessioni aspettano che torni.",
+      "via": "Gli agenti usano la connessione internet di {{name}}",
+      "viaBy": "Gli agenti usano la connessione internet di {{name}} ({{person}})",
+      "viaHint": "I siti vedono la posizione di quel computer. Chi l’ha collegato può disattivarlo nella sua pagina."
     },
     "online": "Online",
     "offline": "Offline",
@@ -17068,6 +17073,12 @@
     "spillOwnHint": "Quando il computer di un agente è pieno, le sue risposte per te iniziano qui.",
     "spillOthers": "Gli agenti di altre persone possono pensare qui",
     "spillOthersHint": "Quando il computer di un agente è pieno, anche le sue risposte per altre persone possono iniziare qui.",
+    "shareInternet": "Gli agenti usano la connessione internet di questo computer",
+    "shareInternetHint": "I siti che gli agenti aprono passano dalla connessione di questo computer, quindi vedono la tua posizione. Solo siti web, fino a 5 GB al giorno, e mai nulla della tua rete. Finché questo computer è offline, gli agenti usano la loro connessione abituale.",
+    "shareInternetInUse": "In uso ora",
+    "shareInternetOther": "Gli agenti ora usano {{name}}",
+    "shareInternetPick": "Usa questo",
+    "shareInternetJoin": "Gli agenti apriranno siti anche tramite la connessione internet di questo computer, quindi i siti vedranno la tua posizione. Puoi disattivarlo nella sua pagina.",
     "connectedBy": "Collegato da {{name}}",
     "downloadFor": "Scarica per {{system}}",
     "downloadApp": "Scarica l'app",

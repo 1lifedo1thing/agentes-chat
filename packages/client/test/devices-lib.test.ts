@@ -24,6 +24,7 @@ import {
   iphoneRestartNext,
   iphoneRestartOf,
   iphoneSteps,
+  lendingDevice,
   linkPhase,
   mayChangeTasks,
   mayTakePhone,
@@ -35,6 +36,7 @@ import {
   phoneScreenUrl,
   reasonText,
   screenGesture,
+  shareInternetText,
   statusDetail,
   statusPill,
   statusSentence,
@@ -738,5 +740,19 @@ describe("a phone's screen", () => {
     });
     // Off the picture's edge: kept on it.
     expect(screenGesture({ x: 0.5, y: 0.5, at: 0 }, { x: 1.4, y: -0.2, at: 200 })).toMatchObject({ x2: 1, y2: 0 });
+  });
+});
+
+describe("agents use a person's computer's internet (ADR 0237)", () => {
+  test("in use now, or which computer the agents use instead; nothing while off or with nothing to lend to", () => {
+    const mine = computer({ id: "m-mine", shareInternet: { on: true, inUse: false } });
+    const ana = computer({ id: "m-ana", name: "Ana's iMac", shareInternet: { on: true, inUse: true } });
+    const lending = lendingDevice([mine, ana]);
+    expect(lending?.id).toBe("m-ana");
+    expect(shareInternetText(t, ana, lending)).toBe("In use now");
+    expect(shareInternetText(t, mine, lending)).toBe("Agents use Ana's iMac now");
+    expect(shareInternetText(t, computer({ shareInternet: { on: false, inUse: false } }), lending)).toBeNull();
+    expect(shareInternetText(t, computer({ shareInternet: null }), lending)).toBeNull();
+    expect(lendingDevice([mine])).toBeNull();
   });
 });

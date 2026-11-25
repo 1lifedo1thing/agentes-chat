@@ -512,6 +512,14 @@ export async function computerDrivers(db: Database, orgId: string, agentId: stri
   return ownersDriving.length > 0 ? ownersDriving : drivers;
 }
 
+/** How long the workspace's computer is said to go out through a lent one after it last did (ADR 0237). */
+export const EGRESS_VIA_SHOWN_MS = 5 * 60_000;
+
+/** The workspace's computer's last lent connection, while recent: whose computer carries its web traffic now. */
+export function egressViaNow(via: { machineId: string; at: string } | null | undefined, now = new Date()) {
+  return via && now.getTime() - Date.parse(via.at) < EGRESS_VIA_SHOWN_MS ? via.machineId : null;
+}
+
 /**
  * The machines of an org as one person sees them: every member sees them;
  * the workspace path and the access report only admins and the pairer.
@@ -568,6 +576,8 @@ async function machineViews(db: Database, actorId: string, orgId: string, only?:
     // The workspace's own computer (ADR 0056 §10) is a service people use, not a box they look into.
     const managed = m.kind === "managed";
     const online = shownOnline(m, now);
+    const viaId = managed ? egressViaNow(m.egressVia, now) : null;
+    const via = viaId ? rows.find((r) => r.machine.id === viaId) : undefined;
     return {
       id: m.id,
       name: m.name,
@@ -581,6 +591,8 @@ async function machineViews(db: Database, actorId: string, orgId: string, only?:
       /** The workspace's own computer's agents wait for their way out, as the operator says: a line, never an error. */
       egressWaiting: managed && machineOnline(m, now) && m.egressWaitingAt !== null,
       egress: managed && machineOnline(m, now) && m.egress?.ip ? { ...m.egress, ip: m.egress.ip } : null,
+      /** ADR 0237: the person's computer whose internet the workspace's own computer's web traffic uses now. */
+      egressVia: via ? { machineId: via.machine.id, name: via.machine.name, userName: via.pairedByName } : null,
       lastSeenAt: m.lastSeenAt?.toISOString() ?? null,
       hostname: managed ? "" : m.hostname,
       os: managed ? "other" : m.os,

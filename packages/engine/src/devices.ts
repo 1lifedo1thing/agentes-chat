@@ -23,6 +23,7 @@ import { publishOrgEvent } from "./events";
 import type { MachineCaller, MachineHub } from "./machine-hub";
 import {
   cleanMachineName,
+  egressViaNow,
   getMachine,
   MachineOfflineError,
   type MachineRow,
@@ -114,6 +115,11 @@ export interface ComputerDevice {
    * whoever connected it; `others`: replies to anyone else (`machines.spill_*`).
    */
   spill: { own: boolean; others: boolean };
+  /**
+   * ADR 0237, a person's computer in a workspace that has its own computer: whether its owner lends it its internet
+   * (`on`), and whether the workspace's computer goes out through it now (`inUse`). Null: nothing to lend to.
+   */
+  shareInternet: { on: boolean; inUse: boolean } | null;
   /** Each agent works as its own OS user there (a server install). */
   systemMode: boolean;
   audience: DeviceAudience;
@@ -427,6 +433,8 @@ export async function listDevices(
     ),
   };
   const busy = new Map(running.map((r) => [r.machineId, Number(r.n)]));
+  const workspaceComputer = rows.find((m) => m.kind === "managed");
+  const lentNow = workspaceComputer ? egressViaNow(workspaceComputer.egressVia, now) : null;
   const grantedMachines = new Set(grants.filter((g) => !g.phoneId).map((g) => g.machineId));
   const grantedPhones = new Set(grants.map((g) => g.phoneId).filter(Boolean));
 
@@ -449,6 +457,10 @@ export async function listDevices(
       ownerUserId: m.pairedByUserId,
       belongsToWorkspace: m.belongsToWorkspace,
       spill: { own: m.spillOwn, others: m.spillOthers },
+      shareInternet:
+        workspaceComputer && m.kind === "connected"
+          ? { on: m.egressShare, inUse: m.egressShare && lentNow === m.id }
+          : null,
       systemMode: m.executors?.mode === "system",
       audience: rule.audience,
       status: computerStatus(m, busy.get(m.id) ?? 0, now),
@@ -567,6 +579,8 @@ export interface ComputerDeviceInput {
   maxTasks?: number;
   /** `TASK_ROOM_PROTOCOL`: tasks may fill memory down to 0.5 GB free, whatever the processor. Online, its owner's. */
   pushHarder?: boolean;
+  /** ADR 0237: lend its internet to the workspace's own computer; on again (or on once more) picks it first. */
+  shareInternet?: boolean;
 }
 
 /**
@@ -612,6 +626,17 @@ export async function updateComputerDevice(
     if (on === undefined) continue;
     if (on && !owner) throw new ForbiddenError("Only the device's owner can turn this on", "device.spill_owner_only");
     set[column] = on;
+  }
+  // Its owner's connection: only they lend it; an admin may stop it.
+  if (input.shareInternet !== undefined) {
+    if (machine.kind !== "connected") {
+      throw new ForbiddenError("Only a person's own computer lends its internet", "device.share_connected_only");
+    }
+    if (input.shareInternet && !owner) {
+      throw new ForbiddenError("Only the device's owner can lend its internet", "device.share_owner_only");
+    }
+    set.egressShare = input.shareInternet;
+    if (input.shareInternet) set.egressShareAt = new Date();
   }
   if (input.maxTasks !== undefined || input.pushHarder !== undefined) {
     if (!owner && machine.pairedByUserId !== null) {

@@ -618,3 +618,12 @@ export function loginRead(status: { isError: boolean; error: unknown; errorUpdat
   if (!(status.error instanceof LoginReadError)) return "failed";
   return status.errorUpdatedAt - status.error.since < LOGIN_RECONNECT_MS ? "reconnecting" : "noAnswer";
 }
+
+/** ADR 0237: "Agents use the internet of Ana's laptop (Ana)" while a person's computer lends its internet; else null. */
+export function egressViaText(t: TFunction, m: Pick<Machine, "kind" | "online" | "egressVia">): string | null {
+  const via = m.kind === "managed" && m.online ? m.egressVia : null;
+  if (!via) return null;
+  return via.userName
+    ? t("machines.egress.viaBy", { name: via.name, person: via.userName })
+    : t("machines.egress.via", { name: via.name });
+}
