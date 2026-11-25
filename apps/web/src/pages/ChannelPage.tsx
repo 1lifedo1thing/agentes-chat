@@ -32,14 +32,12 @@ import {
   fileConversationOf,
   heldRowsIn,
   inMainTimeline,
-  isQuiet,
   isScreenTool,
   keys,
   type LiveRun,
   MESSAGES_PAGE,
   messageLiveRef,
   OPEN_THREAD,
-  QUIET_AFTER_MS,
   runsInChannel,
   type StreamsState,
   sendHelpers,
@@ -122,7 +120,7 @@ import { choiceReplyLine } from "@agenteschat/client/lib/choices";
 import { draftKeyOf } from "@agenteschat/client/lib/composer-drafts";
 import { type ConsultPairItem, consultsForLine } from "@agenteschat/client/lib/consult-group";
 import { consultationsOf } from "@agenteschat/client/lib/consultations";
-import { deviceWaitOf } from "@agenteschat/client/lib/devices";
+import { deviceWaitOf, spilledText } from "@agenteschat/client/lib/devices";
 import { clearDraft, peekDraft } from "@agenteschat/client/lib/drafts";
 import { ErrorBoundary } from "@agenteschat/client/lib/error-boundary";
 import {
@@ -210,6 +208,7 @@ import {
   Locked,
   Mention,
   Menu,
+  MenuCheckboxItem,
   MenuItem,
   MenuRadioGroup,
   MenuSeparator,
@@ -300,6 +299,7 @@ import {
   RoutineReport,
   RoutineTag,
   SpeedFallbackLine,
+  SpilledLine,
   StopPill,
   StopsProvider,
   SurfaceViaMark,
@@ -443,7 +443,6 @@ import { reportPainted } from "@/lib/perf";
 import { useToast } from "@/lib/toast";
 import { useValueStore } from "@/lib/value-store";
 import {
-  reconcileChannelRuns,
   useChannelRealtime,
   useDismissRun,
   useLive,
@@ -909,8 +908,9 @@ function ChannelView({
   // A thread whose replies are still loading: only their skeleton shows, never the root the channel holds above it,
   // which the replies would push out of view. It opens on them, at its end, in one paint.
   const repliesPending = Boolean(thread && messages.isPlaceholderData && thread.replyCount > 0);
-  // An agent's DM whose setup checklist still reads its data: shown with the messages once it can draw as it stays.
-  const introPending = Boolean(!thread && chrome?.introPending);
+  // An agent's DM whose setup checklist still reads its data, or whose first page is still loading: the intro shows with
+  // the messages, never alone over their skeleton (the rows would then land under it and push it out of view).
+  const introPending = Boolean(!thread && (chrome?.introPending || (chrome?.intro && messages.isLoading)));
   // The channel's threads: closed lines, context marks, markers (not in a thread view or while adjusting).
   const listsThreads = readable && !thread;
   const openThreads = useChannelThreads(org.id, channel.id, "all", listsThreads);
@@ -3820,10 +3820,7 @@ function RunBlock({
     [liveId, liveAgent, liveChannel, liveThread, liveStart],
   );
   // At work the bar above the composer speaks for it, and the block draws only for something to show (`rowShows`).
-  // A run gone quiet meanwhile draws for "sem notícias · Atualizar": wake when that moment comes.
-  const waits = Boolean(live && !message && waitsForWords(live));
-  useDue(live?.lastEventAt ?? liveStart ?? null, QUIET_AFTER_MS, waits);
-  const hidden = Boolean(live && !message && !rowShows(live, Date.now()));
+  const hidden = Boolean(live && !message && !rowShows(live));
   const shown = message ?? placeholder;
   // Its live row on the page: the view measures which blocks are in view again (the bar speaks for those out of it).
   const rowDrawn = useContext(RowDrawnContext);
@@ -3969,50 +3966,6 @@ function RunTail({ run }: { run: LiveRun }) {
   );
 }
 
-/** Under a live block: "sem notícias há 4 min · Atualizar" (what it does now is the bar's to say). */
-function LiveRunStatus({ run }: { run: LiveRun }) {
-  const { t } = useTranslation();
-  const { org } = useOrg();
-  const api = useApi();
-  const qc = useQueryClient();
-  const liveStore = useLiveStore();
-  // A run with no news for minutes (orphaned by a restart?): say so and offer to check.
-  const [, tick] = useState(0);
-  useEffect(() => {
-    const again = () => tick((n) => n + 1);
-    const timer = setInterval(again, 15_000);
-    // Back to the tab after a while: check right away.
-    window.addEventListener("focus", again);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener("focus", again);
-    };
-  }, []);
-  const [checking, setChecking] = useState(false);
-  if (!isQuiet(run)) return null;
-  const recheck = () => {
-    setChecking(true);
-    void reconcileChannelRuns(api, liveStore, org.id, run.channelId, [run.runId])
-      .then((dropped) => {
-        if (dropped) void qc.invalidateQueries({ queryKey: keys.messages(org.id, run.channelId) });
-      })
-      .finally(() => setChecking(false));
-  };
-  return (
-    <div className="run-status">
-      <p className="ac-msg__activity run-quiet">
-        {t("run.quiet", {
-          minutes: Math.max(3, Math.floor((Date.now() - (run.lastEventAt ?? run.startedAt ?? 0)) / 60_000)),
-        })}
-        {" · "}
-        <Button variant="ghost" size="sm" loading={checking} onClick={recheck}>
-          {t("run.refresh")}
-        </Button>
-      </p>
-    </div>
-  );
-}
-
 /**
  * Under a stopped answer: "Parado por você · Continuar", or "No limite de passos · Continuar" under the
  * reply of a run that reached its step limit, or just Continuar under the end of a long work its AI provider failed. Continuar starts a new run of the same agent from where it
@@ -4096,27 +4049,6 @@ function StoppedLine({
       className="run-canceled"
     />
   );
-}
-
-/** Shows only after `ms` while `on` ("enviando" waits half a second: most sends never show it). */
-/** True from `from + ms` on (now when `from` is unknown, i.e. counted from the mount), while `on`. */
-function useDue(from: number | null, ms: number, on: boolean) {
-  const [start] = useState(() => Date.now());
-  const at = (from ?? start) + ms;
-  const [, tick] = useState(0);
-  const wait = at - Date.now();
-  useEffect(() => {
-    if (!on || wait <= 0) return;
-    const again = () => tick((n) => n + 1);
-    const timer = setTimeout(again, wait);
-    // Back to the tab after a while: look again at once (a sleeping computer's timers run late).
-    window.addEventListener("focus", again);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("focus", again);
-    };
-  }, [on, wait]);
-  return !on || wait <= 0;
 }
 
 function useAfter(ms: number, on: boolean) {
@@ -4501,7 +4433,7 @@ function ActivityBar({
               </>
             )}
             {/* "Ver" once its row is in the conversation (before that, there is nothing to go back to). */}
-            {!seeConsult && soloAway && rowShows(soloAway, now) && (
+            {!seeConsult && soloAway && rowShows(soloAway) && (
               <>
                 <span className="ac-typing__sep" aria-hidden="true" />
                 <button type="button" className="ac-typing__see" onClick={() => onSee(soloAway.runId)}>
@@ -4677,6 +4609,7 @@ export const TimelineMessage = memo(function TimelineMessage({
   };
   const meta = m.meta ?? {};
   const standIn = modelStandInText(t, meta);
+  const spilled = m.author.type === "agent" ? spilledText(t, meta, org) : null;
   const approvalId = typeof meta.approvalId === "string" ? meta.approvalId : null;
   const proposalId = typeof meta.proposalId === "string" ? meta.proposalId : null;
   const memoryUpdates = Array.isArray(meta.memoryUpdates)
@@ -4992,7 +4925,6 @@ export const TimelineMessage = memo(function TimelineMessage({
       >
         {live && waiting ? (
           <Parts resetKey={m}>
-            <LiveRunStatus run={live} />
             {makingImage(live) && <ImageMaking color={colorOf(agent)} />}
             {/* Its subagents and workflows at work, in a code session (ADR 0215). */}
             <LiveSubagents work={live.work ?? []} agentName={name} color={colorOf(agent)} />
@@ -5066,6 +4998,7 @@ export const TimelineMessage = memo(function TimelineMessage({
             {voice && <ChatVoice message={m} voice={voice} />}
             {m.author.type === "agent" && meta.speedFallback === true && <SpeedFallbackLine agent={agent} />}
             {m.author.type === "agent" && standIn && <ModelStandInLine text={standIn} agent={agent} meta={meta} />}
+            {spilled && <SpilledLine text={spilled} />}
             {(stopped.canceled || atLimit || providerCut) && (
               <StoppedLine
                 runId={m.agentRunId}
@@ -5512,6 +5445,18 @@ function ChannelDetails({
       <span className="member-group__count">{count}</span>
     </p>
   );
+  // How an agent answers my messages; the responsible agent's line says that first, alone when it answers on its own
+  // and something picks for me.
+  const agentLine = (r: (typeof all)[number]) => {
+    const line = !r.autoReply
+      ? t("channelMembers.mentionLine", { handle: r.handle })
+      : !picksForMe(routing)
+        ? t(replyAloneKey(routing), agentGrammar(r.name))
+        : t("channelMembers.aloneLine", agentGrammar(r.name));
+    if (r.id !== channel.leadAgentId) return line;
+    const lead = t("channelMembers.lead");
+    return r.autoReply && picksForMe(routing) ? lead : [lead, line].join(" · ");
+  };
   const membersList = (
     <DialogSearchList
       query={q}
@@ -5533,13 +5478,7 @@ function ChannelDetails({
           </OpensAgent>
           <span className="list-col">
             <span style={{ fontWeight: 600 }}>{r.name}</span>
-            <span className="small muted">
-              {!r.autoReply
-                ? t("channelMembers.mentionLine", { handle: r.handle })
-                : !picksForMe(routing)
-                  ? t(replyAloneKey(routing), agentGrammar(r.name))
-                  : t("channelMembers.aloneLine", agentGrammar(r.name))}
-            </span>
+            <span className="small muted">{agentLine(r)}</span>
           </span>
           {r.setsReply && (
             <Menu
@@ -5585,6 +5524,20 @@ function ChannelDetails({
               />
               {editable && (
                 <>
+                  <MenuSeparator />
+                  <MenuCheckboxItem
+                    checked={r.id === channel.leadAgentId}
+                    disabled={update.isPending}
+                    description={t("channelMembers.leadHelp")}
+                    onCheckedChange={(on) =>
+                      update.mutate(
+                        { leadAgentId: on ? r.id : null },
+                        { onError: (e) => toast.show(errorText(t, e), "error") },
+                      )
+                    }
+                  >
+                    {t("channelMembers.lead")}
+                  </MenuCheckboxItem>
                   <MenuSeparator />
                   <MenuItem icon="close" danger onSelect={() => setRemoving({ kind: "agent", id: r.id, name: r.name })}>
                     {t("channelMembers.remove")}
