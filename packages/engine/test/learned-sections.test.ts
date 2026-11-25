@@ -4,12 +4,16 @@ import { join } from "node:path";
 import { and, eq, migrationsFolder, schema, sql } from "@agenteschat/db";
 import {
   consolidateItem,
+  createAgent,
   decideProposal,
+  editAgent,
   MOVE_LEARNED_JOB,
   moveLearnedSections,
+  NEW_AGENT_DEFAULTS,
   proposeChange,
   proposeFromItem,
   splitLearned,
+  updateAgent,
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
 
@@ -127,6 +131,43 @@ describe("moveLearnedSections", () => {
     expect(await moveLearnedSections(f.db, f.org.id)).toBe(1);
     const [agent] = await f.db.select().from(agents).where(eq(agents.id, f.agent.id));
     expect(agent?.instructions).toBe("Seja breve.\n\n## Learned\n- Usar a chave sk-fake0000000000000000000000.");
+  });
+});
+
+describe("an agent created or saved with a section", () => {
+  const lessonsOf = async (agentId: string) =>
+    f.db
+      .select()
+      .from(contextItems)
+      .where(and(eq(contextItems.agentId, agentId), eq(contextItems.status, "active")));
+
+  test("created (a copy, an import): the section becomes its memory, as the creator's lessons", async () => {
+    f = await setup();
+    const made = await createAgent(
+      f.db,
+      f.owner.id,
+      f.org.id,
+      { name: "Eva", handle: "eva", instructions: "Seja breve.\n\n## Learned\n- Citar a fonte." },
+      NEW_AGENT_DEFAULTS,
+    );
+    expect(made.instructions).toBe("Seja breve.");
+    expect(await lessonsOf(made.id)).toMatchObject([
+      { content: "Citar a fonte.", kind: "lesson", createdByKind: "person", createdById: f.owner.id },
+    ]);
+  });
+
+  test("saved: the section leaves the instructions, a credential stays", async () => {
+    f = await setup();
+    const instructions = "Seja breve.\n\n## Learned\n- Ser cordial.\n- Usar a chave sk-fake0000000000000000000000.";
+    const saved = await updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, { instructions });
+    expect(saved.instructions).toBe("Seja breve.\n\n## Learned\n- Usar a chave sk-fake0000000000000000000000.");
+    expect((await lessonsOf(f.agent.id)).map((i) => i.content)).toEqual(["Ser cordial."]);
+    // The profile's save, one transaction: the same lesson saved again is not a second memory.
+    const edited = await editAgent({ db: f.db }, f.owner.id, f.org.id, f.agent.id, {
+      fields: { instructions: "Seja breve.\n\n## Learned\n- Ser cordial." },
+    });
+    expect(edited.instructions).toBe("Seja breve.");
+    expect((await lessonsOf(f.agent.id)).map((i) => i.content)).toEqual(["Ser cordial."]);
   });
 });
 
