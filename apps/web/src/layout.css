@@ -756,11 +756,6 @@ html:not([data-pointer]) .consult-pair__row:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* A personal workspace's top row is you: your name wraps whole there, as at a team's foot. */
-.sidebar__org-button--me .sidebar__org-name {
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
 .sidebar__org-meta {
   font-size: 12px;
   line-height: 16px;
@@ -914,13 +909,16 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
   display: flex;
   flex-direction: column;
 }
-/* A long name wraps whole: never cut to an ellipsis. */
+/* One line, cut to an ellipsis, as your line under it and a personal workspace's top row are: the face never stands
+   beside more than the name and your line. The button says the whole name (its label and title). */
 .sidebar__user-name {
   font-size: 14px;
   font-weight: 600;
   line-height: 22px;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Page container */
