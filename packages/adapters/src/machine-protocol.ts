@@ -2223,6 +2223,8 @@ export const BRAIN_TURN_MEASURES = [
  */
 export type WireBrainEvent =
   | { type: "text_delta"; text: string }
+  /** A note the model wrote between its calls, apart from its text (Codex's reasoning summary). An older server drops it. */
+  | { type: "note"; text: string }
   | {
       type: "tool_call";
       id: string;
@@ -3927,6 +3929,10 @@ export function parseBrainEvent(v: unknown): WireBrainEvent | null {
   switch (v.type) {
     case "text_delta":
       return isString(v.text) ? { type: "text_delta", text: v.text.slice(0, BRAIN_LIMITS.delta) } : null;
+    case "note":
+      return isString(v.text) && v.text.trim()
+        ? { type: "note", text: v.text.trim().slice(0, BRAIN_LIMITS.delta) }
+        : null;
     case "tool_call": {
       if (!isString(v.id) || !isString(v.name)) return null;
       const ex = isObject(v.executed) && isString(v.executed.content) ? v.executed : null;
