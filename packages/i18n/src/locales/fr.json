@@ -13110,6 +13110,7 @@
       "private": "une conversation privée"
     },
     "waiting": "Dans la file · démarre bientôt",
+    "waitingAfter": "Dans la file, après {{name}}",
     "nth": {
       "one": "{{n}}er",
       "two": "{{n}}e",

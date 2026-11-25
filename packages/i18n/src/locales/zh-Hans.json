@@ -12205,6 +12205,7 @@
       "private": "私密对话"
     },
     "waiting": "排队中 · 即将开始",
+    "waitingAfter": "排队中 · 在 {{name}} 之后",
     "nth": {
       "one": "{{n}}",
       "two": "{{n}}",

@@ -12574,6 +12574,7 @@
       "private": "özel bir konuşma"
     },
     "waiting": "Sırada · birazdan başlar",
+    "waitingAfter": "Sırada · önünde {{name}} var",
     "nth": {
       "one": "{{n}}.",
       "two": "{{n}}.",

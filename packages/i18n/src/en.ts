@@ -13177,6 +13177,8 @@ export const en = {
     },
     /** A turn waiting its turn, one line whatever holds it (its computer or its AI sign-in): the agent's row where "thinking" shows otherwise, and the task manager. */
     waiting: "In line · starts soon",
+    /** The same line while it waits behind another agent's turn on that computer: {{name}} is that agent; `_female` where your language says it differently for a feminine name. */
+    waitingAfter: "In line, after {{name}}",
     /** Places in line by the language's ordinal rule (one: 1st, 21st; two: 2nd; few: 3rd; other: 4th). Same text in each when your language has one form. */
     nth: {
       one: "{{n}}st",

@@ -13585,6 +13585,7 @@
       "private": "prywatna rozmowa"
     },
     "waiting": "W kolejce · zaraz zacznie",
+    "waitingAfter": "W kolejce · wcześniej: {{name}}",
     "nth": {
       "one": "{{n}}.",
       "two": "{{n}}.",

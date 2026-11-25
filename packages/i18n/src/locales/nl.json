@@ -12712,6 +12712,7 @@
       "private": "een privégesprek"
     },
     "waiting": "In de wachtrij · begint zo",
+    "waitingAfter": "In de wachtrij, na {{name}}",
     "nth": {
       "one": "{{n}}e",
       "two": "{{n}}e",

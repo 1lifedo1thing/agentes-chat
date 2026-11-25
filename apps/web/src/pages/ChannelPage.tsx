@@ -3951,9 +3951,8 @@ function RowsProvider({
 }
 
 /**
- * The end of an agent's live row: "· 12 s" (the bar's clock) and its stop. The bar says neither while the row is on
- * screen, so they sit where the eye already is. The clock keeps its room from the start, so the stop never shifts
- * when the seconds appear.
+ * The end of an agent's live row: "· 2 min" (the bar's clock, from a minute on) and its stop. The bar says neither
+ * while the row is on screen, so they sit where the eye already is.
  */
 function RunTail({ run }: { run: LiveRun }) {
   const { t } = useTranslation();

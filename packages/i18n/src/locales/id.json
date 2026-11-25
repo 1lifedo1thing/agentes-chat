@@ -12191,6 +12191,7 @@
       "private": "percakapan pribadi"
     },
     "waiting": "Dalam antrean · segera dimulai",
+    "waitingAfter": "Dalam antrean, setelah {{name}}",
     "nth": {
       "one": "{{n}}",
       "two": "{{n}}",
