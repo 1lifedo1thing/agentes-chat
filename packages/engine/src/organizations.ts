@@ -24,7 +24,7 @@ import { type AgentStyle, isAgentStyle, saveAgentStyle } from "./agent-style";
 import { dropAgentRules } from "./approval-rules";
 import { revokeMemberApps } from "./apps/revoke";
 import { recordAudit } from "./audit";
-import { caches } from "./cache";
+import { caches, cachesEnabled } from "./cache";
 import { memberCardVia } from "./card-via";
 import {
   assertOwnWallpaper,
@@ -126,6 +126,8 @@ export interface Membership {
   standing?: WorkspaceStanding;
   /** What opens when the app starts here (listMemberships). */
   start?: StartChoice;
+  /** The person pays for the workspace's plan, as the billing service said (listMemberships, ADR 0079). */
+  paysPlan?: boolean;
   /** Whether the person sees what agents did under each reply (listMemberships, `setShowActivity`). */
   showActivity?: boolean;
   /** How agents talk to the person here (listMemberships, `setAgentStyle`); null until they pick (ADR 0147). */
@@ -192,6 +194,7 @@ export async function listMemberships(db: Database, userId: string): Promise<Mem
       agentStyle: organizationMembers.agentStyle,
       chatPrefs: organizationMembers.chatPrefs,
       mode: schema.organizationSettings.mode,
+      payer: organizations.payerUserId,
       ...ROLE_COLUMNS,
     })
     .from(organizationMembers)
@@ -200,8 +203,9 @@ export async function listMemberships(db: Database, userId: string): Promise<Mem
     .leftJoin(schema.organizationSettings, eq(schema.organizationSettings.orgId, organizations.id))
     .where(and(eq(organizationMembers.userId, userId), accountInUse))
     .orderBy(asc(organizations.createdAt));
-  return rows.map(({ startPage, startChannelId, chatPrefs, mode, ...row }) => ({
+  return rows.map(({ startPage, startChannelId, chatPrefs, mode, payer, ...row }) => ({
     ...withPermissions(row),
+    paysPlan: payer === userId,
     chatPrefs: chatPrefsOf(chatPrefs),
     mode: isWorkspaceMode(mode) ? mode : "team",
     start: { page: startPage, channelId: startPage === "channel" ? startChannelId : null },
@@ -218,25 +222,30 @@ export async function getMembership(
   orgId: string,
   options: { includeBlocked?: boolean } = {},
 ): Promise<Membership | null> {
-  const [row] = await db
-    .select({
-      orgId: organizations.id,
-      orgName: organizations.name,
-      role: organizationMembers.role,
-      standing: STANDING_COLUMNS,
-      ...ROLE_COLUMNS,
-    })
-    .from(organizationMembers)
-    .innerJoin(organizations, eq(organizations.id, organizationMembers.orgId))
-    .innerJoin(users, eq(users.id, organizationMembers.userId))
-    .where(
-      and(
-        eq(organizationMembers.userId, userId),
-        eq(organizationMembers.orgId, orgId),
-        options.includeBlocked ? undefined : accountInUse,
-      ),
-    );
-  return row ? withPermissions(row) : null;
+  const load = async () => {
+    const [row] = await db
+      .select({
+        orgId: organizations.id,
+        orgName: organizations.name,
+        role: organizationMembers.role,
+        standing: STANDING_COLUMNS,
+        ...ROLE_COLUMNS,
+      })
+      .from(organizationMembers)
+      .innerJoin(organizations, eq(organizations.id, organizationMembers.orgId))
+      .innerJoin(users, eq(users.id, organizationMembers.userId))
+      .where(
+        and(
+          eq(organizationMembers.userId, userId),
+          eq(organizationMembers.orgId, orgId),
+          options.includeBlocked ? undefined : accountInUse,
+        ),
+      );
+    return row ? withPermissions(row) : null;
+  };
+  // `includeBlocked` reads come before acting on the person, and a transaction's read may never commit: both fresh.
+  if (options.includeBlocked || "rollback" in db) return load();
+  return (await caches.membership.getOrLoad(`${orgId}:${userId}`, load, (m) => m !== null)) as Membership | null;
 }
 
 /**
@@ -455,6 +464,7 @@ export async function updateOrganization(
     });
   }
   caches.orgs.delete(`${orgId}:`);
+  caches.membership.deletePrefix(`${orgId}:`);
   return row;
 }
 
@@ -984,6 +994,16 @@ export async function isEmailVerified(db: Database, userId: string): Promise<boo
   return row ? row.verified === true : null;
 }
 
+/**
+ * What an address never confirmed holds back (ADR 0006, addendum 2026-11-22), on a server that sends email: an account
+ * in no workspace yet makes none until its link is opened (`required`). One already in a workspace keeps working, with
+ * a reminder: some of those pay, and a mistyped address may never get the link. Null when there is nothing to ask.
+ */
+export function emailConfirmation(input: { emailDelivers: boolean; verified: boolean; workspaces: number }) {
+  if (!input.emailDelivers || input.verified) return null;
+  return input.workspaces === 0 ? ("required" as const) : ("reminder" as const);
+}
+
 async function ownerCount(db: Pick<Database, "select">, orgId: string) {
   const [row] = await db
     .select({ n: sql<number>`count(*)::int` })
@@ -1014,12 +1034,15 @@ export const lockWorkspacesOf = (tx: Executor, userId: string) =>
  * and the counts again.
  */
 /** `agents`: the ones whose owner or brain changed with it, which open apps read again. */
-export const announceMembers = (pubsub: PubSub | undefined, orgId: string, agents: string[] = []) =>
-  publishOrgEvent(pubsub, {
+export const announceMembers = (pubsub: PubSub | undefined, orgId: string, agents: string[] = []) => {
+  // Every change to who is in a workspace, or to their roles, announces itself here once it committed.
+  caches.membership.deletePrefix(`${orgId}:`);
+  return publishOrgEvent(pubsub, {
     type: "org.broadcast",
     orgId,
     event: { type: "org.members", ...(agents.length ? { agents } : {}) },
   });
+};
 
 /** A person's name or photo changed (theirs in every workspace): each of their workspaces reads its people again. */
 export async function announceProfile(db: Database, pubsub: PubSub | undefined, userId: string) {
@@ -1454,6 +1477,7 @@ async function takeOut(
     },
   );
   forgetConnectionCaches(orgId);
+  caches.membership.delete(`${orgId}:${targetUserId}`);
   if (tasks.length > 0) {
     const { unassignGone } = await import("./issues");
     await unassignGone({ db, pubsub: options.pubsub }, orgId, { type: "person", id: targetUserId }, tasks).catch(
@@ -1471,7 +1495,12 @@ async function takeOut(
   if (heir && handed.length) {
     const { handOver } = await import("./agents");
     for (const agent of handed) {
-      await handOver({ db, pubsub: options.pubsub }, actorId, { ...agent, ownerUserId: targetUserId }, heir);
+      await handOver(
+        { db, pubsub: options.pubsub },
+        actorId,
+        { ...agent, ownerUserId: targetUserId },
+        { ownerUserId: heir, ownerRoleId: null },
+      );
     }
   }
   await announceReleasedAccounts({ db, pubsub: options.pubsub }, released);
@@ -1494,6 +1523,12 @@ async function takeOut(
   await announceMembers(options.pubsub, orgId, changed);
   const { releaseQuestionsOf } = await import("./questions");
   await releaseQuestionsOf({ db, pubsub: options.pubsub }, orgId, targetUserId);
+  // An agent a role of theirs answers for is asked of who holds it now, or of the admins with nobody left (ADR 0085,
+  // addendum of 2026-11-21): its approvals' inbox follows.
+  if (target.roleIds.length > 0) {
+    const { rerouteRoleApprovals } = await import("./notification-producers");
+    await rerouteRoleApprovals({ db, pubsub: options.pubsub }, orgId, target.roleIds).catch(() => {});
+  }
   // Their routines pause at once and their work stops; the agents' owners hear it (ADR 0053 §6.2).
   // Loaded here: the routine engine builds on this module.
   const { pauseRoutinesOfCreator } = await import("./routine-firing");
@@ -1673,6 +1708,7 @@ export async function deleteAccount(
   }
   // Their open WebSocket connections lose every subscription now.
   for (const org of [...plan.closes, ...plan.leaves]) {
+    caches.membership.delete(`${org.id}:${userId}`);
     await publishOrgEvent(options.pubsub, { type: "membership.revoked", orgId: org.id, userId, quiet: true });
   }
   for (const org of plan.leaves) await publishMachineAgentsChanged(options.pubsub, org.id);
@@ -2530,7 +2566,18 @@ export async function joinOrganization(
 
 /** Marks a person as seen now in an organization (WebSocket connect/disconnect). */
 /** Not while the person is hidden: a "last seen" that keeps moving would give them away. */
+/** A person's "last seen" is written at most this often per workspace and process: every socket opens and closes it. */
+export const LAST_SEEN_EVERY_MS = 5 * 60_000;
+const lastSeenWritten = new Map<string, number>();
+
 export async function touchLastSeen(db: Database, orgId: string, userId: string, at = new Date()) {
+  if (cachesEnabled()) {
+    const key = `${orgId}:${userId}`;
+    if (at.getTime() - (lastSeenWritten.get(key) ?? Number.NEGATIVE_INFINITY) < LAST_SEEN_EVERY_MS) return;
+    // ponytail: forgets everyone at 50,000 people; each is written once more then.
+    if (lastSeenWritten.size >= 50_000) lastSeenWritten.clear();
+    lastSeenWritten.set(key, at.getTime());
+  }
   await db
     .update(organizationMembers)
     .set({ lastSeenAt: at })

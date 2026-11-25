@@ -18,7 +18,7 @@ import {
   useReduceMachineAccess,
 } from "@agenteschat/client";
 import { computerName, setupView } from "@agenteschat/client/lib/computer";
-import { offlineCauseText } from "@agenteschat/client/lib/devices";
+import { mayChangeTasks, offlineCauseText, taskLimitLine } from "@agenteschat/client/lib/devices";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { clockAt, firstName, formatTime, joinNames } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
@@ -26,6 +26,7 @@ import {
   allowedFolders,
   allowsInApp,
   canReduceAccess,
+  codexSandboxNote,
   commandInReason,
   computerKind,
   computerState,
@@ -224,14 +225,16 @@ function MachinePage({ machineId }: { machineId: string }) {
       ? { icon: "pause", label: paused }
       : m.online
         ? { icon: "check", label: t("machines.online") }
-        : { icon: "circle", label: t("machines.offline") };
+        : m.moving
+          ? { icon: "swap", label: t("machines.moving.short") }
+          : { icon: "circle", label: t("machines.offline") };
   // One facts line, and why it's paused while it is.
   const facts = [
     managed
       ? [setup?.specs ? t("computerSetup.specs", setup.specs) : null, m.online ? null : seenText(t, i18n.language, m)]
           .filter(Boolean)
           .join(" · ")
-      : [t(`machines.os.${osOf(m.os)}`), m.arch, seenText(t, i18n.language, m)].filter(Boolean).join(" · "),
+      : [t(`machines.os.${osOf(m.os)}`), seenText(t, i18n.language, m)].filter(Boolean).join(" · "),
     isPaused(m) ? (pausedByText(t, i18n.language, m.paused, meId ?? "") ?? t("machines.pausedHint")) : null,
   ].filter((x): x is string => Boolean(x));
   // What most people never need, behind one "Detalhes" row, as the web's.
@@ -255,7 +258,9 @@ function MachinePage({ machineId }: { machineId: string }) {
   const causeLine =
     s?.kind === "offline" && s.cause && s.lastSeenAt
       ? offlineCauseText(t, s.cause, clockAt(i18n.language, s.lastSeenAt), "line")
-      : null;
+      : device
+        ? taskLimitLine(t, device, mayChangeTasks(device, meId ?? "", can(org, "configure")))
+        : null;
   const egressIp = managed && m.online ? (m.egress?.ip ?? null) : null;
   const flag = egressIp ? countryFlagSvg(m.egress?.country) : null;
 
@@ -584,13 +589,17 @@ function ToolsSection({ machine: m, onReduce }: { machine: Machine; onReduce: (r
           ]
             .filter(Boolean)
             .join(" ");
+          const label = t(`machines.access.tool.${tool}`);
+          // Codex on Windows: what holds its commands there, when that is less than MXC.
+          const note = tool === "codex" ? codexSandboxNote(t, m) : null;
           return (
             <GroupedRow
               key={tool}
               {...(tool === "commands"
                 ? { icon: "code" as const }
                 : { leading: <ProviderLogo id={tool} size="sm" off={!on} /> })}
-              label={t(`machines.access.tool.${tool}`)}
+              label={label}
+              {...(note ? { hint: { name: t("common.about", { label }), text: note } } : {})}
               sub={sub}
               subLines={3}
               media
