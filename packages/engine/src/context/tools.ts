@@ -73,6 +73,7 @@ import {
   personSaid,
   RECHECK_AFTER_DAYS,
   savedReceiptLine,
+  saysSentences,
   saysWords,
   supersede,
   TEAM_KINDS,
@@ -1229,9 +1230,10 @@ const notRequested = {
 
 /**
  * In a run that read outside content, what vouches for the text to keep (ADR 0167): `theirs` when the person's own
- * message says it, `agreed` when the message of this agent's they answered (the one they quoted, else the one right
- * before theirs) proposed it, `message` when their whole message is to be kept as their words instead, and `neither`
- * when that can't be it: a quote reply to this agent, or a message with fewer words than the text (a "yes, keep it").
+ * message says it in whole sentences (`saysSentences`), `agreed` when the message of this agent's they answered (the
+ * one they quoted, else the one right before theirs) proposed it, `message` when their whole message is to be kept as
+ * their words instead, and `neither` when that can't be it: a quote reply to this agent, or a message with fewer
+ * words than the text (a "yes, keep it").
  * Case, accents, punctuation and markdown don't count.
  */
 async function vouchedText(
@@ -1239,7 +1241,7 @@ async function vouchedText(
   words: string,
   text: string,
 ): Promise<"theirs" | "agreed" | "message" | "neither"> {
-  if (saysWords(words, text)) return "theirs";
+  if (saysSentences(words, text)) return "theirs";
   const answered = await answeredProposal(ctx);
   if (saysWords(answered.body, text)) return "agreed";
   // ponytail: word count tells a confirmation from a statement; a model judging the reply would catch more.
@@ -1270,7 +1272,10 @@ async function answeredProposal(ctx: ToolContext): Promise<{ body: string; quote
         quoted
           ? eq(messages.id, quoted)
           : and(
-              m.threadId ? eq(messages.threadId, m.threadId) : isNull(messages.threadId),
+              // In a thread, its root too: a reply under the agent's proposal answers it.
+              m.threadId
+                ? or(eq(messages.threadId, m.threadId), eq(messages.id, m.threadId))
+                : isNull(messages.threadId),
               lt(messages.createdAt, m.createdAt),
             ),
       ),

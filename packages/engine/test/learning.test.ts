@@ -105,10 +105,17 @@ async function setup(options: Parameters<typeof baseSetup>[0] = {}) {
 }
 
 /** A run of the agent in `general`, answering a person's message (a routine's when `background`). */
-async function personRun(body = "@dev do it", background = false, meta?: Record<string, unknown>, userId = f.owner.id) {
+async function personRun(
+  body = "@dev do it",
+  background = false,
+  meta?: Record<string, unknown>,
+  userId = f.owner.id,
+  threadId?: string,
+) {
   const msg = await insertMessage(f.db, {
     orgId: f.org.id,
     channelId: f.general.id,
+    ...(threadId ? { threadId } : {}),
     author: { type: "person", userId },
     body,
     meta,
@@ -567,6 +574,33 @@ describe("agents learn on their own (ADR 0120)", () => {
     const closing = (await items()).find((i) => i.content.includes("fechamento"));
     expect([closing?.content, closing && isQuote(closing)]).toEqual(["O fechamento do mês é no dia 5", true]);
 
+    // A reply in the thread under the proposal answers it too.
+    const inThread = await agentSays("Guardo isto? O comitê se reúne às terças.");
+    const { run: threaded } = await personRun("pode", false, undefined, f.owner.id, inThread.id);
+    await readPage(threaded);
+    expect(
+      (
+        await invoke(threaded, "remember", {
+          kind: "fact",
+          content: "O comitê se reúne às terças.",
+          basis: "person_said",
+        })
+      ).isError,
+    ).toBeUndefined();
+    expect((await items()).find((i) => i.content.includes("comitê"))?.content).toBe("O comitê se reúne às terças.");
+
+    // Part of a sentence of theirs is not what they said: "não" left out, their whole message is kept instead.
+    const { run: part } = await personRun("não mande os relatórios sem me perguntar antes");
+    await readPage(part);
+    await invoke(part, "remember", {
+      kind: "preference",
+      content: "Mande os relatórios sem me perguntar antes",
+      basis: "person_said",
+    });
+    expect((await items()).find((i) => i.content.includes("relatórios sem"))?.content).toBe(
+      "não mande os relatórios sem me perguntar antes",
+    );
+
     // Neither theirs nor proposed: refused with a way out, nothing kept.
     const { run: neither } = await personRun("ok");
     await readPage(neither);
@@ -576,7 +610,7 @@ describe("agents learn on their own (ADR 0120)", () => {
       basis: "person_said",
     });
     expect(refused).toMatchObject({ isError: true, content: expect.stringContaining("show them the exact text") });
-    expect(await active()).toHaveLength(2);
+    expect(await active()).toHaveLength(4);
   });
 
   test("who holds which access becomes a workspace fact every agent reads, from a browser run too, kept current", async () => {

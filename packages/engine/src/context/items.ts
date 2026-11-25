@@ -250,6 +250,27 @@ export function saysWords(within: string, text: string) {
   return words.length > 0 && ` ${wordList(within).join(" ")} `.includes(` ${words} `);
 }
 
+/**
+ * `text` is whole sentences of `within` (`saysWords`, starting and ending where a sentence, a clause after a colon or
+ * a line does): a part of a sentence could leave out the words that change what it says ("não mande …").
+ */
+export function saysSentences(within: string, text: string) {
+  const words = wordList(text).join(" ");
+  if (!words) return false;
+  const parts = within
+    .split(/[.!?;:\n。！？；：]+/u)
+    .map((p) => wordList(p).join(" "))
+    .filter(Boolean);
+  return parts.some((_, i) => {
+    let run = "";
+    for (const part of parts.slice(i)) {
+      run = run ? `${run} ${part}` : part;
+      if (run.length >= words.length) return run === words;
+    }
+    return false;
+  });
+}
+
 /** Subject key: its words, once each, sorted. */
 export function normalizeSubject(subject: string) {
   return [...new Set(wordList(subject))].sort().join(" ").slice(0, 200);
