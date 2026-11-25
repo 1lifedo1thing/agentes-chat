@@ -1,6 +1,6 @@
 {
-  "id": "844980af-176f-4dce-baf4-f31ff766976b",
-  "prevId": "9ad644d3-6958-4eb6-9bb7-dca8d9831d0a",
+  "id": "f113e35c-e466-4b9c-9eb9-cd05487be736",
+  "prevId": "f39105ae-f3a0-47b8-ba23-06f80a954660",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -13244,6 +13244,12 @@
         },
         "egress_waiting_at": {
           "name": "egress_waiting_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moving_at": {
+          "name": "moving_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

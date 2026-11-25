@@ -4679,7 +4679,8 @@
   "accountSwitch": {
     "limit": "Ha continuato con l’account <to/> perché l’account <from/> ha raggiunto il limite",
     "line": "Ha continuato con l’account <to/> perché l’account <from/> è vicino al limite",
-    "extra": "Ha continuato con l’account <to/> perché l’account <from/> passerebbe all’uso extra a pagamento"
+    "extra": "Ha continuato con l’account <to/> perché l’account <from/> passerebbe all’uso extra a pagamento",
+    "busy": "Ha continuato con l'account <to/> perché l'account <from/> stava già rispondendo a tutte le conversazioni che può gestire insieme"
   },
   "channelRefs": {
     "list": "Canali",
@@ -6758,7 +6759,7 @@
         "cli_sandbox": "Il programma {{brain}} non riesce ad avviare la sua sandbox su questo computer. Scegli un'altra IA nelle impostazioni dell'agente.",
         "cli_system": "Il programma {{brain}} non funziona ancora sul sistema di questo computer. Scegli un'altra IA nelle impostazioni dell'agente.",
         "account_missing": "L'account scelto per questo agente non è più sul suo computer. Scegline un altro nelle impostazioni dell'agente o aggiungilo di nuovo.",
-        "windows_sandbox": "Questo computer Windows non riesce a isolare i comandi di Codex: serve Windows 11 24H2 o più recente. Aggiorna Windows, scegli Claude o una chiave API per questo agente, oppure spostalo su un computer Linux.",
+        "windows_sandbox": "Codex non è riuscito ad avviare alcun isolamento per i suoi comandi su questo computer Windows. Scegli Claude o una chiave API per questo agente, oppure aggiorna il computer a Windows 11 24H2 o successivo, con gli ultimi aggiornamenti.",
         "our_error": "Qualcosa è andato storto da parte nostra e l'attività si è fermata. Richiedilo tra poco.",
         "unknown": "Non riuscita."
       }
@@ -12988,8 +12989,10 @@
       "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano.",
       "not_reported": "{{computer}} sta ancora controllando quali programmi ha. Questo cambia da solo quando ha finito.",
       "system": "{{program}} non funziona ancora sul sistema di {{computer}}.",
+      "windows_sandbox": "Il Windows di {{computer}} non riesce a isolare i comandi di {{program}}. Scegli invece Claude o una chiave API, oppure aggiorna quel computer a Windows 11 24H2 o successivo, con gli ultimi aggiornamenti.",
       "no_computerCloud": "Pronto appena lo è {{computer}}."
     },
+    "sandboxPartial": "Su questo Windows i comandi di Codex scrivono solo nelle cartelle degli agenti, ma internet è bloccato solo in parte per loro. Windows 11 24H2 o successivo, con gli ultimi aggiornamenti, lo blocca del tutto.",
     "notAvailableNow": "Scelto, ma non disponibile in questo momento.",
     "offline": "{{computer}} è offline in questo momento.",
     "modelLabel": "Modello",
@@ -16849,6 +16852,11 @@
       "line": "IP di uscita {{ip}}",
       "hint": "L’indirizzo che i siti vedono quando gli agenti navigano. Si aggiorna quando cambia la rete del computer.",
       "waiting": "Gli agenti si stanno ricollegando a internet. Le loro connessioni aspettano che torni."
+    },
+    "moving": {
+      "short": "Cambio server",
+      "line": "Si sta spostando su un nuovo server… torna tra pochi minuti",
+      "named": "{{computer}} si sta spostando su un nuovo server… torna tra pochi minuti"
     },
     "online": "Online",
     "offline": "Offline",

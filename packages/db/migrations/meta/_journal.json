@@ -2385,15 +2385,22 @@
     {
       "idx": 342,
       "version": "7",
-      "when": 1795579861058,
-      "tag": "0352_devices_help",
+      "when": 1795580284460,
+      "tag": "0345_machine_moving",
       "breakpoints": true
     },
     {
       "idx": 343,
       "version": "7",
-      "when": 1795580177936,
-      "tag": "0353_devices_first",
+      "when": 1795583938565,
+      "tag": "0346_devices_help",
+      "breakpoints": true
+    },
+    {
+      "idx": 344,
+      "version": "7",
+      "when": 1795584849456,
+      "tag": "0347_devices_first",
       "breakpoints": true
     }
   ]

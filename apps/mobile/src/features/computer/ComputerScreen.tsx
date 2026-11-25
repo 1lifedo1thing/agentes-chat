@@ -247,7 +247,15 @@ function ComputerView({ agentId, onLeave }: { agentId: string; onLeave: (held: B
   } else if (stage === "offline" && machine) {
     const since = machine.lastSeenAt ? clockAt(i18n.language, machine.lastSeenAt) : null;
     const outage = outages.outages.find((o) => o.machineId === machine.id);
-    if (f.edition === "cloud") {
+    if (machine.moving) {
+      sub = t("machines.moving.short");
+      body = (
+        <Cover
+          art={<ComputerPortrait kind={WORKSPACE_COMPUTER_KIND} state="paused" size={96} />}
+          text={t("machines.moving.line")}
+        />
+      );
+    } else if (f.edition === "cloud") {
       sub = t("agentComputer.sub.notAnswering");
       body = (
         <Cover

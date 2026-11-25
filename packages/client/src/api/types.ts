@@ -3229,8 +3229,8 @@ export interface RunAccountSwitch {
   from: RunAccount;
   /** The last one it moved to. */
   to: RunAccount;
-  /** Its plan's limit, the pause line (99%) of long work, or the paid extra usage `from` would go into. */
-  cause: "limit" | "line" | "extra";
+  /** Its plan's limit, the pause line (99%) of long work, the paid extra usage `from` would go into, or `from` busy with all the runs it takes at once. */
+  cause: "limit" | "line" | "extra" | "busy";
 }
 
 export interface RunStep {
@@ -5302,6 +5302,8 @@ export interface Machine {
    * from an older server: not in standby.
    */
   standby?: boolean;
+  /** The workspace's own computer is away moving to another server: back in a few minutes. Absent: not moving. */
+  moving?: boolean;
   /**
    * Why it is offline, from its runner's last close: `unresponsive` (no network, or too busy to answer), `stopped`
    * (its runner stopped), `dropped` (the link dropped). Null or absent: online, the workspace's own, or unknown.
@@ -5347,6 +5349,12 @@ export interface Machine {
    * `CLI_GIT_MISSING`; null or absent for people who don't manage it.
    */
   cliErrors?: Partial<Record<string, string>> | null;
+  /**
+   * Windows: what holds Codex's commands there: `mxc`, `unelevated` (Codex's own sandbox where MXC is missing: writes
+   * held to the agent's folders, the internet only partly blocked) or `none` (nothing could). Null or absent elsewhere,
+   * until its runner knows, or from an older server.
+   */
+  codexSandbox?: "mxc" | "unelevated" | "none" | null;
   /** ADR 0036 §8 (protocol 10): what the machine allows, as last reported. Absent until the machine reports it. */
   access?: MachineAccess | null;
   /** ADR 0040 (protocol 12): whether the agent browser can run there; null or absent when its runner doesn't say. */
@@ -5528,6 +5536,8 @@ export interface MachineOutage {
   /** The workspace's own computer (ADR 0056 §10). */
   managed?: boolean;
   offlineSince: string;
+  /** The workspace's own computer is away moving to another server: it comes back by itself. Absent: not moving. */
+  moving?: boolean;
   agents: OutageAgent[];
   /** Runs parked until the computer (or another one) can take them. */
   waitingRuns: number;
@@ -5672,6 +5682,8 @@ export interface UsageQueueClosedRow {
 export interface ComputerQueue {
   machineId: string;
   name: string;
+  /** It is away moving to another server: the line waits for it. Absent: not moving. */
+  moving?: boolean;
   working: QueueWorking[];
   waiting: QueueWaiting[];
 }
@@ -6481,7 +6493,9 @@ export type BrainUnavailable =
   /** Its runner doesn't run this CLI on the computer's system (Cursor on Windows, for one). */
   | "system"
   /** It is there and can't start: the computer's row has its error (`Machine.cliErrors`). */
-  | "cant_start";
+  | "cant_start"
+  /** Codex on a Windows computer where no sandbox could hold its commands. */
+  | "windows_sandbox";
 
 export interface BrainModelOption {
   /** What is stored (`fable`, `opus`, `sonnet`, `haiku`, a Codex model). */
@@ -6503,6 +6517,11 @@ export interface BrainOption {
   reason?: BrainUnavailable;
   models: BrainModelOption[];
   defaultModel: string | null;
+  /**
+   * `partial`: Codex on a Windows computer without MXC, in Codex's own sandbox: its commands write only in the agent's
+   * folders, but the internet is kept from them only in part. Absent from an older server.
+   */
+  sandbox?: "partial";
   /**
    * Antigravity: the newest Gemini isn't among its models, and why: the computer's agentes.chat is too old to bring a
    * CLI that runs it (`app_old`), its CLI predates it where the computer's setup installs it (`cli_old`), or no
@@ -8057,6 +8076,8 @@ export interface TaskWait {
   since?: string | null;
   /** You may press Continuar agora. */
   canContinue: boolean;
+  /** Its computer is away moving to another server: it comes back by itself. */
+  moving?: boolean;
 }
 
 /** A computer with turns running or waiting for room (counts only). */
@@ -8866,6 +8887,8 @@ export type DeviceStatus =
   | { kind: "needs_you"; reason: string }
   | { kind: "preparing"; reason: string }
   | { kind: "paused"; until: string | null }
+  /** The workspace's own computer, away while it moves to another server, since `since`. */
+  | { kind: "moving"; since: string }
   /** `cause`: a computer's, as `Machine.offlineCause`; absent: unknown. */
   | { kind: "offline"; lastSeenAt: string | null; withHost?: boolean; cause?: MachineOfflineCause }
   | { kind: "unsupported"; reason: string };

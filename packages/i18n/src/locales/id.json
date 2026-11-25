@@ -4369,7 +4369,8 @@
   "accountSwitch": {
     "limit": "Lanjut dengan akun <to/> karena akun <from/> mencapai batasnya",
     "line": "Lanjut dengan akun <to/> karena akun <from/> hampir mencapai batasnya",
-    "extra": "Lanjut dengan akun <to/> karena akun <from/> akan masuk ke penggunaan tambahan berbayar"
+    "extra": "Lanjut dengan akun <to/> karena akun <from/> akan masuk ke penggunaan tambahan berbayar",
+    "busy": "Lanjut dengan akun <to/> karena akun <from/> sudah menjawab percakapan sebanyak yang bisa ditanganinya sekaligus"
   },
   "channelRefs": {
     "list": "Kanal",
@@ -6270,7 +6271,7 @@
         "cli_sandbox": "Program {{brain}} tidak bisa menjalankan sandbox-nya di komputer ini. Pilih AI lain di pengaturan agen.",
         "cli_system": "Program {{brain}} belum berjalan di sistem komputer ini. Pilih AI lain di pengaturan agen.",
         "account_missing": "Akun yang dipilih untuk agen ini sudah tidak ada di komputernya. Pilih akun lain di pengaturan agen, atau tambahkan lagi.",
-        "windows_sandbox": "Komputer Windows ini tidak dapat mengisolasi perintah Codex: perlu Windows 11 24H2 atau yang lebih baru. Perbarui Windows, pilih Claude atau kunci API untuk agen ini, atau pindahkan ke komputer Linux.",
+        "windows_sandbox": "Codex tidak dapat memulai isolasi apa pun untuk perintahnya di komputer Windows ini. Pilih Claude atau kunci API untuk agen ini, atau perbarui komputer ke Windows 11 24H2 atau yang lebih baru, dengan pembaruan terbarunya.",
         "our_error": "Ada yang salah di pihak kami dan tugasnya berhenti. Minta lagi sebentar lagi.",
         "unknown": "Gagal."
       }
@@ -12055,8 +12056,10 @@
       "home_only": "{{program}} hanya terpasang untuk root di {{computer}}, yang tidak bisa dijangkau para agen.",
       "not_reported": "{{computer}} masih memeriksa program apa saja yang dimilikinya. Ini berubah sendiri setelah selesai.",
       "system": "{{program}} belum berjalan di sistem {{computer}}.",
+      "windows_sandbox": "Windows di {{computer}} tidak dapat mengisolasi perintah {{program}}. Pilih Claude atau kunci API sebagai gantinya, atau perbarui komputer itu ke Windows 11 24H2 atau yang lebih baru, dengan pembaruan terbarunya.",
       "no_computerCloud": "Siap begitu {{computer}} siap."
     },
+    "sandboxPartial": "Di Windows ini, perintah Codex hanya bisa menulis di folder para agen, tetapi internet hanya diblokir sebagian untuknya. Windows 11 24H2 atau yang lebih baru, dengan pembaruan terbarunya, memblokirnya sepenuhnya.",
     "notAvailableNow": "Dipilih, tapi sedang tidak tersedia.",
     "offline": "{{computer}} sedang offline.",
     "modelLabel": "Model",
@@ -15758,6 +15761,11 @@
       "line": "IP keluar {{ip}}",
       "hint": "Alamat yang dilihat situs saat agen menjelajah. Alamat ini ikut berubah saat jaringan komputer berubah.",
       "waiting": "Menyambungkan ulang internet agen. Koneksi mereka menunggu sampai kembali."
+    },
+    "moving": {
+      "short": "Pindah server",
+      "line": "Pindah ke server baru… kembali dalam beberapa menit",
+      "named": "{{computer}} sedang pindah ke server baru… kembali dalam beberapa menit"
     },
     "online": "Online",
     "offline": "Offline",
