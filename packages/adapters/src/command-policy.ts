@@ -2425,6 +2425,25 @@ const readerOfText = (text: string) => {
 };
 
 /**
+ * The command line a scheduled task will run, as it is given (schtasks's `/tr`, `New-ScheduledTaskAction`'s
+ * `-Execute` and `-Argument`), or null: judged now, as cron's lines piped to crontab are.
+ */
+function taskAction(argv: readonly string[]): string | null {
+  const at = argv.findIndex((a) => /^(schtasks|new-scheduledtaskaction)$/.test(baseName(a)));
+  if (at < 0) return null;
+  const words = argv.slice(at + 1);
+  const after = (name: RegExp) => {
+    const i = words.findIndex((w) => name.test(w));
+    return i < 0 ? "" : (words[i + 1] ?? "");
+  };
+  const line =
+    baseName(argv[at] as string) === "schtasks"
+      ? after(/^(\/\/?|-)tr$/i)
+      : `${after(/^-ex\w*$/i)} ${after(/^-ar\w*$/i)}`;
+  return line.trim() || null;
+}
+
+/**
  * A shell text's lines with each heredoc's body taken out, and those bodies with the program that runs them (the
  * one it feeds, or the one that is piped on): a body fed to `cat` or `tee` is a file's text, not commands.
  */
@@ -2510,6 +2529,9 @@ function looseScan(text: string, code: boolean, depth: number, out: Loose[]): vo
     const runs = launched(words, argv);
     out.push(...runs);
     for (const a of [argv, ...runs.map((r) => r.argv)]) windowsRun(a);
+    // As the Task Scheduler starts it: `"` quotes, `'` is a plain character, as in cmd's text.
+    const action = taskAction(argv);
+    if (action !== null) windows("cmd", action);
     const reader = readerOf(argv, runs);
     // Text piped from `echo` or `printf` into a shell, a code runner or cron: commands too. Only cron's lines open
     // with a schedule (`@reboot`, or five fields) to leave out.
@@ -2828,7 +2850,6 @@ const POWERSHELL_CHANGES: ReadonlyArray<readonly [string, ...RegExp[]]> = [
   // Without a scope it sets the machine's policy; `CurrentUser` and `Process` are the agent's own.
   [SYSTEM_REASON, cmdlet("set-executionpolicy"), /^(?!.*\b(currentuser|process)\b)/],
   [SYSTEM_REASON, ITEM_CHANGE, HIVE],
-  [SYSTEM_REASON, cmdlet("(register|set|unregister|enable|disable)-scheduledtask")],
   [SYSTEM_REASON, cmdlet("(new|set|remove|stop|suspend|restart)-service|spsv")],
   [SYSTEM_REASON, cmdlet("(new|set|remove|enable|disable|rename|add)-local(user|group|groupmember)")],
   [SYSTEM_REASON, cmdlet("(clear|remove)-eventlog")],
@@ -2842,11 +2863,46 @@ const POWERSHELL_CHANGES: ReadonlyArray<readonly [string, ...RegExp[]]> = [
 ];
 
 /**
- * Why a PowerShell text is refused: its first statement with a change to the system (`POWERSHELL_CHANGES`), or one
- * carried across statements: shadow copies deleted in a script block (`gwmi win32_shadowcopy | % { $_.Delete() }`),
- * the registry changed by the location or a variable (`cd HKCU:\…; ni .`, `$k = "HKCU:\…"; sp $k …`).
+ * Whether the account a scheduled task runs as is the person's own: their name by its variable (`%USERNAME%`,
+ * `$env:USERNAME`) or their home folder's, with or without a domain (`.\ada`, `HOST\ada`).
  */
-function powershellProblem(text: string): string | null {
+function ownAccount(account: string, scope: CommandScope) {
+  const name = account.toLowerCase().split(/[\\/]/).pop() ?? "";
+  const home = (scope.home ?? "").toLowerCase().split(/[\\/]/).filter(Boolean).pop();
+  return (
+    /^(%username%|\$env:username|\$\{?username\}?|\[environment\]::username)$/.test(name) || (!!name && name === home)
+  );
+}
+
+/** PowerShell's cmdlets that change a scheduled task, or make the account one runs as. */
+const TASK_CHANGE = cmdlet("(register|set|unregister|enable|disable)-scheduledtask|new-scheduledtaskprincipal");
+
+/**
+ * Why a PowerShell statement that changes a scheduled task is refused: a task the person's own user doesn't run
+ * (`-User` or `-UserId` another account or `SYSTEM`, `-GroupId`), with the highest rights, on another computer
+ * (`-CimSession`), from XML that can't be read here, or Windows' own (a `-TaskPath` or `-TaskName` under
+ * `\Microsoft\`, or every task `Get-ScheduledTask` lists piped in). The person's own tasks run, as crontab does.
+ */
+function taskProblem(statement: string, scope: CommandScope): string | null {
+  if (!TASK_CHANGE.test(statement)) return null;
+  // Parameters by their names, not their shortest prefixes: an action's own arguments share the statement
+  // (`-Argument 'install -U x'`).
+  const user = /\s-user\w*[\s:]+['"]?([^'"\s;|)]+)/.exec(statement)?.[1];
+  return /\bhighest\b|\s-(cim|xml|group)\w*/.test(statement) ||
+    (user !== undefined && !ownAccount(user, scope)) ||
+    /-task(p|n)\w*[\s:]+['"]?\/?microsoft\//.test(statement) ||
+    /\bget-scheduledtask\s*(\*\s*)?\|/.test(statement)
+    ? SYSTEM_REASON
+    : null;
+}
+
+/**
+ * Why a PowerShell text is refused: its first statement with a change to the system (`POWERSHELL_CHANGES`,
+ * `taskProblem`), or one carried across statements: shadow copies deleted in a script block
+ * (`gwmi win32_shadowcopy | % { $_.Delete() }`), the registry changed by the location or a variable
+ * (`cd HKCU:\…; ni .`, `$k = "HKCU:\…"; sp $k …`).
+ */
+function powershellProblem(text: string, scope: CommandScope): string | null {
   const flat = text.toLowerCase();
   if (/\bwin32_shadowcopy\b/.test(flat) && /\.delete\(|\bremove-(ciminstance|wmiobject)\b/.test(flat))
     return SYSTEM_REASON;
@@ -2857,6 +2913,8 @@ function powershellProblem(text: string): string | null {
       return SYSTEM_REASON;
     const hit = POWERSHELL_CHANGES.find(([, ...all]) => all.every((r) => r.test(statement)));
     if (hit) return hit[0];
+    const task = taskProblem(statement, scope);
+    if (task) return task;
   }
   return null;
 }
@@ -2914,10 +2972,11 @@ const ACL_CHANGES =
   /^(\/\/?|-)((grant|deny|remove|setowner|setintegritylevel|reset|inheritance|restore|substitute)(:\w+)?|[gpdr]|s:\S+)$/i;
 
 /**
- * Why a Windows command is refused: more rights (`runas`), the system changed (the registry, scheduled tasks,
- * services, boot, backups, event logs, accounts, who may use a file outside the agent's folders), a disk wiped, the
- * firewall, proxy or routes changed, the system's secrets read. PowerShell's cmdlets are `powershellProblem`'s.
- * Reads run: `reg query`, `schtasks /query`, `sc query`, `netsh … show`, `icacls` without a change.
+ * Why a Windows command is refused: more rights (`runas`), the system changed (the registry, a scheduled task that
+ * isn't the person's own, services, boot, backups, event logs, accounts, who may use a file outside the agent's
+ * folders), a disk wiped, the firewall, proxy or routes changed, the system's secrets read. PowerShell's cmdlets are
+ * `powershellProblem`'s. Reads run: `reg query`, `schtasks /query`, `sc query`, `netsh … show`, `icacls` without a
+ * change, and so do the person's own scheduled tasks, as crontab does.
  */
 function windowsProblem(cmd: string, args: readonly string[], scope: CommandScope): string | null {
   const sub = (args[0] ?? "").toLowerCase();
@@ -2934,7 +2993,25 @@ function windowsProblem(cmd: string, args: readonly string[], scope: CommandScop
     )
       return SECRETS;
   }
-  if (cmd === "schtasks" && has(/^(\/\/?|-)(create|change|delete)$/i)) return SYSTEM_REASON;
+  // A task the person's own user doesn't run (`/ru` another account or `SYSTEM`, which an empty one is too), with the
+  // highest rights, on another computer (`/s`, `/u`), from XML that can't be read here, or Windows' own
+  // (`\Microsoft\…`, every task by `*`).
+  if (cmd === "schtasks" && has(/^(\/\/?|-)(create|change|delete)$/i)) {
+    const value = (name: string) => {
+      const at = args.findIndex((a) => new RegExp(String.raw`^(\/\/?|-)${name}$`, "i").test(a));
+      return at < 0 ? undefined : (args[at + 1] ?? "");
+    };
+    const user = value("ru");
+    const task = value("tn") ?? "";
+    if (
+      (user !== undefined && !ownAccount(user, scope)) ||
+      /^highest$/i.test(value("rl") ?? "") ||
+      [value("s"), value("u"), value("xml")].some((v) => v !== undefined) ||
+      task === "*" ||
+      /^[\\/]?microsoft([\\/]|$)/i.test(task)
+    )
+      return SYSTEM_REASON;
+  }
   // `sc \\host create …` names another computer first.
   if (cmd === "sc" && args.slice(0, 2).some((a) => SC_CHANGES.test(a))) return SYSTEM_REASON;
   if (
@@ -2969,7 +3046,7 @@ function windowsProblem(cmd: string, args: readonly string[], scope: CommandScop
 }
 
 function commandProblem(s: Loose, scope: CommandScope): string | null {
-  if (s.powershell !== undefined) return textProblem(s.powershell) ?? powershellProblem(s.powershell);
+  if (s.powershell !== undefined) return textProblem(s.powershell) ?? powershellProblem(s.powershell, scope);
   const [first = "", ...args] = s.argv;
   const cmd = baseName(first);
   if (PRIVILEGE.test(cmd)) return PRIVILEGE_REASON;
