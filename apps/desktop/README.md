@@ -69,6 +69,6 @@ there (`src-tauri/src/bench.rs`, only with `AGENTES_BENCH_OUT` set, never a sett
 - **Floor**, beside each: what the site adds is the difference.
 
 Shared runners vary from run to run, so nothing fails on a number: compare with the week's own run, or measure the same
-builds again with `builds` (an earlier run's id). On a computer of your own, `bun apps/desktop/scripts/bench.ts` (its
+builds again with `builds` (an earlier run's id, started from the same commit). On a computer of your own, `bun apps/desktop/scripts/bench.ts` (its
 header says what it takes) runs only where the app never opened, as another user for instance: its first opening needs
 a new profile, and it replaces the app's list of servers.

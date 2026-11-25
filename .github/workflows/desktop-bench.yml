@@ -15,7 +15,7 @@ on:
         type: number
         default: 5
       builds:
-        description: "Measure the builds of an earlier run of this workflow (its run id) instead of building again"
+        description: "Measure the builds of an earlier run of this workflow (its run id), made from this same commit, instead of building again"
         type: string
         required: false
   schedule:
@@ -43,21 +43,22 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      # The builds of an earlier run carry that run's server, which refuses a database migrated past it: the workspace
-      # is seeded by the same commit.
-      - name: The commit of the builds
-        id: builds
+      # The builds of an earlier run carry that run's server, which refuses a database migrated past it, so they are
+      # measured only from the commit they were made from: the workspace is seeded by this checkout, never another
+      # commit's code (that would run another ref's code where this run's caches are written).
+      - name: The builds are this commit's
         if: ${{ inputs.builds }}
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ inputs.builds }}
         run: |
           sha=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" --jq .head_sha)
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          if [ "$sha" != "$GITHUB_SHA" ]; then
+            echo "::error::Run $RUN_ID built $sha; run the bench from that commit to measure its builds."
+            exit 1
+          fi
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          ref: ${{ steps.builds.outputs.sha }}
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
