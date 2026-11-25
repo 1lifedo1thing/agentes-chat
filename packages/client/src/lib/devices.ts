@@ -36,11 +36,13 @@ export const statusLook = (s: DeviceStatus): StatusLook =>
     ? "inuse"
     : s.kind === "needs_you"
       ? "needs"
-      : s.kind === "busy" || s.kind === "preparing" || s.kind === "paused" || s.kind === "offline"
-        ? s.kind
-        : s.kind === "unsupported"
-          ? "unsupported"
-          : "ready";
+      : s.kind === "moving"
+        ? "preparing"
+        : s.kind === "busy" || s.kind === "preparing" || s.kind === "paused" || s.kind === "offline"
+          ? s.kind
+          : s.kind === "unsupported"
+            ? "unsupported"
+            : "ready";
 
 /** The pill's words: the state only ("In use by Lia", "Busy 1/1"); the rest goes beside it (`statusDetail`). */
 export function statusPill(t: TFunction, s: DeviceStatus): string {
@@ -60,6 +62,8 @@ export function statusPill(t: TFunction, s: DeviceStatus): string {
       return t("devices.status.preparing");
     case "paused":
       return t("devices.status.paused");
+    case "moving":
+      return t("machines.moving.short");
     case "offline":
       return t("devices.status.offline");
     case "unsupported":
@@ -181,6 +185,8 @@ export function statusSentence(
   switch (s.kind) {
     case "needs_you":
       return reasonText(t, s.reason, options.hostOs);
+    case "moving":
+      return t("machines.moving.line");
     case "offline":
       if (s.withHost && options.host) return t("devices.line.offlineWithHost", { host: options.host });
       if (s.cause && s.lastSeenAt) return offlineCauseText(t, s.cause, clockAt(locale, s.lastSeenAt, now), "line");

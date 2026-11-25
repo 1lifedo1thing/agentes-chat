@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 79;
+export const MACHINE_PROTOCOL_VERSION = 80;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -643,6 +643,17 @@ export const SHARED_GEMINI_PROTOCOL = 58;
  * A Windows runner before it refuses every Codex turn, so the server reads it as too old for Codex there.
  */
 export const CODEX_WINDOWS_PROTOCOL = 60;
+/**
+ * Codex where Windows has no MXC (ADR 0053's addendum of 2026-11-24): a `plan` or `work` turn runs in Codex's own
+ * `unelevated` sandbox there instead of failing with `windows_sandbox`. `hello.windowsBuild` says a Windows computer's
+ * build, and `executors.codex.sandbox` what holds Codex's commands there once the runner has checked (in the
+ * background, after start). An older runner says neither, and runs Codex on Windows only inside MXC.
+ */
+export const CODEX_UNELEVATED_PROTOCOL = 80;
+/** What holds Codex's commands on a Windows computer (`executors.codex.sandbox`): `none`, nothing it could start. */
+export const CODEX_SANDBOXES = ["mxc", "unelevated", "none"] as const;
+export type CodexSandbox = (typeof CODEX_SANDBOXES)[number];
+export const isCodexSandbox = (v: unknown): v is CodexSandbox => (CODEX_SANDBOXES as readonly unknown[]).includes(v);
 /**
  * `keep_running` (ADR 0176): `keep.start` and `keep.end` take and end an agent's hold, the computer's standard "don't go
  * idle" lock, bound to one of its programs, its browser or a time; `hello.holds` says which live and which ended since,
@@ -2124,6 +2135,8 @@ export interface RunnerExecutorInfo {
   version: string;
   /** `codex` only: the copy the runner starts, the newest of those it found. */
   path?: string;
+  /** `CODEX_UNELEVATED_PROTOCOL`, `codex` on Windows: what holds its commands there; absent until the runner knows. */
+  sandbox?: CodexSandbox;
   /** Protocol 8, `claude` only: `claude auth status` says it is logged in (absent: unknown). */
   loggedIn?: boolean;
   /** Protocol 8, `claude` only: how it is logged in (`claude.ai`, `api_key`…) and the plan (`pro`, `max`, `ultra`…). */
@@ -2756,6 +2769,8 @@ export interface RunnerInfo {
   protocol: number;
   os: MachineOs;
   arch: string;
+  /** `CODEX_UNELEVATED_PROTOCOL`, Windows only: its build (`os.release()`, `10.0.19045`). */
+  windowsBuild?: string;
   hostname: string;
   /** Absolute path of the workspace on the machine (shown to admins only). */
   workspace: string;
@@ -3772,7 +3787,8 @@ export function parseCursorModels(v: unknown): CursorModelInfo[] {
 
 /**
  * `hello.executors`: only `claude`, `codex`, `cursor`, `opencode`, `grok` and `antigravity`, each with a short version
- * line (and Claude Code's login), and `broken`: the error line of each of them that is there and can't start.
+ * line (and Claude Code's login, Codex's sandbox on Windows), and `broken`: the error line of each of them that is there
+ * and can't start.
  */
 export function parseExecutors(v: Record<string, unknown>): NonNullable<RunnerInfo["executors"]> {
   const out: NonNullable<RunnerInfo["executors"]> = {};
@@ -3786,6 +3802,7 @@ export function parseExecutors(v: Record<string, unknown>): NonNullable<RunnerIn
     out[name] = {
       version: e.version.replace(/\s+/g, " ").trim().slice(0, 80),
       ...(path ? { path } : {}),
+      ...(name === "codex" && isCodexSandbox(e.sandbox) ? { sandbox: e.sandbox } : {}),
       ...(typeof e.loggedIn === "boolean" ? { loggedIn: e.loggedIn } : {}),
       ...(authMethod ? { authMethod } : {}),
       ...(plan ? { plan } : {}),
@@ -4100,6 +4117,9 @@ export function parseRunnerFrame(raw: string): RunnerFrame | null {
         protocol: f.protocol,
         os: (["linux", "darwin", "windows"] as const).find((o) => o === f.os) ?? "other",
         arch: isString(f.arch) ? f.arch.slice(0, 40) : "",
+        ...(isString(f.windowsBuild) && /^\d{1,3}\.\d{1,3}\.\d{1,6}$/.test(f.windowsBuild)
+          ? { windowsBuild: f.windowsBuild }
+          : {}),
         hostname: isString(f.hostname) ? f.hostname.slice(0, 200) : "",
         workspace: isString(f.workspace) ? f.workspace.slice(0, 500) : "",
         exec: f.exec !== false,
