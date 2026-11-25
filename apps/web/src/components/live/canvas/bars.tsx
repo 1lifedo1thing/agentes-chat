@@ -13,7 +13,14 @@ import { Button, type ButtonProps, Icon, type IconName, Menu, MenuItem, MenuSepa
 import { type CSSProperties, type KeyboardEvent, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type FontChoices, FontPicker, fontWeights } from "../type/FontPicker";
-import { EffectsMenu, type EffectsPatch, TextStyleMenu, TYPE_WEIGHTS, type TypePatch } from "../type/TypeMenus";
+import {
+  EffectsMenu,
+  type EffectsPatch,
+  TextStyleMenu,
+  TYPE_WEIGHTS,
+  TypeGlyph,
+  type TypePatch,
+} from "../type/TypeMenus";
 import type { Size } from "./camera";
 import { inkSwatch, rovingKeys } from "./chrome";
 import { DARK_INK, isInk, SOFT } from "./palette";
@@ -734,7 +741,7 @@ export function SelectionBar({
               aria-label={t("live.type.text")}
               title={t("live.type.text")}
             >
-              <span className="lf-aa">Aa</span>
+              <TypeGlyph />
               <Icon name="chevronDown" size={16} />
             </Button>
           }

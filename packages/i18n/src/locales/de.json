@@ -21748,6 +21748,7 @@
       "notFont": "Diese Datei ist keine Schriftart. Wähle eine .ttf-, .otf- oder .woff-Datei.",
       "done": "Fertig",
       "text": "Textstil",
+      "glyph": "Aa",
       "weight": "Stärke",
       "weights": {
         "w300": "Leicht",

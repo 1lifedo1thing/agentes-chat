@@ -22493,6 +22493,7 @@
       "notFont": "Ce fichier n'est pas une police. Choisissez un .ttf, .otf ou .woff.",
       "done": "Terminé",
       "text": "Style du texte",
+      "glyph": "Aa",
       "weight": "Graisse",
       "weights": {
         "w300": "Maigre",

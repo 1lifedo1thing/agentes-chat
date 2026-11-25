@@ -22346,6 +22346,7 @@
       "notFont": "Este archivo no es una fuente. Elige un .ttf, .otf o .woff.",
       "done": "Listo",
       "text": "Estilo del texto",
+      "glyph": "Aa",
       "weight": "Grosor",
       "weights": {
         "w300": "Fina",

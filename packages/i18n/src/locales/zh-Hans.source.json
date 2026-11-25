@@ -53026,6 +53026,9 @@
   "live.type.text": {
     "value": "Text style"
   },
+  "live.type.glyph": {
+    "value": "Aa"
+  },
   "live.type.weight": {
     "value": "Weight"
   },

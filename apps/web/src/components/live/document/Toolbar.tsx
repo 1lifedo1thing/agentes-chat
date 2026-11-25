@@ -14,7 +14,7 @@ import { type FormEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRoving } from "../spreadsheet/Toolbar";
 import { type FontChoices, FontPicker } from "../type/FontPicker";
-import { TextStyleMenu, type TypeLook, type TypePatch } from "../type/TypeMenus";
+import { TextStyleMenu, TypeGlyph, type TypeLook, type TypePatch } from "../type/TypeMenus";
 import type { DocFormat, DocStyle } from "./commands";
 import "../slides/slides.css";
 import "../spreadsheet/sheet.css";
@@ -230,7 +230,7 @@ export function DocToolbar(props: DocToolbarProps) {
             disabled={format.style === "code"}
             onMouseDown={keep}
           >
-            <span className="lf-aa">Aa</span>
+            <TypeGlyph />
             <Icon name="chevronDown" size={14} className="sheet-tools__chev" />
           </Button>
         }

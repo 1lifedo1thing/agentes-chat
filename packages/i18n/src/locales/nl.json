@@ -21931,6 +21931,7 @@
       "notFont": "Dit bestand is geen lettertype. Kies een .ttf, .otf of .woff.",
       "done": "Klaar",
       "text": "Tekststijl",
+      "glyph": "Aa",
       "weight": "Dikte",
       "weights": {
         "w300": "Licht",

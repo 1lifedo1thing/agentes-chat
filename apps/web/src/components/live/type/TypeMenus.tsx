@@ -53,6 +53,12 @@ export type TypePatch = Partial<Pick<TypeLook, "weight" | "tracking" | "caps">> 
 
 const NONE = "none";
 
+/** The text style menu's button face: a sample of letters, as the language writes them ("Aa"). */
+export function TypeGlyph() {
+  const { t } = useTranslation();
+  return <span className="lf-aa">{t("live.type.glyph")}</span>;
+}
+
 export function TextStyleMenu({
   look,
   weights,

@@ -344,7 +344,8 @@
       "codeSessions.gitTab.commits",
       "codeTerminal.label",
       "codeSessions.tabs.terminalN",
-      "live.type.trackings.normal"
+      "live.type.trackings.normal",
+      "live.type.glyph"
     ],
     "es": [
       "aiHub.modes.roles",
@@ -637,7 +638,8 @@
       "codeSessions.gitTab.commits",
       "codeTerminal.label",
       "codeSessions.tabs.terminalN",
-      "live.type.trackings.normal"
+      "live.type.trackings.normal",
+      "live.type.glyph"
     ],
     "fr": [
       "agentPage.facts.budget",
@@ -1169,7 +1171,8 @@
       "live.type.trackings.normal",
       "live.type.highlights.orange",
       "live.type.gradients.graphite",
-      "live.type.gradients.violet"
+      "live.type.gradients.violet",
+      "live.type.glyph"
     ],
     "de": [
       "agentPage.facts.budget",
@@ -1674,7 +1677,8 @@
       "codeSessions.tabs.terminalN",
       "live.type.body",
       "live.type.trackings.normal",
-      "live.type.highlights.orange"
+      "live.type.highlights.orange",
+      "live.type.glyph"
     ],
     "it": [
       "agentPage.facts.budget",
@@ -2078,7 +2082,8 @@
       "codeSessions.gitTab.label",
       "codeSessions.files.count",
       "cliTools.files",
-      "connectors.store.account"
+      "connectors.store.account",
+      "live.type.glyph"
     ],
     "nl": [
       "agentPage.facts.budget",
@@ -2764,7 +2769,8 @@
       "connectors.store.agents",
       "connectors.store.account",
       "live.type.weights.w500",
-      "live.type.gradients.violet"
+      "live.type.gradients.violet",
+      "live.type.glyph"
     ],
     "ja": [
       "live.sheet.args.k",
@@ -2946,7 +2952,8 @@
       "codeSessions.home.beta",
       "codeSessions.home.mode",
       "codeSessions.home.was",
-      "codeSessions.gitTab.label"
+      "codeSessions.gitTab.label",
+      "live.type.glyph"
     ],
     "ko": [
       "live.sheet.args.k",
@@ -3286,7 +3293,8 @@
       "codeSessions.home.beta",
       "codeSessions.home.mode",
       "codeSessions.home.was",
-      "codeSessions.gitTab.label"
+      "codeSessions.gitTab.label",
+      "live.type.glyph"
     ],
     "id": [
       "drive.folder",
@@ -3630,7 +3638,8 @@
       "live.type.font",
       "live.type.groups.sans",
       "live.type.groups.serif",
-      "live.type.trackings.normal"
+      "live.type.trackings.normal",
+      "live.type.glyph"
     ],
     "tr": [
       "live.canvas.inspector.model",
@@ -3849,7 +3858,8 @@
       "codeSessions.gitTab.label",
       "codeTerminal.label",
       "codeSessions.tabs.terminalN",
-      "live.type.trackings.normal"
+      "live.type.trackings.normal",
+      "live.type.glyph"
     ],
     "pl": [
       "drive.folder",
@@ -4190,7 +4200,8 @@
       "codeSessions.tabs.terminalN",
       "connectors.store.agents",
       "live.type.gradient",
-      "live.type.gradients.ocean"
+      "live.type.gradients.ocean",
+      "live.type.glyph"
     ],
     "ru": [
       "live.canvas.sizes.short.s",

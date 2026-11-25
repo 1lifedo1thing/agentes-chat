@@ -22510,6 +22510,7 @@
       "notFont": "Questo file non è un carattere. Scegli un .ttf, .otf o .woff.",
       "done": "Fatto",
       "text": "Stile del testo",
+      "glyph": "Aa",
       "weight": "Peso",
       "weights": {
         "w300": "Sottile",

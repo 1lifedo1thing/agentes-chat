@@ -21260,6 +21260,7 @@
       "notFont": "这个文件不是字体。请选择 .ttf、.otf 或 .woff 文件。",
       "done": "完成",
       "text": "文字样式",
+      "glyph": "Aa",
       "weight": "粗细",
       "weights": {
         "w300": "细",

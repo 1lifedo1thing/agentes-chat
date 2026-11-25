@@ -22511,6 +22511,8 @@ export const ptBR = {
       notFont: "Esse arquivo não é uma fonte. Escolha um .ttf, .otf ou .woff.",
       done: "Pronto",
       text: "Estilo do texto",
+      /** The text style menu's button: a sample of letters, as the language writes them. */
+      glyph: "Aa",
       weight: "Peso",
       weights: {
         w300: "Fina",

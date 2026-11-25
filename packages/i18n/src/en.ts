@@ -22657,6 +22657,8 @@ export const en = {
       notFont: "This file isn't a font. Pick a .ttf, .otf or .woff file.",
       done: "Done",
       text: "Text style",
+      /** The text style menu's button: a sample of letters, as the language writes them. */
+      glyph: "Aa",
       weight: "Weight",
       weights: {
         w300: "Light",

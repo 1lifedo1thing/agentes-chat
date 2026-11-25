@@ -23,6 +23,7 @@ import {
   EffectsMenu,
   type EffectsPatch,
   TextStyleMenu,
+  TypeGlyph,
   type TypeLook,
   type TypePatch,
 } from "../type/TypeMenus";
@@ -364,7 +365,7 @@ export function SlideToolbar(props: SlideToolbarProps) {
             weights={text.weights}
             onChange={props.onType}
             onClosed={props.onDone}
-            trigger={opener(t("live.type.text"), <span className="lf-aa">Aa</span>)}
+            trigger={opener(t("live.type.text"), <TypeGlyph />)}
           />
           {tool("alignLeft", t("live.slides.tools.alignLeft"), () => props.onAlign("left"), {
             pressed: (text.format.align ?? "left") === "left",

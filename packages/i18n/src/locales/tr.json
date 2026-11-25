@@ -21672,6 +21672,7 @@
       "notFont": "Bu dosya bir yazı tipi değil. Bir .ttf, .otf veya .woff seçin.",
       "done": "Tamam",
       "text": "Metin stili",
+      "glyph": "Aa",
       "weight": "Kalınlık",
       "weights": {
         "w300": "İnce",

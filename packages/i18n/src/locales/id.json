@@ -21183,6 +21183,7 @@
       "notFont": "File ini bukan font. Pilih file .ttf, .otf, atau .woff.",
       "done": "Selesai",
       "text": "Gaya teks",
+      "glyph": "Aa",
       "weight": "Ketebalan",
       "weights": {
         "w300": "Tipis",
