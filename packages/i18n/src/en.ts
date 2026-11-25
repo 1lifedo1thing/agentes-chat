@@ -15470,6 +15470,8 @@ export const en = {
      */
     ownClient: {
       title: "Use your own OAuth app",
+      /** Opened before the server's address is typed (or while it isn't https): the form reads that address. */
+      addressFirst: "Enter the server's https address first.",
       notApproved:
         "{{name}} only lets in apps it approved, and agentes.chat isn't one yet. You can connect it with your own app there.",
       askAdmin: "An admin can connect it with the workspace's own app.",

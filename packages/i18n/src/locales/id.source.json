@@ -36988,6 +36988,9 @@
   "connectFlow.ownClient.title": {
     "value": "Use your own OAuth app"
   },
+  "connectFlow.ownClient.addressFirst": {
+    "value": "Enter the server's https address first."
+  },
   "connectFlow.ownClient.notApproved": {
     "value": "{{name}} only lets in apps it approved, and agentes.chat isn't one yet. You can connect it with your own app there."
   },

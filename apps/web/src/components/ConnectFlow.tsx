@@ -350,8 +350,10 @@ function ConnectStep({
   const appOffered =
     def?.id === "github" && !viaComposio && !mode && !accountOnly && !personal && githubApp.data?.installable === true;
   const viaApp = appOffered && how === "app";
-  // Read once its form opens: asking takes a request to the server.
-  const own = useOwnOAuthClient(org.id, serverUrl, ownOffered && ownOpen);
+  // Offered before an address is typed, so an admin sees the way exists. Read once its form opens with an https
+  // address: asking takes a request to the server, about that address.
+  const ownReady = !askUrl || isHttpsUrl(url);
+  const own = useOwnOAuthClient(org.id, serverUrl, ownOffered && ownOpen && ownReady);
   // Its form open, the dialog's main button saves the app and goes on to the sign-in.
   const ownForm = ownOffered && ownOpen && own.current.isSuccess;
   const busy = connect.isPending || withKey.isPending || oauth.isPending || installApp.isPending || own.save.isPending;
@@ -642,7 +644,7 @@ function ConnectStep({
               />
             </details>
           )}
-          {!viaApp && ownOffered && serverUrl !== "" && (askUrl ? isHttpsUrl(url) : true) && (
+          {!viaApp && ownOffered && (
             <details
               className="cflow__more"
               open={ownOpen}
@@ -650,10 +652,16 @@ function ConnectStep({
                 const opened = (e.currentTarget as HTMLDetailsElement).open;
                 setOwnOpen(opened);
                 if (opened) setKeyOpen(false);
+                if (opened && !ownReady) document.getElementById("cflow-url")?.focus();
               }}
             >
               <summary>{t("connectFlow.ownClient.title")}</summary>
-              {ownOpen && (
+              {ownOpen && !ownReady && (
+                <div className="cflow__key">
+                  <p className="small muted">{t("connectFlow.ownClient.addressFirst")}</p>
+                </div>
+              )}
+              {ownOpen && ownReady && (
                 <OwnClient
                   own={own}
                   guide={guide}

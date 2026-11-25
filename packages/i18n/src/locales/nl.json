@@ -15121,6 +15121,7 @@
     "serverSaid": "De server antwoordde: {{detail}}",
     "ownClient": {
       "title": "Je eigen OAuth-app gebruiken",
+      "addressFirst": "Vul eerst het https-adres van de server in.",
       "notApproved": "{{name}} laat alleen apps toe die het heeft goedgekeurd, en agentes.chat hoort daar nog niet bij. Je kunt het verbinden met je eigen app daar.",
       "askAdmin": "Een beheerder kan het verbinden met de eigen app van de workspace.",
       "help": "Maak een app bij de aanbieder, registreer daar deze redirect-URI en plak de client-ID hier. Elke aanmelding daar vanuit de workspace gebruikt dan jouw app.",

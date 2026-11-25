@@ -14550,6 +14550,7 @@
     "serverSaid": "Jawaban server: {{detail}}",
     "ownClient": {
       "title": "Pakai aplikasi OAuth Anda sendiri",
+      "addressFirst": "Masukkan dulu alamat https server.",
       "notApproved": "{{name}} hanya mengizinkan aplikasi yang sudah disetujuinya, dan agentes.chat belum termasuk. Anda bisa menghubungkannya dengan aplikasi Anda sendiri di sana.",
       "askAdmin": "Admin bisa menghubungkannya dengan aplikasi milik workspace.",
       "help": "Buat aplikasi di penyedia, daftarkan URI pengalihan ini di sana, lalu tempel client ID-nya. Setiap masuk ke sana dari workspace akan memakai aplikasi Anda.",
