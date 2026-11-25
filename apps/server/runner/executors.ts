@@ -67,8 +67,13 @@ export function resolveCommand(
   command: string,
   pathList = process.env.PATH ?? "",
   sharedBin = process.env[SHARED_BIN_ENV],
+  platform: NodeJS.Platform = process.platform,
 ): string {
-  if (process.platform === "win32" || command.includes("/")) return command;
+  if (platform === "win32") {
+    if (command === "agy") return pickedAgy() ?? windowsExe(command, pathList) ?? command;
+    return command;
+  }
+  if (command.includes("/")) return command;
   const picked = command === "codex" ? pickedCodex() : command === "agy" ? pickedAgy() : undefined;
   if (picked) return picked;
   const dirs = pathList.split(delimiter).filter((dir) => dir && dir !== sharedBin);
@@ -86,8 +91,9 @@ export function ownCommand(
   command: string,
   pathList = process.env.PATH ?? "",
   sharedBin = process.env[SHARED_BIN_ENV],
+  platform: NodeJS.Platform = process.platform,
 ): string | null {
-  if (process.platform === "win32") return null;
+  if (platform === "win32") return windowsExe(command, pathList);
   return (
     onPath(
       command,
@@ -137,6 +143,12 @@ export function envValue(
   const upper = name.toUpperCase();
   const key = Object.keys(env).find((k) => k.toUpperCase() === upper);
   return key === undefined ? undefined : env[key];
+}
+
+/** `name` on the Windows PATH when it is a program that starts by itself (`.exe`, `.com`); null: none, or a launcher. */
+function windowsExe(name: string, pathList: string): string | null {
+  const found = findOnWindowsPath(name, pathList, envValue(process.env, "PATHEXT", "win32"));
+  return found && /\.(?:exe|com)$/i.test(found) ? found : null;
 }
 
 /** The extensions of a program the runner starts on Windows, in PATHEXT's order (never a script host's `.js` or `.vbs`). */
@@ -260,6 +272,8 @@ export function cliSpawn(
   } = {},
 ): CliRun {
   const [file = "", ...pre] = command;
+  const picked = platform === "win32" && file === "agy" ? pickedAgy() : undefined;
+  if (picked) return { file: picked, args: [...pre, ...args], env: { ...NO_CWD_LOOKUP } };
   if (platform === "win32" && command.length === 1) {
     const found = findOnWindowsPath(
       file,

@@ -3610,7 +3610,8 @@
       "gemini": {
         "title": "Gemini planınız",
         "tiers": "Google AI Pro, Google AI Ultra veya Gemini Enterprise",
-        "warning": "Google, kişisel bir Gemini planını başka uygulamaların içinde kullanmanın hesabın askıya alınmasına yol açabileceğini söylüyor. Bu riskten kaçınmak için bir Gemini API anahtarı veya Gemini Enterprise kullanın."
+        "warning": "Google, kişisel bir Gemini planını başka uygulamaların içinde kullanmanın hesabın askıya alınmasına yol açabileceğini söylüyor. Bu riskten kaçınmak için bir Gemini API anahtarı veya Gemini Enterprise kullanın.",
+        "windowsOne": "Windows'ta bir bilgisayar aynı anda tek bir Gemini hesabı kullanır."
       },
       "zen": {
         "title": "OpenCode",
@@ -12394,7 +12395,6 @@
       "home_only": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu ve ajanlar ona erişemez.",
       "not_reported": "{{computer}} hangi programların olduğunu hâlâ kontrol ediyor. Bittiğinde bu kendiliğinden değişir.",
       "system": "{{program}} henüz {{computer}} sisteminde çalışmıyor.",
-      "systemAntigravity": "Gemini planları {{computer}} üzerinde henüz çalışmıyor: Windows'ta Antigravity CLI, Google oturumunu Kimlik Bilgileri Yöneticisi'nde tutuyor ve agentes.chat bunu henüz hesap başına ayıramıyor. Bunun yerine bir Gemini API anahtarı kullanın.",
       "no_computerCloud": "{{computer}} hazır olur olmaz hazır."
     },
     "notAvailableNow": "Seçildi ama şu anda kullanılamıyor.",
@@ -16022,6 +16022,7 @@
       "askSelf": "Bu sizin bilgisayarınız: düğmeyle açın.",
       "adminAskSelf": "Bunu burada kendiniz yapabilirsiniz.",
       "accountMethodUnsupported": "Bu bilgisayar Claude'u henüz bu şekilde bağlayamıyor. Üzerindeki agentes.chat programını güncelleyin ya da bir API anahtarı kullanın.",
+      "windowsOneGemini": "Windows'ta bir bilgisayar aynı anda tek bir Gemini hesabı kullanır. Bu hesapla giriş yapmak için diğer Gemini hesabını bu bilgisayardan kaldırın.",
       "brainUnavailable": "Bu yapay zekâ {{computer}} üzerinde henüz kurulmadı. Orada kurun ya da başka birini seçin.",
       "offline": "{{name}} şu an çevrimdışı. Geri geldiğinde tekrar deneyin.",
       "paused": "{{name}} duraklatıldı: devam ettirilene kadar üzerinde yeni bir şey başlamaz.",

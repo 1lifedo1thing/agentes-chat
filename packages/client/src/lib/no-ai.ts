@@ -690,9 +690,6 @@ export function gateLine(
     if (said === CLI_GIT_MISSING) return { text: t("connectAi.cli.gitMissing", words), rechecks };
     if (said) return { text: t("connectAi.cli.cantStart", { ...words, message: said }), rechecks };
   }
-  // The Antigravity CLI's `system` is Windows, where it keeps every Google sign-in in one Credential Manager (ADR 0143).
-  if (gate.reason === "system" && kind === "antigravity")
-    return { text: t("brain.reasons.systemAntigravity", { computer }), rechecks };
   return { text: t(`brain.reasons.${gate.reason}`, { computer, program }), rechecks };
 }
 

@@ -3757,7 +3757,8 @@
       "gemini": {
         "title": "Tu plan de Gemini",
         "tiers": "Google AI Pro, Google AI Ultra o Gemini Enterprise",
-        "warning": "Google dice que usar un plan personal de Gemini dentro de otras apps puede hacer que suspendan la cuenta. Para evitar ese riesgo, usa una clave de API de Gemini o Gemini Enterprise."
+        "warning": "Google dice que usar un plan personal de Gemini dentro de otras apps puede hacer que suspendan la cuenta. Para evitar ese riesgo, usa una clave de API de Gemini o Gemini Enterprise.",
+        "windowsOne": "En Windows, una computadora usa una sola cuenta de Gemini a la vez."
       },
       "zen": {
         "title": "OpenCode",
@@ -12849,7 +12850,6 @@
       "home_only": "{{program}} está instalado solo para root en {{computer}}, donde los agentes no llegan.",
       "not_reported": "{{computer}} todavía está comprobando qué programas tiene. Esto cambia solo cuando termine.",
       "system": "{{program}} todavía no funciona en el sistema de {{computer}}.",
-      "systemAntigravity": "Los planes de Gemini todavía no funcionan en {{computer}}: en Windows, Antigravity CLI guarda el inicio de sesión de Google en el Administrador de credenciales, que agentes.chat todavía no puede separar por cuenta. Usa una clave de API de Gemini en su lugar.",
       "no_computerCloud": "Listo en cuanto {{computer}} lo esté."
     },
     "notAvailableNow": "Elegido, pero no disponible ahora.",
@@ -16558,6 +16558,7 @@
       "askSelf": "Es tu ordenador: actívalo con el botón.",
       "adminAskSelf": "Puedes hacerlo aquí tú mismo.",
       "accountMethodUnsupported": "Esta computadora todavía no puede conectar Claude de esta forma. Actualiza el programa de agentes.chat en ella o usa una clave de API.",
+      "windowsOneGemini": "En Windows, una computadora usa una sola cuenta de Gemini a la vez. Quita la otra cuenta de Gemini de esta computadora para iniciar sesión con esta.",
       "brainUnavailable": "Esta IA todavía no está configurada en {{computer}}. Configúrala allí o elige otra.",
       "offline": "{{name}} está desconectada ahora. Intenta de nuevo cuando vuelva.",
       "paused": "{{name}} está en pausa: nada nuevo empieza en ella hasta que se reanude.",

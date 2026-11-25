@@ -142,6 +142,7 @@ const KNOWN = {
   "machine.not_found": "errors.machine.notFound",
   "machine.name_required": "errors.machine.nameRequired",
   "account.method_unsupported": "errors.machine.accountMethodUnsupported",
+  "account.windows_one_gemini": "errors.machine.windowsOneGemini",
   "brain.unavailable": "errors.machine.brainUnavailable",
   "machine.pairing_invalid": "errors.machine.pairingInvalid",
   "machine.pairing_off": "errors.machine.pairingOff",

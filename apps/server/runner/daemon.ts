@@ -620,7 +620,7 @@ export class RunnerDaemon implements RequestObserver {
       : null;
     // Outside system mode, where the person's own CLI runs: the root's are the computer's setup's (the Cloud's image).
     this.agy =
-      opts.agyCopy && !system && (process.platform === "darwin" || process.platform === "linux")
+      opts.agyCopy && !system && ["darwin", "linux", "win32"].includes(process.platform)
         ? new AgyCopy({
             home: opts.home,
             log: opts.log,

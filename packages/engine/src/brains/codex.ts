@@ -1,6 +1,7 @@
 import {
   type AgentScope,
   ANTIGRAVITY_PROTOCOL,
+  ANTIGRAVITY_WINDOWS_PROTOCOL,
   BRAIN_PROFILES_PROTOCOL,
   BRAIN_PROTOCOL,
   type BrainTurnRequest,
@@ -258,6 +259,7 @@ const ANTIGRAVITY_CLI: CliBrainSpec = {
   kind: "antigravity",
   name: "Antigravity CLI",
   protocol: ANTIGRAVITY_PROTOCOL,
+  windowsProtocol: ANTIGRAVITY_WINDOWS_PROTOCOL,
   check: ({ antigravity }) =>
     antigravity
       ? null

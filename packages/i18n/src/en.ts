@@ -3953,6 +3953,7 @@ export const en = {
         /** Shown plainly wherever a personal Gemini plan is connected or chosen: Google's own rule for consumer plans. */
         warning:
           "Google says using a personal Gemini plan inside other apps can get the account suspended. To avoid that risk, use a Gemini API key or Gemini Enterprise.",
+        windowsOne: "On Windows, a computer uses one Gemini account at a time.",
       },
       /** OpenCode's CLI (ADR 0132): its free models with no sign-in, or a key from OpenCode's console. */
       zen: { title: "OpenCode", tiers: "Free models, or your OpenCode key" },
@@ -12945,9 +12946,6 @@ export const en = {
       not_reported: "{{computer}} is still checking which programs it has. This changes by itself when it's done.",
       /** The runner doesn't run this program on that computer's system (Cursor on Windows, for one). */
       system: "{{program}} doesn't run on {{computer}}'s system yet.",
-      /** The Antigravity CLI on Windows (ADR 0143). The button to use an API key follows. */
-      systemAntigravity:
-        "Gemini plans don't run on {{computer}} yet: on Windows the Antigravity CLI keeps its Google sign-in in the Credential Manager, which agentes.chat can't yet keep apart for each account. Use a Gemini API key instead.",
       no_computerCloud: "Ready as soon as {{computer}} is.",
     },
     notAvailableNow: "Chosen, but unavailable right now.",
@@ -16507,6 +16505,8 @@ export const en = {
       adminAskSelf: "You can do this here yourself.",
       accountMethodUnsupported:
         "This computer can't connect Claude this way yet. Update the agentes.chat program on it, or use an API key.",
+      windowsOneGemini:
+        "On Windows, a computer uses one Gemini account at a time. Remove the other Gemini account from this computer to sign in with this one.",
       brainUnavailable: "This AI isn't set up on {{computer}} yet. Set it up there, or choose another one.",
       offline: "{{name}} is offline right now. Try again once it's back.",
       paused: "{{name}} is paused: nothing new starts on it until it's resumed.",

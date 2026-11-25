@@ -725,9 +725,6 @@ describe("one click where a tool is off (ADR 0036 §8)", () => {
     );
     // No words from the runner (an older one): the plain line.
     expect(line("opencode", pc)).toBe(t("brain.reasons.cant_start", { program: "OpenCode", computer: "PC da Bia" }));
-    const gemini = line("antigravity", pc, { state: "unsupported", reason: "system" });
-    expect(gemini).toBe(t("brain.reasons.systemAntigravity", { computer: "PC da Bia" }));
-    expect(gemini).toContain("Gerenciador de Credenciais");
   });
 
   test("Prefiro no Terminal: the same switches as one command, only for who turns them on, where there may be no app", () => {

@@ -3472,7 +3472,8 @@
       "gemini": {
         "title": "你的 Gemini 套餐",
         "tiers": "Google AI Pro、Google AI Ultra 或 Gemini Enterprise",
-        "warning": "Google 表示，在其他应用中使用个人 Gemini 套餐可能导致账号被停用。为避免这一风险，请使用 Gemini API 密钥或 Gemini Enterprise。"
+        "warning": "Google 表示，在其他应用中使用个人 Gemini 套餐可能导致账号被停用。为避免这一风险，请使用 Gemini API 密钥或 Gemini Enterprise。",
+        "windowsOne": "在 Windows 上，一台电脑一次只能使用一个 Gemini 账号。"
       },
       "zen": {
         "title": "OpenCode",
@@ -12031,7 +12032,6 @@
       "home_only": "{{computer}} 上的 {{program}} 只为 root 安装了，智能体访问不到。",
       "not_reported": "{{computer}} 还在检查有哪些程序。完成后这里会自动更新。",
       "system": "{{program}} 暂时还不能在 {{computer}} 的系统上运行。",
-      "systemAntigravity": "Gemini 套餐暂时还不能在 {{computer}} 上使用：在 Windows 上，Antigravity CLI 把 Google 登录保存在凭据管理器中，agentes.chat 目前还无法按账号分开。请改用 Gemini API 密钥。",
       "no_computerCloud": "{{computer}} 一就绪即可使用。"
     },
     "notAvailableNow": "已选择，但目前不可用。",
@@ -15576,6 +15576,7 @@
       "askSelf": "这是你的电脑：用按钮打开它。",
       "adminAskSelf": "你可以在这里自己完成。",
       "accountMethodUnsupported": "这台电脑暂时无法用这种方式连接 Claude。请更新电脑上的 agentes.chat 程序，或使用 API 密钥。",
+      "windowsOneGemini": "在 Windows 上，一台电脑一次只能使用一个 Gemini 账号。要用这个账号登录，请先从这台电脑移除另一个 Gemini 账号。",
       "brainUnavailable": "{{computer}} 上还没有设置这个 AI。请在那里设置，或选择另一个。",
       "offline": "{{name}} 现在离线，等它恢复后再试。",
       "paused": "{{name}} 已暂停：恢复之前不会在上面开始新的工作。",

@@ -3472,7 +3472,8 @@
       "gemini": {
         "title": "あなたのGeminiプラン",
         "tiers": "Google AI Pro、Google AI Ultra、またはGemini Enterprise",
-        "warning": "Googleによると、個人のGeminiプランを他のアプリ内で使うと、アカウントが停止されることがあります。このリスクを避けるには、Gemini APIキーまたはGemini Enterpriseを使ってください。"
+        "warning": "Googleによると、個人のGeminiプランを他のアプリ内で使うと、アカウントが停止されることがあります。このリスクを避けるには、Gemini APIキーまたはGemini Enterpriseを使ってください。",
+        "windowsOne": "WindowsではGeminiアカウントは1台のコンピューターで一度に1つしか使えません。"
       },
       "zen": {
         "title": "OpenCode",
@@ -11959,7 +11960,6 @@
       "home_only": "{{computer}} の {{program}} は root 専用にインストールされていて、エージェントからは届きません。",
       "not_reported": "{{computer}}は、入っているプログラムをまだ確認しています。終わりしだい自動で切り替わります。",
       "system": "{{program}}は{{computer}}のシステムではまだ動きません。",
-      "systemAntigravity": "{{computer}}ではGeminiプランはまだ使えません。WindowsではAntigravity CLIがGoogleのログインを資格情報マネージャーに保存し、agentes.chatはまだアカウントごとに分けられません。代わりにGemini APIキーを使ってください。",
       "no_computerCloud": "{{computer}}の準備ができ次第使えます。"
     },
     "notAvailableNow": "選択済みですが、現在は利用できません。",
@@ -15507,6 +15507,7 @@
       "askSelf": "あなたのコンピューターです。ボタンでオンにしてください。",
       "adminAskSelf": "ここで自分で行えます。",
       "accountMethodUnsupported": "このコンピューターでは、まだこの方法でClaudeを接続できません。コンピューターのagentes.chatプログラムを更新するか、APIキーを使ってください。",
+      "windowsOneGemini": "WindowsではGeminiアカウントは1台のコンピューターで一度に1つしか使えません。このアカウントでサインインするには、このコンピューターからもう一方のGeminiアカウントを削除してください。",
       "brainUnavailable": "このAIは{{computer}}でまだ設定されていません。そちらで設定するか、別のAIを選んでください。",
       "offline": "{{name}}は現在オフラインです。戻ったらもう一度お試しください。",
       "paused": "{{name}}は一時停止中です。再開されるまで新しいものは始まりません。",

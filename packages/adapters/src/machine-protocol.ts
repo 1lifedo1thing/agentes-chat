@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 78;
+export const MACHINE_PROTOCOL_VERSION = 79;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -2493,6 +2493,13 @@ export const AGY_COPY_PROTOCOL = 76;
  * An older runner keeps its count and is never sent either.
  */
 export const TASK_ROOM_PROTOCOL = 78;
+
+/**
+ * Protocol 79 (ADR 0143): Gemini signs in and thinks on Windows, one account a computer (the CLI keeps its sign-in in
+ * the Windows user's one Credential Manager), with the runner's own `agy.exe` where the person's is older or missing.
+ * An older Windows runner refuses every Gemini sign-in and turn.
+ */
+export const ANTIGRAVITY_WINDOWS_PROTOCOL = 79;
 
 /** About how many more background tasks fit on the computer now, and what decides it. */
 export interface TaskRoomReport {

@@ -7,6 +7,7 @@ import {
   type AccountLoginState,
   ANTIGRAVITY_MAC_PROTOCOL,
   ANTIGRAVITY_PROTOCOL,
+  ANTIGRAVITY_WINDOWS_PROTOCOL,
   type AuthMethod,
   accountCodeAad,
   CLAUDE_AUTH_PROTOCOL,
@@ -1569,7 +1570,9 @@ export async function beginAccountLogin(
       : kind === "antigravity"
         ? machine.os === "darwin"
           ? ANTIGRAVITY_MAC_PROTOCOL
-          : ANTIGRAVITY_PROTOCOL
+          : machine.os === "windows"
+            ? ANTIGRAVITY_WINDOWS_PROTOCOL
+            : ANTIGRAVITY_PROTOCOL
         : kind === "grok"
           ? GROK_PROTOCOL
           : kind === "opencode"
@@ -1578,6 +1581,29 @@ export async function beginAccountLogin(
               ? PLAN_KEYS_PROTOCOL
               : ACCOUNTS_PROTOCOL,
   );
+  // On Windows the Antigravity CLI keeps its sign-in in the user's one Credential Manager (ADR 0143): a second
+  // account would take the first one's place.
+  if (kind === "antigravity" && machine.os === "windows" && accountId === undefined) {
+    const [other] = await deps.db
+      .select({ id: machineAccounts.id })
+      .from(machineAccounts)
+      .where(
+        and(
+          eq(machineAccounts.orgId, orgId),
+          eq(machineAccounts.machineId, machine.id),
+          eq(machineAccounts.kind, "antigravity"),
+          inArray(machineAccounts.status, LISTED_ACCOUNT_STATUSES),
+        ),
+      )
+      .limit(1);
+    if (other) {
+      throw new ConflictError(
+        "On Windows a computer uses one Gemini account at a time. Remove the other Gemini account from this computer first.",
+        "account.windows_one_gemini",
+        { name: machine.name },
+      );
+    }
+  }
   // Once for every agent of its owner there, where the runner can (protocol 29; ChatGPT's 38, Gemini's 58).
   const shared = protocol >= sharedSignInProtocol(kind) && sharedSignIn(kind, provider);
   const again = accountId !== undefined;

@@ -281,7 +281,12 @@ export function withoutContainers(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 }
 
 /** The env a CLI runs with for an account folder: `base` without any other sign-in, the folder as its home. */
-export function accountEnv(kind: AccountKind, dir: string, base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+export function accountEnv(
+  kind: AccountKind,
+  dir: string,
+  base: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+): NodeJS.ProcessEnv {
   const env = withoutSignIns(base);
   env[ENV_VAR[kind]] = dir;
   if (kind === "cursor") {
@@ -313,7 +318,9 @@ export function accountEnv(kind: AccountKind, dir: string, base: NodeJS.ProcessE
     delete env.DISPLAY;
     delete env.SSH_AUTH_SOCK;
     Object.assign(env, AGY_QUIET_ENV);
-    if (process.platform === "darwin") agyKeychain(dir);
+    // Go reads the home from USERPROFILE on Windows, never HOME: the CLI's settings and config come from this folder.
+    if (platform === "win32") env.USERPROFILE = dir;
+    if (platform === "darwin") agyKeychain(dir);
   }
   return env;
 }
@@ -1618,6 +1625,21 @@ export class AccountManager {
     return this.authPrefix() !== null;
   }
 
+  /** A Gemini account here, or one signing in now; a sign-in left unfinished isn't one. */
+  private hasAgy(): boolean {
+    let names: string[];
+    try {
+      names = readdirSync(this.kindRoot("antigravity"));
+    } catch {
+      return false;
+    }
+    return names.some(
+      (id) =>
+        isAccountId(id) &&
+        (this.logins.get(id)?.state === "waiting" || !existsSync(path.join(this.dirOf("antigravity", id), SIGNING_IN))),
+    );
+  }
+
   /** Where a kind's account folders are. */
   private kindRoot(kind: AccountKind) {
     return kind === "grok" && this.opts.grokRoot ? this.opts.grokRoot : path.join(this.opts.root, kind);
@@ -1642,7 +1664,7 @@ export class AccountManager {
   }
 
   private env(kind: AccountKind, dir: string): NodeJS.ProcessEnv {
-    return accountEnv(kind, dir);
+    return accountEnv(kind, dir, process.env, this.opts.platform);
   }
 
   /**
@@ -1821,10 +1843,13 @@ export class AccountManager {
     if (kind === "opencode" && !cliKey) {
       throw new RunnerError("bad_request", "OpenCode signs in with its API key");
     }
-    // ADR 0143: Windows keeps every sign-in in the one Credential Manager of the computer's user, so two accounts
-    // would be one.
-    if (kind === "antigravity" && (this.opts.platform ?? process.platform) === "win32") {
-      throw new RunnerError("bad_request", "Gemini accounts don't sign in on Windows computers yet.");
+    // ADR 0143: Windows keeps the CLI's sign-in in the one Credential Manager of the computer's user, so a second
+    // account would take the first one's place.
+    if (kind === "antigravity" && !again && (this.opts.platform ?? process.platform) === "win32" && this.hasAgy()) {
+      throw new RunnerError(
+        "bad_request",
+        "On Windows a computer uses one Gemini account at a time. Remove the other Gemini account here first.",
+      );
     }
     if (this.logins.get(loginId)?.state === "waiting") {
       throw new RunnerError("bad_request", "This sign-in already exists");

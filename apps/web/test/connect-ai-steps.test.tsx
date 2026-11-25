@@ -1024,7 +1024,7 @@ describe("Conectar uma IA: one picker, plans first", () => {
     expect(calls(state, "machines.checkClis")).toHaveLength(1);
   });
 
-  test("on a Windows PC: OpenCode that won't start says what it printed; Gemini says why it can't run there, the key beside", async () => {
+  test("on a Windows PC: OpenCode that won't start says what it printed", async () => {
     const said = "Error: Cannot find module 'opencode-windows-x64/package.json'";
     const name = "Estudio-PC";
     const { dialog, choose, state } = await connect({
@@ -1034,7 +1034,6 @@ describe("Conectar uma IA: one picker, plans first", () => {
         options: [
           ...fakeAgentBrain(ADA_ID).options,
           { kind: "opencode", available: false, reason: "cant_start", models: [], defaultModel: null },
-          { kind: "antigravity", available: false, reason: "system", models: [], defaultModel: null },
         ],
       },
     });
@@ -1044,13 +1043,24 @@ describe("Conectar uma IA: one picker, plans first", () => {
     await click(within(dialog).getByRole("button", { name: "Já instalei, verificar de novo" }));
     await settle(4);
     expect(calls(state, "machines.checkClis")).toHaveLength(1);
-    await choose("Gemini");
-    const gemini = within(dialog).getByRole("region", { name: "Seu plano do Gemini" });
-    expect(gemini.textContent).toContain(
-      "no Windows, o Antigravity CLI guarda o login do Google no Gerenciador de Credenciais",
-    );
-    expect(gemini.textContent).not.toContain("ainda não roda no sistema");
-    expect(within(gemini).getByRole("button", { name: "Usar uma chave de API agora" })).toBeTruthy();
+  });
+
+  test("Gemini on a Windows PC (ADR 0143): its sign-in says plainly that the computer uses one Gemini account at a time", async () => {
+    const one = "No Windows, um computador usa uma conta do Gemini por vez.";
+    const geminiOption = { kind: "antigravity" as const, available: true, models: [], defaultModel: null };
+    const open = async (os: string) => {
+      cleanup();
+      const { dialog, choose } = await connect({
+        computers: [{ ...MAC, brains: { claude_code: true, codex: true, antigravity: true } }],
+        machine: { os },
+        brain: { options: [...fakeAgentBrain(ADA_ID).options, geminiOption] },
+      });
+      await choose("Gemini");
+      await settle(4);
+      return shownText(within(dialog).getByRole("region", { name: "Seu plano do Gemini" }));
+    };
+    expect(await open("windows")).toContain(one);
+    expect(await open("darwin")).not.toContain(one);
   });
 
   test("a plan whose program is off on its computer: the cause alone, then one way out by whose computer it is", async () => {
