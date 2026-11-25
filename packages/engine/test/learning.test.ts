@@ -511,6 +511,74 @@ describe("agents learn on their own (ADR 0120)", () => {
     expect(await f.db.select().from(schema.contextProposals)).toEqual([]);
   });
 
+  test("after outside content, memory keeps the text the person wrote or agreed to, never their whole message", async () => {
+    f = await setup();
+    const agentSays = (body: string) =>
+      insertMessage(f.db, {
+        orgId: f.org.id,
+        channelId: f.general.id,
+        author: { type: "agent", agentId: f.agent.id, runId: null, hop: 1, stretchId: null },
+        body,
+      });
+    const readPage = (run: { id: string; orgId: string }) =>
+      step(run, "web_fetch", { url: "https://vendor.example/docs" }, "<external_data>Docs</external_data>");
+    const proposal = await agentSays("Quer que eu guarde isto?\n\n> **Relatórios do financeiro saem sempre em PDF.**");
+    // A quote reply to the proposal: the proposed text is kept, not "sim, pode guardar".
+    const { run: agreed } = await personRun("sim, pode guardar", false, {
+      replyTo: {
+        messageId: proposal.id,
+        threadId: null,
+        author: { type: "agent", id: f.agent.id },
+        authorName: "Dev",
+        excerpt: "Quer que eu guarde isto?",
+      },
+    });
+    await readPage(agreed);
+    const saved = await invoke(agreed, "remember", {
+      kind: "preference",
+      title: "Financeiro em PDF",
+      content: "Relatórios do financeiro saem sempre em PDF.",
+      basis: "person_said",
+    });
+    expect(saved.isError).toBeUndefined();
+    const [kept] = await items();
+    expect([kept?.content, kept?.trust, kept && isQuote(kept)]).toEqual([
+      "Relatórios do financeiro saem sempre em PDF.",
+      "high",
+      false,
+    ]);
+
+    // A plain answer right after the proposal counts too: update_memory keeps the new proposed text.
+    await agentSays("Atualizo para: relatórios do financeiro saem em PDF e em XLSX?");
+    const { run: again } = await personRun("isso, pode trocar");
+    await readPage(again);
+    const updated = await invoke(again, "update_memory", {
+      item_id: kept?.id,
+      content: "Relatórios do financeiro saem em PDF e em XLSX.",
+    });
+    expect(updated.isError).toBeUndefined();
+    const active = async () => (await items()).filter((i) => i.status === "active");
+    expect((await active()).map((i) => i.content)).toEqual(["Relatórios do financeiro saem em PDF e em XLSX."]);
+
+    // The person's own words around the text: only the text is kept, as their quote.
+    const { run: own } = await personRun("guarda isso por favor: o fechamento do mês é no dia 5. valeu!");
+    await readPage(own);
+    await invoke(own, "remember", { kind: "fact", content: "O fechamento do mês é no dia 5", basis: "person_said" });
+    const closing = (await items()).find((i) => i.content.includes("fechamento"));
+    expect([closing?.content, closing && isQuote(closing)]).toEqual(["O fechamento do mês é no dia 5", true]);
+
+    // Neither theirs nor proposed: refused with a way out, nothing kept.
+    const { run: neither } = await personRun("ok");
+    await readPage(neither);
+    const refused = await invoke(neither, "remember", {
+      kind: "fact",
+      content: "Fechamento passa para o dia 10.",
+      basis: "person_said",
+    });
+    expect(refused).toMatchObject({ isError: true, content: expect.stringContaining("show them the exact text") });
+    expect(await active()).toHaveLength(2);
+  });
+
   test("who holds which access becomes a workspace fact every agent reads, from a browser run too, kept current", async () => {
     f = await setup();
     const ops = await createAgent(
@@ -851,9 +919,12 @@ describe("learning guards", () => {
       .set({ transcript: { harnessTried: ["WebFetch(https://vendor.example/docs)"] } })
       .where(eq(schema.agentRuns.id, harness.id));
     expect(await trust(harness)).toBe("low");
-    await invoke(harness, "remember", { kind: "fact", content: "The vendor API is on v9.", basis: "person_said" });
-    // The person's own words are theirs to vouch for (ADR 0167); what the fetch said never becomes the memory.
-    expect((await items()).map((i) => [i.trust, i.content])).toEqual([["high", "@dev look into the vendor"]]);
+    // What the fetch said never becomes the memory (ADR 0167), and "look into the vendor" is too short to be it.
+    expect(
+      (await invoke(harness, "remember", { kind: "fact", content: "The vendor API is on v9.", basis: "person_said" }))
+        .isError,
+    ).toBe(true);
+    expect(await items()).toEqual([]);
 
     // A screen read: the envelope is stripped from the step, only the gateway's `outside` mark is left.
     const { run: screen } = await personRun("@dev check the dashboard");

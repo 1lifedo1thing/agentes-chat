@@ -237,12 +237,18 @@ export const howToSql = () =>
   sql`(${contextItems.kind} = 'note' and ${HOW_TO_WORD} = any(string_to_array(${contextItems.subjectKey}, ' ')))`;
 
 /** A text's words: lower case, accents and punctuation removed. */
-const wordList = (text: string) =>
+export const wordList = (text: string) =>
   text
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase()
     .match(/[\p{L}\p{N}]+/gu) ?? [];
+
+/** `text`'s words appear in `within` side by side, in order: case, accents, punctuation and markdown don't count. */
+export function saysWords(within: string, text: string) {
+  const words = wordList(text).join(" ");
+  return words.length > 0 && ` ${wordList(within).join(" ")} `.includes(` ${words} `);
+}
 
 /** Subject key: its words, once each, sorted. */
 export function normalizeSubject(subject: string) {
