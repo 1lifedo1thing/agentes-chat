@@ -69,6 +69,13 @@ export const ptBR = {
     offline: "Você está sem internet. Confira a conexão e tente de novo.",
     unreachable: "Sem conexão com o agentes.chat agora. Tente de novo em instantes.",
   },
+  reconnect: {
+    device: "Reconectando… Sem internet neste aparelho.",
+    server: "Reconectando… O servidor não responde ou está reiniciando.",
+    signedOut: "Sua sessão terminou.",
+    retry: "Tentar agora",
+    signIn: "Entrar",
+  },
   roles: {
     owner: "Dono",
     admin: "Admin",
@@ -450,7 +457,7 @@ export const ptBR = {
     },
     manage_agents: {
       title: "Editar agentes",
-      desc: "Instruções, cérebro, orçamento e o que cada um usa, nos agentes com que a pessoa fala. Os privados de outras pessoas ficam de fora.",
+      desc: "Instruções, cérebro, orçamento e o que cada um usa, nos agentes com que a pessoa fala. Dos privados de outras pessoas, só o nome, o dono e o uso.",
       short: "editar agentes",
       say: "edita os agentes com que fala",
     },
@@ -2216,7 +2223,7 @@ export const ptBR = {
     moreWhat: {
       waiting: "Tudo o que espera uma resposta sua",
       approvals: "O que os agentes pedem para você liberar",
-      proposals: "O que os agentes propõem mudar",
+      proposals: "O que os agentes mudaram, e por quê",
       threads: "Conversas que seguem à parte, e as missões",
       issues: "O trabalho da equipe, de pessoas e agentes",
       wiki: "O que a equipe sabe, escrito para todos",
@@ -2344,7 +2351,7 @@ export const ptBR = {
     /** The sidebar's one entry for everything that involves me: what waits on me, what is new, what I decided. */
     waiting: "Caixa de entrada",
     approvals: "Aprovações",
-    proposals: "Propostas de melhoria",
+    proposals: "Melhorias dos agentes",
     issues: "Tarefas",
     missionsWaiting_one: "{{count}} missão esperando você",
     missionsWaiting_other: "{{count}} missões esperando você",
@@ -2390,8 +2397,6 @@ export const ptBR = {
     unread_other: "{{count}} mensagens não lidas",
     pendingApprovals_one: "{{count}} aprovação pendente",
     pendingApprovals_other: "{{count}} aprovações pendentes",
-    pendingProposals_one: "{{count}} proposta esperando você",
-    pendingProposals_other: "{{count}} propostas esperando você",
     home: "Início",
     notifications: "Notificações",
     unreadMark: "Não lida",
@@ -2534,10 +2539,54 @@ export const ptBR = {
       gone: "Este link para desfazer não funciona mais",
       sender: "Esse remetente",
     },
+    /** A page a link sent in the chat app opens (ADR 0226): one action the person approves with their PIN. */
+    page: {
+      opening: "Abrindo a página",
+      gone: "Este link não funciona mais",
+      lead: "Digite seu PIN para aprovar.",
+      leadFirst: "Escolha um PIN de 6 dígitos para aprovar. Ele confirma ações como esta pelo {{surface}}.",
+      choosePin: "Escolha um PIN",
+      repeatPin: "Digite de novo",
+      pin: "Seu PIN",
+      mismatch: "Os dois PINs não são iguais. Digite o segundo de novo.",
+      approve: "Aprovar",
+      refuse: "Recusar",
+      forgot: "Esqueceu seu PIN?",
+      emailed: "Enviamos um link por e-mail. Escolha seu PIN lá e depois volte para esta página.",
+      notYours: "{{who}} decide isso no app.",
+      notYoursSomeone: "Quem pode aprovar decide isso no app.",
+      approved: "Aprovado",
+      refused: "Recusado",
+      expired: "Este pedido expirou",
+      back: "Volte ao {{surface}}. Seu assistente continua por lá.",
+      setFirst: "Escolha seu PIN primeiro",
+      setFirstLead:
+        "Aprovar pelo {{surface}} pede um PIN, e um link do chat não pode escolhê-lo. Escolha no app, com sua conta, e depois volte para esta página.",
+      setFirstLeadEmail:
+        "Aprovar pelo {{surface}} pede um PIN, e um link do chat não pode escolhê-lo. Escolha no app, com sua conta, ou por um link que enviamos por e-mail. Depois volte para esta página.",
+      openApp: "Escolher no app",
+      emailMe: "Enviar um link por e-mail",
+    },
+    /** The page the "Reset your PIN" email opens. Signed out, so it learns the app's name only from the answer. */
+    pinReset: {
+      title: "Escolha seu PIN",
+      lead: "Seis dígitos. Você vai digitá-lo para aprovar ações que pedir pelo seu app de chat.",
+      button: "Salvar meu PIN",
+      done: "PIN salvo",
+      doneLead: "Volte para a página do {{surface}} e aprove com ele.",
+      gone: "Este link não funciona mais",
+    },
     via: "via {{surface}}",
     viaTip: "Enviada por {{person}} pelo {{surface}}",
     forwarded: "encaminhada via {{surface}}",
     forwardedTip: "{{person}} encaminhou isto do {{surface}}. As palavras são de outra pessoa.",
+    pin: {
+      set: "Definir PIN",
+      change: "Trocar PIN",
+      title: "Seu PIN do {{surface}}",
+      text: "Seis dígitos que você digita para aprovar ações que pedir pelo {{surface}}. Ele nunca é enviado no chat.",
+      save: "Salvar PIN",
+    },
   },
   team: {
     title: "Equipe",
@@ -3138,7 +3187,6 @@ export const ptBR = {
       mineHelp_female: "Sua conversa com a {{name}} pensa com um plano seu ou compartilhado com você, e só a sua.",
       connectMine: "Conectar meu plano",
       useWorkspace: "Usar a do workspace",
-      useMine: "Usar meu plano",
       mineYours: "seu plano",
       mineOf: "plano de {{owner}}",
       mineKey: "chave do workspace",
@@ -3212,25 +3260,6 @@ export const ptBR = {
       editFirst: "Editar antes",
       superseded: "Trocada pela proposta mais nova",
       onlyCreators: "Só admins criam agentes",
-      only: {
-        model: "Só admins mudam o modelo de um agente",
-        effort: "Só admins mudam o esforço de um agente",
-        budget: "Só admins mudam o orçamento de um agente",
-        owner: "Só admins mudam o responsável por um agente",
-        archive: "Só admins arquivam um agente",
-        delete: "Só admins apagam um agente",
-        audience: "Só admins e o responsável mudam quem conversa com ele",
-        audience_female: "Só admins e o responsável mudam quem conversa com ela",
-        channels: "Só admins e o responsável mudam os canais dele",
-        channels_female: "Só admins e o responsável mudam os canais dela",
-        skill: "Só quem pode editar um agente muda as skills dele",
-        ai_account: "Só o dono da conta a escolhe",
-        name: "Só admins mudam o nome de um agente",
-        look: "Só admins e o responsável mudam a aparência",
-        group: "Só admins mudam um agente de setor",
-        reports_to: "Só admins mudam a quem um agente responde",
-        many: "Só admins fazem essas mudanças",
-      },
     },
     field: {
       model: "Modelo",
@@ -3271,12 +3300,6 @@ export const ptBR = {
       archiveTitle_other: "Arquivar {{count}} agentes?",
       deleteTitle_one: "Apagar {{count}} agente para sempre?",
       deleteTitle_other: "Apagar {{count}} agentes para sempre?",
-      archiveAll: "Arquivar todos",
-      deleteAll: "Apagar todos",
-      archiveSome_one: "Arquivar {{count}}",
-      archiveSome_other: "Arquivar {{count}}",
-      deleteSome_one: "Apagar {{count}}",
-      deleteSome_other: "Apagar {{count}}",
       deleteHelp: "Instruções, memória e rotinas vão embora para sempre. As mensagens ficam.",
     },
     /** The right hand's people card (`propose_member_changes`, ADR 0137 §4): a row per change. */
@@ -4410,8 +4433,7 @@ export const ptBR = {
   inlineProposal: {
     group: "Proposta de mudança de {{name}}",
     groupMany: "Proposta de mudança de {{name}} para {{count}} agentes",
-    edit: "Editar",
-    open: "Abrir em Propostas",
+    open: "Abrir em Melhorias dos agentes",
   },
   newChannel: {
     open: "Criar canal",
@@ -4536,6 +4558,8 @@ export const ptBR = {
     replyMentionHelp: "Só responde se alguém escrever @{{handle}}",
     aloneLine: "Entra na conversa por conta própria",
     mentionLine: "Espera alguém chamar @{{handle}}",
+    lead: "Responsável pelo canal",
+    leadHelp: "Recebe o que é dito ao time todo e faz o trabalho andar entre os agentes",
     readOnly: "Só quem criou o canal e os admins mudam os membros.",
     people: "Pessoas",
     agents: "Agentes",
@@ -5441,7 +5465,6 @@ export const ptBR = {
       },
     },
     asks: "<b>{{agent}}</b> pede aprovação",
-    waitingYou: "Aguardando você",
     approve: {
       merge: "Aprovar merge",
       deploy: "Aprovar deploy",
@@ -5739,6 +5762,15 @@ export const ptBR = {
       joinOutside: "<b>{{name}}</b> pede para entrar como colaborador externo de <b>{{outsideOf}}</b>, sem ocupar vaga",
       changeRequest: "<b>{{name}}</b> pede uma mudança em <b>{{agent}}</b>",
       proposalWaiting: "Propostas de melhoria de <b>{{names}}</b>",
+      /** The day's changes agents applied themselves (ADR 0219): `name` who applied the newest, `count` how many. */
+      proposalApplied_one: "<b>{{name}}</b> aplicou uma melhoria",
+      proposalApplied_other: "<b>{{name}}</b> aplicou {{count}} melhorias",
+      /** Several agents applied them. */
+      proposalAppliedMany_one: "<b>{{names}}</b> aplicaram uma melhoria",
+      proposalAppliedMany_other: "<b>{{names}}</b> aplicaram {{count}} melhorias",
+      /** The same with no agent behind it: a lesson for the whole workspace. */
+      proposalAppliedAuto_one: "Uma melhoria foi aplicada automaticamente",
+      proposalAppliedAuto_other: "{{count}} melhorias foram aplicadas automaticamente",
       changeRequestAgent: "<b>{{name}}</b> pede um novo agente: <b>{{agent}}</b>",
       changeRequestAction: "<b>{{name}}</b> pede uma mudança no workspace",
       approvalCover: "<b>{{name}}</b> escolheu você em Quem aprova por mim",
@@ -5872,8 +5904,6 @@ export const ptBR = {
     noneHere: "Nada aqui por enquanto.",
     noneDone: "Nada concluído nos últimos 30 dias.",
     noneRequests: "Nenhum pedido decidido ainda.",
-    /** A proposal's row in the inbox, after the agent's name. */
-    proposes: "propõe uma melhoria",
     more: "Mostrar mais",
   },
   approvals: {
@@ -6306,6 +6336,26 @@ export const ptBR = {
           missed_other: "{{count}} agentes não mudaram.",
         },
         add: {
+          /** "Add account" in "Quem pensa": one line per AI, then that AI's sign-in. */
+          pickTitle: "Adicionar conta",
+          pickFoot: "Você entra na página da própria IA.",
+          /** At the end of an AI's line: how many accounts of it the person already has there. */
+          have_one: "Você tem 1",
+          have_other: "Você tem {{count}}",
+          others: "Outro plano",
+          key: "Chave de API",
+          keyLine: "Pago pelo uso",
+          /** A coding plan's sign-in: its key. */
+          titlePlan: "Adicionar o {{plan}}",
+          againTitle: "Entrar de novo no {{brand}}",
+          /** Before a new sign-in where the person has accounts of that AI there: the browser would bring one of those back. */
+          haveNote:
+            "Você já tem {{accounts}} aqui. Para entrar com outra conta, saia do {{brand}} no navegador antes, ou copie o link e abra numa janela anônima.",
+          againNote: "Entre de novo como {{account}}. O {{name}} volta a pensar com ela assim que você terminar.",
+          againNote_female:
+            "Entre de novo como {{account}}. A {{name}} volta a pensar com ela assim que você terminar.",
+          footSignIn: "Você digita a senha na página do {{brand}}.",
+          footKey: "A chave vai cifrada direto para o {{computer}}.",
           title: {
             claude_code: "Adicionar conta do Claude",
             codex: "Adicionar conta do ChatGPT",
@@ -6413,26 +6463,6 @@ export const ptBR = {
           only_female: "Vale só para a {{name}}.",
           /** A line on the first screen that opens effort, speed, context and the rest. */
           more: "Mais opções",
-          switch: "Trocar de conta",
-          switchTitle: "Trocar a conta do {{name}}",
-          switchTitle_female: "Trocar a conta da {{name}}",
-          /** The label over the account the agent uses now. */
-          inUse: "Em uso",
-          /** The main button: `label` is the account's title ("Claude 2 · Max"). */
-          switchTo: "Trocar para {{label}}",
-          teamTitle: "Trocar a conta do time",
-          /** The two cards of the team screen, for a screen reader: whom the switch is for. */
-          teamAria: "Para quem é",
-          /** Two cards, when the account thinks for all of its owner's agents: whom the switch is for. */
-          justOne: "Só o {{name}}",
-          justOne_female: "Só a {{name}}",
-          everyone: "Todos nesta conta",
-          /** The label over the account they switch to. */
-          target: "Trocar para",
-          switchMany_one: "Trocar {{count}} agente",
-          switchMany_other: "Trocar os {{count}} agentes",
-          limitTitle: "A conta do {{name}} está no limite",
-          limitTitle_female: "A conta da {{name}} está no limite",
           /** `when` is a day and a time ("sábado às 18:00"). */
           limitBack: "{{account}} volta {{when}}",
           /** When the time it's back isn't known. */
@@ -6442,17 +6472,12 @@ export const ptBR = {
           /** Under the list, with an account at its limit picked: the row above says until when. */
           fullWait: "Nesta conta o {{name}} espera até o plano renovar.",
           fullWait_female: "Nesta conta a {{name}} espera até o plano renovar.",
-          /** A link to the usage page, after `fullWait`. */
-          seeUsage: "Ver uso",
-          wait: "Esperar",
           modelTitle: "Modelo do {{name}}",
           modelTitle_female: "Modelo da {{name}}",
           moreTitle: "Mais opções do {{name}}",
           moreTitle_female: "Mais opções da {{name}}",
           /** A line under More options where several computers can run it. */
           computer: "Computador",
-          doneTitle: "Pronto",
-          doneSub: "O que estava em andamento continua com a conta nova.",
           /** The main button of the first screen, of More options and of the last screen. */
           finish: "Concluído",
           undo: "Desfazer",
@@ -6461,6 +6486,21 @@ export const ptBR = {
           /** The agents the server didn't move when switching everyone on the account: `names` lists them. */
           missed_one: "{{names}} ficou com a conta de antes.",
           missed_other: "{{names}} ficaram com a conta de antes.",
+          /** Under the account, after one a sign-in here just brought became the one in use. */
+          added: "Conta adicionada. O {{name}} já pensa com {{account}}.",
+          added_female: "Conta adicionada. A {{name}} já pensa com {{account}}.",
+          /** After a switch: the others of the person's agents still on the account it left (`names` lists them). */
+          alsoUses_one: "{{names}} também pensa com {{account}}.",
+          alsoUses_other: "{{names}} também pensam com {{account}}.",
+          alsoSwitch: "Trocar também",
+          /** The account in use signed out on its computer. `brand`: its AI ("Claude"). */
+          signedOut:
+            "{{account}} saiu do {{brand}}. O {{name}} não responde até você entrar de novo ou escolher outra conta.",
+          signedOut_female:
+            "{{account}} saiu do {{brand}}. A {{name}} não responde até você entrar de novo ou escolher outra conta.",
+          /** No AI to think with at all. */
+          empty: "O {{name}} ainda não tem uma conta de IA para pensar.",
+          empty_female: "A {{name}} ainda não tem uma conta de IA para pensar.",
         },
       },
       computer: {
@@ -6519,6 +6559,7 @@ export const ptBR = {
       overview: "Visão geral",
       instructions: "Instruções",
       access: "Ferramentas e acesso",
+      skills: "Skills",
       memory: "Memória",
       files: "Arquivos",
       usage: "Uso",
@@ -6650,15 +6691,34 @@ export const ptBR = {
     },
     copyHandle: "Copiar @{{handle}}",
     copied: "@{{handle}} copiado.",
+    facts: {
+      private: "Privado",
+      created: "Criado",
+      created_female: "Criada",
+      createdBy: "{{name}}, {{date}}",
+      usage: "Uso em {{month}}",
+      budget: "Orçamento",
+      budgetUsed: "{{percent}} usado",
+      last: "Última atividade",
+      never: "Nenhuma ainda",
+      title: "O que ele faz",
+      title_female: "O que ela faz",
+      locked:
+        "Instruções, memória, ferramentas, conversas, rotinas e arquivos do {{name}} ficam com {{owner}}, quem essa pessoa chamar para editar e os admins.",
+      locked_female:
+        "Instruções, memória, ferramentas, conversas, rotinas e arquivos da {{name}} ficam com {{owner}}, quem essa pessoa chamar para editar e os admins.",
+      lockedNoOwner:
+        "Instruções, memória, ferramentas, conversas, rotinas e arquivos do {{name}} ficam com quem pode editá-lo e os admins.",
+      lockedNoOwner_female:
+        "Instruções, memória, ferramentas, conversas, rotinas e arquivos da {{name}} ficam com quem pode editá-la e os admins.",
+      ask: "Pedir a {{owner}}",
+    },
     overview: {
       approvals_one: "{{count}} pedido de aprovação",
       approvals_other: "{{count}} pedidos de aprovação",
       approvalsYou: "Você aprova ou recusa em Aprovações ou no chat",
       approvalsWait: "Esperando o responsável ou um admin",
       seeApprovals: "Ver pedidos",
-      proposes: "O {{name}} propõe mudar as instruções",
-      proposes_female: "A {{name}} propõe mudar as instruções",
-      review: "Revisar",
       does: "O que o {{name}} faz",
       does_female: "O que a {{name}} faz",
       readAll: "Ler tudo",
@@ -6690,8 +6750,6 @@ export const ptBR = {
       hideDiff: "Esconder o que mudou",
       diff: "O que mudou nas instruções",
       add: "Acrescentar",
-      proposals_one: "{{count}} proposta de mudança",
-      proposals_other: "{{count}} propostas de mudança",
     },
     access: {
       search: "Buscar conector ou área",
@@ -6722,17 +6780,10 @@ export const ptBR = {
       lessons: "Lições",
       fromTeam: "aprendidas com o time",
       fromTeamRightHand: "aprendidas com você",
-      proposals: "Propostas",
-      waiting: "esperando decisão",
-      noneWaiting: "nenhuma esperando",
-      waitingCount_one: "{{count}} proposta esperando",
-      waitingCount_other: "{{count}} propostas esperando",
+      /** What agents (or people) applied to this agent's instructions, role, apps and settings (ADR 0219). */
+      improvements: "Melhorias",
+      improvementsApplied: "aplicadas",
       full: "Abrir a memória completa",
-      accepted: "Mudança aceita. As instruções foram atualizadas.",
-      refused: "Proposta recusada. O {{name}} guardou o motivo.",
-      refused_female: "Proposta recusada. A {{name}} guardou o motivo.",
-      decides: "{{who}} decide.",
-      adminDecides: "Um admin decide.",
       learned: "Aprendizados",
       learnedEmpty: "Correções, preferências e jeitos de fazer que descobrir aparecem aqui.",
       learnedEmptyTitle: "Aprende com cada correção",
@@ -6756,6 +6807,25 @@ export const ptBR = {
       playbookNote:
         "Jeitos de trabalhar que guardou para si. Não aparecem na conversa. O que pegou de fora e não voltou a usar vai sozinho para Arquivadas.",
       details: "Detalhes técnicos",
+      learning: {
+        title: "Como aprende",
+        fromYou: "Aprende com as suas conversas",
+        fromYouHint:
+          "O que aprende na sua DM fica só com você. O que aprende num canal, todo mundo que lê aquele canal vê. O que aprende sobre você fica só com você.",
+        workspaceOff: "Desligado para o workspace inteiro",
+        forgetAll: "Esquecer tudo",
+        forgetAllHint: "Apaga o que aprendeu com você por conta própria. O que você pediu para lembrar fica.",
+        forgetTitle: "Esquecer o que aprendeu com você?",
+        forgetText:
+          "Tudo o que aprendeu com você por conta própria vai embora, para sempre. O que você pediu para lembrar fica, e o que aprendeu nos canais também.",
+        forgotten: "Pronto. O que aprendeu com você por conta própria foi apagado.",
+        workspace: "Aprende neste workspace",
+        workspaceHint:
+          "Desligado, não aprende com ninguém por conta própria. De todo jeito, ninguém lê as memórias de outra pessoa.",
+        onlyYou: "Só você",
+        everyoneIn: "Todo mundo em #{{channel}}",
+        everyone: "Todo mundo que pode ver",
+      },
       skills: "Skills que criou",
       skillUses_zero: "nunca carregada",
       skillUses_one: "carregada uma vez",
@@ -6808,7 +6878,10 @@ export const ptBR = {
         stuck: "Parou porque travou.",
         brain_interrupted: "A IA parou antes de terminar.",
         brain_unavailable: "A IA do computador não conseguiu responder. Confira o computador e peça de novo.",
-        empty_reply: "O modelo não respondeu nada.",
+        empty_reply:
+          "A IA terminou a vez dela sem escrever uma resposta. Tente de novo ou escolha outro modelo nas configurações do agente.",
+        empty_reply_limit:
+          "A IA chegou ao limite de saída antes de escrever uma resposta. Tente de novo ou escolha outro modelo nas configurações do agente.",
         model_refused: "O modelo se recusou a responder.",
         agent_archived: "O agente foi arquivado.",
         code_session_unavailable: "A worktree da sessão não está disponível no computador.",
@@ -6978,8 +7051,6 @@ export const ptBR = {
     subtitle_female: "O que a {{name}} aprendeu com as conversas e as correções do time.",
     subtitlePersonal: "O que o {{name}} aprendeu com as suas conversas e correções.",
     subtitlePersonal_female: "O que a {{name}} aprendeu com as suas conversas e correções.",
-    proposals_one: "{{count}} proposta de melhoria",
-    proposals_other: "{{count}} propostas de melhoria",
     tabsLabel: "Tipo",
     tabs: { known: "Fatos e decisões", lessons: "Lições e preferências", archived: "Arquivados" },
     search: "Buscar",
@@ -6993,9 +7064,6 @@ export const ptBR = {
     unverifiedTitle: "Só agentes afirmaram isso. Entra no contexto como dica marcada.",
     pinned: "Sempre no contexto",
     lowTrust: "Fonte externa, não confiável",
-    confirm: "Confirmar",
-    confirmTitle: "Diga que está certo: os agentes passam a usar como confiável.",
-    confirmed: "Confirmada",
     used_zero: "nunca usado",
     used_one: "usado {{count}} vez",
     used_other: "usado {{count}} vezes",
@@ -7027,7 +7095,7 @@ export const ptBR = {
     },
   },
   proposals: {
-    title: "Propostas de melhoria",
+    title: "Melhorias dos agentes",
     whyCode: {
       refused: "Uma pessoa recusou: {{text}}",
       corrected: "Uma pessoa corrigiu: {{text}}",
@@ -7037,9 +7105,9 @@ export const ptBR = {
       budget: "Parou no orçamento mensal esta semana.",
       noChannel: "Não está em nenhum canal.",
     },
-    subtitle: "O que os agentes propõem mudar no time. Nada muda sem alguém aceitar.",
-    subtitlePersonal: "O que os seus agentes propõem mudar. Nada muda sem você aceitar.",
-    list: "Propostas",
+    subtitle: "O que os agentes mudaram no time, e por quê. Dá para desfazer.",
+    subtitlePersonal: "O que os seus agentes mudaram, e por quê. Dá para desfazer.",
+    list: "Melhorias",
     proposes: "<b>{{agent}}</b> propõe · {{target}}",
     proposesMany: "<b>{{agent}}</b> propõe · instruções de {{count}} agentes",
     proposesManyChanges: "<b>{{agent}}</b> propõe · mudanças em {{count}} agentes",
@@ -7059,60 +7127,37 @@ export const ptBR = {
     roleLine: "Função: {{from}} → {{to}}",
     accessOn: "Ligar: {{app}}",
     accessOff: "Desligar: {{app}}",
-    include: "Incluir {{name}}",
-    acceptAll: "Aceitar para todos",
-    acceptSome: "Aceitar para {{count}}",
-    /** At the tabs' right on Propostas de melhoria: the waiting proposals the person may decide (two or more), asked once. */
-    all: {
-      label: "Decidir todas as propostas",
-      accept: "Aceitar todas",
-      refuse: "Recusar todas",
-      acceptAsk_one: "Aceitar a proposta? Ela muda na hora.",
-      acceptAsk_other: "Aceitar as {{count}} propostas? Cada uma muda na hora.",
-      refuseAsk_one: "Recusar a proposta? O agente não propõe isso de novo.",
-      refuseAsk_other: "Recusar as {{count}} propostas? Os agentes não propõem isso de novo.",
-      acceptGo_one: "Aceitar",
-      acceptGo_other: "Aceitar as {{count}}",
-      refuseGo_one: "Recusar",
-      refuseGo_other: "Recusar as {{count}}",
-    },
-    staleSome_one: "Uma não foi aceita: o texto mudou desde a proposta.",
-    staleSome_other: "{{count}} não foram aceitas: o texto mudou desde a proposta.",
-    staleSomeAgent_one: "Uma não foi aceita: o agente mudou desde a proposta.",
-    staleSomeAgent_other: "{{count}} não foram aceitas: os agentes mudaram desde a proposta.",
-    waitingFor: "Aguardando {{name}}",
+    /** The agent's review hasn't weighed it yet (ADR 0219): applied or left out in a few seconds. */
+    reviewing: "Avaliando…",
+    /** Applied by the agent whose review weighed it. */
+    appliedByAgent: "Aplicado pelo {{name}}",
+    appliedByAgent_female: "Aplicado pela {{name}}",
+    /** A lesson for the whole workspace, applied with no agent behind it. */
+    appliedAuto: "Aplicado automaticamente",
+    leftOutBy: "Não aplicado pelo {{name}}",
+    leftOutBy_female: "Não aplicado pela {{name}}",
+    leftOut: "Não aplicado",
+    undoneBy: "Desfeito por {{name}}",
+    undoneByYou: "Desfeito por você",
+    undo: "Desfazer",
+    /** A card whose rows ended apart. */
+    appliedSome: "{{done}} de {{total}} aplicadas",
     waitingAdmin: "Aguardando um admin",
     stale: "Ficou velha",
-    staleError: "Esta proposta ficou velha: o texto mudou desde que ela foi feita. A lista foi atualizada.",
-    staleNote: "O texto mudou depois desta proposta, então ela não pode mais ser aceita.",
-    staleErrorAgent: "Esta proposta ficou velha: o agente mudou desde que ela foi feita. A lista foi atualizada.",
-    staleNoteAgent: "O agente mudou depois desta proposta, então ela não pode mais ser aceita.",
+    staleNote: "O texto mudou depois desta proposta, então ela não pode mais ser aplicada.",
+    staleNoteAgent: "O agente mudou depois desta proposta, então ela não pode mais ser aplicada.",
     accepted: "Aceita",
     refused: "Recusada",
-    acceptedSome: "{{done}} de {{total}} aceitas",
-    acceptedBy: "Aceita por {{name}} · {{when}}",
-    refusedBy: "Recusada por {{name}} · {{when}}",
-    acceptedByYou: "Aceita por você · {{when}}",
-    refusedByYou: "Recusada por você · {{when}}",
     why: "Por quê",
     change: "Mudança · {{target}}",
     changeLabel: "Mudança proposta",
-    editFirst: "Editar antes de aceitar",
-    viewDiff: "Ver diferenças",
-    finalText: "Texto final das instruções",
-    finalTextContext: "Texto final do contexto",
-    accept: "Aceitar mudança",
-    acceptEdited: "Aceitar com ajustes",
-    refuse: "Recusar",
-    refuseNote: "Recusar ensina o {{name}} a não propor isso de novo.",
-    refuseNote_female: "Recusar ensina a {{name}} a não propor isso de novo.",
     added: "Adicionado: ",
     removed: "Removido: ",
     /** A run of unchanged lines folded away in a change to an agent's instructions or the context. */
     sameLines_one: "{{count}} linha igual",
     sameLines_other: "{{count}} linhas iguais",
-    empty: "Quando alguém pedir uma mudança a um agente, ou uma lição se repetir, a proposta aparece aqui.",
-    emptyTitle: "Nada para revisar",
+    empty: "Quando um agente melhorar as próprias instruções ou as de um colega, a mudança aparece aqui, com Desfazer.",
+    emptyTitle: "Nada mudou ainda",
     titleInstructions: "Atualizar as instruções do {{name}}",
     titleInstructions_female: "Atualizar as instruções da {{name}}",
     titleRole: "Mudar a função do {{name}}",
@@ -9654,6 +9699,7 @@ export const ptBR = {
       provider_unavailable: "O modelo não respondeu",
       gave_up: "O modelo não respondeu depois de várias tentativas",
       empty_reply: "O modelo não respondeu nada",
+      empty_reply_limit: "O modelo chegou ao limite de saída antes de responder",
       model_refused: "O modelo se recusou a responder",
       runner_outdated: "O programa no computador precisa ser atualizado",
       too_many_tool_calls: "Passou do limite de passos numa execução",
@@ -11152,6 +11198,10 @@ export const ptBR = {
     of: "de {{name}}",
     moreSpeed: "Velocidade e janela de contexto",
     whoThinks: "Quem pensa",
+    /** Under an account in Contas de IA: the agents that think with it (`names` lists them). */
+    thinks_one: "{{names}} pensa com ela",
+    thinks_other: "{{names}} pensam com ela",
+    thinksNone: "Nenhum agente pensa com ela",
     bulk: {
       sub: "Escolha a IA e depois os agentes que passam a usar.",
     },
@@ -11161,10 +11211,15 @@ export const ptBR = {
       search: "Buscar por nome, IA, plano ou dono",
       noMatch: "Nenhuma conta encontrada.",
       noModel: "Nenhum modelo encontrado.",
+      empty: "Nenhuma conta ainda.",
+      /** The account list's foot, under every row. */
+      add: "Adicionar conta",
+      addLine: "Claude, ChatGPT, Gemini e outras, ou uma chave de API",
+      manage: "Gerenciar contas",
       groups: {
-        yours: "Suas",
+        yours: "Suas contas",
         others: "Do time",
-        keys: "Do workspace",
+        keys: "Chaves de API",
       },
     },
     order: {
@@ -12765,8 +12820,6 @@ export const ptBR = {
     steered: "{{name}} recebeu durante a tarefa",
     stillWorking: "{{name}} ainda trabalhando",
     inProgress: "em andamento",
-    quiet: "sem notícias há {{minutes}} min",
-    refresh: "Atualizar",
     stop: "Parar",
     stopping: "Parando…",
     stopHint: "Parar tarefa · Esc",
@@ -13314,7 +13367,6 @@ export const ptBR = {
     count_other: "{{count}} itens",
     searchHint: "Atalho para buscar",
     who: "Quem fez",
-    everyone: "Todos",
     kindMany: {
       document: "Documentos",
       table: "Tabelas",
@@ -13332,8 +13384,10 @@ export const ptBR = {
     view: "Visualização",
     viewGrid: "Grade",
     viewList: "Lista",
-    arrange: "Organizar",
-    arrangeValue: "Organizar: {{group}}",
+    display: "Exibição",
+    displayValue: "Exibição: {{view}} · {{group}}",
+    filterButton: "Filtro",
+    filterValue: "{{filter}}: {{value}}",
     groupBy: "Agrupar por",
     group: {
       date: "Data",
@@ -15994,6 +16048,14 @@ export const ptBR = {
       undoGone: "Este link de desfazer já foi usado ou expirou. Desvincule nas suas configurações de notificações.",
       codeGone:
         "Este código está errado, já foi usado ou expirou depois de 10 minutos. Gere um novo código e envie de novo.",
+      pageGone: "Este link expirou. Peça um novo ao seu assistente no chat.",
+      pageElsewhere: "Este link foi aberto em outro aparelho. Peça um novo ao seu assistente no chat.",
+      pinWrong: "PIN errado. Tentativas restantes: {{left}}.",
+      pinLocked: "PINs errados demais. Tente mais tarde ou escolha um PIN novo no app.",
+      pinShape: "Seu PIN tem 6 dígitos.",
+      pinResetGone: "Este link já foi usado ou expirou. Peça um novo em “Esqueceu seu PIN?”.",
+      pinUnset: "Escolha seu PIN primeiro. Escolha no app, com sua conta.",
+      emailUnverified: "Seu e-mail ainda não foi confirmado. Escolha seu PIN no app.",
     },
     wallpaper: {
       notYours: "Essa foto não é sua.",
@@ -16048,6 +16110,8 @@ export const ptBR = {
       deleteName: "Digite o nome do canal para apagar.",
       generalKept: "O #general não pode ser apagado.",
       generalStays: "Todo mundo fica no #general.",
+      leadChannelOnly: "Só canais têm agente responsável.",
+      leadNotMember: "O agente responsável precisa estar no canal.",
       mcpUnreachable: "Não foi possível conectar ao servidor MCP. Confira o endereço e tente de novo.",
       notApproved: "Este serviço ainda não aprovou o agentes.chat.",
       alreadyInvited: "Essa pessoa já tem um convite.",
@@ -16175,6 +16239,13 @@ export const ptBR = {
     teamProposal: {
       undoExpired:
         "Já passou um dia desde que este time foi criado, então não dá para desfazer aqui. Arquive os agentes nas páginas deles.",
+    },
+    /** Undo on a change an agent applied (ADR 0219). */
+    proposal: {
+      changed: "Isso mudou depois de aplicado: ajuste à mão.",
+      notApplied: "Esta mudança não foi aplicada, então não há o que desfazer.",
+      notUndoable: "Um agente apagado não volta.",
+      notAllowed: "Só quem pode fazer esta mudança consegue desfazer.",
     },
     agentProposal: {
       decided: "Alguém já decidiu esta proposta.",
@@ -16367,6 +16438,7 @@ export const ptBR = {
       widenForbidden: "Admins só podem restringir quem usa o dispositivo de outra pessoa.",
       spillOwnerOnly: "Só quem conectou este computador pode deixar respostas pensarem nele. Você pode desligar.",
       tasksOwnerOnly: "Só quem conectou este computador pode mudar quantas tarefas ele roda ao mesmo tempo.",
+      tasksCloud: "A Cloud dimensiona sozinha o espaço deste computador para tarefas.",
       notHome: "Os agentes moram no computador do workspace e usam este quando o citam pelo nome.",
     },
     machine: {
@@ -16783,6 +16855,13 @@ export const ptBR = {
     phonesHere: "Celulares neste computador",
     maxTasks: "Tarefas ao mesmo tempo",
     maxTasksHint: "Quantas tarefas em segundo plano os agentes rodam aqui ao mesmo tempo. As outras esperam a vez.",
+    tasksAutoRoom: "Automático · {{running}} rodando · cabem mais umas {{more}}",
+    tasksAutoFull: "Automático · {{running}} rodando · cheio por enquanto",
+    tasksAutoHint:
+      "Os agentes começam tarefas em segundo plano enquanto este computador tem memória sobrando, deixando 1,5 GB livres para os seus apps. As outras esperam a vez.",
+    pushHarder: "Forçar mais",
+    pushHarderHint:
+      "Mais tarefas ao mesmo tempo: só 0,5 GB de memória fica livre e o processador ocupado não as segura. Os seus apps podem ficar lentos.",
     belongs: "Pertence ao workspace",
     belongsHint: "Ele fica quando quem o conectou sai, e todos podem usá-lo enquanto ninguém for dono dele.",
     spillOwn: "Suas respostas podem pensar aqui",
@@ -16840,6 +16919,7 @@ export const ptBR = {
       inUse: "Em uso",
       inUseBy: "Em uso por {{name}}",
       busy: "Ocupado {{running}}/{{max}}",
+      busyRunning: "Ocupado · {{running}} rodando",
       needs: "Precisa de você",
       preparing: "Preparando",
       paused: "Pausado",
@@ -16863,6 +16943,11 @@ export const ptBR = {
       tasksChange: "Tarefas ao mesmo tempo aqui: {{max}}. Mude abaixo.",
       tasksOwner: "Tarefas ao mesmo tempo aqui: {{max}}. Quem conectou este computador pode mudar isso.",
       tasksUpdate: "Tarefas ao mesmo tempo aqui: {{max}}. Atualize o app dele para mudar isso daqui.",
+      tasksNoMemory:
+        "Sem espaço para outra tarefa agora: {{gb, number}} GB de memória livres. A próxima começa quando uma terminar.",
+      tasksNoCpu:
+        "Sem espaço para outra tarefa agora: o processador está quase cheio. A próxima começa quando ele aliviar.",
+      tasksPushing: "Forçando mais: {{gb, number}} GB de memória livres. Os seus apps podem ficar lentos.",
       offline: "Os agentes esperam ele voltar.",
       offlineSeen: "Visto às {{time}}. Os agentes esperam ele voltar.",
       offlineWithHost: "{{host}} está offline. Os agentes esperam ele voltar.",
@@ -16965,8 +17050,13 @@ export const ptBR = {
         "De quem os agentes podem rodar tarefas aqui. Admins podem restringir, só o dono pode abrir para mais gente.",
       phoneHint: "Compartilhar um celular nunca compartilha {{host}}.",
       followsHint: "Um iPhone segue a regra do Mac em que está conectado.",
-      serverHelp: "Cada agente roda nele com o próprio usuário.",
-      computerHelp: "Os comandos dos agentes rodam nele com o seu usuário.",
+    },
+    share: {
+      title: "Deixar o workspace todo usar",
+      off: "Só você por enquanto",
+      on: "Todos em {{org}}",
+      hint: "Os agentes de todos em {{org}} podem rodar tarefas nele, com o seu usuário.",
+      hintServer: "Os agentes de todos em {{org}} podem rodar tarefas nele, cada um com o próprio usuário.",
     },
     request: {
       title: "{{name}} quer entrar em {{org}}",
@@ -16974,7 +17064,6 @@ export const ptBR = {
       letJoin: "Deixar entrar",
       deny: "Recusar",
       denied: "{{name}} não vai entrar.",
-      joined: "{{name}} entrou.",
     },
     empty: {
       title: "Nenhum dispositivo ainda",
@@ -18215,7 +18304,7 @@ export const ptBR = {
     telemetry: {
       title: "Estatísticas de uso",
       label: "Enviar estatísticas de uso anônimas ao agentes.chat",
-      help: "Contagens como pessoas, agentes, tamanho das máquinas, tokens de IA usados e o volume de dados que os navegadores dos agentes enviam e recebem. Nunca mensagens, arquivos, nomes ou sites.",
+      help: "Contagens como pessoas, agentes, tamanho das máquinas, tokens de IA usados, o volume de dados que os navegadores dos agentes enviam e recebem e com que rapidez os apps abrem e respondem. Nunca mensagens, arquivos, nomes ou sites.",
       envOff: "Desligado nas configurações deste servidor (TELEMETRY=off).",
       envOffDesktop:
         "Desligado no app do agentes.chat no computador deste servidor (Preferências\u00a0›\u00a0Servidores).",
@@ -18302,7 +18391,6 @@ export const ptBR = {
     removeUsedNone_other:
       "{{agents}} pensam com esta chave e não têm outra. Sem ela, param de responder até você conectar outra IA.",
     noKeys: "Com uma chave de API, você paga direto ao provedor e escolhe os modelos.",
-    noKeysTitle: "Traga sua própria chave de IA",
     platformAvailable: "A chave do Claude deste servidor também está disponível.",
     usageTitle: "Gastos da API por tipo",
     usageAgentLine: "{{spent}} de {{budget}}",
@@ -19462,6 +19550,10 @@ export const ptBR = {
         "{{surface}} foi desvinculado porque a identidade mudou. Vincule de novo em Configurações se foi você.",
       surfaceVoiceDropped: "Não consegui entender esse áudio. Pode mandar de novo ou escrever?",
       done: "Pronto.",
+      no_reply:
+        "A IA terminou a vez dela sem escrever uma resposta. O que ela mudou está abaixo. Peça de novo a resposta.",
+      no_reply_limit:
+        "A IA chegou ao limite de saída antes de escrever uma resposta. O que ela mudou está abaixo. Peça de novo a resposta.",
       /**
        * A stretch's pause card (ADR 0089): `agents` their names, `count` how many; `percent` the share of each one's
        * monthly budget, and with `_cost` it in money (`amount`).
