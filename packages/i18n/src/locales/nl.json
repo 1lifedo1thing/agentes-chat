@@ -3604,6 +3604,10 @@
       "plan": "Met abonnement",
       "key": "Met API-sleutel"
     },
+    "offSystem": "Werkt nog niet op {{system}}",
+    "offSystemGroup": "Werken nog niet op {{system}}",
+    "offSystemSome_one": "{{names}} werkt nog niet op {{system}}",
+    "offSystemSome_other": "{{names}} werken nog niet op {{system}}",
     "pick": {
       "plan": "Abonnement",
       "placeholder": "Kies een abonnement",

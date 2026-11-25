@@ -627,6 +627,7 @@ test("a coding plan's key: no sign-in page but the plan's key page, the key seal
       machineId,
       name: "mac",
       online: expect.any(Boolean),
+      os: expect.any(String),
       mine: true,
       canAdd: true,
       keys: true,

@@ -15,6 +15,7 @@ import {
   agentAccountsDir,
   grantOf,
   loginFailureOf,
+  parseAgyLoginEmail,
   parseAgyLoginUrl,
   parseAgyStatus,
 } from "../../runner/accounts";
@@ -231,7 +232,18 @@ test("the CLI's words: its models, its sign-in status, its sign-in link and its 
   expect(parseAgyStatus(0, "Fetching available models...\n", null)).toEqual({ loggedIn: false });
   const login =
     "Open this link in a browser to log in with Google:\r\n\r\n  https://accounts.google.com/o/oauth2/auth?client_id=agy&state=s1\r\n\r\nThen paste the authorization code";
-  expect(parseAgyLoginUrl(login)).toBe("https://accounts.google.com/o/oauth2/auth?client_id=agy&state=s1");
+  // Google always asks which account: a browser signed in to one would otherwise take it for a second sign-in too.
+  expect(parseAgyLoginUrl(login)).toBe(
+    "https://accounts.google.com/o/oauth2/auth?client_id=agy&state=s1&prompt=select_account",
+  );
+  expect(
+    parseAgyLoginUrl("https://accounts.google.com/o/oauth2/auth?client_id=agy&prompt=consent&state=s1\n", true),
+  ).toBe("https://accounts.google.com/o/oauth2/auth?client_id=agy&prompt=consent+select_account&state=s1");
+  expect(parseAgyLoginUrl("https://accounts.google.com/o/oauth2/auth?prompt=select_account&state=s1\n", true)).toBe(
+    "https://accounts.google.com/o/oauth2/auth?prompt=select_account&state=s1",
+  );
+  expect(parseAgyLoginEmail("\r\nLogged in as ana@example.com.\r\n")).toBe("ana@example.com");
+  expect(parseAgyLoginEmail(login)).toBeUndefined();
   expect(parseAgyLoginUrl("https://evil.example/accounts.google.com\n", true)).toBeNull();
   // Why a sign-in failed, by the CLI's words.
   expect(loginFailureOf('couldn\'t log in: token exchange failed: oauth2: "invalid_grant" "Bad Request"')).toBe(
@@ -541,7 +553,7 @@ test.skipIf(!posix)(
     managers.push(m);
     const id = "0193eeee-0000-7000-8000-0000000000d2";
     const begun = await m.begin("antigravity", id, false, undefined, "enterprise");
-    expect(begun.url).toBe("https://accounts.google.com/o/oauth2/auth?client_id=agy&state=s1");
+    expect(begun.url).toBe("https://accounts.google.com/o/oauth2/auth?client_id=agy&state=s1&prompt=select_account");
     expect(typeof begun.publicKey).toBe("string");
     expect(agyAuthOf(path.join(home, "accounts", "antigravity", id))).toBe("oauth-business");
     const aad = accountCodeAad(id, ORG);
@@ -550,7 +562,8 @@ test.skipIf(!posix)(
     // `agy models` lists its models split by a tab: signed in.
     expect(m.status(id)).toMatchObject({
       state: "done",
-      account: { kind: "antigravity", loggedIn: true, provider: "enterprise" },
+      // `agy models` never names the account: the sign-in's own "Logged in as" line does.
+      account: { kind: "antigravity", loggedIn: true, provider: "enterprise", email: "ana@example.com" },
     });
     // Windows keeps every sign-in in the user's one Credential Manager: refused.
     const win = new AccountManager({ root: path.join(home, "win"), orgId: () => ORG, platform: "win32" });
@@ -762,6 +775,7 @@ test.skipIf(!posix)(
       id: ACCOUNT,
       kind: "antigravity" as const,
       loggedIn: true,
+      email: "ana@example.com",
       shared: true,
       authMethod: "cli_login" as const,
     };
@@ -775,7 +789,9 @@ test.skipIf(!posix)(
     expect(existsSync(path.join(dir, ".check"))).toBe(false);
     expect(await m.lendTo("antigravity", ACCOUNT, 21001)).toBe(false);
     m.invalidate();
-    expect(await m.list()).toEqual([account]);
+    // A later look can't name the account (`agy models`): the server keeps the email the sign-in said.
+    const { email: _said, ...looked } = account;
+    expect(await m.list()).toEqual([looked]);
     // Its plan's usage, from its CLI in root's folder, which refreshes the sign-in in place meanwhile: a turn's copy is
     // read once the file is whole again, never as an empty one that would sign every agent out.
     process.env.FAKE_AGY_REFRESH_MS = "500";

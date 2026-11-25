@@ -257,6 +257,73 @@ describe("Conectar uma IA: one picker, plans first", () => {
     }
   });
 
+  test("a plan that doesn't run on the computer's system says so in its row, before it is picked", async () => {
+    const opt = (kind: AgentBrain["options"][number]["kind"], off = false) => ({
+      kind,
+      available: !off,
+      models: [],
+      defaultModel: null,
+      ...(off ? { reason: "system" as const } : {}),
+    });
+    const { dialog } = await connect({
+      computers: [{ ...MAC, name: "Desktop", os: "windows" }],
+      brain: {
+        computer: { machineId: "machine_1", name: "Desktop", online: true, os: "windows" },
+        options: [
+          opt("claude_code"),
+          opt("codex"),
+          opt("cursor", true),
+          opt("opencode"),
+          opt("grok", true),
+          opt("antigravity", true),
+        ],
+      },
+    });
+    const rows = await openAiSelect(dialog);
+    // The ones that run there first; the others last, under a heading that names the system. Every row one line.
+    expect(rows.map((o) => o.textContent).slice(-3)).toEqual(["Gemini", "Grok", "Cursor"]);
+    const off = screen().getByRole("group", { name: "Ainda não rodam no Windows" });
+    expect(
+      within(off)
+        .getAllByRole("option")
+        .map((o) => o.textContent),
+    ).toEqual(["Gemini", "Grok", "Cursor"]);
+    expect(rows.some((o) => o.querySelector(".ac-menu__desc"))).toBe(false);
+    await closeAiSelect();
+  });
+
+  test("the team's plan cards say which plans don't run on the computer's system, folded or not", async () => {
+    const opt = (kind: AgentBrain["options"][number]["kind"], off = false) => ({
+      kind,
+      available: !off,
+      models: [],
+      defaultModel: null,
+      ...(off ? { reason: "system" as const } : {}),
+    });
+    const { dialog } = await connect({
+      crew: true,
+      computers: [{ ...MAC, name: "Desktop", os: "windows" }],
+      brain: {
+        computer: { machineId: "machine_1", name: "Desktop", online: true, os: "windows" },
+        options: [
+          opt("claude_code"),
+          opt("codex"),
+          opt("cursor", true),
+          opt("opencode"),
+          opt("grok", true),
+          opt("antigravity", true),
+        ],
+      },
+    });
+    const row = (name: RegExp) =>
+      within(dialog).getByRole("button", { name }).closest(".ac-optrow") as HTMLElement;
+    expect(shownText(row(/^Outro plano/))).toContain("Gemini, Grok e Cursor ainda não rodam no Windows");
+    await click(within(dialog).getByRole("button", { name: /^Outro plano/ }));
+    for (const name of ["Gemini", "Grok", "Cursor"])
+      expect(shownText(row(new RegExp(`^${name}`)))).toBe(`${name}Ainda não roda no Windows`);
+    expect(shownText(row(/^Claude/))).not.toContain("Windows");
+  });
+
   test("Settings › AI accounts opens the same picker: a plan or a key, then one select with Claude chosen and its sign-in", async () => {
     const { dialog } = await connect();
     const group = within(dialog).getByRole("group", { name: "Qual IA eles vão usar?" });

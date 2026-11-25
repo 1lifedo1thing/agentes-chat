@@ -3880,6 +3880,12 @@
       "plan": "Planem",
       "key": "Kluczem API"
     },
+    "offSystem": "Jeszcze nie działa w systemie {{system}}",
+    "offSystemGroup": "Jeszcze nie działają w systemie {{system}}",
+    "offSystemSome_one": "{{names}} jeszcze nie działa w systemie {{system}}",
+    "offSystemSome_few": "{{names}} jeszcze nie działają w systemie {{system}}",
+    "offSystemSome_many": "{{names}} jeszcze nie działają w systemie {{system}}",
+    "offSystemSome_other": "{{names}} jeszcze nie działają w systemie {{system}}",
     "pick": {
       "plan": "Plan",
       "placeholder": "Wybierz plan",

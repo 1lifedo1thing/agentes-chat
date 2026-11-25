@@ -3447,6 +3447,9 @@
       "plan": "요금제로",
       "key": "API 키로"
     },
+    "offSystem": "아직 {{system}}에서는 실행되지 않아요",
+    "offSystemGroup": "아직 {{system}}에서는 실행되지 않아요",
+    "offSystemSome_other": "{{names}}은(는) 아직 {{system}}에서 실행되지 않아요",
     "pick": {
       "plan": "요금제",
       "placeholder": "요금제 선택",

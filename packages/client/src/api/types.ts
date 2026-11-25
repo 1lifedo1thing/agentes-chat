@@ -6575,7 +6575,8 @@ export interface AgentBrain {
   /** As stored; null = the brain's default. */
   model: string | null;
   effectiveModel: string | null;
-  computer: { machineId: string; name: string; online: boolean } | null;
+  /** `os`: its system, where a plan doesn't run there (absent: an older server). */
+  computer: { machineId: string; name: string; online: boolean; os?: string } | null;
   options: BrainOption[];
   /** Every computer the caller may give the agent, with what each offers ("Vai para o Mac mini"). */
   machines: BrainMachine[];
@@ -6787,6 +6788,8 @@ export interface AiComputer {
   machineId: string;
   name: string;
   online: boolean;
+  /** Its system, where a plan doesn't run there (absent: an older server). */
+  os?: string;
   /** The viewer connected it. */
   mine: boolean;
   /** The viewer adds accounts there (they connected it, or nobody did), on a runner that knows accounts. */

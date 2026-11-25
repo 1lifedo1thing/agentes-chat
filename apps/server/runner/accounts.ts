@@ -1292,10 +1292,23 @@ export function parseGrokStatus(
 
 /**
  * The Antigravity CLI's sign-in (`agy acp --login`): the first https URL on Google's accounts pages. The code Google
- * shows after the sign-in is pasted back (`code`), as with Claude Code.
+ * shows after the sign-in is pasted back (`code`), as with Claude Code. It always asks which Google account
+ * (`prompt=select_account`): the CLI's link doesn't, so a browser signed in to one account took that one without a
+ * question, and a second Gemini account signed in as the first again.
  */
 export function parseAgyLoginUrl(output: string, final = false): string | null {
-  return urlsIn(stripAnsi(output), (h) => hostIs(h, "accounts.google.com"), final)[0]?.url ?? null;
+  const found = urlsIn(stripAnsi(output), (h) => hostIs(h, "accounts.google.com"), final)[0]?.url;
+  if (!found) return null;
+  const url = new URL(found);
+  const prompt = (url.searchParams.get("prompt") ?? "").split(" ").filter(Boolean);
+  if (!prompt.includes("select_account")) url.searchParams.set("prompt", [...prompt, "select_account"].join(" "));
+  return url.toString();
+}
+
+/** The Google account a finished `agy acp --login` names (`Logged in as someone@example.com.`), when it does. */
+export function parseAgyLoginEmail(output: string): string | undefined {
+  const email = /logged in as ([^\s@<>()"']+@[^\s@<>()"']+\.[a-z]{2,})/i.exec(stripAnsi(output))?.[1];
+  return email && email.length <= 254 ? email : undefined;
 }
 
 /** What the Antigravity CLI says when it has no sign-in to think with. */
@@ -2317,6 +2330,11 @@ export class AccountManager {
         const status: { said?: string } = {};
         const info = await this.lookUp(login.kind, login.id, status);
         if (login.state !== "waiting") return;
+        // `agy models` never names the account: its sign-in's own words may, which the server then keeps.
+        if (login.kind === "antigravity" && !info.email) {
+          const email = parseAgyLoginEmail(login.output);
+          if (email) info.email = email;
+        }
         const sandbox =
           info.loggedIn && !info.statusUnknown && login.kind === "grok"
             ? (this.opts.grokSandbox?.(login.dir) ?? null)

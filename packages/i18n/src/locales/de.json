@@ -3604,6 +3604,10 @@
       "plan": "Mit einem Abo",
       "key": "Mit API-Schlüssel"
     },
+    "offSystem": "Läuft noch nicht unter {{system}}",
+    "offSystemGroup": "Laufen noch nicht unter {{system}}",
+    "offSystemSome_one": "{{names}} läuft noch nicht unter {{system}}",
+    "offSystemSome_other": "{{names}} laufen noch nicht unter {{system}}",
     "pick": {
       "plan": "Abo",
       "placeholder": "Abo auswählen",

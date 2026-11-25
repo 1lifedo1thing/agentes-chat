@@ -3449,6 +3449,9 @@
       "plan": "プランで",
       "key": "APIキーで"
     },
+    "offSystem": "{{system}} ではまだ動きません",
+    "offSystemGroup": "{{system}} ではまだ動きません",
+    "offSystemSome_other": "{{names}} は {{system}} ではまだ動きません",
     "pick": {
       "plan": "プラン",
       "placeholder": "プランを選ぶ",

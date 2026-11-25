@@ -3449,6 +3449,9 @@
       "plan": "用套餐",
       "key": "用 API 密钥"
     },
+    "offSystem": "暂不支持 {{system}}",
+    "offSystemGroup": "暂不支持 {{system}}",
+    "offSystemSome_other": "{{names}} 暂不支持 {{system}}",
     "pick": {
       "plan": "套餐",
       "placeholder": "选择套餐",

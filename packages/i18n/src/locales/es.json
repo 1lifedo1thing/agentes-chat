@@ -3734,6 +3734,11 @@
       "plan": "Con un plan",
       "key": "Con clave de API"
     },
+    "offSystem": "Aún no funciona en {{system}}",
+    "offSystemGroup": "Aún no funcionan en {{system}}",
+    "offSystemSome_one": "{{names}} aún no funciona en {{system}}",
+    "offSystemSome_many": "{{names}} aún no funcionan en {{system}}",
+    "offSystemSome_other": "{{names}} aún no funcionan en {{system}}",
     "pick": {
       "plan": "Plan",
       "placeholder": "Elige un plan",

@@ -630,3 +630,9 @@ export function loginRead(status: { isError: boolean; error: unknown; errorUpdat
   if (!(status.error instanceof LoginReadError)) return "failed";
   return status.errorUpdatedAt - status.error.since < LOGIN_RECONNECT_MS ? "reconnecting" : "noAnswer";
 }
+
+const OS_CODES = new Set(["linux", "darwin", "windows", "other"]);
+
+/** "macOS", "Windows", or the server's own words when it sends a full name with a version ("Ubuntu 24.04"). */
+export const osName = (t: TFunction, os: string) =>
+  OS_CODES.has(os) ? (t as unknown as (key: string) => string)(`machines.os.${os}`) : os;

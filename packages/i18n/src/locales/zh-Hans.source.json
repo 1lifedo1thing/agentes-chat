@@ -8902,6 +8902,18 @@
   "connectAi.pay.key": {
     "value": "With an API key"
   },
+  "connectAi.offSystem": {
+    "value": "Doesn't run on {{system}} yet"
+  },
+  "connectAi.offSystemGroup": {
+    "value": "Don't run on {{system}} yet"
+  },
+  "connectAi.offSystemSome": {
+    "value": {
+      "one": "{{names}} doesn't run on {{system}} yet",
+      "other": "{{names}} don't run on {{system}} yet"
+    }
+  },
   "connectAi.pick.plan": {
     "value": "Plan"
   },

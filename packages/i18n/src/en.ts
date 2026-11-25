@@ -3940,6 +3940,16 @@ export const en = {
       plan: "With a plan",
       key: "With an API key",
     },
+    /**
+     * A plan's line in the pickers when it doesn't run on the computer's system (`planOffSystem`), in place of its
+     * tiers: `system` is "Windows", "macOS"…
+     */
+    offSystem: "Doesn't run on {{system}} yet",
+    /** The heading over those plans at the end of the plans' select. */
+    offSystemGroup: "Don't run on {{system}} yet",
+    /** Under "More plans" while it's folded: the plans in it that don't run on the computer's system. */
+    offSystemSome_one: "{{names}} doesn't run on {{system}} yet",
+    offSystemSome_other: "{{names}} don't run on {{system}} yet",
     pick: {
       plan: "Plan",
       placeholder: "Choose a plan",
