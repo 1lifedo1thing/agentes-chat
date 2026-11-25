@@ -484,7 +484,7 @@ export const envVars = {
     section: "Agents",
   },
   CLAUDE_PLAN_CONCURRENCY: {
-    schema: z.coerce.number().int().min(0).max(50).default(6),
+    schema: z.coerce.number().int().min(0).max(50).default(12),
     description:
       "How many agent runs one Claude plan sign-in (a subscription, never an API key) works on at once. Past it, the next run waits in line like any other and starts as soon as one ends. 0 turns the limit off.",
     section: "Agents",
@@ -1435,7 +1435,7 @@ export const envVars = {
       .transform((on) => (on ? "on" : "off") as "on" | "off")
       .default("on"),
     description:
-      "Send anonymous usage statistics to agentes.chat once a day: counts such as people, agents, machine sizes, AI tokens used and how much data the agents' browsers send and receive. Never messages, files, names or sites. `off` stops it, whatever the switch in Settings → General says (the installation's owner can turn it off there too). `docker compose run --rm agentes telemetry` prints exactly what would be sent (https://agentes.chat/docs/install-on-a-server#data).",
+      "Send anonymous usage statistics to agentes.chat once a day: counts such as people, agents, machine sizes, AI tokens used, how much data the agents' browsers send and receive, and how fast the apps open and run. Never messages, files, names or sites. `off` stops it, whatever the switch in Settings → General says (the installation's owner can turn it off there too). `docker compose run --rm agentes telemetry` prints exactly what would be sent (https://agentes.chat/docs/install-on-a-server#data).",
     section: "Usage report",
   },
   TELEMETRY_URL: {

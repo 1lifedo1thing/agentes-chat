@@ -2661,12 +2661,57 @@ export const en = {
       /** In place of the sender's name when the server has none. */
       sender: "That sender",
     },
+    /** A page a link sent in the chat app opens (ADR 0226): one action the person approves with their PIN. */
+    page: {
+      opening: "Opening the page",
+      gone: "This link no longer works",
+      lead: "Type your PIN to approve it.",
+      leadFirst: "Choose a 6-digit PIN to approve it. It confirms actions like this one from {{surface}}.",
+      choosePin: "Choose a PIN",
+      repeatPin: "Type it again",
+      pin: "Your PIN",
+      mismatch: "The two PINs don't match. Type the second one again.",
+      approve: "Approve",
+      refuse: "Refuse",
+      forgot: "Forgot your PIN?",
+      emailed: "We emailed you a link. Choose your PIN there, then come back to this page.",
+      notYours: "{{who}} decides this in the app.",
+      notYoursSomeone: "Someone who can approve it decides this in the app.",
+      approved: "Approved",
+      refused: "Refused",
+      expired: "This request ran out",
+      back: "Go back to {{surface}}. Your assistant goes on there.",
+      setFirst: "Set your PIN first",
+      setFirstLead:
+        "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page.",
+      setFirstLeadEmail:
+        "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page.",
+      openApp: "Choose it in the app",
+      emailMe: "Email me a link",
+    },
+    /** The page the "Choose your PIN" email opens. Signed out, so it learns the app's name only from the answer. */
+    pinReset: {
+      title: "Choose your PIN",
+      lead: "Six digits. You'll type it to approve actions you ask for from your chat app.",
+      button: "Save my PIN",
+      done: "PIN saved",
+      doneLead: "Go back to the page from {{surface}} and approve with it.",
+      gone: "This link no longer works",
+    },
     /** The tag on a person's message written in the chat app. */
     via: "via {{surface}}",
     viaTip: "Sent by {{person}} on {{surface}}",
     /** The same, for a message the person forwarded there: someone else's words. */
     forwarded: "forwarded via {{surface}}",
     forwardedTip: "{{person}} forwarded this from {{surface}}. The words are someone else's.",
+    /** Choosing the PIN in the app's settings, where the signed-in session proves who chooses it (ADR 0226). */
+    pin: {
+      set: "Set PIN",
+      change: "Change PIN",
+      title: "Your {{surface}} PIN",
+      text: "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat.",
+      save: "Save PIN",
+    },
   },
   team: {
     title: "Team",
@@ -16037,6 +16082,14 @@ export const en = {
       taken: "That sender is linked to another agentes.chat account. Unlink it there, then send a new code.",
       undoGone: "This undo link was already used or ran out. Unlink in your notification settings instead.",
       codeGone: "This code is wrong, used or ran out after 10 minutes. Make a new code and send it again.",
+      pageGone: "This link ran out. Ask your assistant in the chat for a new one.",
+      pageElsewhere: "This link was opened on another device. Ask your assistant in the chat for a new one.",
+      pinWrong: "Wrong PIN. Tries left: {{left}}.",
+      pinLocked: "Too many wrong PINs. Try again later, or choose a new PIN in the app.",
+      pinShape: "Your PIN has 6 digits.",
+      pinResetGone: "This link was already used or ran out. Ask for a new one with “Forgot your PIN?”.",
+      pinUnset: "Set your PIN first. Choose it in the app, signed in.",
+      emailUnverified: "Your email address isn't verified yet. Choose your PIN in the app instead.",
     },
     wallpaper: {
       notYours: "That photo isn't yours.",
@@ -18398,7 +18451,7 @@ export const en = {
     telemetry: {
       title: "Usage statistics",
       label: "Send anonymous usage statistics to agentes.chat",
-      help: "Counts such as people, agents, machine sizes, AI tokens used and how much data the agents' browsers send and receive. Never messages, files, names or sites.",
+      help: "Counts such as people, agents, machine sizes, AI tokens used, how much data the agents' browsers send and receive, and how fast the apps open and run. Never messages, files, names or sites.",
       envOff: "Turned off in this server's settings (TELEMETRY=off).",
       envOffDesktop: "Turned off in the agentes.chat app on this server's computer (Preferences\u00a0›\u00a0Servers).",
       envOffHere: "Turned off in the agentes.chat app on this computer.",
