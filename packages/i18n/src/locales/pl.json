@@ -1549,6 +1549,10 @@
         "file_few": "{{who}} używają {{label}}.",
         "file_many": "{{who}} używają {{label}}.",
         "file_other": "{{who}} używają {{label}}.",
+        "path_one": "{{who}} wskazuje w instrukcjach {{label}}, ale tego nie było w imporcie, więc agent nie może tego otworzyć. Wrzuć te pliki do Drive albo usuń tę ścieżkę z instrukcji.",
+        "path_few": "{{who}} wskazują w instrukcjach {{label}}, ale tego nie było w imporcie, więc agenci nie mogą tego otworzyć. Wrzuć te pliki do Drive albo usuń tę ścieżkę z instrukcji.",
+        "path_many": "{{who}} wskazują w instrukcjach {{label}}, ale tego nie było w imporcie, więc agenci nie mogą tego otworzyć. Wrzuć te pliki do Drive albo usuń tę ścieżkę z instrukcji.",
+        "path_other": "{{who}} wskazują w instrukcjach {{label}}, ale tego nie było w imporcie, więc agenci nie mogą tego otworzyć. Wrzuć te pliki do Drive albo usuń tę ścieżkę z instrukcji.",
         "webhook_one": "Rutyna {{label}} ({{who}}) dostaje tu nowy adres: zmień go na stronie lub w aplikacji, która wywoływała stary.",
         "webhook_few": "Rutyna {{label}} ({{who}}) dostaje tu nowy adres: zmień go na stronie lub w aplikacji, która wywoływała stary.",
         "webhook_many": "Rutyna {{label}} ({{who}}) dostaje tu nowy adres: zmień go na stronie lub w aplikacji, która wywoływała stary.",
@@ -1676,6 +1680,7 @@
         "app": "Połącz",
         "model": "Wybierz model",
         "file": "Otwórz Drive",
+        "path": "Otwórz Drive",
         "webhook": "Otwórz Rutyny"
       },
       "linkSkipped_one": "{{count}} plik ponad limit linku",

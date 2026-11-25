@@ -1593,6 +1593,11 @@ export const en = {
         model_other: "{{who}} use {{label}}, which isn't available here.",
         file_one: "{{who}} uses {{label}}.",
         file_other: "{{who}} use {{label}}.",
+        /** A file or folder (`label`, a path on the old computer) an agent's instructions name that the import didn't bring. */
+        path_one:
+          "{{who}} points to {{label}} in its instructions, but it didn't come in the import, so the agent can't open it. Add those files to the Drive, or take that path out of the instructions.",
+        path_other:
+          "{{who}} point to {{label}} in their instructions, but it didn't come in the import, so the agents can't open it. Add those files to the Drive, or take that path out of the instructions.",
         webhook_one:
           "The routine {{label}}, of {{who}}, gets a new address here: change it in the site or app that called the old one.",
         webhook_other:
@@ -1702,6 +1707,7 @@ export const en = {
         app: "Connect",
         model: "Pick a model",
         file: "Open the Drive",
+        path: "Open the Drive",
         webhook: "Open routines",
       },
       linkSkipped_one: "{{count}} file past the link's limit",

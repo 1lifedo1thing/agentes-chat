@@ -1458,6 +1458,8 @@
         "model_other": "{{who}} gebruiken {{label}}, dat hier niet beschikbaar is.",
         "file_one": "{{who}} gebruikt {{label}}.",
         "file_other": "{{who}} gebruiken {{label}}.",
+        "path_one": "{{who}} verwijst in de instructies naar {{label}}, maar dat kwam niet mee met de import, dus de agent kan het niet openen. Zet die bestanden in de Drive of haal dat pad uit de instructies.",
+        "path_other": "{{who}} verwijzen in hun instructies naar {{label}}, maar dat kwam niet mee met de import, dus de agents kunnen het niet openen. Zet die bestanden in de Drive of haal dat pad uit de instructies.",
         "webhook_one": "De routine {{label}} ({{who}}) krijgt hier een nieuw adres: wijzig het in de site of app die het oude aanriep.",
         "webhook_other": "De routine {{label}} ({{who}}) krijgt hier een nieuw adres: wijzig het in de site of app die het oude aanriep."
       },
@@ -1565,6 +1567,7 @@
         "app": "Koppelen",
         "model": "Kies een model",
         "file": "De Drive openen",
+        "path": "De Drive openen",
         "webhook": "Routines openen"
       },
       "linkSkipped_one": "{{count}} bestand voorbij de limiet van de link",

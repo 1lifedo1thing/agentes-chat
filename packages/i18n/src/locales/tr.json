@@ -1458,6 +1458,8 @@
         "model_other": "{{who}}, burada kullanılamayan {{label}} modelini kullanıyor.",
         "file_one": "{{who}}, {{label}} kullanıyor.",
         "file_other": "{{who}}, {{label}} kullanıyor.",
+        "path_one": "{{who}}, talimatlarında {{label}} yolunu gösteriyor ama bu içe aktarmayla gelmedi, bu yüzden ajan onu açamıyor. Bu dosyaları Drive'a koyun ya da bu yolu talimatlardan çıkarın.",
+        "path_other": "{{who}}, talimatlarında {{label}} yolunu gösteriyor ama bu içe aktarmayla gelmedi, bu yüzden ajanlar onu açamıyor. Bu dosyaları Drive'a koyun ya da bu yolu talimatlardan çıkarın.",
         "webhook_one": "{{label}} rutini ({{who}}) burada yeni bir adres alıyor: eski adresi çağıran site veya uygulamada bunu değiştirin.",
         "webhook_other": "{{label}} rutini ({{who}}) burada yeni bir adres alıyor: eski adresi çağıran site veya uygulamada bunu değiştirin."
       },
@@ -1565,6 +1567,7 @@
         "app": "Bağla",
         "model": "Model seç",
         "file": "Drive'ı aç",
+        "path": "Drive'ı aç",
         "webhook": "Rutinleri aç"
       },
       "linkSkipped_one": "Bağlantı sınırını aşan {{count}} dosya",
