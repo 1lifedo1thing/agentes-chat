@@ -3075,6 +3075,8 @@ export interface AgentWork {
   count: number;
   /** With `later`: when it comes back to that conversation (ISO). */
   at?: string;
+  /** Its conversation is one you don't read (someone else's DM, a private channel): nowhere to open. */
+  private?: true;
 }
 
 /**

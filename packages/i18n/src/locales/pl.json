@@ -4735,7 +4735,9 @@
       "noAi": "Brak podłączonej AI"
     },
     "bySelf": "Napisane przez {{name}} · zniknie, gdy skończy",
-    "byAuto": "Co teraz robi"
+    "byAuto": "Co teraz robi",
+    "byPrivate": "W prywatnej rozmowie · szczegóły widzą tylko jej uczestnicy",
+    "openWork": "Otwórz rozmowę"
   },
   "agentWork": {
     "working": "pracuje",
@@ -4744,6 +4746,7 @@
     "queued": "w kolejce",
     "here": "tutaj",
     "routine": "w rutynie",
+    "private": "w prywatnej rozmowie",
     "yourApproval": "twoje zatwierdzenie",
     "yourAnswer": "twoja odpowiedź",
     "later": "follow-up {{when}}",

@@ -4417,7 +4417,9 @@
       "noAi": "Bağlı yapay zeka yok"
     },
     "bySelf": "{{name}} yazdı · iş bitince temizlenir",
-    "byAuto": "Şu anda ne yapıyor"
+    "byAuto": "Şu anda ne yapıyor",
+    "byPrivate": "Özel bir sohbette · ayrıntıları yalnızca sohbetteki kişiler görür",
+    "openWork": "Sohbeti aç"
   },
   "agentWork": {
     "working": "çalışıyor",
@@ -4426,6 +4428,7 @@
     "queued": "sırada",
     "here": "burada",
     "routine": "bir rutinde",
+    "private": "özel bir sohbette",
     "yourApproval": "onayınız",
     "yourAnswer": "yanıtınız",
     "later": "takip {{when}}",

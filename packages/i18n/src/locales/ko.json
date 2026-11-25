@@ -4267,7 +4267,9 @@
       "noAi": "연결된 AI 없음"
     },
     "bySelf": "{{name}}이(가) 작성 · 끝나면 지워져요",
-    "byAuto": "지금 하고 있는 일"
+    "byAuto": "지금 하고 있는 일",
+    "byPrivate": "비공개 대화에서 작업 중 · 대화에 있는 사람만 자세한 내용을 볼 수 있어요",
+    "openWork": "대화 열기"
   },
   "agentWork": {
     "working": "작업 중",
@@ -4276,6 +4278,7 @@
     "queued": "차례 대기 중",
     "here": "여기",
     "routine": "루틴 진행 중",
+    "private": "비공개 대화에서",
     "yourApproval": "내 승인",
     "yourAnswer": "내 답변",
     "later": "후속 확인 {{when}}",

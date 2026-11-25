@@ -4695,6 +4695,10 @@ export const ptBR = {
     },
     bySelf: "Escrito por {{name}} · some quando terminar",
     byAuto: "O que está fazendo agora",
+    /** Sob a linha quando o trabalho está numa conversa que quem lê não acessa (a DM de outra pessoa). */
+    byPrivate: "Numa conversa particular · só quem está nela vê os detalhes",
+    /** A dica da linha, e seu nome para leitores de tela, quando ela abre onde o trabalho está. */
+    openWork: "Abrir a conversa",
   },
   /**
    * An agent's work in a list's line and on its profile card (ADR 0084 addendum of 2026-11-13), lowercase: where it
@@ -4709,6 +4713,8 @@ export const ptBR = {
     /** Its own work in the conversation the list belongs to (the members column). */
     here: "aqui",
     routine: "numa rotina",
+    /** Numa conversa que quem lê não acessa (a DM de outra pessoa, um canal privado). */
+    private: "numa conversa particular",
     /** After "Esperando você" on the profile card. */
     yourApproval: "sua aprovação",
     yourAnswer: "sua resposta",

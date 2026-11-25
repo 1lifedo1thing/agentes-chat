@@ -4438,7 +4438,9 @@
       "noAi": "Geen AI gekoppeld"
     },
     "bySelf": "Geschreven door {{name}} · verdwijnt als het klaar is",
-    "byAuto": "Waar hij nu mee bezig is"
+    "byAuto": "Waar hij nu mee bezig is",
+    "byPrivate": "In een privégesprek · alleen de mensen in dat gesprek zien de details",
+    "openWork": "Gesprek openen"
   },
   "agentWork": {
     "working": "bezig",
@@ -4447,6 +4449,7 @@
     "queued": "in de rij",
     "here": "hier",
     "routine": "bij een routine",
+    "private": "in een privégesprek",
     "yourApproval": "je goedkeuring",
     "yourAnswer": "je antwoord",
     "later": "opvolging {{when}}",

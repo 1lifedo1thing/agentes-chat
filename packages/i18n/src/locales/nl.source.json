@@ -10873,6 +10873,12 @@
   "presence.byAuto": {
     "value": "What it's doing now"
   },
+  "presence.byPrivate": {
+    "value": "In a private conversation · only the people in it see the details"
+  },
+  "presence.openWork": {
+    "value": "Open the conversation"
+  },
   "agentWork.working": {
     "value": "working"
   },
@@ -10890,6 +10896,9 @@
   },
   "agentWork.routine": {
     "value": "on a routine"
+  },
+  "agentWork.private": {
+    "value": "in a private conversation"
   },
   "agentWork.yourApproval": {
     "value": "your approval"

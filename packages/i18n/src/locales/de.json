@@ -4438,7 +4438,9 @@
       "noAi": "Keine KI verbunden"
     },
     "bySelf": "Von {{name}} geschrieben · wird gelöscht, wenn es erledigt ist",
-    "byAuto": "Was er gerade tut"
+    "byAuto": "Was er gerade tut",
+    "byPrivate": "In einer privaten Unterhaltung · nur die Personen darin sehen die Details",
+    "openWork": "Unterhaltung öffnen"
   },
   "agentWork": {
     "working": "arbeitet",
@@ -4447,6 +4449,7 @@
     "queued": "in der Warteschlange",
     "here": "hier",
     "routine": "in einer Routine",
+    "private": "in einer privaten Unterhaltung",
     "yourApproval": "deine Freigabe",
     "yourAnswer": "deine Antwort",
     "later": "Rückmeldung {{when}}",

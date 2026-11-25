@@ -4586,7 +4586,9 @@
       "noAi": "Aucune IA connectée"
     },
     "bySelf": "Écrit par {{name}} · s'efface une fois terminé",
-    "byAuto": "Ce qu'il fait en ce moment"
+    "byAuto": "Ce qu'il fait en ce moment",
+    "byPrivate": "Dans une conversation privée · seules les personnes qui y participent voient les détails",
+    "openWork": "Ouvrir la conversation"
   },
   "agentWork": {
     "working": "au travail",
@@ -4595,6 +4597,7 @@
     "queued": "dans la file",
     "here": "ici",
     "routine": "sur une routine",
+    "private": "dans une conversation privée",
     "yourApproval": "votre approbation",
     "yourAnswer": "votre réponse",
     "later": "suivi {{when}}",
