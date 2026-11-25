@@ -6,6 +6,7 @@ import {
   accountCodeAad,
   BRAIN_PROTOCOL,
   CLAUDE_AUTH_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
   generateSecretKeyPair,
   type MachineRequest,
   OPENCODE_KEY_PROVIDER,
@@ -1682,6 +1683,26 @@ test("a Grok sign-in is asked for all agents only from protocol 67 (issue #319)"
   });
   // From 67: root keeps it and each agent's turn gets a copy.
   expect(await ask(SHARED_GROK_PROTOCOL)).toMatchObject({ kind: "grok", shared: true });
+});
+
+test("Grok signs in on Windows from GROK_WINDOWS_PROTOCOL on; an older Windows runner is too old for it", async () => {
+  f = await setup();
+  const { machineId } = await ownedMachine(GROK_WINDOWS_PROTOCOL);
+  await f.db.update(schema.machines).set({ os: "windows" }).where(eq(schema.machines.id, machineId));
+  const begin = (protocol: number) => {
+    const runner = fakeHub(
+      machineId,
+      (req) => (req.action === "begin" ? { url: "https://grok.com/device?user_code=KJ4D-9QRS" } : {}),
+      { protocol },
+    );
+    return beginAccountLogin(runner.deps, f.owner.id, f.org.id, machineId, "grok");
+  };
+  expect(await begin(GROK_WINDOWS_PROTOCOL)).toMatchObject({ url: "https://grok.com/device?user_code=KJ4D-9QRS" });
+  await f.db
+    .update(schema.machines)
+    .set({ protocol: GROK_WINDOWS_PROTOCOL - 1 })
+    .where(eq(schema.machines.id, machineId));
+  await expect(begin(GROK_WINDOWS_PROTOCOL - 1)).rejects.toMatchObject({ code: "account.runner_old" });
 });
 
 test("one sign-in for all agents (protocol 29): asked for, it thinks for two agents, once; out and gone for both", async () => {

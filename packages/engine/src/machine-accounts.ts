@@ -15,6 +15,7 @@ import {
   CURSOR_PROTOCOL,
   claudeLoginMethodsOf,
   GROK_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
   isAccountId,
   isAccountKind,
   isAccountLoginFailure,
@@ -1571,7 +1572,9 @@ export async function beginAccountLogin(
           ? ANTIGRAVITY_MAC_PROTOCOL
           : ANTIGRAVITY_PROTOCOL
         : kind === "grok"
-          ? GROK_PROTOCOL
+          ? machine.os === "windows"
+            ? GROK_WINDOWS_PROTOCOL
+            : GROK_PROTOCOL
           : kind === "opencode"
             ? OPENCODE_PROTOCOL
             : plan
