@@ -244,6 +244,8 @@ function AgentProfile({
   const [deleting, setDeleting] = useState(false);
   /** The dialog of the sentence under the name that is open (who thinks, where it works, the browser). */
   const [work, setWork] = useState<WorkDialog | null>(null);
+  // The screen "Quem pensa" opens on again from the Connect it closed for ("Adicionar conta").
+  const [reopenAt, setReopenAt] = useState<BrainScreen>();
   /** The repositories picker: open, with a repository to add ("Liberar"). */
   const [picking, setPicking] = useState<{ add?: string } | null>(null);
   const top = useRef<HTMLDivElement>(null);
@@ -948,12 +950,16 @@ function AgentProfile({
 
       <WorkDialogs
         open={work}
-        brainAt={section === "brain" ? brainAt : undefined}
+        brainAt={reopenAt ?? (section === "brain" ? brainAt : undefined)}
         onClose={() => {
           setWork(null);
+          setReopenAt(undefined);
           if (section === "brain") onNavigate(tab);
         }}
-        onReopen={() => setWork("brain")}
+        onReopen={(at) => {
+          setReopenAt(at);
+          setWork("brain");
+        }}
       />
 
       <Dialog

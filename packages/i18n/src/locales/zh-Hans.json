@@ -2399,10 +2399,50 @@
       "gone": "这个撤销链接已失效",
       "sender": "该发送者"
     },
+    "page": {
+      "opening": "正在打开页面",
+      "gone": "此链接已失效",
+      "lead": "输入你的 PIN 以批准。",
+      "leadFirst": "设置一个 6 位 PIN 来批准。它用于确认来自 {{surface}} 的此类操作。",
+      "choosePin": "设置 PIN",
+      "repeatPin": "再输入一次",
+      "pin": "你的 PIN",
+      "mismatch": "两次输入的 PIN 不一致。请重新输入第二个。",
+      "approve": "批准",
+      "refuse": "拒绝",
+      "forgot": "忘记 PIN？",
+      "emailed": "我们已通过邮件发送链接。请在那里设置 PIN，然后回到此页面。",
+      "notYours": "由 {{who}} 在应用中决定。",
+      "notYoursSomeone": "由有权批准的人在应用中决定。",
+      "approved": "已批准",
+      "refused": "已拒绝",
+      "expired": "此请求已过期",
+      "back": "回到 {{surface}}，你的助手会在那里继续。",
+      "setFirst": "请先设置 PIN",
+      "setFirstLead": "通过 {{surface}} 批准需要 PIN，而聊天中的链接无法设置它。请在已登录的应用中设置，然后回到此页面。",
+      "setFirstLeadEmail": "通过 {{surface}} 批准需要 PIN，而聊天中的链接无法设置它。请在已登录的应用中设置，或通过我们发到你邮箱的链接设置，然后回到此页面。",
+      "openApp": "在应用中设置",
+      "emailMe": "通过邮件发送链接"
+    },
+    "pinReset": {
+      "title": "设置你的 PIN",
+      "lead": "六位数字。你在聊天应用中请求的操作需要输入它来批准。",
+      "button": "保存我的 PIN",
+      "done": "PIN 已保存",
+      "doneLead": "回到从 {{surface}} 打开的页面，用它来批准。",
+      "gone": "此链接已失效"
+    },
     "via": "通过 {{surface}}",
     "viaTip": "由 {{person}} 通过 {{surface}} 发送",
     "forwarded": "通过 {{surface}} 转发",
-    "forwardedTip": "{{person}} 从 {{surface}} 转发了这条消息。这是别人的话。"
+    "forwardedTip": "{{person}} 从 {{surface}} 转发了这条消息。这是别人的话。",
+    "pin": {
+      "set": "设置 PIN",
+      "change": "更改 PIN",
+      "title": "你的 {{surface}} PIN",
+      "text": "你在 {{surface}} 中请求的操作需要输入这六位数字来批准。它永远不会在聊天中发送。",
+      "save": "保存 PIN"
+    }
   },
   "team": {
     "title": "团队",
@@ -2915,7 +2955,6 @@
       "mineHelp": "你与{{name}}的对话使用你的套餐或共享给你的套餐思考，且仅限你的对话。",
       "connectMine": "连接我的套餐",
       "useWorkspace": "使用工作区的",
-      "useMine": "使用我的套餐",
       "mineYours": "你的套餐",
       "mineOf": "{{owner}}的套餐",
       "mineKey": "工作区的密钥",
@@ -4112,6 +4151,8 @@
     "aloneLine": "会主动加入对话",
     "aloneLine_female": "会主动加入对话",
     "mentionLine": "等待有人输入 @{{handle}}",
+    "lead": "频道负责人",
+    "leadHelp": "接收对整个团队说的话，并推动智能体之间的工作继续进行",
     "readOnly": "只有频道创建者和管理员可以更改成员。",
     "people": "成员",
     "agents": "智能体"
@@ -4307,7 +4348,8 @@
   "accountSwitch": {
     "limit": "因 <from/> 账号已达上限，改用 <to/> 账号继续",
     "line": "因 <from/> 账号接近上限，改用 <to/> 账号继续",
-    "extra": "因 <from/> 账号将进入付费额外用量，改用 <to/> 账号继续"
+    "extra": "因 <from/> 账号将进入付费额外用量，改用 <to/> 账号继续",
+    "busy": "<from/> 账号已在同时回复它能承担的最多对话，因此改用 <to/> 账号继续"
   },
   "channelRefs": {
     "list": "频道",
@@ -5745,6 +5787,18 @@
           "missed_other": "{{count}} 个智能体未更改。"
         },
         "add": {
+          "pickTitle": "添加账号",
+          "pickFoot": "你在 AI 自己的页面上登录。",
+          "have_other": "你有 {{count}} 个",
+          "others": "其他套餐",
+          "key": "API 密钥",
+          "keyLine": "按用量付费",
+          "titlePlan": "添加 {{plan}}",
+          "againTitle": "重新登录 {{brand}}",
+          "haveNote": "你在这里已经有 {{accounts}}。要用其他账号登录，请先在浏览器中退出 {{brand}}，或复制链接在无痕窗口中打开。",
+          "againNote": "以 {{account}} 重新登录。你一完成，{{name}} 就会再次用它思考。",
+          "footSignIn": "你在 {{brand}} 的页面上输入密码。",
+          "footKey": "密钥会加密后直接发送到 {{computer}}。",
           "title": {
             "claude_code": "添加 Claude 账号",
             "codex": "添加 ChatGPT 账号",
@@ -5826,32 +5880,22 @@
           "title": "{{name}} 的思考方式",
           "only": "仅适用于 {{name}}。",
           "more": "更多选项",
-          "switch": "更换账号",
-          "switchTitle": "更换 {{name}} 的账号",
-          "inUse": "使用中",
-          "switchTo": "切换到 {{label}}",
-          "teamTitle": "更换团队的账号",
-          "teamAria": "适用对象",
-          "justOne": "仅 {{name}}",
-          "everyone": "此账号上的所有智能体",
-          "target": "切换到",
-          "switchMany_other": "切换 {{count}} 个智能体",
-          "limitTitle": "{{name}} 的账号已达上限",
           "limitBack": "{{account}} {{when}}恢复",
           "limitSoon": "{{account}} 会在套餐续期后恢复",
           "limitHelp": "在此期间，{{name}} 可以用另一个已连接的账号思考。",
           "fullWait": "在这个账号上，{{name}} 会等到套餐续期。",
-          "seeUsage": "查看用量",
-          "wait": "等待",
           "modelTitle": "{{name}} 的模型",
           "moreTitle": "{{name}} 的更多选项",
           "computer": "电脑",
-          "doneTitle": "都好了",
-          "doneSub": "进行中的工作会用新账号继续。",
           "finish": "完成",
           "undo": "撤销",
           "undone": "已恢复原样。",
-          "missed_other": "{{names}} 仍使用原来的账号。"
+          "missed_other": "{{names}} 仍使用原来的账号。",
+          "added": "已添加账号。{{name}} 现在用 {{account}} 思考。",
+          "alsoUses_other": "{{names}} 也在用 {{account}} 思考。",
+          "alsoSwitch": "也切换",
+          "signedOut": "{{account}} 已退出 {{brand}}。在你重新登录或选择其他账号之前，{{name}} 不会回复。",
+          "empty": "{{name}} 还没有用来思考的 AI 账号。"
         }
       },
       "computer": {
@@ -6195,7 +6239,8 @@
         "stuck": "因卡住而停止。",
         "brain_interrupted": "AI 在完成前停止了。",
         "brain_unavailable": "其电脑上的 AI 无法回答。请检查电脑后再试一次。",
-        "empty_reply": "模型没有返回任何内容。",
+        "empty_reply": "AI 结束了这一轮，但没有写回复。请重试，或在智能体设置中选择其他模型。",
+        "empty_reply_limit": "AI 在写回复前就达到了输出上限。请重试，或在智能体设置中选择其他模型。",
         "model_refused": "模型拒绝回答。",
         "agent_archived": "该智能体已归档。",
         "code_session_unavailable": "会话的 worktree 在电脑上不可用。",
@@ -6233,7 +6278,7 @@
         "cli_sandbox": "程序 {{brain}} 无法在这台电脑上启动它的沙盒。请在智能体设置中选择其他 AI。",
         "cli_system": "程序 {{brain}} 暂时还不能在这台电脑的系统上运行。请在智能体设置中选择其他 AI。",
         "account_missing": "为这个智能体选择的账号已不在它的电脑上。请在智能体设置中选择另一个账号，或重新添加。",
-        "windows_sandbox": "这台 Windows 电脑无法隔离 Codex 的命令：需要 Windows 11 24H2 或更高版本。请更新 Windows，为这个智能体选择 Claude 或 API 密钥，或把它移到一台 Linux 电脑上。",
+        "windows_sandbox": "Codex 在这台 Windows 电脑上无法为它的命令启动任何隔离。请为这个智能体选择 Claude 或 API 密钥，或把电脑更新到 Windows 11 24H2 或更高版本，并装好最新更新。",
         "our_error": "我们这边出了点问题，任务已停止。请稍后再提一次。",
         "unknown": "失败。"
       }
@@ -7817,6 +7862,38 @@
       "label": "编辑 Vault 联系信息",
       "description": "在 Vault 中保存和更新联系信息，修改已保存登录信息的用户名或描述，为它创建的账号生成密码，并删除它自己保存的内容。"
     },
+    "gitlab_git_read": {
+      "label": "克隆仓库（git）",
+      "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。GitLab 令牌永远不会进入这台电脑。"
+    },
+    "gitlab_git_write": {
+      "label": "推送分支（git push）",
+      "description": "将提交推送到 agentes/{agent}/… 分支：绝不推送到默认分支，不强制推送，不推送标签。删除分支和推送到他人的分支需要先审批。"
+    },
+    "gitlab_pr_write": {
+      "label": "创建 Merge request",
+      "description": "创建 Merge request 并发表评论。"
+    },
+    "bitbucket_git_read": {
+      "label": "克隆仓库（git）",
+      "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。Bitbucket 令牌永远不会进入这台电脑。"
+    },
+    "bitbucket_git_write": {
+      "label": "推送分支（git push）",
+      "description": "将提交推送到 agentes/{agent}/… 分支：绝不推送到默认分支，不强制推送，不推送标签。删除分支和推送到他人的分支需要先审批。"
+    },
+    "bitbucket_pr_write": {
+      "label": "创建 Pull Request",
+      "description": "创建 Pull Request 并发表评论。"
+    },
+    "git_git_read": {
+      "label": "克隆仓库（git）",
+      "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。Git 令牌永远不会进入这台电脑。"
+    },
+    "git_git_write": {
+      "label": "推送分支（git push）",
+      "description": "将提交推送到 agentes/{agent}/… 分支：绝不推送到默认分支，不强制推送，不推送标签。删除分支和推送到他人的分支需要先审批。"
+    },
     "github_git_read": {
       "label": "克隆仓库（git）",
       "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。GitHub 令牌永远不会进入这台电脑。"
@@ -8890,6 +8967,7 @@
       "provider_unavailable": "模型没有响应",
       "gave_up": "多次尝试后模型仍没有响应",
       "empty_reply": "模型没有返回任何内容",
+      "empty_reply_limit": "模型在回答前达到了输出上限",
       "model_refused": "模型拒绝回答",
       "runner_outdated": "电脑上的程序需要更新",
       "too_many_tool_calls": "超过了单次运行的步骤上限",
@@ -10344,6 +10422,8 @@
     "of": "{{name}} 的",
     "moreSpeed": "速度和上下文窗口",
     "whoThinks": "由谁思考",
+    "thinks_other": "{{names}} 用它思考",
+    "thinksNone": "没有智能体用它思考",
     "bulk": {
       "sub": "先选 AI，再选使用它的智能体。"
     },
@@ -10353,10 +10433,14 @@
       "search": "按名称、AI、套餐或所有者搜索",
       "noMatch": "没有匹配的账号。",
       "noModel": "没有匹配的模型。",
+      "empty": "还没有账号。",
+      "add": "添加账号",
+      "addLine": "Claude、ChatGPT、Gemini 等，或 API 密钥",
+      "manage": "管理账号",
       "groups": {
-        "yours": "你的",
+        "yours": "你的账号",
         "others": "团队的",
-        "keys": "工作区的"
+        "keys": "API 密钥"
       }
     },
     "order": {
@@ -10978,10 +11062,10 @@
       "agent": "智能体",
       "repo": "在哪里工作",
       "repoPlaceholder": "仓库或项目",
-      "repoSearch": "搜索，或输入 owner/name 或新名称",
+      "repoSearch": "搜索，或输入 owner/name、仓库地址或一个新名称",
       "newLocal": "电脑上的新项目：{{name}}",
       "useRepo": "使用 {{repo}}",
-      "repoNote": "不带 owner 的名称会在智能体的电脑上新建项目，不放在 GitHub 上。",
+      "repoNote": "不带 owner 的名称只会在智能体的电脑上创建项目，没有远程仓库。",
       "hint": "用 @ 呼叫他人加入会话",
       "start": "开始"
     },
@@ -10995,7 +11079,7 @@
       "closeHint": "会从列表中移除：工作树会被删除，分支会保留",
       "failed": "无法准备工作树。",
       "retry": "重试",
-      "githubAccess": "此工作区没有这个仓库的 GitHub 访问权限。请在“设置 › 连接器”中连接 GitHub，或在电脑上的项目中开始会话（只需输入名称）。"
+      "githubAccess": "此工作区无权访问该仓库。请在设置 › 连接器中连接它所在的平台（GitHub、GitLab 或 Bitbucket），或在电脑上的项目中开始会话（只需一个名称）。"
     },
     "panel": {
       "label": "会话面板",
@@ -11848,8 +11932,6 @@
     "steered": "{{name}} 在任务进行中收到了",
     "stillWorking": "{{name}} 仍在工作",
     "inProgress": "进行中",
-    "quiet": "{{minutes}} 分钟没有新进展",
-    "refresh": "刷新",
     "stop": "停止",
     "stopping": "正在停止…",
     "stopHint": "停止任务 · Esc",
@@ -11983,8 +12065,10 @@
       "home_only": "{{computer}} 上的 {{program}} 只为 root 安装了，智能体访问不到。",
       "not_reported": "{{computer}} 还在检查有哪些程序。完成后这里会自动更新。",
       "system": "{{program}} 暂时还不能在 {{computer}} 的系统上运行。",
+      "windows_sandbox": "{{computer}} 的 Windows 无法隔离 {{program}} 的命令。请改选 Claude 或 API 密钥，或把那台电脑更新到 Windows 11 24H2 或更高版本，并装好最新更新。",
       "no_computerCloud": "{{computer}} 一就绪即可使用。"
     },
+    "sandboxPartial": "在这个 Windows 上，Codex 的命令只能写入智能体的文件夹，但互联网只被部分屏蔽。装好最新更新的 Windows 11 24H2 或更高版本能完全屏蔽。",
     "notAvailableNow": "已选择，但目前不可用。",
     "offline": "{{computer}} 当前离线。",
     "modelLabel": "模型",
@@ -12059,7 +12143,7 @@
     "rule": "电脑有空闲内存时，新工作才会开始。人优先。一起被提到的智能体逐个开始。",
     "spill": {
       "title": "你的电脑",
-      "text": "这台电脑满了时，给你的回复可以在你的某台电脑上开始。长时间工作和智能体的文件仍留在这里。",
+      "text": "当这台电脑满载或不在线时，你的智能体可以在你的某台电脑上开始。任务、代码会话和有代码仓库的智能体会留在这里。",
       "plan": "你的 {{plan}} 套餐"
     },
     "youFirst": "你优先",
@@ -12887,6 +12971,7 @@
       "teamLocked": "只有管理连接器的人才能添加团队的连接。",
       "mailLocked": "邮箱始终属于连接它的人。",
       "done": "你的智能体只在你提出请求时使用它。",
+      "githubDone": "在代码会话中，你所请求工作的提交、推送和拉取请求都以你的名义发出。",
       "worksWhenAsked": "只在你提出请求时生效。",
       "remove": "移除",
       "removeName": "移除 {{name}}",
@@ -13645,6 +13730,7 @@
     },
     "label": {
       "git_clone": "克隆仓库",
+      "list_repositories": "列出仓库",
       "create_repository": "创建仓库",
       "delete_repository": "删除仓库",
       "fork_repository": "Fork 仓库",
@@ -14538,6 +14624,19 @@
       "adjust": "调整",
       "ok": "完成"
     },
+    "git": {
+      "token": "访问令牌",
+      "address": "地址",
+      "addressHelp": {
+        "gitlab": "仅用于贵公司自行托管的 GitLab。留空则为 gitlab.com。",
+        "git": "git 服务器的位置，例如 https://git.company.com。"
+      },
+      "tokenHelp": {
+        "gitlab": "具有 api 和 write_repository 权限范围的 GitLab 访问令牌（个人、群组或项目）。它保存在服务器上：智能体的电脑永远拿不到它。",
+        "bitbucket": "具有仓库写入和拉取请求写入权限的工作区或仓库访问令牌。使用你自己的 API 令牌时，请输入你的 Atlassian 邮箱、冒号和令牌：you@company.com:TOKEN。",
+        "git": "服务器作为 git 密码接受的令牌。如果需要用户名，请输入 username:token。"
+      }
+    },
     "telegram": {
       "token": "机器人令牌",
       "steps": "在 Telegram 中打开 @BotFather，发送 /newbot，取一个名字和以“bot”结尾的用户名，然后把它给你的令牌粘贴到这里。要读取群组，把机器人加进去。要在频道发帖，把它设为那里的管理员。"
@@ -15155,7 +15254,15 @@
       "linkGone": "此关联已不再等待：它在 10 分钟后过期或已被取消。请生成新代码重新开始。",
       "taken": "该发送者已关联到另一个 agentes.chat 账号。请先在那里取消关联，再发送新代码。",
       "undoGone": "此撤销链接已被使用或已过期。请改在通知设置中取消关联。",
-      "codeGone": "此代码错误、已被使用或已在 10 分钟后过期。请生成新代码并重新发送。"
+      "codeGone": "此代码错误、已被使用或已在 10 分钟后过期。请生成新代码并重新发送。",
+      "pageGone": "此链接已过期。请在聊天中向助手要一个新链接。",
+      "pageElsewhere": "此链接已在另一台设备上打开。请在聊天中向助手要一个新链接。",
+      "pinWrong": "PIN 错误。剩余次数：{{left}}。",
+      "pinLocked": "错误的 PIN 次数过多。请稍后再试，或在应用中设置新的 PIN。",
+      "pinShape": "PIN 为 6 位数字。",
+      "pinResetGone": "此链接已使用或已过期。请通过“忘记 PIN？”重新获取。",
+      "pinUnset": "请先设置 PIN。请在已登录的应用中设置。",
+      "emailUnverified": "你的邮箱地址尚未验证。请在应用中设置 PIN。"
     },
     "wallpaper": {
       "notYours": "这张照片不是你的。",
@@ -15202,6 +15309,8 @@
       "deleteName": "输入频道名称才能删除。",
       "generalKept": "#general 无法删除。",
       "generalStays": "所有人都留在 #general。",
+      "leadChannelOnly": "只有频道才有负责的智能体。",
+      "leadNotMember": "负责的智能体必须在该频道中。",
       "mcpUnreachable": "无法连接到 MCP 服务器。请检查地址后重试。",
       "notApproved": "这项服务尚未批准 agentes.chat。",
       "alreadyInvited": "此人已有邀请。",
@@ -15476,6 +15585,7 @@
       "tooLarge": "这个文件已达到大小上限。请先从中删掉一些内容。",
       "assetTooLarge": "图片超过了 {{max}} MB，这是每张图片的上限。",
       "assetType": "这个文件只能放图片：PNG、JPEG、WebP 或 GIF。",
+      "fontInvalid": "无法使用这个字体：应用无法读取这个文件。请试试 .ttf、.otf 或 .woff 文件。",
       "liveOnly": "这个文件只能在原处修改，不能整个替换。"
     },
     "office": {
@@ -15497,7 +15607,7 @@
     "device": {
       "notLinkMaker": "只有创建链接的人才能让这台电脑加入。",
       "widenForbidden": "管理员只能缩小可以使用他人个人设备的人员范围。",
-      "spillOwnerOnly": "只有连接这台电脑的人才能让回复在这里思考。你可以把它关掉。",
+      "spillOwnerOnly": "只有连接这台电脑的人可以打开它的帮忙功能。你可以关闭它。",
       "tasksOwnerOnly": "只有连接这台电脑的人才能更改它同时运行的任务数。",
       "tasksCloud": "这台电脑用于任务的余量由 Cloud 自己决定。",
       "notHome": "智能体住在工作区的电脑上，点名时才使用这台电脑。"
@@ -15650,6 +15760,11 @@
       "line": "出口 IP {{ip}}",
       "hint": "智能体浏览网页时网站看到的地址。电脑的网络变化时会随之更新。",
       "waiting": "正在重新连接智能体的网络。网络恢复前，它们的连接会等待。"
+    },
+    "moving": {
+      "short": "正在迁移服务器",
+      "line": "正在迁移到新服务器… 几分钟后回来",
+      "named": "{{computer}} 正在迁移到新服务器… 几分钟后回来"
     },
     "online": "在线",
     "offline": "离线",
@@ -15923,10 +16038,12 @@
     "pushHarderHint": "同时运行更多任务：只留 0.5 GB 空闲内存，处理器忙碌时也不再暂停。你自己的应用可能会变慢。",
     "belongs": "归工作区所有",
     "belongsHint": "连接它的人离开后它仍会保留，没有所有者时所有人都可以使用。",
-    "spillOwn": "给你的回复可以在这里思考",
-    "spillOwnHint": "智能体的电脑满了时，它给你的回复会在这里开始。",
-    "spillOthers": "其他人的智能体也可以在这里思考",
-    "spillOthersHint": "智能体的电脑满了时，它给其他人的回复也可以在这里开始。",
+    "spillOwn": "团队的电脑满载或不在线时帮忙",
+    "spillOwnHint": "当你的智能体的电脑满载或不在线时，它们的回复、请求和例行任务可以用你的登录在这里思考。",
+    "spillTeamHint": "当某个智能体的电脑满载或不在线时，它的回复、请求和例行任务可以用其所有者在这台电脑上的登录在这里思考。",
+    "spillWorkspaceOff": "管理员已为整个工作区关闭此功能。",
+    "helpWorkspace": "团队的电脑满载或不在线时，其他电脑来帮忙",
+    "helpWorkspaceHint": "每台电脑只有在其所有者允许时才会帮忙。关闭：无论所有者如何选择，都不会有电脑帮忙。",
     "connectedBy": "由 {{name}} 连接",
     "downloadFor": "下载 {{system}} 版",
     "downloadApp": "下载应用",
@@ -17286,7 +17403,7 @@
     "telemetry": {
       "title": "使用统计",
       "label": "向 agentes.chat 发送匿名使用统计",
-      "help": "成员数、智能体数、机器规格、使用的 AI token 数，以及智能体浏览器收发的数据量等计数。绝不包括消息、文件、名称或网站。",
+      "help": "成员数、智能体数、机器规格、使用的 AI token 数、智能体浏览器收发的数据量，以及应用打开和运行的速度等计数。绝不包括消息、文件、名称或网站。",
       "envOff": "已在此服务器的设置中关闭（TELEMETRY=off）。",
       "envOffDesktop": "已在此服务器所在电脑上的 agentes.chat 应用中关闭（偏好设置 › 服务器）。",
       "envOffHere": "已在这台电脑的 agentes.chat 应用中关闭。",
@@ -17357,7 +17474,6 @@
     "removeUsedOther_other": "{{agents}} 正在用这个密钥思考。删除后会改用其他密钥。如果没有适合其模型的密钥，则会请求连接 AI。",
     "removeUsedNone_other": "{{agents}} 正在用这个密钥思考，且没有其他方式。删除后将停止回复，直到你连接其他 AI。",
     "noKeys": "使用 API 密钥，你直接向提供商付费并自选模型。",
-    "noKeysTitle": "使用你自己的 AI 密钥",
     "platformAvailable": "也可以使用此服务器的 Claude 密钥。",
     "usageTitle": "按类型划分的 API 花费",
     "usageAgentLine": "{{spent}} / {{budget}}",
@@ -17838,6 +17954,11 @@
       "cant": "已用{{via}}回答：{{plan}}现在无法思考。",
       "change": "更改"
     },
+    "spilled": {
+      "full": "在 {{to}} 上思考：{{from}} 已满载。",
+      "away": "在 {{to}} 上思考：{{from}} 不在线。",
+      "itsComputer": "它的电脑"
+    },
     "modelStandIn": {
       "text": "{{plan}} 用此密钥拒绝了 {{from}}。我改用可用的 {{to}} 回复了。",
       "useAll": "全部使用 {{model}}",
@@ -18091,6 +18212,7 @@
         "runningCommandAny": "运行了命令",
         "usingScreen": "使用了屏幕",
         "cloningRepo": "克隆了仓库",
+        "listingRepos": "已列出仓库",
         "openingPullRequest": "创建了拉取请求",
         "handingOff": "交付了报告",
         "recordingFindings": "记录了发现",
@@ -18212,6 +18334,7 @@
       "runningCommandAny": "运行命令",
       "usingScreen": "使用屏幕",
       "cloningRepo": "克隆仓库",
+      "listingRepos": "正在列出仓库",
       "openingPullRequest": "创建拉取请求",
       "handingOff": "交付报告",
       "recordingFindings": "记录发现",
@@ -18422,6 +18545,8 @@
       "surfaceUnlinked": "{{surface}} 因身份变更已解除关联。如果是你，请在设置中重新关联。",
       "surfaceVoiceDropped": "我没听清那条语音消息。可以再发一次，或者打字告诉我吗？",
       "done": "完成。",
+      "no_reply": "AI 结束了这一轮，但没有写回复。它所做的更改在下方。请再次向它要回复。",
+      "no_reply_limit": "AI 在写回复前就达到了输出上限。它所做的更改在下方。请再次向它要回复。",
       "stretch_paused_runs_other": "{{agents}} 暂停下来，先向你确认再继续",
       "stretch_paused_spend_other": "{{agents}} 暂停下来向你确认 · 每个已用掉本月预算的 {{percent}}%",
       "stretch_paused_spend_cost_other": "{{agents}} 暂停下来向你确认 · 每个已用掉 {{amount}}（本月预算的 {{percent}}%）",
@@ -19833,6 +19958,7 @@
       "offline": "{{computer}} 已离线",
       "offlineHelpPlain": "{{name}} 正在等待电脑恢复。",
       "offlineHelpPlain_female": "{{name}} 正在等待电脑恢复。",
+      "helping": "在此期间，新工作可以在 {{names}} 上思考。",
       "noRoom": "{{computer}} 显示的屏幕已达上限。请稍后再试。",
       "unavailable": "暂时无法显示 {{name}} 的屏幕",
       "unavailable_female": "暂时无法显示 {{name}} 的屏幕",
