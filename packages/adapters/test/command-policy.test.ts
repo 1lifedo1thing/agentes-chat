@@ -886,6 +886,21 @@ describe("where a push goes, as written", () => {
       expect([command, gitPushes(command)]).toEqual([command, null]);
     }
   });
+
+  // Each of these took seconds when a line was read again from every `git` in it, or for every command on it.
+  test("a long run of git with no push is read in time, and a push named after it still can't be read", () => {
+    const started = performance.now();
+    expect(gitPushes(`echo ${"git ".repeat(50_000)}`)).toEqual([]);
+    expect(gitPushes(`xargs ${"git ".repeat(50_000)}push`)).toBeNull();
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
+  test("a line of many commands is read in time, and a push run through xargs on it still can't be read", () => {
+    const started = performance.now();
+    expect(gitPushes(`${"x;".repeat(100_000)}x`)).toEqual([]);
+    expect(gitPushes(`${"x;".repeat(100_000)}xargs git push`)).toBeNull();
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
 });
 
 describe("whether a push waits for a person", () => {
@@ -1087,6 +1102,37 @@ describe("whether a push waits for a person", () => {
       )?.message,
     ).toContain("This runs git push in a way the computer can't read");
     expect(await approvalNeeded("print('hi')", ASK_AGAIN, { code: true, own, facts: () => facts() })).toBeNull();
+  });
+
+  test("a long line of code naming deny-listed programs is read in time, and a merge on it still waits", async () => {
+    const ask = (code: string) => approvalNeeded(code, ASK_AGAIN, { code: true, own, facts: () => facts() });
+    let line = "";
+    for (let i = 0; line.length < 12_000; i++) line += `gh w${i} `;
+    const started = performance.now();
+    expect(await ask(line)).toBeNull();
+    expect(await ask(`${line}gh pr merge 12`)).toEqual({
+      message: approvalMessage("This is a merge", ASK_AGAIN),
+      never: false,
+    });
+    // Each took seconds when every program named started a command read to the line's end.
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
+  test("a long line of code starting a deny rule's words over and over is read in time, and an API call on it still waits", async () => {
+    const ask = (code: string) => approvalNeeded(code, ASK_AGAIN, { code: true, own, facts: () => facts() });
+    let line = "";
+    for (let i = 0; line.length < 50_000; i++) line += `gh api${i} `;
+    const started = performance.now();
+    expect(await ask(line)).toBeNull();
+    expect(await ask(`${line}gh api repos/o/r -X PUT`)).toEqual({
+      message: approvalMessage(
+        "This calls the GitHub API directly, which can merge, delete or change settings",
+        ASK_AGAIN,
+      ),
+      never: false,
+    });
+    // Each took seconds when the deny list cut every command into its parts again for each of its rules.
+    expect(performance.now() - started).toBeLessThan(1000);
   });
 
   test("through our git proxy, what it refuses whoever approves never runs here, and the refusal says where to go", async () => {

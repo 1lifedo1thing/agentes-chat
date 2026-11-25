@@ -4653,13 +4653,16 @@ export function commandParts(command: string): string[] {
     .filter(Boolean);
 }
 
+/** The most of a call `commandOf` keeps: all of a command a permission rule reads. */
+export const COMMAND_OF_MAX = 1000;
+
 /** What a tool call does, as one line for people (`git init`, `WebFetch https://…`). */
 export function commandOf(toolName: string, input: Record<string, unknown> | null | undefined): string {
   const i = input ?? {};
   const s = (k: string) => (typeof i[k] === "string" ? (i[k] as string) : "");
-  if (toolName === "Bash") return s("command").trim().replace(/\s+/g, " ").slice(0, 1000);
+  if (toolName === "Bash") return s("command").trim().replace(/\s+/g, " ").slice(0, COMMAND_OF_MAX);
   const what = s("url") || s("file_path") || s("path") || s("query") || s("pattern");
-  return `${toolName}${what ? ` ${what}` : ""}`.slice(0, 1000);
+  return `${toolName}${what ? ` ${what}` : ""}`.slice(0, COMMAND_OF_MAX);
 }
 
 const globRe = (pattern: string) =>
@@ -4671,12 +4674,16 @@ const globRe = (pattern: string) =>
   );
 
 /** The `Bash(...)` pattern of a rule, or null for another tool's rule. */
-const bashPattern = (rule: string) => /^Bash\((.*)\)$/s.exec(rule.trim())?.[1] ?? null;
+export const bashPattern = (rule: string) => /^Bash\((.*)\)$/s.exec(rule.trim())?.[1] ?? null;
 
-/** One part of a command against one `Bash(...)` pattern (Claude Code's `*` matches anything; `x *` also matches `x`). */
-function partMatches(pattern: string, part: string) {
-  if (globRe(pattern).test(part)) return true;
-  return pattern.endsWith(" *") && part === pattern.slice(0, -2);
+/**
+ * One `Bash(...)` pattern as a test of one part of a command, built once for all the parts it reads (Claude Code's
+ * `*` matches anything; `x *` also matches `x`).
+ */
+export function partTest(pattern: string): (part: string) => boolean {
+  const re = globRe(pattern);
+  const bare = pattern.endsWith(" *") ? pattern.slice(0, -2) : null;
+  return (part) => re.test(part) || part === bare;
 }
 
 /**
@@ -4689,7 +4696,7 @@ export function ruleMatches(rule: string, toolName: string, input: Record<string
   const pattern = bashPattern(rule);
   if (pattern !== null) {
     if (toolName !== "Bash") return false;
-    return commandParts(commandOf("Bash", input)).some((part) => partMatches(pattern, part));
+    return commandParts(commandOf("Bash", input)).some(partTest(pattern));
   }
   const r = rule.trim();
   if (r === toolName) return true;
@@ -4716,7 +4723,7 @@ export function allowedBy(
   return parts.every((part) =>
     rules.some((r) => {
       const pattern = bashPattern(r);
-      return pattern !== null && partMatches(pattern, part);
+      return pattern !== null && partTest(pattern)(part);
     }),
   );
 }
