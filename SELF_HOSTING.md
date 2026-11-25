@@ -1369,10 +1369,7 @@ Install the ones you want on that computer, as the user that runs the runner: Cu
 even when its service's PATH lacks it), OpenCode's with `npm install -g opencode-ai@1.19.5`, Grok Build with
 `curl -fsSL https://x.ai/cli/install.sh | bash` (it puts `grok` in `~/.local/bin` too; agents think with it only
 through a Grok account added in Settings, AI and usage, never the computer's own sign-in. On Linux its sandbox needs
-bubblewrap, `sudo apt install -y bubblewrap`, or Grok Build refuses to start and every turn fails; on Ubuntu 24.04+
-where `kernel.apparmor_restrict_unprivileged_userns = 1` blocks unprivileged user namespaces for `bwrap` (affecting
-both Grok Build and Antigravity CLI's Linux terminal sandbox), add a targeted AppArmor profile at
-`/etc/apparmor.d/bwrap` granting `userns` only to `/usr/bin/bwrap` — `abi <abi/4.0>, include <tunables/global> profile bwrap /usr/bin/bwrap flags=(unconfined) { userns, }` — and run `sudo systemctl reload apparmor`, rather than disabling AppArmor globally), Google's
+bubblewrap, `sudo apt install -y bubblewrap`, or Grok Build refuses to start and every turn fails; on Ubuntu 24.04 and later it also needs the AppArmor profile below), Google's
 Antigravity CLI with
 `curl -fsSL https://antigravity.google/cli/install.sh | bash` (`agy` in `~/.local/bin`; Gemini accounts sign in on Linux
 and macOS computers, not Windows yet, each in a folder of its own (on a Mac, with a keychain of its own there), and a personal Google plan used this way is against Google's terms for
@@ -1394,6 +1391,23 @@ sign in from the apps (Settings, AI and usage), once for all of their owner's ag
 Commands run as the user that runs the runner, so give it a dedicated user or a VM.
 `agentes-runner tools disable commands` (or `claude`, `codex`, `cursor`, `opencode`, `grok` or `antigravity`) turns a capability off on that
 computer, and `agentes-runner folders allow <path>` shares a folder besides the agents' own.
+
+Ubuntu 24.04 and later block unprivileged user namespaces (`kernel.apparmor_restrict_unprivileged_userns = 1`),
+which the bubblewrap sandbox of Grok Build and of the Antigravity CLI's terminal needs. Allow them for `bwrap`
+alone, rather than turning AppArmor off:
+
+```sh
+sudo tee /etc/apparmor.d/bwrap >/dev/null <<'PROFILE'
+abi <abi/4.0>,
+include <tunables/global>
+
+profile bwrap /usr/bin/bwrap flags=(unconfined) {
+  userns,
+  include if exists <local/bwrap>
+}
+PROFILE
+sudo systemctl reload apparmor
+```
 
 On a Linux server, the installer's `--system` option (below) installs Google Chrome from Google's apt
 repository (its signing key checked against its fingerprint) when the computer has none, with a
