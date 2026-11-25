@@ -1278,7 +1278,7 @@ export const ptBR = {
         fileLead: "O arquivo de qualquer app que a gente conhece. Ele é reconhecido sozinho.",
         paths: {
           lead: "Escolha como trazer. Você confere tudo antes de criar.",
-          best: "o mais completo",
+          best: "O mais completo",
           safe: "Chaves, senhas e sessões do {{app}} nunca vêm, por nenhum caminho.",
           command: {
             title: "Com um comando",
@@ -2541,10 +2541,54 @@ export const ptBR = {
       gone: "Este link para desfazer não funciona mais",
       sender: "Esse remetente",
     },
+    /** A page a link sent in the chat app opens (ADR 0226): one action the person approves with their PIN. */
+    page: {
+      opening: "Abrindo a página",
+      gone: "Este link não funciona mais",
+      lead: "Digite seu PIN para aprovar.",
+      leadFirst: "Escolha um PIN de 6 dígitos para aprovar. Ele confirma ações como esta pelo {{surface}}.",
+      choosePin: "Escolha um PIN",
+      repeatPin: "Digite de novo",
+      pin: "Seu PIN",
+      mismatch: "Os dois PINs não são iguais. Digite o segundo de novo.",
+      approve: "Aprovar",
+      refuse: "Recusar",
+      forgot: "Esqueceu seu PIN?",
+      emailed: "Enviamos um link por e-mail. Escolha seu PIN lá e depois volte para esta página.",
+      notYours: "{{who}} decide isso no app.",
+      notYoursSomeone: "Quem pode aprovar decide isso no app.",
+      approved: "Aprovado",
+      refused: "Recusado",
+      expired: "Este pedido expirou",
+      back: "Volte ao {{surface}}. Seu assistente continua por lá.",
+      setFirst: "Escolha seu PIN primeiro",
+      setFirstLead:
+        "Aprovar pelo {{surface}} pede um PIN, e um link do chat não pode escolhê-lo. Escolha no app, com sua conta, e depois volte para esta página.",
+      setFirstLeadEmail:
+        "Aprovar pelo {{surface}} pede um PIN, e um link do chat não pode escolhê-lo. Escolha no app, com sua conta, ou por um link que enviamos por e-mail. Depois volte para esta página.",
+      openApp: "Escolher no app",
+      emailMe: "Enviar um link por e-mail",
+    },
+    /** The page the "Reset your PIN" email opens. Signed out, so it learns the app's name only from the answer. */
+    pinReset: {
+      title: "Escolha seu PIN",
+      lead: "Seis dígitos. Você vai digitá-lo para aprovar ações que pedir pelo seu app de chat.",
+      button: "Salvar meu PIN",
+      done: "PIN salvo",
+      doneLead: "Volte para a página do {{surface}} e aprove com ele.",
+      gone: "Este link não funciona mais",
+    },
     via: "via {{surface}}",
     viaTip: "Enviada por {{person}} pelo {{surface}}",
     forwarded: "encaminhada via {{surface}}",
     forwardedTip: "{{person}} encaminhou isto do {{surface}}. As palavras são de outra pessoa.",
+    pin: {
+      set: "Definir PIN",
+      change: "Trocar PIN",
+      title: "Seu PIN do {{surface}}",
+      text: "Seis dígitos que você digita para aprovar ações que pedir pelo {{surface}}. Ele nunca é enviado no chat.",
+      save: "Salvar PIN",
+    },
   },
   team: {
     title: "Equipe",
@@ -3145,7 +3189,6 @@ export const ptBR = {
       mineHelp_female: "Sua conversa com a {{name}} pensa com um plano seu ou compartilhado com você, e só a sua.",
       connectMine: "Conectar meu plano",
       useWorkspace: "Usar a do workspace",
-      useMine: "Usar meu plano",
       mineYours: "seu plano",
       mineOf: "plano de {{owner}}",
       mineKey: "chave do workspace",
@@ -4517,6 +4560,8 @@ export const ptBR = {
     replyMentionHelp: "Só responde se alguém escrever @{{handle}}",
     aloneLine: "Entra na conversa por conta própria",
     mentionLine: "Espera alguém chamar @{{handle}}",
+    lead: "Responsável pelo canal",
+    leadHelp: "Recebe o que é dito ao time todo e faz o trabalho andar entre os agentes",
     readOnly: "Só quem criou o canal e os admins mudam os membros.",
     people: "Pessoas",
     agents: "Agentes",
@@ -4564,6 +4609,8 @@ export const ptBR = {
     available: "Disponível",
     working: "Trabalhando",
     waiting: "Esperando você",
+    /** An agent idle a while (server `away`): never a person's "away", which reads as gone, nor asleep. */
+    idle: "Inativo",
     lower: {
       online: "online",
       away: "ausente",
@@ -4735,6 +4782,7 @@ export const ptBR = {
     limit: "Seguiu na conta <to/> porque a conta <from/> chegou ao limite",
     line: "Seguiu na conta <to/> porque a conta <from/> está perto do limite",
     extra: "Seguiu na conta <to/> porque a conta <from/> entraria no uso extra pago",
+    busy: "Seguiu na conta <to/> porque a conta <from/> já estava respondendo o máximo de conversas ao mesmo tempo",
   },
   channelRefs: {
     list: "Canais",
@@ -6293,6 +6341,26 @@ export const ptBR = {
           missed_other: "{{count}} agentes não mudaram.",
         },
         add: {
+          /** "Add account" in "Quem pensa": one line per AI, then that AI's sign-in. */
+          pickTitle: "Adicionar conta",
+          pickFoot: "Você entra na página da própria IA.",
+          /** At the end of an AI's line: how many accounts of it the person already has there. */
+          have_one: "Você tem 1",
+          have_other: "Você tem {{count}}",
+          others: "Outro plano",
+          key: "Chave de API",
+          keyLine: "Pago pelo uso",
+          /** A coding plan's sign-in: its key. */
+          titlePlan: "Adicionar o {{plan}}",
+          againTitle: "Entrar de novo no {{brand}}",
+          /** Before a new sign-in where the person has accounts of that AI there: the browser would bring one of those back. */
+          haveNote:
+            "Você já tem {{accounts}} aqui. Para entrar com outra conta, saia do {{brand}} no navegador antes, ou copie o link e abra numa janela anônima.",
+          againNote: "Entre de novo como {{account}}. O {{name}} volta a pensar com ela assim que você terminar.",
+          againNote_female:
+            "Entre de novo como {{account}}. A {{name}} volta a pensar com ela assim que você terminar.",
+          footSignIn: "Você digita a senha na página do {{brand}}.",
+          footKey: "A chave vai cifrada direto para o {{computer}}.",
           title: {
             claude_code: "Adicionar conta do Claude",
             codex: "Adicionar conta do ChatGPT",
@@ -6400,26 +6468,6 @@ export const ptBR = {
           only_female: "Vale só para a {{name}}.",
           /** A line on the first screen that opens effort, speed, context and the rest. */
           more: "Mais opções",
-          switch: "Trocar de conta",
-          switchTitle: "Trocar a conta do {{name}}",
-          switchTitle_female: "Trocar a conta da {{name}}",
-          /** The label over the account the agent uses now. */
-          inUse: "Em uso",
-          /** The main button: `label` is the account's title ("Claude 2 · Max"). */
-          switchTo: "Trocar para {{label}}",
-          teamTitle: "Trocar a conta do time",
-          /** The two cards of the team screen, for a screen reader: whom the switch is for. */
-          teamAria: "Para quem é",
-          /** Two cards, when the account thinks for all of its owner's agents: whom the switch is for. */
-          justOne: "Só o {{name}}",
-          justOne_female: "Só a {{name}}",
-          everyone: "Todos nesta conta",
-          /** The label over the account they switch to. */
-          target: "Trocar para",
-          switchMany_one: "Trocar {{count}} agente",
-          switchMany_other: "Trocar os {{count}} agentes",
-          limitTitle: "A conta do {{name}} está no limite",
-          limitTitle_female: "A conta da {{name}} está no limite",
           /** `when` is a day and a time ("sábado às 18:00"). */
           limitBack: "{{account}} volta {{when}}",
           /** When the time it's back isn't known. */
@@ -6429,17 +6477,12 @@ export const ptBR = {
           /** Under the list, with an account at its limit picked: the row above says until when. */
           fullWait: "Nesta conta o {{name}} espera até o plano renovar.",
           fullWait_female: "Nesta conta a {{name}} espera até o plano renovar.",
-          /** A link to the usage page, after `fullWait`. */
-          seeUsage: "Ver uso",
-          wait: "Esperar",
           modelTitle: "Modelo do {{name}}",
           modelTitle_female: "Modelo da {{name}}",
           moreTitle: "Mais opções do {{name}}",
           moreTitle_female: "Mais opções da {{name}}",
           /** A line under More options where several computers can run it. */
           computer: "Computador",
-          doneTitle: "Pronto",
-          doneSub: "O que estava em andamento continua com a conta nova.",
           /** The main button of the first screen, of More options and of the last screen. */
           finish: "Concluído",
           undo: "Desfazer",
@@ -6448,6 +6491,21 @@ export const ptBR = {
           /** The agents the server didn't move when switching everyone on the account: `names` lists them. */
           missed_one: "{{names}} ficou com a conta de antes.",
           missed_other: "{{names}} ficaram com a conta de antes.",
+          /** Under the account, after one a sign-in here just brought became the one in use. */
+          added: "Conta adicionada. O {{name}} já pensa com {{account}}.",
+          added_female: "Conta adicionada. A {{name}} já pensa com {{account}}.",
+          /** After a switch: the others of the person's agents still on the account it left (`names` lists them). */
+          alsoUses_one: "{{names}} também pensa com {{account}}.",
+          alsoUses_other: "{{names}} também pensam com {{account}}.",
+          alsoSwitch: "Trocar também",
+          /** The account in use signed out on its computer. `brand`: its AI ("Claude"). */
+          signedOut:
+            "{{account}} saiu do {{brand}}. O {{name}} não responde até você entrar de novo ou escolher outra conta.",
+          signedOut_female:
+            "{{account}} saiu do {{brand}}. A {{name}} não responde até você entrar de novo ou escolher outra conta.",
+          /** No AI to think with at all. */
+          empty: "O {{name}} ainda não tem uma conta de IA para pensar.",
+          empty_female: "A {{name}} ainda não tem uma conta de IA para pensar.",
         },
       },
       computer: {
@@ -6825,7 +6883,10 @@ export const ptBR = {
         stuck: "Parou porque travou.",
         brain_interrupted: "A IA parou antes de terminar.",
         brain_unavailable: "A IA do computador não conseguiu responder. Confira o computador e peça de novo.",
-        empty_reply: "O modelo não respondeu nada.",
+        empty_reply:
+          "A IA terminou a vez dela sem escrever uma resposta. Tente de novo ou escolha outro modelo nas configurações do agente.",
+        empty_reply_limit:
+          "A IA chegou ao limite de saída antes de escrever uma resposta. Tente de novo ou escolha outro modelo nas configurações do agente.",
         model_refused: "O modelo se recusou a responder.",
         agent_archived: "O agente foi arquivado.",
         code_session_unavailable: "A worktree da sessão não está disponível no computador.",
@@ -6873,9 +6934,9 @@ export const ptBR = {
           "O {{brain}} ainda não roda no sistema deste computador. Escolha outra IA nas configurações do agente.",
         account_missing:
           "A conta escolhida para este agente não está mais no computador dele. Escolha outra nas configurações do agente ou adicione de novo.",
-        /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */
+        /** A Codex turn on a Windows computer where no sandbox could hold its commands (runner `windows_sandbox`). */
         windows_sandbox:
-          "Este computador com Windows não consegue isolar os comandos do Codex: ele precisa do Windows 11 24H2 ou mais novo. Atualize o Windows, escolha o Claude ou uma chave de API para este agente, ou mova-o para um computador Linux.",
+          "O Codex não conseguiu isolar os comandos dele neste computador com Windows. Escolha o Claude ou uma chave de API para este agente, ou atualize o computador para o Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia.",
         our_error: "Algo deu errado do nosso lado e a tarefa parou. Peça de novo daqui a pouco.",
         unknown: "Falhou.",
       },
@@ -8556,6 +8617,44 @@ export const ptBR = {
       description:
         "Salvar e atualizar contatos no Cofre, mudar o usuário de um login salvo ou uma descrição, criar senhas para contas que ele abre, e apagar o que ele salvou.",
     },
+    gitlab_git_read: {
+      label: "Clonar repositórios (git)",
+      description:
+        "Clonar e atualizar repositórios no computador do agente com git, pelo nosso proxy. O token do GitLab nunca entra na máquina.",
+    },
+    gitlab_git_write: {
+      label: "Enviar branches (git push)",
+      description:
+        "Enviar commits para branches agentes/{agent}/…: nunca para o branch padrão, sem force push, sem tags. Apagar branches e enviar para o branch de outra pessoa pedem aprovação antes.",
+    },
+    gitlab_pr_write: {
+      label: "Abrir merge requests",
+      description: "Abrir merge requests a partir de um branch enviado. O merge continua com as pessoas.",
+    },
+    bitbucket_git_read: {
+      label: "Clonar repositórios (git)",
+      description:
+        "Clonar e atualizar repositórios no computador do agente com git, pelo nosso proxy. O token do Bitbucket nunca entra na máquina.",
+    },
+    bitbucket_git_write: {
+      label: "Enviar branches (git push)",
+      description:
+        "Enviar commits para branches agentes/{agent}/…: nunca para o branch padrão, sem force push, sem tags. Apagar branches e enviar para o branch de outra pessoa pedem aprovação antes.",
+    },
+    bitbucket_pr_write: {
+      label: "Abrir pull requests",
+      description: "Abrir pull requests a partir de um branch enviado. O merge continua com as pessoas.",
+    },
+    git_git_read: {
+      label: "Clonar repositórios (git)",
+      description:
+        "Clonar e atualizar repositórios no computador do agente com git, pelo nosso proxy. O token do servidor nunca entra na máquina.",
+    },
+    git_git_write: {
+      label: "Enviar branches (git push)",
+      description:
+        "Enviar commits para branches agentes/{agent}/…: nunca para o branch padrão, sem force push, sem tags. Enviar para o branch de outra pessoa pede aprovação antes.",
+    },
     github_git_read: {
       label: "Clonar repositórios (git)",
       description:
@@ -9643,6 +9742,7 @@ export const ptBR = {
       provider_unavailable: "O modelo não respondeu",
       gave_up: "O modelo não respondeu depois de várias tentativas",
       empty_reply: "O modelo não respondeu nada",
+      empty_reply_limit: "O modelo chegou ao limite de saída antes de responder",
       model_refused: "O modelo se recusou a responder",
       runner_outdated: "O programa no computador precisa ser atualizado",
       too_many_tool_calls: "Passou do limite de passos numa execução",
@@ -11141,6 +11241,10 @@ export const ptBR = {
     of: "de {{name}}",
     moreSpeed: "Velocidade e janela de contexto",
     whoThinks: "Quem pensa",
+    /** Under an account in Contas de IA: the agents that think with it (`names` lists them). */
+    thinks_one: "{{names}} pensa com ela",
+    thinks_other: "{{names}} pensam com ela",
+    thinksNone: "Nenhum agente pensa com ela",
     bulk: {
       sub: "Escolha a IA e depois os agentes que passam a usar.",
     },
@@ -11150,10 +11254,15 @@ export const ptBR = {
       search: "Buscar por nome, IA, plano ou dono",
       noMatch: "Nenhuma conta encontrada.",
       noModel: "Nenhum modelo encontrado.",
+      empty: "Nenhuma conta ainda.",
+      /** The account list's foot, under every row. */
+      add: "Adicionar conta",
+      addLine: "Claude, ChatGPT, Gemini e outras, ou uma chave de API",
+      manage: "Gerenciar contas",
       groups: {
-        yours: "Suas",
+        yours: "Suas contas",
         others: "Do time",
-        keys: "Do workspace",
+        keys: "Chaves de API",
       },
     },
     order: {
@@ -11849,11 +11958,11 @@ export const ptBR = {
       agent: "Agente",
       repo: "Onde trabalhar",
       repoPlaceholder: "Repositório ou projeto",
-      repoSearch: "Busque, ou digite owner/name ou um nome novo",
+      repoSearch: "Busque, ou digite owner/name, o endereço do repositório ou um nome novo",
       /** Um nome sem owner: um projeto novo só no computador do agente, sem remote. */
       newLocal: "Novo projeto no computador: {{name}}",
       useRepo: "Usar {{repo}}",
-      repoNote: "Um nome sem owner cria um projeto no computador do agente, fora do GitHub.",
+      repoNote: "Um nome sem owner cria um projeto só no computador do agente, sem repositório remoto.",
       hint: "@ chama alguém para a sessão",
       start: "Começar",
     },
@@ -11868,7 +11977,7 @@ export const ptBR = {
       failed: "Não deu para preparar a worktree.",
       retry: "Tentar de novo",
       githubAccess:
-        "Este workspace não tem acesso ao GitHub para esse repositório. Conecte o GitHub em Configurações\u00a0›\u00a0Conectores, ou comece uma sessão num projeto no computador (só um nome).",
+        "Este workspace não tem acesso a esse repositório. Conecte onde ele fica (GitHub, GitLab ou Bitbucket) em Configurações\u00a0›\u00a0Conectores, ou comece uma sessão num projeto no computador (só um nome).",
     },
     panel: {
       label: "Painel da sessão",
@@ -12754,8 +12863,6 @@ export const ptBR = {
     steered: "{{name}} recebeu durante a tarefa",
     stillWorking: "{{name}} ainda trabalhando",
     inProgress: "em andamento",
-    quiet: "sem notícias há {{minutes}} min",
-    refresh: "Atualizar",
     stop: "Parar",
     stopping: "Parando…",
     stopHint: "Parar tarefa · Esc",
@@ -12896,8 +13003,17 @@ export const ptBR = {
       home_only: "O {{program}} está instalado só para o root no {{computer}}, onde os agentes não chegam.",
       not_reported: "O {{computer}} ainda está vendo quais programas tem. Isto muda sozinho quando terminar.",
       system: "O {{program}} ainda não roda no sistema do {{computer}}.",
+      /** Codex on a Windows computer where neither MXC nor Codex's own sandbox could start. */
+      windows_sandbox:
+        "O Windows do {{computer}} não consegue isolar os comandos do {{program}}. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia.",
       no_computerCloud: "Disponível assim que o {{computer}} ficar pronto.",
     },
+    /**
+     * Behind an ⓘ beside Codex on a Windows computer without MXC, where Codex runs in its own `unelevated` sandbox:
+     * writes held to the agents' folders, the internet blocked only through proxy settings a program may ignore.
+     */
+    sandboxPartial:
+      "Neste Windows, os comandos do Codex só escrevem nas pastas dos agentes, mas a internet fica bloqueada só em parte para eles. O Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia, bloqueia por completo.",
     notAvailableNow: "Escolhido, mas indisponível agora.",
     offline: "O {{computer}} está offline agora.",
     modelLabel: "Modelo",
@@ -12985,7 +13101,7 @@ export const ptBR = {
     /** The viewer's own computers that may take their replies while this one is full (`machines.spill_own`). */
     spill: {
       title: "Seus computadores",
-      text: "Quando este computador estiver cheio, as respostas para você podem começar num computador seu. Trabalhos longos e os arquivos dos agentes continuam aqui.",
+      text: "Quando este computador estiver cheio ou fora, seus agentes podem começar num computador seu. Missões, sessões de código e agentes com repositórios continuam aqui.",
       /** The viewer's own sign-in there, "Claude Max". */
       plan: "seu plano {{plan}}",
     },
@@ -13902,6 +14018,7 @@ export const ptBR = {
       teamLocked: "Só quem gerencia conectores adiciona os da equipe.",
       mailLocked: "Uma caixa de email é sempre de quem a conecta.",
       done: "Seus agentes só usam quando você pede.",
+      githubDone: "Nas sessões de código, commits, pushes e pull requests do que você pedir saem no seu nome.",
       worksWhenAsked: "Só funciona quando você pede.",
       remove: "Remover",
       removeName: "Remover {{name}}",
@@ -14487,6 +14604,7 @@ export const ptBR = {
     },
     label: {
       git_clone: "Clonar repositório",
+      list_repositories: "Listar repositórios",
       create_repository: "Criar repositório",
       delete_repository: "Apagar repositório",
       fork_repository: "Fazer fork de um repositório",
@@ -15391,6 +15509,21 @@ export const ptBR = {
       adjust: "Ajustar",
       ok: "Pronto",
     },
+    git: {
+      token: "Token de acesso",
+      address: "Endereço",
+      addressHelp: {
+        gitlab: "Só para um GitLab que a sua empresa mesma hospeda. Em branco, é o gitlab.com.",
+        git: "Onde fica o servidor git, como https://git.empresa.com.",
+      },
+      tokenHelp: {
+        gitlab:
+          "Um token de acesso do GitLab (pessoal, de grupo ou de projeto) com os escopos api e write_repository. Ele fica no servidor: os computadores dos agentes nunca o recebem.",
+        bitbucket:
+          "Um token de acesso do workspace ou do repositório, com escrita em repositórios e em pull requests. Com o seu próprio token de API, escreva o seu email da Atlassian, dois-pontos e o token: voce@empresa.com:TOKEN.",
+        git: "O token que o servidor aceita como senha do git. Se ele pede um usuário, escreva usuario:token.",
+      },
+    },
     telegram: {
       token: "Token do bot",
       steps:
@@ -15975,6 +16108,14 @@ export const ptBR = {
       undoGone: "Este link de desfazer já foi usado ou expirou. Desvincule nas suas configurações de notificações.",
       codeGone:
         "Este código está errado, já foi usado ou expirou depois de 10 minutos. Gere um novo código e envie de novo.",
+      pageGone: "Este link expirou. Peça um novo ao seu assistente no chat.",
+      pageElsewhere: "Este link foi aberto em outro aparelho. Peça um novo ao seu assistente no chat.",
+      pinWrong: "PIN errado. Tentativas restantes: {{left}}.",
+      pinLocked: "PINs errados demais. Tente mais tarde ou escolha um PIN novo no app.",
+      pinShape: "Seu PIN tem 6 dígitos.",
+      pinResetGone: "Este link já foi usado ou expirou. Peça um novo em “Esqueceu seu PIN?”.",
+      pinUnset: "Escolha seu PIN primeiro. Escolha no app, com sua conta.",
+      emailUnverified: "Seu e-mail ainda não foi confirmado. Escolha seu PIN no app.",
     },
     wallpaper: {
       notYours: "Essa foto não é sua.",
@@ -16029,6 +16170,8 @@ export const ptBR = {
       deleteName: "Digite o nome do canal para apagar.",
       generalKept: "O #general não pode ser apagado.",
       generalStays: "Todo mundo fica no #general.",
+      leadChannelOnly: "Só canais têm agente responsável.",
+      leadNotMember: "O agente responsável precisa estar no canal.",
       mcpUnreachable: "Não foi possível conectar ao servidor MCP. Confira o endereço e tente de novo.",
       notApproved: "Este serviço ainda não aprovou o agentes.chat.",
       alreadyInvited: "Essa pessoa já tem um convite.",
@@ -16332,6 +16475,8 @@ export const ptBR = {
       tooLarge: "Este arquivo já está no limite de tamanho. Remova algo dele antes.",
       assetTooLarge: "A imagem passa de {{max}} MB, o limite por imagem.",
       assetType: "Só imagens entram neste arquivo: PNG, JPEG, WebP ou GIF.",
+      fontInvalid:
+        "Essa fonte não pode ser usada: o arquivo não é uma fonte que o app consiga ler. Tente um arquivo .ttf, .otf ou .woff.",
       liveOnly: "Este arquivo é alterado no próprio lugar e não pode ser substituído por inteiro.",
     },
     office: {
@@ -16353,7 +16498,7 @@ export const ptBR = {
     device: {
       notLinkMaker: "Só quem gerou o link pode deixar este computador entrar.",
       widenForbidden: "Admins só podem restringir quem usa o dispositivo de outra pessoa.",
-      spillOwnerOnly: "Só quem conectou este computador pode deixar respostas pensarem nele. Você pode desligar.",
+      spillOwnerOnly: "Só quem conectou este computador pode ligar a ajuda dele. Você pode desligar.",
       tasksOwnerOnly: "Só quem conectou este computador pode mudar quantas tarefas ele roda ao mesmo tempo.",
       tasksCloud: "A Cloud dimensiona sozinha o espaço deste computador para tarefas.",
       notHome: "Os agentes moram no computador do workspace e usam este quando o citam pelo nome.",
@@ -16522,6 +16667,11 @@ export const ptBR = {
       line: "IP de saída {{ip}}",
       hint: "O endereço que os sites veem quando os agentes navegam. Ele acompanha as mudanças de rede do computador.",
       waiting: "Reconectando a internet dos agentes. As conexões deles esperam até ela voltar.",
+    },
+    moving: {
+      short: "Mudando de servidor",
+      line: "Mudando de servidor… volta em alguns minutos",
+      named: "{{computer}} está mudando de servidor… volta em alguns minutos",
     },
     online: "Online",
     offline: "Offline",
@@ -16781,11 +16931,15 @@ export const ptBR = {
       "Mais tarefas ao mesmo tempo: só 0,5 GB de memória fica livre e o processador ocupado não as segura. Os seus apps podem ficar lentos.",
     belongs: "Pertence ao workspace",
     belongsHint: "Ele fica quando quem o conectou sai, e todos podem usá-lo enquanto ninguém for dono dele.",
-    spillOwn: "Suas respostas podem pensar aqui",
-    spillOwnHint: "Quando o computador de um agente estiver cheio, as respostas dele para você começam aqui.",
-    spillOthers: "Agentes de outras pessoas podem pensar aqui",
-    spillOthersHint:
-      "Quando o computador de um agente estiver cheio, as respostas dele para outras pessoas também podem começar aqui.",
+    spillOwn: "Ajudar quando o computador da equipe estiver cheio ou fora",
+    spillOwnHint:
+      "Quando o computador dos seus agentes estiver cheio ou fora, as respostas, os pedidos e as rotinas deles podem pensar aqui com o seu login.",
+    spillTeamHint:
+      "Quando o computador de um agente estiver cheio ou fora, as respostas, os pedidos e as rotinas dele podem pensar aqui com o login do dono dele neste computador.",
+    spillWorkspaceOff: "Um admin desativou isso para o workspace.",
+    helpWorkspace: "Computadores ajudam quando o da equipe estiver cheio ou fora",
+    helpWorkspaceHint:
+      "Cada computador só ajuda se o dono permitir. Com isto desativado, nenhum ajuda, seja qual for a escolha do dono.",
     connectedBy: "Conectado por {{name}}",
     downloadFor: "Baixar para {{system}}",
     downloadApp: "Baixar o app",
@@ -18221,7 +18375,7 @@ export const ptBR = {
     telemetry: {
       title: "Estatísticas de uso",
       label: "Enviar estatísticas de uso anônimas ao agentes.chat",
-      help: "Contagens como pessoas, agentes, tamanho das máquinas, tokens de IA usados e o volume de dados que os navegadores dos agentes enviam e recebem. Nunca mensagens, arquivos, nomes ou sites.",
+      help: "Contagens como pessoas, agentes, tamanho das máquinas, tokens de IA usados, o volume de dados que os navegadores dos agentes enviam e recebem e com que rapidez os apps abrem e respondem. Nunca mensagens, arquivos, nomes ou sites.",
       envOff: "Desligado nas configurações deste servidor (TELEMETRY=off).",
       envOffDesktop:
         "Desligado no app do agentes.chat no computador deste servidor (Preferências\u00a0›\u00a0Servidores).",
@@ -18308,7 +18462,6 @@ export const ptBR = {
     removeUsedNone_other:
       "{{agents}} pensam com esta chave e não têm outra. Sem ela, param de responder até você conectar outra IA.",
     noKeys: "Com uma chave de API, você paga direto ao provedor e escolhe os modelos.",
-    noKeysTitle: "Traga sua própria chave de IA",
     platformAvailable: "A chave do Claude deste servidor também está disponível.",
     usageTitle: "Gastos da API por tipo",
     usageAgentLine: "{{spent}} de {{budget}}",
@@ -18790,6 +18943,11 @@ export const ptBR = {
       cant: "Respondi com {{via}}: {{plan}} não consegue pensar agora.",
       change: "Trocar",
     },
+    spilled: {
+      full: "Pensou em {{to}}: {{from}} estava cheio.",
+      away: "Pensou em {{to}}: {{from}} estava fora.",
+      itsComputer: "o computador dele",
+    },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
       text: "O {{plan}} recusou o {{from}} com esta chave. Respondi com o {{to}}, que funciona nela.",
@@ -19097,6 +19255,7 @@ export const ptBR = {
         runningCommandAny: "Rodou um comando",
         usingScreen: "Usou a tela",
         cloningRepo: "Clonou um repositório",
+        listingRepos: "Listou os repositórios",
         openingPullRequest: "Abriu um pull request",
         handingOff: "Entregou um relatório",
         recordingFindings: "Anotou o que encontrou",
@@ -19218,6 +19377,7 @@ export const ptBR = {
       runningCommandAny: "rodando um comando",
       usingScreen: "usando a tela",
       cloningRepo: "clonando um repositório",
+      listingRepos: "listando os repositórios",
       openingPullRequest: "abrindo um pull request",
       handingOff: "entregando um relatório",
       recordingFindings: "anotando o que encontrou",
@@ -19468,6 +19628,10 @@ export const ptBR = {
         "{{surface}} foi desvinculado porque a identidade mudou. Vincule de novo em Configurações se foi você.",
       surfaceVoiceDropped: "Não consegui entender esse áudio. Pode mandar de novo ou escrever?",
       done: "Pronto.",
+      no_reply:
+        "A IA terminou a vez dela sem escrever uma resposta. O que ela mudou está abaixo. Peça de novo a resposta.",
+      no_reply_limit:
+        "A IA chegou ao limite de saída antes de escrever uma resposta. O que ela mudou está abaixo. Peça de novo a resposta.",
       /**
        * A stretch's pause card (ADR 0089): `agents` their names, `count` how many; `percent` the share of each one's
        * monthly budget, and with `_cost` it in money (`amount`).
@@ -21010,6 +21174,7 @@ export const ptBR = {
       offline: "O {{computer}} está offline",
       offlineHelpPlain: "O {{name}} espera o computador voltar.",
       offlineHelpPlain_female: "A {{name}} espera o computador voltar.",
+      helping: "Enquanto isso, o trabalho novo pode pensar em {{names}}.",
       noRoom: "O {{computer}} já mostra o máximo de telas que consegue. Tente de novo daqui a pouco.",
       unavailable: "A tela do {{name}} não pode ser mostrada agora",
       unavailable_female: "A tela da {{name}} não pode ser mostrada agora",

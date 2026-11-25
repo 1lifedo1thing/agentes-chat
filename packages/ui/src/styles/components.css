@@ -870,6 +870,10 @@ textarea.ac-input:not(:hover, :focus-visible) {
 .ac-brand svg {
   fill: currentColor;
 }
+/* The kit's own line icon on a tile (a key, a computer): its strokes, never filled. */
+.ac-brand > svg.ac-icon {
+  fill: none;
+}
 /* An image mark that isn't square (Tux) keeps its shape in the square box. */
 .ac-brand img {
   object-fit: contain;
@@ -6464,6 +6468,8 @@ html:not([data-pointer]) .ac-hint:focus-visible {
   max-width: min(280px, calc(100vw - 32px));
   padding: 8px 12px;
   text-wrap: pretty;
+  /* A name with no place to break (a computer named by its address) wraps inside the bubble. */
+  overflow-wrap: anywhere;
   border-radius: 12px;
   color: var(--ink2);
   font-size: 13px;
@@ -9586,6 +9592,14 @@ html:not([data-pointer]) .ac-recur__day:focus-visible {
   font-size: 13px;
   color: var(--muted);
 }
+/* SearchSelect's `footer`: under the list whatever is typed, past a menu's separator, its rows drawn as a menu's. */
+.ac-tz__foot {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--menu-pad) var(--menu-pad);
+}
 .ac-tz__option[aria-disabled="true"] {
   color: var(--ink-muted);
   cursor: not-allowed;
@@ -11216,6 +11230,45 @@ html:not([data-pointer]) .ac-run-bars__bar:focus-visible {
   margin-block: -1px;
 }
 
+/* ---------- InlineName: a name renamed where it stands ---------- */
+/* The font, size and line of what it replaces, so nothing moves; no box, only the ring. Its 4px of side padding are
+   pulled back out, so the text stays on the name's own edge. */
+.ac-inlinename {
+  display: block;
+  box-sizing: content-box;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  outline: none;
+  box-shadow: inset 0 -1px 0 var(--line2);
+}
+@supports (top: 1lh) {
+  .ac-inlinename {
+    height: 1lh;
+  }
+}
+.ac-inlinename:focus {
+  box-shadow: var(--field-ring);
+}
+.ac-inlinename--fit {
+  width: auto;
+}
+.ac-inlinename[aria-busy] {
+  opacity: 0.6;
+}
+.ac-inlinename::placeholder {
+  color: var(--faint);
+}
+
 /* ---------- Choice rows (OptionList.tsx): full width, one left edge, neutral selection ---------- */
 .ac-optlist {
   display: flex;
@@ -11598,6 +11651,125 @@ html:not([data-pointer]) .ac-effort:focus-visible .ac-effort__ramp {
 @media (max-width: 640px) {
   .ac-optrow__side {
     display: none;
+  }
+}
+/*
+ * Links (OptionLinks): the row's look for a choice that opens its own steps. The title is the button, stretched over
+ * the row, so a link in the description stays clickable above it; nothing stays chosen, the chevron says it moves on.
+ */
+.ac-optlinks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ac-optrow--link {
+  position: relative;
+  cursor: pointer;
+}
+/* The chevron ends every row 16 in: the leading picture starts as far in. */
+.ac-optrow--link.ac-optrow--lead {
+  padding-left: 16px;
+}
+.ac-optrow__hit {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.ac-optrow__hit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+html:not([data-pointer]) .ac-optrow__hit:focus-visible {
+  outline: none;
+}
+html:not([data-pointer]) .ac-optrow--link:has(.ac-optrow__hit:focus-visible) {
+  box-shadow:
+    inset 0 0 0 1px var(--line2),
+    var(--field-ring);
+}
+.ac-optrow--link .ac-optrow__title {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.ac-optrow--link .ac-optrow__desc :is(a, button) {
+  position: relative;
+  z-index: var(--z-raised);
+}
+.ac-optrow__go {
+  flex: none;
+  color: var(--faint);
+  transition:
+    color 0.15s,
+    transform 0.2s var(--out);
+}
+.ac-optrow--link:hover .ac-optrow__go {
+  color: var(--ink);
+  transform: translateX(2px);
+}
+.ac-optrow--link[data-disabled] {
+  cursor: default;
+  opacity: 0.5;
+}
+.ac-optrow--link[data-disabled]:hover {
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+.ac-optrow--link[data-disabled]:active,
+.ac-optrow--link[data-disabled]:hover .ac-optrow__go {
+  transform: none;
+}
+.ac-optrow--link[data-disabled] .ac-optrow__hit {
+  cursor: default;
+}
+/* A row's quiet end words stay on a phone too: they are part of the choice ("Um login por agente"). */
+.ac-optrow__side--link {
+  display: inline-flex;
+  flex: 0 1 auto;
+  max-width: 40%;
+  white-space: normal;
+  text-align: end;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ac-optrow--link:hover .ac-optrow__go {
+    transform: none;
+  }
+}
+/* A phone: the leading picture and the title share the first line, the line under them takes the row's width. */
+@media (width <= 480px) {
+  .ac-optrow--link.ac-optrow--lead {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    row-gap: 4px;
+  }
+  .ac-optrow--link.ac-optrow--lead > .ac-optrow__text {
+    display: contents;
+  }
+  .ac-optrow--link.ac-optrow--lead > .ac-optrow__lead {
+    grid-area: 1 / 1;
+  }
+  .ac-optrow--link.ac-optrow--lead .ac-optrow__title {
+    grid-area: 1 / 2;
+  }
+  .ac-optrow--link.ac-optrow--lead > .ac-optrow__go {
+    grid-area: 1 / 3;
+  }
+  .ac-optrow--link.ac-optrow--lead .ac-optrow__desc {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+  .ac-optrow--link.ac-optrow--lead > .ac-optrow__side--link {
+    grid-column: 1 / -1;
+    max-width: none;
+    text-align: start;
   }
 }
 .ac-optrow__more--cards {
