@@ -81,6 +81,13 @@ export function paidLine(t: TFunction, plan: string | null | undefined, period: 
   return t("paidMoment.onPlan", { plan });
 }
 
+/** The same plan as a row's value ("Team, yearly"): its name alone when the return said no period. */
+export function planLine(t: TFunction, plan: string, period: PlanPeriod | undefined) {
+  if (period === "month") return t("billing.planMonth", { plan });
+  if (period === "year") return t("billing.planYear", { plan });
+  return plan;
+}
+
 /**
  * What the plan in force gives, in one line, from the limits the billing service set: the seats paid for and the room
  * for files (a workspace's own bucket counts against none). Null while they aren't known.

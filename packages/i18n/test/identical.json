@@ -635,7 +635,8 @@
       "codeSessions.gitTab.label",
       "codeSessions.gitTab.commits",
       "codeTerminal.label",
-      "codeSessions.tabs.terminalN"
+      "codeSessions.tabs.terminalN",
+      "billing.plan"
     ],
     "fr": [
       "agentPage.facts.budget",
@@ -3833,7 +3834,8 @@
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
       "codeTerminal.label",
-      "codeSessions.tabs.terminalN"
+      "codeSessions.tabs.terminalN",
+      "billing.plan"
     ],
     "pl": [
       "drive.folder",
@@ -4172,7 +4174,8 @@
       "cliTools.progress.agents",
       "codeTerminal.label",
       "codeSessions.tabs.terminalN",
-      "connectors.store.agents"
+      "connectors.store.agents",
+      "billing.plan"
     ],
     "ru": [
       "live.canvas.sizes.short.s",

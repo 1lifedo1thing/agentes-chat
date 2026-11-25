@@ -20681,6 +20681,13 @@ export const en = {
     failed: "Couldn't open it now. Try again in a moment.",
     adminsOnly: "Only the workspace's owners and admins manage its agentes.chat plan.",
     seeOptions: "See options",
+    /**
+     * The plan card's first row, once this tab came back from buying it: `plan` its label, the others its value.
+     * `{{plan}}`: the plan's name, as the billing service's plan list writes it ("Team").
+     */
+    plan: "Plan",
+    planMonth: "{{plan}}, monthly",
+    planYear: "{{plan}}, yearly",
     people: "People",
     files: "Files",
     usedOf: "{{used}} of {{limit}}",

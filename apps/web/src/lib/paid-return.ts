@@ -71,6 +71,8 @@ export function usePaidMoment(orgId: string, standing: OrgStanding | undefined, 
   const pendingJson = pending && JSON.stringify(pending);
   useEffect(() => {
     if (pendingJson === null) return;
+    // What was bought outlives the moment for the tab: the plan card names it (`usePaidPlan`).
+    sessionStore.set(`${STORAGE_KEYS.paidPlan}.${orgId}`, pendingJson);
     if (!active) {
       sessionStore.set(pendingKey, pendingJson);
       return;
@@ -84,4 +86,15 @@ export function usePaidMoment(orgId: string, standing: OrgStanding | undefined, 
   }, [active, due, form, inAddress, navigate, orgId, pendingJson, pendingKey, shownKey]);
   const done = useCallback(() => setShown(null), []);
   return { moment: mine?.moment ?? (due ? pending : null), form: mine?.form ?? form, done };
+}
+
+/**
+ * What this tab came back from buying for the workspace, the moment's own source (ADR 0079): the paid return in the
+ * address, else the one `usePaidMoment` kept for the tab. Null without one, and while the plan isn't in force. The
+ * server never says the plan, so a tab that saw no return knows none.
+ */
+export function usePaidPlan(orgId: string, standing: OrgStanding | undefined): PaidReturn | null {
+  const search = useRouterState({ select: (s) => s.location.search }) as Record<string, unknown>;
+  if (!standingActive(standing)) return null;
+  return paidReturnOf(search) ?? readPending(`${STORAGE_KEYS.paidPlan}.${orgId}`);
 }

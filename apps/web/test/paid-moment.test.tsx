@@ -213,6 +213,45 @@ describe("the paid moment where the return lands", () => {
   });
 });
 
+describe("the plan card in Settings", () => {
+  /** The card's rows, each as its label and its value. */
+  const rows = () =>
+    [...(document.querySelector('[aria-label="Plano e cobrança"]')?.querySelectorAll(".row") ?? [])].map((r) =>
+      [r.querySelector("b")?.textContent, r.querySelector(".muted")?.textContent].join(": "),
+    );
+  const bought = () => {
+    const state = workspace();
+    state.limits = limits(null, null);
+    state.authConfig = { billingUrl: "https://billing.example.com" };
+    planList([{ key: "team", name: "Equipe" }]);
+    return state;
+  };
+
+  test("names the plan and its period first, from the paid return as the moment does, and keeps it for the tab", async () => {
+    const { router } = await open(bought(), `${SETTINGS}?paid=1&plan=team&period=year`);
+    expect(screen().getByRole("dialog", { name: "Você está no plano Equipe, anual" })).toBeTruthy();
+    expect(rows()).toEqual(["Plano: Equipe, anual", "Pessoas: Sem limite", "Arquivos: Sem limite"]);
+    // The address has forgotten the return as the moment showed: the tab still knows what it bought.
+    expect((router.state.location.search as Record<string, unknown>).plan).toBeUndefined();
+    cleanup();
+    await open(bought(), SETTINGS);
+    expect(rows()[0]).toBe("Plano: Equipe, anual");
+  });
+
+  test("by its name alone when the return said no period", async () => {
+    await open(bought(), `${SETTINGS}?paid=1&plan=team`);
+    expect(rows()[0]).toBe("Plano: Equipe");
+  });
+
+  test("a tab that saw no return, or a plan not in force yet: as before, people and files", async () => {
+    await open(bought(), SETTINGS);
+    expect(rows()).toEqual(["Pessoas: Sem limite", "Arquivos: Sem limite"]);
+    cleanup();
+    await open(held(bought()), `${SETTINGS}?paid=1&plan=team&period=year`);
+    expect(rows()).toEqual(["Pessoas: Sem limite", "Arquivos: Sem limite"]);
+  });
+});
+
 describe("a confirmation that comes later", () => {
   test("while the hold lasts, nothing; once it lifts after the person went elsewhere, the card in the corner", async () => {
     await open(held(workspace()), `${SETTINGS}?paid=1`);

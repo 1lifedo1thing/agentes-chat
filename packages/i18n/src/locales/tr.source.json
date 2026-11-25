@@ -48849,6 +48849,15 @@
   "billing.seeOptions": {
     "value": "See options"
   },
+  "billing.plan": {
+    "value": "Plan"
+  },
+  "billing.planMonth": {
+    "value": "{{plan}}, monthly"
+  },
+  "billing.planYear": {
+    "value": "{{plan}}, yearly"
+  },
   "billing.people": {
     "value": "People"
   },

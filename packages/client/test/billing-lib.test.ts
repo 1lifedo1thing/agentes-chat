@@ -11,6 +11,7 @@ import {
   paidRoom,
   paidSearch,
   planHeldNext,
+  planLine,
   planMoveTargets,
   planOfferOf,
   planTurnedOn,
@@ -132,6 +133,10 @@ describe("a paid return (the billing service's `?paid=1`)", () => {
     expect(paidLine(t, "Equipe", undefined)).toBe("paidMoment.onPlan:Equipe");
     expect(paidLine(t, "Equipe", "month")).toBe("paidMoment.onMonth:Equipe");
     expect(paidLine(t, "Equipe", "year")).toBe("paidMoment.onYear:Equipe");
+    // The same plan as the plan card's row: its name and period, or its name alone.
+    expect(planLine(t, "Equipe", "year")).toBe("billing.planYear:Equipe");
+    expect(planLine(t, "Equipe", "month")).toBe("billing.planMonth:Equipe");
+    expect(planLine(t, "Equipe", undefined)).toBe("Equipe");
   });
 
   test("what the plan gives, from its limits: seats and files, a bucket of its own counting against none", () => {
