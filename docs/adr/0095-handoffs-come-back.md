@@ -135,3 +135,12 @@ A channel where several agents share one job had nobody in charge of it: a quest
 - **In the apps:** the channel's agent menu on the web (a checkbox) and the agent's screen in the channel on the phone (a switch) have "Responsible for the channel". The line under its name says so, followed by how it answers when that is a warning (it waits to be mentioned, or nothing picks for this person).
 
 Left out: the workspace export and import don't carry it, the right hand's settings card has no row for it, and an archived lead can be replaced but not cleared from the apps.
+
+## Addendum (2026-11-24): the agent in the middle goes on when what came back needs it
+
+An agent answering another agent in their DM that handed part of the work on (a check, a fix, another part) ended its turn, and when the result came back it only rode up inside its answer (decision 4). The agent in the middle never acted on it: a check that found problems in its own work went up to the agent above, which had not done that work, and the fix waited until someone asked again.
+
+- **Once everything it handed on is back** and its run already ended still owing an answer, one judge call (`handed_back_next`, `goOnBetween` in `consultations.ts`) reads the request, what it said and each result, and asks whether a step only it can take is left (fix what a check found, check again, put the parts together, pass a result on, a part that failed and nobody picks up). Yes: a notice in that agents' DM wakes it once, its run there takes what it owes (`target_run_id`), and that run's reply goes back with the results (`settleOwed`, as before). No: its answer goes back as before.
+- **No judge, or a judge that can't answer** for the workspace or run (no Jev key and no small model, platform cap, confidential thread, a hold): no wake, as before. Other judge failures wake. Past the stretch's limits (ADR 0089) it isn't woken either: the answer goes back as before, with no pause card for a run nothing would wait for.
+- **Nothing is lost on a failure:** a run that fails or is stopped while owing an answer closes it as failed with why, followed by what its colleagues had sent back.
+- `tell_agent` from an agents' DM says the agent is woken there first when what comes back needs a step from it.

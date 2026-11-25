@@ -81,7 +81,7 @@ import {
   stallNote,
   stallWords,
 } from "./brain-silence";
-import { coAuthorLines } from "./co-authors";
+import { coAuthorLines, commitAuthorEnv } from "./co-authors";
 import { ownBranches } from "./command-gate";
 import { DELEGATED_RESULT_CHARS, type DelegatedBridge } from "./delegated-tools";
 import { hostMemAvailable, MIN_FREE_BYTES } from "./desktop-session";
@@ -472,6 +472,12 @@ export interface ClaudeTurnStats {
   thinkingChars: number;
 }
 
+/** A real model id from an assistant/message_start frame (ignores empty strings and `<synthetic>` placeholders). */
+const realModel = (v: unknown) => {
+  const s = str(v).trim();
+  return s && !s.startsWith("<") ? s : "";
+};
+
 /**
  * Claude Code's `stream-json` output → `WireBrainEvent`s. One parser per
  * process (the session id persists); `beginTurn` resets what a turn tracks.
@@ -480,12 +486,6 @@ export interface ClaudeTurnStats {
  * become executed `tool_call` events too, by their Claude Code names: the
  * engine keeps them as what the turn tried (`transcript.harnessTried`).
  */
-/** A real model id from an assistant/message_start frame (ignores empty strings and `<synthetic>` placeholders). */
-const realModel = (v: unknown) => {
-  const s = str(v).trim();
-  return s && !s.startsWith("<") ? s : "";
-};
-
 export class ClaudeStreamParser {
   session?: string;
   /** Counted from `resetStats` on, across the turns the CLI runs for one request (`beginTurn` leaves them). */
@@ -2736,6 +2736,8 @@ export class BrainManager {
       context: isContextTokens(req.contextTokens) ? req.contextTokens : null,
       // Its commits' lines are in its env (`co-authors.ts`): turned off or the agent renamed, a new one (resumed).
       coAuthors: coAuthorLines(ctx.agent),
+      // Who its commits are by is in its env too: another person asking in a code session, a new one (resumed).
+      author: commitAuthorEnv(ctx.agent).GIT_AUTHOR_EMAIL ?? null,
       // A code session's turn starts with its session's tools and the repository's plugin (ADR 0215 §6).
       code: req.codeSession === true,
     });
