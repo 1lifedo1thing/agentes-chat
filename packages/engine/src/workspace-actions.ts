@@ -1018,8 +1018,7 @@ const channelSnapshot = (c: ChannelRow) => ({
 
 const updateChannelAction: WorkspaceAction = {
   id: "update_channel",
-  does:
-    "Rename a channel, change its topic, make it private (invite only) or public, or choose the agent responsible for it.",
+  does: "Rename a channel, change its topic, make it private (invite only) or public, or choose the agent responsible for it.",
   input: {
     type: "object",
     properties: {
@@ -1031,7 +1030,7 @@ const updateChannelAction: WorkspaceAction = {
         type: "string",
         maxLength: 64,
         description:
-          "The @handle of an agent in the channel to make responsible for it: it answers what people say to the room for the team and takes the next step of work that ends there. One per channel. \"\" for none.",
+          'The @handle of an agent in the channel to make responsible for it: it answers what people say to the room for the team and takes the next step of work that ends there. One per channel. "" for none.',
       },
     },
     required: ["channel"],

@@ -861,7 +861,10 @@ describe("what Desfazer, the card and the people card keep to", () => {
     f = await setup({ rightHand: true });
     const row = async () => (await f.db.select().from(schema.channels).where(eq(schema.channels.id, f.general.id)))[0];
     const ctx = await lodiRun(f, f.owner.id, "make dev responsible for general");
-    const unknown = await act(f, ctx, { action: "update_channel", input: { channel: "general", responsible: "@nobody" } });
+    const unknown = await act(f, ctx, {
+      action: "update_channel",
+      input: { channel: "general", responsible: "@nobody" },
+    });
     expect(unknown.content).toContain("No agent @nobody here");
     const out = await act(f, ctx, { action: "update_channel", input: { channel: "general", responsible: "@dev" } });
     expect(out.content).toContain("Done at once, with Undo");

@@ -9917,6 +9917,15 @@
   "agentActions.channel.agent_added": {
     "value": "Brought {{agentName}} into <b>#{{channel}}</b>"
   },
+  "agentActions.channel.lead_changed": {
+    "value": "Made {{agentName}} responsible for <b>#{{channel}}</b>"
+  },
+  "agentActions.channel.lead_changed_self": {
+    "value": "Became responsible for <b>#{{channel}}</b>"
+  },
+  "agentActions.channel.lead_changed_none": {
+    "value": "Left <b>#{{channel}}</b> with no agent responsible"
+  },
   "agentActions.channel.created": {
     "value": "Created the channel <b>#{{name}}</b>"
   },
@@ -36247,6 +36256,9 @@
   "toolNames.label.add_agent_to_channel": {
     "value": "Add agent to a channel"
   },
+  "toolNames.label.set_channel_lead": {
+    "value": "Choose the agent responsible for a channel"
+  },
   "toolNames.label.ask_agent": {
     "value": "Ask another agent"
   },
@@ -46253,6 +46265,9 @@
   "chat.work.step.addingAgent": {
     "value": "Added an agent to a channel"
   },
+  "chat.work.step.settingChannelLead": {
+    "value": "Chose the agent responsible for a channel"
+  },
   "chat.work.step.readingConversation": {
     "value": "Read the conversation"
   },
@@ -46609,6 +46624,9 @@
   },
   "chat.activity.addingAgent": {
     "value": "adding an agent to a channel"
+  },
+  "chat.activity.settingChannelLead": {
+    "value": "choosing the agent responsible for a channel"
   },
   "chat.activity.readingConversation": {
     "value": "reading the conversation"

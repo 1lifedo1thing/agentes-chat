@@ -463,7 +463,9 @@ describe("act with undo: memory, routines, channels, wiki, threads", () => {
       "@lia is now responsible for #general, in place of @dev.",
     );
     // Naming one that isn't responsible clears nothing.
-    expect((await call("set_channel_lead", { agent: "@dev", responsible: false })).content).toContain("nothing changed");
+    expect((await call("set_channel_lead", { agent: "@dev", responsible: false })).content).toContain(
+      "nothing changed",
+    );
     expect(await lead()).toBe(lia.id);
     expect((await call("set_channel_lead", { responsible: false })).content).toBe(
       "#general has no responsible agent now.",
@@ -472,7 +474,11 @@ describe("act with undo: memory, routines, channels, wiki, threads", () => {
 
     const m = await reply(f, ctx);
     const actions = (await actionsFor(f.db, f.org.id, [m.id])).get(m.id) ?? [];
-    expect(actions.map((a) => a.kind)).toEqual(["channel.lead_changed", "channel.lead_changed", "channel.lead_changed"]);
+    expect(actions.map((a) => a.kind)).toEqual([
+      "channel.lead_changed",
+      "channel.lead_changed",
+      "channel.lead_changed",
+    ]);
     const [itself, other, none] = actions;
     expect(itself?.params).toMatchObject({ self: true, agentId: f.agent.id, previousAgentId: null });
     expect(other?.params).toMatchObject({ self: false, agentName: "Lia", previousAgentId: f.agent.id });

@@ -3905,6 +3905,9 @@
     },
     "channel": {
       "agent_added": "Membawa {{agentName}} ke <b>#{{channel}}</b>",
+      "lead_changed": "Menjadikan {{agentName}} penanggung jawab <b>#{{channel}}</b>",
+      "lead_changed_self": "Menjadi penanggung jawab <b>#{{channel}}</b>",
+      "lead_changed_none": "Membiarkan <b>#{{channel}}</b> tanpa agen penanggung jawab",
       "created": "Membuat kanal <b>#{{name}}</b>"
     },
     "wiki": {
@@ -14292,6 +14295,7 @@
       "send_dm": "Kirim pesan langsung",
       "read_conversation": "Baca percakapan",
       "add_agent_to_channel": "Tambah agen ke kanal",
+      "set_channel_lead": "Pilih agen penanggung jawab kanal",
       "ask_agent": "Tanya agen lain",
       "tell_agent": "Beri tahu agen lain",
       "find_agent": "Temukan agen",
@@ -18239,6 +18243,7 @@
         "workingOnWorkspace": "Bekerja di ruang kerja",
         "updatingThread": "Memperbarui utas",
         "addingAgent": "Menambahkan agen ke kanal",
+        "settingChannelLead": "Memilih agen penanggung jawab kanal",
         "readingConversation": "Membaca percakapan",
         "usingTool": "Memakai alat {{tool}}",
         "thinking": "Berpikir",
@@ -18361,6 +18366,7 @@
       "workingOnWorkspace": "bekerja di ruang kerja",
       "updatingThread": "memperbarui utas",
       "addingAgent": "menambahkan agen ke kanal",
+      "settingChannelLead": "memilih agen penanggung jawab kanal",
       "readingConversation": "membaca percakapan",
       "usingTool": "memakai alat"
     },

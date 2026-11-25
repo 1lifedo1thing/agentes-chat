@@ -229,15 +229,7 @@ export function createWorkspaceToolSource(deps: { pubsub?: PubSub }): ToolSource
           const events = holdEvents(deps.pubsub);
           await actWithUndo(
             ctx,
-            (db) =>
-              updateChannel(
-                db,
-                requester,
-                ctx.orgId,
-                channel.id,
-                { leadAgentId: next?.id ?? null },
-                { pubsub: events },
-              ),
+            (db) => updateChannel(db, requester, ctx.orgId, channel.id, { leadAgentId: next?.id ?? null }, events),
             () => ({
               kind: "channel.lead_changed",
               target: { type: "channel", id: channel.id, title: channel.name },
