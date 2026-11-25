@@ -37237,6 +37237,9 @@
   "connectFlow.routine.late": {
     "value": "{{name}} finds overdue tasks and sends you in a DM who looks after each one."
   },
+  "connectFlow.routine.traffic": {
+    "value": "{{name}} looks at your site's numbers and sends you in a DM what changed against the week before."
+  },
   "connectFlow.routine.openPrs": {
     "value": "{{name}} looks at the PRs waiting for review and sends you in a DM what to look at first."
   },

@@ -14639,6 +14639,7 @@
       "leads": "{{name}} melihat siapa yang masuk ke CRM dan memberi tahu lewat DM harus mulai dari siapa.",
       "tickets": "{{name}} mencari tiket yang menunggu balasan dan mengirimnya lewat DM, dengan saran balasan.",
       "late": "{{name}} mencari tugas yang terlambat dan memberi tahu lewat DM siapa yang mengurus masing-masing.",
+      "traffic": "{{name}} melihat angka situs dan memberi tahu lewat DM apa yang berubah dibanding minggu sebelumnya.",
       "openPrs": "{{name}} melihat PR yang menunggu ditinjau dan memberi tahu lewat DM apa yang perlu dilihat lebih dulu.",
       "errors": "{{name}} memeriksa error baru dan memberi tahu lewat DM apa yang perlu diperhatikan.",
       "noAgent": "Beri akses ke agen di atas dan ia akan mengurus ini untukmu.",

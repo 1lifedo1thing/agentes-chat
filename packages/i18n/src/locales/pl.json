@@ -16209,6 +16209,7 @@
       "leads": "{{name}} sprawdza, kto pojawił się w CRM, i pisze Ci w wiadomości bezpośredniej, od kogo zacząć.",
       "tickets": "{{name}} znajduje zgłoszenia czekające na odpowiedź i wysyła Ci je w wiadomości bezpośredniej, z sugerowaną odpowiedzią.",
       "late": "{{name}} znajduje zaległe zadania i pisze Ci w wiadomości bezpośredniej, kto zajmuje się każdym z nich.",
+      "traffic": "{{name}} sprawdza liczby strony i pisze Ci w wiadomości bezpośredniej, co zmieniło się w porównaniu z poprzednim tygodniem.",
       "openPrs": "{{name}} sprawdza PR czekające na przegląd i pisze Ci w wiadomości bezpośredniej, na co spojrzeć najpierw.",
       "errors": "{{name}} sprawdza nowe błędy i pisze Ci w wiadomości bezpośredniej, co wymaga uwagi.",
       "noAgent": "Daj dostęp agentowi powyżej, a on się tym zajmie.",
