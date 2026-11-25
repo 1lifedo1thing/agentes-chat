@@ -249,9 +249,14 @@ p {
   border-bottom: 1px solid var(--line);
   background: var(--surface-raised);
 }
+/* The notices on top of the work area (`MorphRoom`): their room glides, never shrinks. */
+.shell__notices {
+  flex: none;
+}
 /* On the paper above the work's sheet: each notice is its own rounded card, 8px clear of the sheet, never a square
    strip over the sheet's rounded corners. */
-.shell__work > .outages {
+.shell__work > .outages,
+.shell__notices > .ac-morph__in > .outages {
   margin-bottom: 8px;
   border-bottom: 0;
   border-radius: var(--radius-section) var(--radius-section) var(--radius-section) 4px;
@@ -423,7 +428,14 @@ p {
 }
 /* A phone's line has room for the names, the count and the time only: the subject would be a letter and its "…". */
 @container (max-width: 420px) {
-  .consult-pair__subject {
+  /* Except another agent's request in this agent's DM: nothing else there says what was asked. */
+  .consult-pair__row:not(.consult-pair__row--handed) .consult-pair__subject {
+    display: none;
+  }
+  /* There "por você" and the time give way instead. */
+  .consult-pair__row--handed .consult-pair__for,
+  .consult-pair__row--handed .consult-pair__how,
+  .consult-pair__row--handed .consult-pair__time {
     display: none;
   }
 }
@@ -475,6 +487,22 @@ html:not([data-pointer]) .consult-pair__row:focus-visible {
   height: 15px;
   margin-inline: 6px;
   vertical-align: calc(var(--cap-top) - var(--cap-mid) - 7.5px);
+}
+/* Another agent's request in this agent's DM: the words in the arrows' place ("Atlas pediu à Ada"), as quiet. */
+.consult-pair__asked {
+  margin-inline: 6px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.consult-pair__for {
+  margin-inline-start: 0.25em;
+  color: var(--muted);
+}
+/* Where it was asked stays whole beside the subject, which gives way first; only a very long channel name is cut. */
+.consult-pair__row > .consult-pair__where {
+  max-width: 16em;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* Cut out of what is under them: the open row's blue too (the page's ring drew gray circles on it in dark). */
 .consult-pair__faces > .ac-avatar {

@@ -2590,6 +2590,12 @@ export const en = {
     testFlight: "TestFlight",
     googlePlay: "Google Play",
   },
+  /** Lodi's cursor building the sidebar after a team is made: Skip on the receipt and the count on the closed menu. */
+  lodiCursor: {
+    skip: "Skip",
+    inMenu_one: "{{count}} new in the menu",
+    inMenu_other: "{{count}} new in the menu",
+  },
   openOnPhone: {
     qr: "QR code to sign in to the agentes app",
     making: "Making the code…",
@@ -6395,9 +6401,17 @@ export const en = {
           low: "Low",
           medium: "Medium",
           high: "High",
+          xhigh: "Extra high",
           max: "Maximum",
         },
-        effortsLower: { auto: "automatic", low: "low", medium: "medium", high: "high", max: "maximum" },
+        effortsLower: {
+          auto: "automatic",
+          low: "low",
+          medium: "medium",
+          high: "high",
+          xhigh: "extra high",
+          max: "maximum",
+        },
         effortText: {
           auto: "The Automatic model picks each task's effort. Pick a model to set the effort yourself.",
           low: "Answers fast. Good for simple questions.",
@@ -6406,6 +6420,7 @@ export const en = {
           mediumKey: "Thinks enough most of the time.",
           none: "The model thinks as much as it usually does. Pick a level to set the effort.",
           high: "Thinks more on hard tasks. Slower and costs more.",
+          xhigh: "Thinks longer than high on the hardest tasks. Slower and costs more again.",
           max: "Thinks as much as possible. Much slower and pricier.",
         },
         speed: "Speed",
@@ -6613,6 +6628,8 @@ export const en = {
           limitHelp: "Meanwhile {{name}} can think with another account that's already connected.",
           /** Under the list, with an account at its limit picked: the row above says until when. */
           fullWait: "On this account {{name}} waits until the plan renews.",
+          switchTo: "Switch to {{label}}",
+          seeUsage: "See usage",
           modelTitle: "{{name}}'s model",
           moreTitle: "More options for {{name}}",
           /** A line under More options where several computers can run it. */
@@ -19507,6 +19524,12 @@ export const en = {
       someAnswered: "{{done}} of {{total}} answered",
       /** Its tip when several were asked: "Theo's talks with Atlas, Rio and Iris". */
       labelMany: "{{from}}'s talks with {{to}}",
+      /** Between the two names on another agent's request in this agent's DM: "Atlas asked Ada · subject". */
+      askedHere: "asked",
+      /** After the second name on that row: the person it was for ("Atlas asked Ada for you"). */
+      forYou: "for you",
+      /** That row's place: where the person asked ("in #eng"). */
+      askedIn: "in {{channel}}",
     },
     /** A question opened in the panel over the conversation ("Theo ⇄ Iris"): what the two agents said, read only. */
     consultPanel: {
@@ -19535,8 +19558,17 @@ export const en = {
       consultReplyAnon: "Another agent answered",
       agentNote: "Note from {{from}}",
       agentNoteAnon: "Note from another agent",
+      /** Another agent asked this agent something for you, in its private conversation with it. */
+      handOff: "{{from}} asked {{to}}",
       waitResult: "What {{name}} was waiting for came in",
       other: "Notice for {{name}}",
+      /** Who joined the channel (`who`: their names as one list), and who added them. */
+      joined_one: "{{who}} joined the channel",
+      joined_other: "{{who}} joined the channel",
+      joinedBy_one: "{{who}} joined the channel · added by {{by}}",
+      joinedBy_other: "{{who}} joined the channel · added by {{by}}",
+      /** Who left the channel, or was taken out of it. */
+      left: "{{who}} left the channel",
       wakeSkipped: "{{name}}'s mention didn't reach {{agents}}",
       /** The same, on an older line that didn't keep whom. */
       wakeSkippedAnon: "{{name}}'s mention didn't reach another agent",

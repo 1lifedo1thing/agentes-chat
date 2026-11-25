@@ -2346,6 +2346,10 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "건너뛰기",
+    "inMenu_other": "메뉴에 새 항목 {{count}}개"
+  },
   "openOnPhone": {
     "qr": "agentes 앱에 로그인하는 QR 코드",
     "making": "코드를 만드는 중…",
@@ -5673,6 +5677,7 @@
           "low": "낮음",
           "medium": "중간",
           "high": "높음",
+          "xhigh": "매우 높음",
           "max": "최대"
         },
         "effortsLower": {
@@ -5680,6 +5685,7 @@
           "low": "낮음",
           "medium": "중간",
           "high": "높음",
+          "xhigh": "매우 높음",
           "max": "최대"
         },
         "effortText": {
@@ -5689,6 +5695,7 @@
           "mediumKey": "대부분 충분히 생각해요.",
           "none": "모델이 평소만큼 생각해요. 수준을 고르면 고정할 수 있어요.",
           "high": "어려운 작업에서 더 생각해요. 더 느리고 비용이 더 들어요.",
+          "xhigh": "가장 어려운 작업에서 높음보다 더 오래 생각해요. 더 느리고 비용도 더 들어요.",
           "max": "최대한 생각해요. 훨씬 느리고 비용도 더 들어요."
         },
         "speed": "속도",
@@ -5862,6 +5869,8 @@
           "limitSoon": "{{account}}은(는) 요금제가 갱신되면 돌아와요",
           "limitHelp": "그동안 {{name}}은(는) 이미 연결된 다른 계정으로 생각할 수 있어요.",
           "fullWait": "이 계정에서는 {{name}}이(가) 플랜이 갱신될 때까지 기다려요.",
+          "switchTo": "{{label}}(으)로 바꾸기",
+          "seeUsage": "사용량 보기",
           "modelTitle": "{{name}}의 모델",
           "moreTitle": "{{name}}의 추가 옵션",
           "computer": "컴퓨터",
@@ -18195,7 +18204,10 @@
       "noAnswer": "답하지 않음",
       "notFinished": "끝내지 못함",
       "someAnswered": "{{total}}명 중 {{done}}명 답함",
-      "labelMany": "{{from}}와 {{to}}의 대화"
+      "labelMany": "{{from}}와 {{to}}의 대화",
+      "askedHere": "→",
+      "forYou": "나 대신",
+      "askedIn": "{{channel}}에서"
     },
     "consultPanel": {
       "label": "{{from}}과(와) {{to}}의 대화",
@@ -18219,8 +18231,12 @@
       "consultReplyAnon": "다른 에이전트가 답했어요",
       "agentNote": "{{from}}의 메모",
       "agentNoteAnon": "다른 에이전트의 메모",
+      "handOff": "{{from}} → {{to}} 요청",
       "waitResult": "{{name}}이(가) 기다리던 결과가 도착했어요",
       "other": "{{name}}에게 온 알림",
+      "joined_other": "{{who}} 님이 채널에 들어왔습니다",
+      "joinedBy_other": "{{who}} 님이 채널에 들어왔습니다 · {{by}} 님이 추가함",
+      "left": "{{who}} 님이 채널을 나갔습니다",
       "wakeSkipped": "{{name}}의 멘션이 {{agents}}에게 전달되지 않았어요",
       "wakeSkippedAnon": "{{name}}의 멘션이 다른 에이전트에게 닿지 않았어요",
       "wakeSkippedAudience": "{{agents}}은(는) 일부 사람만 부를 수 있는데, {{name}}의 이 작업은 그중 누구에게서도 오지 않았어요. {{agents}}을(를) 부를 수 있는 사람이 요청을 전달할 수 있어요.",

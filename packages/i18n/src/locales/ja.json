@@ -2346,6 +2346,10 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "スキップ",
+    "inMenu_other": "メニューに新着 {{count}} 件"
+  },
   "openOnPhone": {
     "qr": "agentesアプリにログインするためのQRコード",
     "making": "コードを作成中…",
@@ -5675,6 +5679,7 @@
           "low": "低",
           "medium": "中",
           "high": "高",
+          "xhigh": "さらに高い",
           "max": "最大"
         },
         "effortsLower": {
@@ -5682,6 +5687,7 @@
           "low": "低",
           "medium": "中",
           "high": "高",
+          "xhigh": "さらに高い",
           "max": "最大"
         },
         "effortText": {
@@ -5691,6 +5697,7 @@
           "mediumKey": "たいていは十分に考えます。",
           "none": "モデルはいつもどおりに考えます。レベルを選ぶと固定できます。",
           "high": "難しいタスクでより深く考えます。時間とコストがかかります。",
+          "xhigh": "最も難しいタスクで「高」より長く考えます。さらに遅く、費用もかかります。",
           "max": "できる限り深く考えます。かなり時間とコストがかかります。"
         },
         "speed": "速度",
@@ -5864,6 +5871,8 @@
           "limitSoon": "{{account}}はプランが更新されたら戻ります",
           "limitHelp": "それまでの間、{{name}}は接続済みの別のアカウントで考えられます。",
           "fullWait": "このアカウントでは、{{name}}はプランが更新されるまで待ちます。",
+          "switchTo": "{{label}}に切り替え",
+          "seeUsage": "使用量を見る",
           "modelTitle": "{{name}}のモデル",
           "moreTitle": "{{name}}のその他のオプション",
           "computer": "コンピューター",
@@ -18203,7 +18212,10 @@
       "noAnswer": "回答なし",
       "notFinished": "完了せず",
       "someAnswered": "{{total}}件中{{done}}件回答",
-      "labelMany": "{{from}}と{{to}}の会話"
+      "labelMany": "{{from}}と{{to}}の会話",
+      "askedHere": "→",
+      "forYou": "あなたの代わりに",
+      "askedIn": "{{channel}} で"
     },
     "consultPanel": {
       "label": "{{from}}と{{to}}の会話",
@@ -18227,8 +18239,12 @@
       "consultReplyAnon": "別のエージェントが回答しました",
       "agentNote": "{{from}}からのメモ",
       "agentNoteAnon": "別のエージェントからのメモ",
+      "handOff": "{{from}} から {{to}} への依頼",
       "waitResult": "{{name}}が待っていたものが届きました",
       "other": "{{name}}へのお知らせ",
+      "joined_other": "{{who}}がチャンネルに参加しました",
+      "joinedBy_other": "{{who}}がチャンネルに参加しました · {{by}}が追加",
+      "left": "{{who}}がチャンネルを退出しました",
       "wakeSkipped": "{{name}}のメンションは{{agents}}に届きませんでした",
       "wakeSkippedAnon": "{{name}} のメンションはほかのエージェントに届きませんでした",
       "wakeSkippedAudience": "{{agents}} を呼べるのは一部の人だけで、{{name}} のこの作業はその誰からの依頼でもありません。{{agents}} を呼べる人が依頼を引き継げます。",

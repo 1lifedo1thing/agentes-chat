@@ -2429,6 +2429,11 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "Geç",
+    "inMenu_one": "Menüde {{count}} yeni",
+    "inMenu_other": "Menüde {{count}} yeni"
+  },
   "openOnPhone": {
     "qr": "agentes uygulamasına giriş yapmak için QR kodu",
     "making": "Kod oluşturuluyor…",
@@ -5882,6 +5887,7 @@
           "low": "Düşük",
           "medium": "Orta",
           "high": "Yüksek",
+          "xhigh": "Çok yüksek",
           "max": "En yüksek"
         },
         "effortsLower": {
@@ -5889,6 +5895,7 @@
           "low": "düşük",
           "medium": "orta",
           "high": "yüksek",
+          "xhigh": "çok yüksek",
           "max": "en yüksek"
         },
         "effortText": {
@@ -5898,6 +5905,7 @@
           "mediumKey": "Çoğu zaman yeterince düşünür.",
           "none": "Model her zamanki kadar düşünür. Çabayı sabitlemek için bir seviye seçin.",
           "high": "Zor görevlerde daha çok düşünür. Daha yavaş ve daha pahalıdır.",
+          "xhigh": "En zor görevlerde yüksekten daha uzun düşünür. Daha da yavaş ve pahalı.",
           "max": "Olabildiğince çok düşünür. Çok daha yavaş ve daha pahalıdır."
         },
         "speed": "Hız",
@@ -6077,6 +6085,8 @@
           "limitSoon": "{{account}} plan yenilenince geri dönüyor",
           "limitHelp": "Bu arada {{name}}, zaten bağlı olan başka bir hesapla düşünebilir.",
           "fullWait": "Bu hesapta {{name}}, plan yenilenene kadar bekler.",
+          "switchTo": "{{label}} hesabına geç",
+          "seeUsage": "Kullanımı gör",
           "modelTitle": "{{name}} için model",
           "moreTitle": "{{name}} için diğer seçenekler",
           "computer": "Bilgisayar",
@@ -18763,7 +18773,10 @@
       "noAnswer": "yanıt vermedi",
       "notFinished": "bitiremedi",
       "someAnswered": "{{total}} ajandan {{done}} tanesi yanıt verdi",
-      "labelMany": "{{from}} ile {{to}} arasındaki konuşmalar"
+      "labelMany": "{{from}} ile {{to}} arasındaki konuşmalar",
+      "askedHere": "→",
+      "forYou": "sizin yerinize",
+      "askedIn": "{{channel}} kanalında"
     },
     "consultPanel": {
       "label": "{{from}} ile {{to}} arasındaki konuşma",
@@ -18788,8 +18801,14 @@
       "consultReplyAnon": "Başka bir ajan yanıtladı",
       "agentNote": "{{from}} ajanından not",
       "agentNoteAnon": "Başka bir ajandan not",
+      "handOff": "{{from}} → {{to}} isteği",
       "waitResult": "{{name}} ajanının beklediği şey geldi",
       "other": "{{name}} için bildirim",
+      "joined_one": "{{who}} kanala katıldı",
+      "joined_other": "{{who}} kanala katıldı",
+      "joinedBy_one": "{{who}} kanala katıldı · {{by}} ekledi",
+      "joinedBy_other": "{{who}} kanala katıldı · {{by}} ekledi",
+      "left": "{{who}} kanaldan ayrıldı",
       "wakeSkipped": "{{name}} ajanının bahsetmesi {{agents}} ajanına ulaşmadı",
       "wakeSkippedAnon": "{{name}} adlı ajanın bahsetmesi başka bir ajana ulaşmadı",
       "wakeSkippedAudience": "{{agents}} ajanını yalnızca bazı kişiler çağırabilir ve {{name}} adlı ajanın bu işi onlardan birinden gelmedi. {{agents}} ajanını çağırabilen biri isteği iletebilir.",

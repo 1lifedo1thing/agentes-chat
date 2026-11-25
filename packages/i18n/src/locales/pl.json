@@ -2598,6 +2598,13 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "Pomiń",
+    "inMenu_one": "{{count}} nowy w menu",
+    "inMenu_few": "{{count}} nowe w menu",
+    "inMenu_many": "{{count}} nowych w menu",
+    "inMenu_other": "{{count}} nowego w menu"
+  },
   "openOnPhone": {
     "qr": "Kod QR do logowania w aplikacji agentes",
     "making": "Tworzę kod…",
@@ -6340,6 +6347,7 @@
           "low": "Niski",
           "medium": "Średni",
           "high": "Wysoki",
+          "xhigh": "Bardzo wysoki",
           "max": "Maksymalny"
         },
         "effortsLower": {
@@ -6347,6 +6355,7 @@
           "low": "niski",
           "medium": "średni",
           "high": "wysoki",
+          "xhigh": "bardzo wysoki",
           "max": "maksymalny"
         },
         "effortText": {
@@ -6356,6 +6365,7 @@
           "mediumKey": "Zwykle myśli wystarczająco.",
           "none": "Model myśli tyle, ile zwykle. Wybierz poziom, aby ustalić wysiłek.",
           "high": "Myśli więcej przy trudnych zadaniach. Wolniej i drożej.",
+          "xhigh": "Przy najtrudniejszych zadaniach myśli dłużej niż przy wysokim. Jeszcze wolniej i drożej.",
           "max": "Myśli tyle, ile się da. Dużo wolniej i drożej."
         },
         "speed": "Szybkość",
@@ -6547,6 +6557,8 @@
           "limitSoon": "{{account}} wraca, gdy plan się odnowi",
           "limitHelp": "W międzyczasie {{name}} może myśleć z innym kontem, które jest już połączone.",
           "fullWait": "Na tym koncie {{name}} czeka, aż plan się odnowi.",
+          "switchTo": "Przełącz na {{label}}",
+          "seeUsage": "Zobacz użycie",
           "modelTitle": "Model agenta {{name}}",
           "moreTitle": "Więcej opcji agenta {{name}}",
           "computer": "Komputer",
@@ -20039,7 +20051,10 @@
       "noAnswer": "nie odpowiedział",
       "notFinished": "nie skończył",
       "someAnswered": "odpowiedziało {{done}} z {{total}}",
-      "labelMany": "Rozmowy {{from}} z {{to}}"
+      "labelMany": "Rozmowy {{from}} z {{to}}",
+      "askedHere": "→",
+      "forYou": "za ciebie",
+      "askedIn": "w {{channel}}"
     },
     "consultPanel": {
       "label": "Rozmowa między {{from}} a {{to}}",
@@ -20069,8 +20084,18 @@
       "consultReplyAnon": "Odpowiedź od innego agenta",
       "agentNote": "Notatka od: {{from}}",
       "agentNoteAnon": "Notatka od innego agenta",
+      "handOff": "Prośba od {{from}} do {{to}}",
       "waitResult": "Dotarło to, na co czeka {{name}}",
       "other": "Powiadomienie dla: {{name}}",
+      "joined_one": "{{who}} dołączył(a) do kanału",
+      "joined_few": "{{who}} dołączyli do kanału",
+      "joined_many": "{{who}} dołączyli do kanału",
+      "joined_other": "{{who}} dołączyli do kanału",
+      "joinedBy_one": "{{who}} dołączył(a) do kanału · dodane przez {{by}}",
+      "joinedBy_few": "{{who}} dołączyli do kanału · dodane przez {{by}}",
+      "joinedBy_many": "{{who}} dołączyli do kanału · dodane przez {{by}}",
+      "joinedBy_other": "{{who}} dołączyli do kanału · dodane przez {{by}}",
+      "left": "{{who}} opuścił(a) kanał",
       "wakeSkipped": "Wzmianka od {{name}} nie dotarła do: {{agents}}",
       "wakeSkippedAnon": "Wzmianka {{name}} nie dotarła do innego agenta",
       "wakeSkippedAudience": "Tylko niektóre osoby mogą wywołać {{agents}}, a ta praca {{name}} nie pochodzi od żadnej z nich. Ktoś, kto może wywołać {{agents}}, może przekazać prośbę dalej.",

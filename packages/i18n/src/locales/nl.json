@@ -2429,6 +2429,11 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "Overslaan",
+    "inMenu_one": "{{count}} nieuw in het menu",
+    "inMenu_other": "{{count}} nieuw in het menu"
+  },
   "openOnPhone": {
     "qr": "QR-code om in te loggen in de agentes-app",
     "making": "Code maken…",
@@ -5927,6 +5932,7 @@
           "low": "Laag",
           "medium": "Gemiddeld",
           "high": "Hoog",
+          "xhigh": "Zeer hoog",
           "max": "Maximaal"
         },
         "effortsLower": {
@@ -5934,6 +5940,7 @@
           "low": "laag",
           "medium": "gemiddeld",
           "high": "hoog",
+          "xhigh": "zeer hoog",
           "max": "maximaal"
         },
         "effortText": {
@@ -5943,6 +5950,7 @@
           "mediumKey": "Denkt meestal genoeg na.",
           "none": "Het model denkt zoveel als het gewoonlijk doet. Kies een niveau om de inspanning vast te zetten.",
           "high": "Denkt meer na bij moeilijke taken. Trager en duurder.",
+          "xhigh": "Denkt bij de moeilijkste taken langer dan bij hoog. Nog trager en duurder.",
           "max": "Denkt zoveel mogelijk na. Veel trager en duurder."
         },
         "speed": "Snelheid",
@@ -6122,6 +6130,8 @@
           "limitSoon": "{{account}} is terug als het abonnement vernieuwt",
           "limitHelp": "Tot die tijd kan {{name}} denken met een ander account dat al gekoppeld is.",
           "fullWait": "Op dit account wacht {{name}} tot het abonnement vernieuwt.",
+          "switchTo": "Overstappen naar {{label}}",
+          "seeUsage": "Gebruik bekijken",
           "modelTitle": "Model van {{name}}",
           "moreTitle": "Meer opties voor {{name}}",
           "computer": "Computer",
@@ -18908,7 +18918,10 @@
       "noAnswer": "gaf geen antwoord",
       "notFinished": "niet afgemaakt",
       "someAnswered": "{{done}} van {{total}} gaven antwoord",
-      "labelMany": "Gesprekken van {{from}} met {{to}}"
+      "labelMany": "Gesprekken van {{from}} met {{to}}",
+      "askedHere": "vroeg",
+      "forYou": "voor je",
+      "askedIn": "in {{channel}}"
     },
     "consultPanel": {
       "label": "Gesprek tussen {{from}} en {{to}}",
@@ -18936,8 +18949,14 @@
       "consultReplyAnon": "Een andere agent heeft geantwoord",
       "agentNote": "Notitie van {{from}}",
       "agentNoteAnon": "Notitie van een andere agent",
+      "handOff": "{{from}} vroeg {{to}} iets",
       "waitResult": "Waar {{name}} op wachtte, is binnen",
       "other": "Melding voor {{name}}",
+      "joined_one": "{{who}} is het kanaal binnengekomen",
+      "joined_other": "{{who}} zijn het kanaal binnengekomen",
+      "joinedBy_one": "{{who}} is het kanaal binnengekomen · toegevoegd door {{by}}",
+      "joinedBy_other": "{{who}} zijn het kanaal binnengekomen · toegevoegd door {{by}}",
+      "left": "{{who}} heeft het kanaal verlaten",
       "wakeSkipped": "De vermelding van {{name}} bereikte {{agents}} niet",
       "wakeSkippedAnon": "De vermelding van {{name}} bereikte geen andere agent",
       "wakeSkippedAudience": "Alleen bepaalde mensen mogen {{agents}} aanroepen, en dit werk van {{name}} kwam van geen van hen. Iemand die {{agents}} mag aanroepen, kan het verzoek doorgeven.",

@@ -2485,6 +2485,12 @@ export const ptBR = {
     testFlight: "TestFlight",
     googlePlay: "Google Play",
   },
+  /** Lodi's cursor building the sidebar after a team is made: Pular on the receipt and the count on the closed menu. */
+  lodiCursor: {
+    skip: "Pular",
+    inMenu_one: "{{count}} novo no menu",
+    inMenu_other: "{{count}} novos no menu",
+  },
   openOnPhone: {
     qr: "QR code para entrar no app agentes",
     making: "Gerando o código…",
@@ -6257,9 +6263,17 @@ export const ptBR = {
           low: "Baixo",
           medium: "Médio",
           high: "Alto",
+          xhigh: "Muito alto",
           max: "Máximo",
         },
-        effortsLower: { auto: "automático", low: "baixo", medium: "médio", high: "alto", max: "máximo" },
+        effortsLower: {
+          auto: "automático",
+          low: "baixo",
+          medium: "médio",
+          high: "alto",
+          xhigh: "muito alto",
+          max: "máximo",
+        },
         effortText: {
           auto: "O modelo Automático escolhe o esforço de cada tarefa. Escolha um modelo para fixar o esforço.",
           low: "Responde rápido. Bom para perguntas simples.",
@@ -6267,6 +6281,7 @@ export const ptBR = {
           mediumKey: "Pensa o suficiente na maioria das vezes.",
           none: "O modelo pensa o quanto costuma. Escolha um nível para fixar o esforço.",
           high: "Pensa mais em tarefas difíceis. Demora e gasta mais.",
+          xhigh: "Pensa mais que o alto nas tarefas mais difíceis. Demora e gasta ainda mais.",
           max: "Pensa o máximo que puder. Bem mais lento e caro.",
         },
         /** Velocidade (ADR 0149): shown on a ChatGPT plan with a model that has Fast mode. `2,5×` is OpenAI's rate. */
@@ -6491,6 +6506,8 @@ export const ptBR = {
           /** Under the list, with an account at its limit picked: the row above says until when. */
           fullWait: "Nesta conta o {{name}} espera até o plano renovar.",
           fullWait_female: "Nesta conta a {{name}} espera até o plano renovar.",
+          switchTo: "Trocar para {{label}}",
+          seeUsage: "Ver uso",
           modelTitle: "Modelo do {{name}}",
           modelTitle_female: "Modelo da {{name}}",
           moreTitle: "Mais opções do {{name}}",
@@ -19347,6 +19364,13 @@ export const ptBR = {
       someAnswered: "{{done}} de {{total}} responderam",
       /** Its tip when several were asked: "Theo's talks with Atlas, Rio and Iris". */
       labelMany: "Conversas de {{from}} com {{to}}",
+      /** Between the two names on another agent's request in this agent's DM: "Atlas asked Ada · subject". */
+      askedHere: "pediu ao",
+      askedHere_female: "pediu à",
+      /** After the second name on that row: the person it was for ("Atlas asked Ada for you"). */
+      forYou: "por você",
+      /** That row's place: where the person asked ("in #eng"). */
+      askedIn: "em {{channel}}",
     },
     /** A question opened in the panel over the conversation ("Theo ⇄ Iris"): what the two agents said, read only. */
     consultPanel: {
@@ -19380,8 +19404,17 @@ export const ptBR = {
       consultReplyAnon: "Outro agente respondeu",
       agentNote: "Nota de {{from}}",
       agentNoteAnon: "Nota de outro agente",
+      /** Another agent asked this agent something for you, in its private conversation with it. */
+      handOff: "{{from}} fez um pedido para {{to}}",
       waitResult: "Chegou o resultado que {{name}} esperava",
       other: "Aviso para {{name}}",
+      /** Who joined the channel (`who`: their names as one list), and who added them. */
+      joined_one: "{{who}} entrou no canal",
+      joined_other: "{{who}} entraram no canal",
+      joinedBy_one: "{{who}} entrou no canal · {{by}} adicionou",
+      joinedBy_other: "{{who}} entraram no canal · {{by}} adicionou",
+      /** Who left the channel, or was taken out of it. */
+      left: "{{who}} saiu do canal",
       wakeSkipped: "A menção de {{name}} não chamou {{agents}}",
       wakeSkippedAnon: "A menção de {{name}} não chamou outro agente",
       wakeSkippedAudience:

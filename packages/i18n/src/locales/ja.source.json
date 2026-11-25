@@ -6041,6 +6041,15 @@
   "appsDownload.googlePlay": {
     "value": "Google Play"
   },
+  "lodiCursor.skip": {
+    "value": "Skip"
+  },
+  "lodiCursor.inMenu": {
+    "value": {
+      "one": "{{count}} new in the menu",
+      "other": "{{count}} new in the menu"
+    }
+  },
   "openOnPhone.qr": {
     "value": "QR code to sign in to the agentes app"
   },
@@ -14512,6 +14521,9 @@
   "agentPage.work.brain.efforts.high": {
     "value": "High"
   },
+  "agentPage.work.brain.efforts.xhigh": {
+    "value": "Extra high"
+  },
   "agentPage.work.brain.efforts.max": {
     "value": "Maximum"
   },
@@ -14526,6 +14538,9 @@
   },
   "agentPage.work.brain.effortsLower.high": {
     "value": "high"
+  },
+  "agentPage.work.brain.effortsLower.xhigh": {
+    "value": "extra high"
   },
   "agentPage.work.brain.effortsLower.max": {
     "value": "maximum"
@@ -14547,6 +14562,9 @@
   },
   "agentPage.work.brain.effortText.high": {
     "value": "Thinks more on hard tasks. Slower and costs more."
+  },
+  "agentPage.work.brain.effortText.xhigh": {
+    "value": "Thinks longer than high on the hardest tasks. Slower and costs more again."
   },
   "agentPage.work.brain.effortText.max": {
     "value": "Thinks as much as possible. Much slower and pricier."
@@ -15000,6 +15018,12 @@
   },
   "agentPage.work.brain.v2.fullWait": {
     "value": "On this account {{name}} waits until the plan renews."
+  },
+  "agentPage.work.brain.v2.switchTo": {
+    "value": "Switch to {{label}}"
+  },
+  "agentPage.work.brain.v2.seeUsage": {
+    "value": "See usage"
   },
   "agentPage.work.brain.v2.modelTitle": {
     "value": "{{name}}'s model"
@@ -46263,6 +46287,15 @@
   "chat.consultPair.labelMany": {
     "value": "{{from}}'s talks with {{to}}"
   },
+  "chat.consultPair.askedHere": {
+    "value": "asked"
+  },
+  "chat.consultPair.forYou": {
+    "value": "for you"
+  },
+  "chat.consultPair.askedIn": {
+    "value": "in {{channel}}"
+  },
   "chat.consultPanel.label": {
     "value": "Conversation between {{from}} and {{to}}"
   },
@@ -46323,11 +46356,29 @@
   "chat.notice.agentNoteAnon": {
     "value": "Note from another agent"
   },
+  "chat.notice.handOff": {
+    "value": "{{from}} asked {{to}}"
+  },
   "chat.notice.waitResult": {
     "value": "What {{name}} was waiting for came in"
   },
   "chat.notice.other": {
     "value": "Notice for {{name}}"
+  },
+  "chat.notice.joined": {
+    "value": {
+      "one": "{{who}} joined the channel",
+      "other": "{{who}} joined the channel"
+    }
+  },
+  "chat.notice.joinedBy": {
+    "value": {
+      "one": "{{who}} joined the channel · added by {{by}}",
+      "other": "{{who}} joined the channel · added by {{by}}"
+    }
+  },
+  "chat.notice.left": {
+    "value": "{{who}} left the channel"
   },
   "chat.notice.wakeSkipped": {
     "value": "{{name}}'s mention didn't reach {{agents}}"

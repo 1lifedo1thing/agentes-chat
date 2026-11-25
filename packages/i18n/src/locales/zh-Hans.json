@@ -2346,6 +2346,10 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "跳过",
+    "inMenu_other": "菜单中有 {{count}} 个新项目"
+  },
   "openOnPhone": {
     "qr": "用于登录 agentes 应用的二维码",
     "making": "正在生成二维码…",
@@ -5696,6 +5700,7 @@
           "low": "低",
           "medium": "中",
           "high": "高",
+          "xhigh": "超高",
           "max": "最高"
         },
         "effortsLower": {
@@ -5703,6 +5708,7 @@
           "low": "低",
           "medium": "中",
           "high": "高",
+          "xhigh": "超高",
           "max": "最高"
         },
         "effortText": {
@@ -5712,6 +5718,7 @@
           "mediumKey": "大多数时候思考得足够充分。",
           "none": "模型按平时的方式思考。选择一个级别来固定投入程度。",
           "high": "在难题上思考更多，更慢，费用也更高。",
+          "xhigh": "在最难的任务上比“高”想得更久。更慢，花费也更多。",
           "max": "尽可能深入思考，慢得多，也贵得多。"
         },
         "speed": "速度",
@@ -5885,6 +5892,8 @@
           "limitSoon": "{{account}} 会在套餐续期后恢复",
           "limitHelp": "在此期间，{{name}} 可以用另一个已连接的账号思考。",
           "fullWait": "在这个账号上，{{name}} 会等到套餐续期。",
+          "switchTo": "切换到 {{label}}",
+          "seeUsage": "查看用量",
           "modelTitle": "{{name}} 的模型",
           "moreTitle": "{{name}} 的更多选项",
           "computer": "电脑",
@@ -18273,7 +18282,10 @@
       "noAnswer": "未回答",
       "notFinished": "未完成",
       "someAnswered": "{{total}} 个中 {{done}} 个已回答",
-      "labelMany": "{{from}} 与 {{to}} 的对话"
+      "labelMany": "{{from}} 与 {{to}} 的对话",
+      "askedHere": "请求",
+      "forYou": "替你",
+      "askedIn": "在 {{channel}}"
     },
     "consultPanel": {
       "label": "{{from}} 和 {{to}} 之间的对话",
@@ -18300,8 +18312,12 @@
       "consultReplyAnon": "另一个智能体已回答",
       "agentNote": "来自 {{from}} 的备注",
       "agentNoteAnon": "来自另一个智能体的备注",
+      "handOff": "{{from}} 向 {{to}} 提出了请求",
       "waitResult": "{{name}} 等待的结果到了",
       "other": "给 {{name}} 的通知",
+      "joined_other": "{{who}} 加入了频道",
+      "joinedBy_other": "{{who}} 加入了频道 · 由 {{by}} 添加",
+      "left": "{{who}} 离开了频道",
       "wakeSkipped": "{{name}} 的提及没有传达给 {{agents}}",
       "wakeSkippedAnon": "{{name}} 的提及没有叫到其他智能体",
       "wakeSkippedAudience": "只有部分人可以呼叫 {{agents}}，而 {{name}} 的这项工作并非来自其中任何人。可以呼叫 {{agents}} 的人可以把请求转交过去。",

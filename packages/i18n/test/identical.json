@@ -1182,6 +1182,7 @@
     ],
     "de": [
       "agentPage.facts.budget",
+      "chat.consultPair.askedIn",
       "aiHub.detail.limits",
       "live.sheet.args.k",
       "live.sheet.args.x",
@@ -1691,6 +1692,7 @@
     ],
     "it": [
       "agentPage.facts.budget",
+      "chat.consultPair.askedIn",
       "surface.nudge.hours",
       "live.sheet.args.a1",
       "live.sheet.args.k",
@@ -2100,6 +2102,7 @@
     ],
     "nl": [
       "agentPage.facts.budget",
+      "chat.consultPair.askedIn",
       "aiHub.accounts",
       "usage.kinds.routines",
       "calendar.moreRuns",
