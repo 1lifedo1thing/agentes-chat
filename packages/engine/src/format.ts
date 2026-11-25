@@ -9,6 +9,31 @@ export const cutText = (text: string, max: number) => text.slice(0, max).replace
 /** `cutText` for text people read: a cut ends in "…", never passing for the whole. */
 export const cutMarked = (text: string, max: number) => (text.length > max ? `${cutText(text, max - 1)}…` : text);
 
+/**
+ * A JSON object or array as compact JSON within `max` characters, its longest strings shortened first (each cut one
+ * ends in "…"): every key, number and short value stays, where a cut at the end drops whole fields. Null when the text
+ * isn't one, or when even its keys alone don't fit.
+ */
+export function shortenJson(text: string, max: number): string | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (typeof value !== "object" || value === null) return null;
+  const capped = (cap: number) =>
+    JSON.stringify(value, (_key, v) => (typeof v === "string" && v.length > cap ? `${cutText(v, cap)}…` : v));
+  if (capped(0).length > max) return null;
+  let [lo, hi] = [0, text.length];
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (capped(mid).length <= max) lo = mid;
+    else hi = mid - 1;
+  }
+  return capped(lo);
+}
+
 /** A sentence's words as they compare: lower case, no accents, no punctuation or emoji, single spaces. */
 export const plainWords = (s: string) =>
   s

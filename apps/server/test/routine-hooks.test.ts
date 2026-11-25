@@ -94,6 +94,20 @@ test("its address: POST only, 202 with the run; signed calls with a secret; a ne
   expect(runs.runs.every((r) => r.status === "silent")).toBe(true);
 });
 
+test("Linear's own secret, pasted: its Linear-Signature calls pass, others are refused", async () => {
+  const { api, routine } = await webhookRoutine();
+  const pasted = "lin_wh_fake_1111111111111111";
+  const set = await api(`/routines/${routine.id}/hook/secret`, { json: { secret: pasted } });
+  expect(set.status).toBe(200);
+  expect(((await set.json()) as { hook: Hook }).hook.signed).toBe(true);
+  const body = JSON.stringify({ action: "create", type: "Issue", webhookTimestamp: Date.now() });
+  const hex = createHmac("sha256", pasted).update(body).digest("hex");
+  expect((await call(routine.trigger.url, body, { "linear-signature": hex })).status).toBe(202);
+  expect((await call(routine.trigger.url, body, { "linear-signature": "0".repeat(64) })).status).toBe(401);
+  const bad = await api(`/routines/${routine.id}/hook/secret`, { json: { secret: "short" } });
+  expect(bad.status).toBe(400);
+});
+
 test("a repeat within 24 hours (Idempotency-Key or X-GitHub-Delivery) answers with the first run", async () => {
   const { routine } = await webhookRoutine();
   const first = await call(routine.trigger.url, '{"n":1}', { "idempotency-key": "order-42" });

@@ -8,6 +8,7 @@ import {
   CALLS_PER_RUN,
   closeRoutineRun,
   createRoutine,
+  createWebhookCallToolSource,
   deleteRoutine,
   duplicateRoutine,
   executeRoutineRun,
@@ -29,6 +30,7 @@ import {
   setRoutineActive,
   sha256,
   stopRoutineRun,
+  type ToolContext,
   untrustedBlock,
   updateRoutine,
   webhookEventText,
@@ -256,6 +258,76 @@ describe("routine webhooks", () => {
     expect(await post(d, token, body)).toMatchObject({ status: 202 });
   });
 
+  test("Linear's own secret, pasted: Linear-Signature (the hex alone) passes with a webhookTimestamp within a minute", async () => {
+    f = await setup();
+    const routine = await webhookRoutine();
+    const ref = await managedWebhookRoutine(f.db, f.owner.id, f.org.id, routine.id);
+    await expect(newRoutineHookSecret(hookDeps(), f.owner.id, ref, "has space")).rejects.toThrow();
+    const pasted = "lin_wh_fake_0000000000000000";
+    const { secret } = await newRoutineHookSecret(hookDeps(), f.owner.id, ref, ` ${pasted} `);
+    expect(secret).toBe(pasted);
+    const token = await tokenOf(routine.id);
+    const d = hookDeps();
+    const hex = (body: string) => createHmac("sha256", pasted).update(body).digest("hex");
+    const linear = (at: number | null, delivery: string) => {
+      const body = JSON.stringify({
+        action: "update",
+        type: "Issue",
+        ...(at === null ? {} : { webhookTimestamp: at }),
+      });
+      return post(d, token, body, {
+        "linear-signature": hex(body),
+        "linear-delivery": delivery,
+        "linear-event": "Issue",
+      });
+    };
+    const fresh = await linear(Date.now(), "del-1");
+    expect(fresh).toMatchObject({ status: 202, duplicate: false });
+    expect(await linear(Date.now() - 2 * 60_000, "del-2")).toEqual({ status: 401, code: "invalid_signature" });
+    expect(await linear(null, "del-3")).toEqual({ status: 401, code: "invalid_signature" });
+    // Linear-Delivery is the call's id: a repeat answers with the first run.
+    expect(await linear(Date.now(), "del-1")).toMatchObject({ status: 202, duplicate: true });
+    const runId = fresh.status === 202 ? (fresh.runId ?? "") : "";
+    const [kept] = ((await routineRunRow(f, runId)).event?.calls ?? []) as { headers: Record<string, string> }[];
+    expect(kept?.headers).toMatchObject({ "linear-delivery": "del-1", "linear-event": "Issue" });
+    expect(kept?.headers["linear-signature"]).toBeUndefined();
+  });
+
+  test("long JSON calls lose their longest strings, never their keys; read_webhook_call reads one whole", async () => {
+    f = await setup();
+    const routine = await webhookRoutine();
+    const token = await tokenOf(routine.id);
+    const d = hookDeps();
+    const issue = (n: number) =>
+      JSON.stringify({
+        action: "update",
+        data: { id: `ISS-${n}`, description: `${n}`.repeat(10_000), labels: ["Admin", "Improvement"] },
+        updatedFrom: { labelIds: ["retired"] },
+      });
+    let runId = "";
+    for (let n = 1; n <= 5; n++) {
+      const answer = await post(d, token, issue(n));
+      runId = answer.status === 202 ? (answer.runId ?? "") : "";
+    }
+    const text = webhookEventText((await routineRunRow(f, runId)).event ?? {});
+    for (let n = 1; n <= 5; n++) expect(text).toContain(`"id":"ISS-${n}"`);
+    expect(text.match(/"updatedFrom":\{"labelIds":\["retired"\]\}/g)).toHaveLength(5);
+    expect(text.match(/"labels":\["Admin","Improvement"\]/g)).toHaveLength(5);
+    expect(text).toContain("read_webhook_call with call 3 reads the call whole");
+    expect(text).not.toContain("more characters cut");
+
+    await executeRoutineRun(deps(), runId);
+    const run = await agentRunRow(f, (await routineRunRow(f, runId)).agentRunId);
+    const ctx = { db: f.db, orgId: f.org.id, agentId: f.agent.id, runId: run.id, background: true } as ToolContext;
+    const [tool] = await createWebhookCallToolSource().tools(ctx);
+    expect(tool?.name).toBe("read_webhook_call");
+    const read = await tool?.execute({ call: 3 }, ctx);
+    expect(read?.content).toContain(issue(3));
+    expect((await tool?.execute({ call: 9 }, ctx))?.isError).toBe(true);
+    // Any other run doesn't get it.
+    expect(await createWebhookCallToolSource().tools({ ...ctx, background: false })).toEqual([]);
+  });
+
   test("a signed GET's signature covers its query string: one seen signature can't carry other data", async () => {
     f = await setup();
     const routine = await webhookRoutine();
@@ -424,7 +496,7 @@ describe("routine webhooks", () => {
     // Two calls share what the model reads, 12,000 characters each: the second's emoji sits across its cut.
     await post(d, token, `${"b".repeat(11_999)}😀 tail`);
     const text = webhookEventText((await routineRunRow(f, runId)).event ?? {});
-    expect(text).toContain(`${"b".repeat(11_999)}\n[… 7 more characters cut]`);
+    expect(text).toContain(`${"b".repeat(11_999)}\n[… 7 more characters cut: read_webhook_call with call 2`);
     expect(wellFormed(text)).toBe(true);
     expect(wellFormed(untrustedBlock("webhook", `${"c".repeat(9)}😀`, 10))).toBe(true);
   });

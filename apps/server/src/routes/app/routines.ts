@@ -941,15 +941,20 @@ export function routineRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/routines/{routineId}/hook/secret",
       tags,
       security,
-      summary: "A new signing secret (shown this once): from now on calls must be signed with it",
+      summary:
+        "A signing secret: ours (shown this once) or the service's own, pasted; from now on calls must be signed with it",
       description:
-        "A call carries the HMAC-SHA256 of its raw body as `X-Agentes-Signature: sha256=<hex>` (GitHub's `X-Hub-Signature-256` works too).",
-      request: { params: RoutineParams },
+        "A call carries the HMAC-SHA256 of its raw body as `X-Agentes-Signature: sha256=<hex>` (GitHub's `X-Hub-Signature-256` works too), or as Linear signs it: the hex alone in `Linear-Signature`, with the body's `webhookTimestamp` within a minute. `secret`: the one the service made (Linear's), in place of a new one of ours. Refused: `routine.webhook_secret_invalid` (400) when it is under 8 characters or has spaces.",
+      request: {
+        params: RoutineParams,
+        body: { ...body(z.object({ secret: z.string().max(512).optional() })), required: false },
+      },
       responses: { 200: json(z.object({ secret: z.string(), hook: Hook })), ...errors },
     }),
     async (c) => {
       const actor = c.get("user").id;
-      return c.json(await newRoutineHookSecret(hookDeps, actor, await managed(actor, c.req.valid("param"))), 200);
+      const routine = await managed(actor, c.req.valid("param"));
+      return c.json(await newRoutineHookSecret(hookDeps, actor, routine, c.req.valid("json")?.secret), 200);
     },
   );
 
