@@ -10,6 +10,7 @@ import { DOCX_STYLES, docxCore } from "../docx";
 import { imageSize } from "../image-size";
 import { zip } from "../zip";
 import { imageTypeOf } from "./package";
+import { xmlAttr } from "./xml";
 
 /**
  * A live document as a Word file (ADR 0200): headings, paragraphs with their alignment and indent, bullet and
@@ -82,7 +83,8 @@ function runXml(run: DocRun, w: Writer, extra = ""): string {
   const bold = run.weight !== undefined ? run.weight >= 600 : run.bold;
   const props = [
     run.link ? '<w:rStyle w:val="Hyperlink"/>' : "",
-    face ? `<w:rFonts w:ascii="${esc(face)}" w:hAnsi="${esc(face)}" w:cs="${esc(face)}"/>` : "",
+    // A file's own font names its family from the font file itself: escaped as an attribute, quotes included.
+    face ? `<w:rFonts w:ascii="${xmlAttr(face)}" w:hAnsi="${xmlAttr(face)}" w:cs="${xmlAttr(face)}"/>` : "",
     bold ? "<w:b/>" : "",
     run.italic ? "<w:i/>" : "",
     run.caps ? "<w:caps/>" : "",
