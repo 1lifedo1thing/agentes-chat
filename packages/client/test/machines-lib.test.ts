@@ -697,10 +697,14 @@ describe("one click where a tool is off (ADR 0036 §8)", () => {
     for (const no of [
       cliInstallCommand("claude_code", server),
       cliInstallCommand("opencode", server),
-      cliInstallCommand("grok", { ...server, os: "windows" }),
+      cliInstallCommand("antigravity", { ...server, os: "windows" }),
       cliInstallCommand("grok", { ...server, kind: "managed" }),
     ])
       expect(no).toBeNull();
+    // xAI's PowerShell installer, in a line cmd runs too.
+    expect(cliInstallCommand("grok", { ...server, os: "windows" })).toBe(
+      'powershell -ExecutionPolicy Bypass -Command "irm https://x.ai/cli/install.ps1 | iex"',
+    );
 
     const words = { program: "Antigravity CLI", computer: "srv-1" };
     expect(cliCommandWayOut(t, "antigravity", server, "not_installed", "srv-1")?.text).toBe(
