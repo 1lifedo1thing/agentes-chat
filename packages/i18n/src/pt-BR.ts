@@ -4289,6 +4289,10 @@ export const ptBR = {
     },
     channel: {
       agent_added: "Chamei {{agentName}} para <b>#{{channel}}</b>",
+      /** The channel's responsible agent (ADR 0095): another agent, the agent itself, or none. */
+      lead_changed: "Deixei {{agentName}} responsável por <b>#{{channel}}</b>",
+      lead_changed_self: "Fiquei responsável por <b>#{{channel}}</b>",
+      lead_changed_none: "Deixei <b>#{{channel}}</b> sem agente responsável",
       created: "Criei o canal <b>#{{name}}</b>",
     },
     wiki: {
@@ -15348,6 +15352,7 @@ export const ptBR = {
       send_dm: "Enviar mensagem direta",
       read_conversation: "Ler conversa",
       add_agent_to_channel: "Adicionar agente a um canal",
+      set_channel_lead: "Escolher o agente responsável por um canal",
       ask_agent: "Perguntar a outro agente",
       tell_agent: "Avisar outro agente",
       find_agent: "Encontrar agente",
@@ -19484,6 +19489,7 @@ export const ptBR = {
         workingOnWorkspace: "Alterou o workspace",
         updatingThread: "Atualizou uma thread",
         addingAgent: "Adicionou um agente a um canal",
+        settingChannelLead: "Escolheu o agente responsável por um canal",
         readingConversation: "Leu a conversa",
         usingTool: "Usou a ferramenta {{tool}}",
         thinking: "Pensou",
@@ -19606,6 +19612,7 @@ export const ptBR = {
       workingOnWorkspace: "mexendo no workspace",
       updatingThread: "atualizando uma thread",
       addingAgent: "adicionando um agente a um canal",
+      settingChannelLead: "escolhendo o agente responsável por um canal",
       readingConversation: "lendo a conversa",
       usingTool: "usando uma ferramenta",
     },

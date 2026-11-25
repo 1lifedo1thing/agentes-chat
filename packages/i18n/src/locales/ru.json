@@ -4344,6 +4344,9 @@
     },
     "channel": {
       "agent_added": "{{agentName}} добавлен в <b>#{{channel}}</b>",
+      "lead_changed": "{{agentName}} теперь отвечает за <b>#{{channel}}</b>",
+      "lead_changed_self": "Теперь отвечаю за <b>#{{channel}}</b>",
+      "lead_changed_none": "У <b>#{{channel}}</b> больше нет ответственного агента",
       "created": "Создан канал <b>#{{name}}</b>"
     },
     "wiki": {
@@ -15931,6 +15934,7 @@
       "send_dm": "Отправить личное сообщение",
       "read_conversation": "Прочитать беседу",
       "add_agent_to_channel": "Добавить агента в канал",
+      "set_channel_lead": "Выбрать агента, отвечающего за канал",
       "ask_agent": "Спросить другого агента",
       "tell_agent": "Сообщить другому агенту",
       "find_agent": "Найти агента",
@@ -20122,6 +20126,7 @@
         "workingOnWorkspace": "Поработал в рабочем пространстве",
         "updatingThread": "Обновил ветку обсуждения",
         "addingAgent": "Добавил агента в канал",
+        "settingChannelLead": "Выбрал агента, отвечающего за канал",
         "readingConversation": "Прочитал беседу",
         "usingTool": "Использовал инструмент {{tool}}",
         "thinking": "Подумал",
@@ -20244,6 +20249,7 @@
       "workingOnWorkspace": "работает в рабочем пространстве",
       "updatingThread": "обновляет ветку обсуждения",
       "addingAgent": "добавляет агента в канал",
+      "settingChannelLead": "выбирает агента, отвечающего за канал",
       "readingConversation": "читает беседу",
       "usingTool": "использует инструмент"
     },

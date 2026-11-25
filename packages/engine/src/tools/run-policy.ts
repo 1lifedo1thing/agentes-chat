@@ -133,6 +133,7 @@ const ELSEWHERE = new Set([
   "delete_routine",
   "run_routine_now",
   "add_agent_to_channel",
+  "set_channel_lead",
   "create_channel",
   "request_secret",
   "request_permission",

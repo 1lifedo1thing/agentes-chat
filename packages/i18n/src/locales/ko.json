@@ -3890,6 +3890,9 @@
     },
     "channel": {
       "agent_added": "{{agentName}}을(를) <b>#{{channel}}</b>에 데려왔어요",
+      "lead_changed": "{{agentName}}을(를) <b>#{{channel}}</b> 책임자로 정했어요",
+      "lead_changed_self": "<b>#{{channel}}</b> 책임자가 되었어요",
+      "lead_changed_none": "<b>#{{channel}}</b>을(를) 책임자 없이 두었어요",
       "created": "채널 <b>#{{name}}</b>을(를) 만들었어요"
     },
     "wiki": {
@@ -14381,6 +14384,7 @@
       "send_dm": "다이렉트 메시지 보내기",
       "read_conversation": "대화 읽기",
       "add_agent_to_channel": "채널에 에이전트 추가",
+      "set_channel_lead": "채널 책임자 정하기",
       "ask_agent": "다른 에이전트에게 질문",
       "tell_agent": "다른 에이전트에게 알림",
       "find_agent": "에이전트 찾기",
@@ -18338,6 +18342,7 @@
         "workingOnWorkspace": "워크스페이스에서 작업했어요",
         "updatingThread": "스레드를 업데이트했어요",
         "addingAgent": "에이전트를 채널에 추가했어요",
+        "settingChannelLead": "채널 책임자를 정했어요",
         "readingConversation": "대화를 읽었어요",
         "usingTool": "{{tool}} 도구를 사용했어요",
         "thinking": "생각했어요",
@@ -18460,6 +18465,7 @@
       "workingOnWorkspace": "워크스페이스에서 작업하는 중",
       "updatingThread": "스레드를 업데이트하는 중",
       "addingAgent": "에이전트를 채널에 추가하는 중",
+      "settingChannelLead": "채널 책임자를 정하는 중",
       "readingConversation": "대화를 읽는 중",
       "usingTool": "도구를 사용하는 중"
     },

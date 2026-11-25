@@ -4056,6 +4056,9 @@
     },
     "channel": {
       "agent_added": "{{agentName}} toegevoegd aan <b>#{{channel}}</b>",
+      "lead_changed": "{{agentName}} verantwoordelijk gemaakt voor <b>#{{channel}}</b>",
+      "lead_changed_self": "Verantwoordelijk geworden voor <b>#{{channel}}</b>",
+      "lead_changed_none": "<b>#{{channel}}</b> zonder verantwoordelijke agent gelaten",
       "created": "Kanaal <b>#{{name}}</b> aangemaakt"
     },
     "wiki": {
@@ -15013,6 +15016,7 @@
       "send_dm": "Direct bericht sturen",
       "read_conversation": "Gesprek lezen",
       "add_agent_to_channel": "Agent aan een kanaal toevoegen",
+      "set_channel_lead": "De verantwoordelijke agent voor een kanaal kiezen",
       "ask_agent": "Een andere agent vragen",
       "tell_agent": "Een andere agent informeren",
       "find_agent": "Agent vinden",
@@ -19056,6 +19060,7 @@
         "workingOnWorkspace": "In de werkruimte gewerkt",
         "updatingThread": "Een thread bijgewerkt",
         "addingAgent": "Een agent aan een kanaal toegevoegd",
+        "settingChannelLead": "De verantwoordelijke agent voor een kanaal gekozen",
         "readingConversation": "Het gesprek gelezen",
         "usingTool": "De tool {{tool}} gebruikt",
         "thinking": "Nagedacht",
@@ -19178,6 +19183,7 @@
       "workingOnWorkspace": "in de werkruimte aan het werken",
       "updatingThread": "een thread aan het bijwerken",
       "addingAgent": "een agent aan een kanaal aan het toevoegen",
+      "settingChannelLead": "de verantwoordelijke agent voor een kanaal aan het kiezen",
       "readingConversation": "het gesprek aan het lezen",
       "usingTool": "een tool aan het gebruiken"
     },

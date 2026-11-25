@@ -3602,6 +3602,7 @@ export const AGENT_ACTION_KINDS = [
   "routine.updated",
   "routine.deleted",
   "channel.agent_added",
+  "channel.lead_changed",
   "channel.created",
   "wiki.page_created",
   "wiki.page_edited",
@@ -3685,6 +3686,8 @@ export interface AgentActionTarget {
  *   English words, never shown), `active`; `routine.updated`: `name`,
  *   `fields` (name, prompt, target, schedule, active), `active`, `schedule`
  * - `channel.agent_added`: `agentId`, `agentName`, `agentHandle`, `channel`
+ * - `channel.lead_changed` (ADR 0095): `channel`, `agentId`, `agentName`, `agentHandle` (null: the channel has no
+ *   responsible agent now), `self` (the agent made itself responsible), `previousAgentId`, `previousAgentName`
  * - `channel.created`: `name` (undo archives it)
  * - `pr.merged`: `repo`, and `number` (a pull request) or `ref` (a branch); nothing undoes it
  * - `wiki.page_created` / `wiki.page_edited`: `title`, `slug`
