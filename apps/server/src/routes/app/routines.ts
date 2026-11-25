@@ -40,6 +40,7 @@ import {
   takeOverRoutine,
   updateRoutine,
 } from "@agenteschat/engine";
+import { ROUTINE_PROMPT_MAX } from "@agenteschat/tokens/routines";
 import { createRoute, z } from "@hono/zod-openapi";
 import { errorResponse } from "../../http/errors";
 import {
@@ -696,7 +697,7 @@ export function routineRoutes(deps: AppDeps) {
           z.object({
             name: z.string().max(120).optional(),
             agentId: z.uuid(),
-            prompt: z.string().min(1).max(10_000),
+            prompt: z.string().min(1).max(ROUTINE_PROMPT_MAX),
             target: Target,
             trigger: TriggerInput,
             access: Access.optional().openapi({ description: "Ignored: every routine acts (ADR 0109)." }),
@@ -728,7 +729,7 @@ export function routineRoutes(deps: AppDeps) {
         body: body(
           z.object({
             name: z.string().min(1).max(120).optional(),
-            prompt: z.string().min(1).max(10_000).optional(),
+            prompt: z.string().min(1).max(ROUTINE_PROMPT_MAX).optional(),
             agentId: z.uuid().optional(),
             trigger: TriggerInput.optional().openapi({
               description:

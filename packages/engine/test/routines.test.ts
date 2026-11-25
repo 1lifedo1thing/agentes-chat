@@ -241,6 +241,18 @@ describe("routines", () => {
     expect(new Date(view?.nextRunAt ?? 0).getTime()).toBeGreaterThan(Date.now());
   });
 
+  test("a routine keeps instructions up to 50,000 characters, whole", async () => {
+    f = await setup();
+    const prompt = `Regras:\n${"r".repeat(49_000)}`;
+    const routine = await createRoutine(routineDeps(), f.owner.id, f.org.id, {
+      agentId: f.agent.id,
+      prompt,
+      target: { type: "channel", channelId: f.general.id },
+      trigger: { type: "schedule", phrase: "dias úteis às 9h" },
+    });
+    expect(routine.prompt).toBe(prompt);
+  });
+
   test("read in the creator's own time zone (org stays UTC); posted as the routine, not as the person", async () => {
     let prompt: ModelRequest | undefined;
     f = await setup({
