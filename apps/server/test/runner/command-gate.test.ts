@@ -1,10 +1,11 @@
 import { afterEach, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { ASK_AGAIN, DELETE_BRANCHES_POINTER, textVerdict } from "@agenteschat/adapters/command-policy";
 import {
   allowedMerge,
+  childRunner,
   commandApproval,
   lonePush,
   pushesOwnBranches,
@@ -115,7 +116,8 @@ test.skipIf(!hasGit)(
 test("a long script is read in a child runner: this runner's timers keep firing, and a merge at its end still waits", async () => {
   const dir = tempDir("gate-");
   dirs.push(dir);
-  // 1 MiB of code naming deny-listed programs, its first 128 KiB on one line (the costliest shape to read).
+  // 1 MiB of code naming deny-listed programs, its first 128 KiB on one line (a costly shape to read, and quick to
+  // build).
   const merge = '\nsubprocess.run(["gh", "pr", "merge", "12"])\n';
   let crafted = "";
   for (let i = 0; crafted.length < 128 * 1024; i++) crafted += `gh api${i} `;
@@ -130,7 +132,7 @@ test("a long script is read in a child runner: this runner's timers keep firing,
   }, 5);
   let message: string | null;
   try {
-    message = await gate("python3 run.py", dir, { script: true, apart: { command: RUNNER } });
+    message = await gate("python3 run.py", dir, { script: true, apart: { runner: childRunner(RUNNER) } });
   } finally {
     clearInterval(tick);
     // A check that holds the thread to its end lets no tick run after it: that stretch counts too.
@@ -176,7 +178,7 @@ test.skipIf(!hasGit)(
       expect([file, JSON.parse(String(answer))]).toEqual([file, textVerdict(text, ASK_AGAIN, code)]);
       const message = await gate(`${code ? "python3" : "bash"} .agentes/${file}`, root, {
         script: true,
-        apart: { command: RUNNER },
+        apart: { runner: childRunner(RUNNER) },
       });
       expect([file, message?.split(": a person approves it first.")[0] ?? null]).toEqual([file, why]);
     }
@@ -184,25 +186,36 @@ test.skipIf(!hasGit)(
   30_000,
 );
 
-test("a child runner that can't answer leaves the script read here: it doesn't start, dies, answers nonsense or hangs", async () => {
+test("a child runner that can't answer, or is another build, leaves the script read here", async () => {
   const dir = tempDir("gate-");
   dirs.push(dir);
   writeFileSync(path.join(dir, "run.sh"), `${LONG}gh pr merge 12\n`);
-  const bun = process.execPath;
-  for (const command of [
-    [path.join(dir, "nowhere")],
-    [bun, "-e", "process.exit(3)"],
-    [bun, "-e", `console.log('{"pushes":1,"denied":null}')`],
-    [bun, "-e", "setInterval(() => {}, 1000)"],
-  ]) {
+  /** A child runner from a file of this code. */
+  const child = (name: string, code: string) => {
+    writeFileSync(path.join(dir, name), code);
+    return childRunner([process.execPath, path.join(dir, name)]);
+  };
+  const silent = `process.stdout.write('{"pushes":[],"denied":null}')`;
+  // Its answer is well formed, from a file another one was renamed over since, as `agentes-runner update` does.
+  const updated = child("updated.js", silent);
+  writeFileSync(path.join(dir, "next.js"), `${silent}\n`);
+  renameSync(path.join(dir, "next.js"), path.join(dir, "updated.js"));
+  writeFileSync(path.join(dir, "plain.txt"), "not a program");
+  for (const [why, runner] of [
+    ["no file", childRunner([path.join(dir, "nowhere")])],
+    ["doesn't start", childRunner([path.join(dir, "plain.txt")])],
+    ["dies", child("dies.js", "process.exit(3)")],
+    ["nonsense", child("nonsense.js", `console.log('{"pushes":1,"denied":null}')`)],
+    ["hangs", child("hangs.js", "setInterval(() => {}, 1000)")],
+    ["another build", updated],
+  ] as const) {
     const started = performance.now();
-    const message = await gate("bash run.sh", dir, { script: true, apart: { command, ms: 500 } });
-    expect([command, message]).toEqual([
-      command,
-      expect.stringContaining("This is a merge: a person approves it first."),
-    ]);
+    const message = await gate("bash run.sh", dir, { script: true, apart: { runner, ms: 500 } });
+    expect([why, message]).toEqual([why, expect.stringContaining("This is a merge: a person approves it first.")]);
     expect(performance.now() - started).toBeLessThan(5000);
   }
+  // The same answer from a file nothing replaced is the verdict: the merge isn't seen.
+  expect(await gate("bash run.sh", dir, { script: true, apart: { runner: child("same.js", silent) } })).toBeNull();
 });
 
 test.skipIf(!hasGit)(
