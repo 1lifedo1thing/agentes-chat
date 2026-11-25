@@ -154,13 +154,13 @@ export const NOTIFICATION_KINDS = [
    */
   "computer_no_chrome",
   /**
-   * A computer the workspace's agents work on has been away `DOWN_NOTICE_MS` (ADR 0227): who configures the workspace
+   * A computer the workspace's agents work on has been away `DOWN_NOTICE_MS` (ADR 0241): who configures the workspace
    * (and who connected one they brought) hears it once per outage, by email too from `DOWN_EMAIL_MS`.
    * `source.machineId` and its name in `source.label`, `latest.since` when the outage began, `latest.runs` the runs
    * waiting for it and `latest.calls` the webhook calls its agents' routines took since. Never for standby or a move.
    */
   "computer_down",
-  /** The same computer is back (ADR 0227): only to who heard it was down, with the same fields, then. */
+  /** The same computer is back (ADR 0241): only to who heard it was down, with the same fields, then. */
   "computer_back",
   /**
    * Someone other than the agent's owner took control of its desktop (ADR 0059 §8): its owner, once a day per agent,

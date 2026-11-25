@@ -689,6 +689,8 @@
       "confirmNo": "不是我",
       "done": "全部就绪。",
       "doneLead": "你已登录 agentes 应用，可以关闭这个标签页了。",
+      "back": "正在返回应用。",
+      "openApp": "打开应用",
       "expired": "这个请求已过期。",
       "expiredLead": "请返回应用，重新选择 {{provider}}。",
       "handover": "正在用另一台设备上的账号登录…",
@@ -4195,6 +4197,7 @@
     "available": "空闲",
     "working": "工作中",
     "waiting": "等你处理",
+    "idle": "无活动",
     "lower": {
       "online": "在线",
       "away": "离开",
@@ -4347,7 +4350,8 @@
   "accountSwitch": {
     "limit": "因 <from/> 账号已达上限，改用 <to/> 账号继续",
     "line": "因 <from/> 账号接近上限，改用 <to/> 账号继续",
-    "extra": "因 <from/> 账号将进入付费额外用量，改用 <to/> 账号继续"
+    "extra": "因 <from/> 账号将进入付费额外用量，改用 <to/> 账号继续",
+    "busy": "<from/> 账号已在同时回复它能承担的最多对话，因此改用 <to/> 账号继续"
   },
   "channelRefs": {
     "list": "频道",
@@ -6276,7 +6280,7 @@
         "cli_sandbox": "程序 {{brain}} 无法在这台电脑上启动它的沙盒。请在智能体设置中选择其他 AI。",
         "cli_system": "程序 {{brain}} 暂时还不能在这台电脑的系统上运行。请在智能体设置中选择其他 AI。",
         "account_missing": "为这个智能体选择的账号已不在它的电脑上。请在智能体设置中选择另一个账号，或重新添加。",
-        "windows_sandbox": "这台 Windows 电脑无法隔离 Codex 的命令：需要 Windows 11 24H2 或更高版本。请更新 Windows，为这个智能体选择 Claude 或 API 密钥，或把它移到一台 Linux 电脑上。",
+        "windows_sandbox": "Codex 在这台 Windows 电脑上无法为它的命令启动任何隔离。请为这个智能体选择 Claude 或 API 密钥，或把电脑更新到 Windows 11 24H2 或更高版本，并装好最新更新。",
         "our_error": "我们这边出了点问题，任务已停止。请稍后再提一次。",
         "unknown": "失败。"
       }
@@ -7859,6 +7863,38 @@
     "vault_write": {
       "label": "编辑 Vault 联系信息",
       "description": "在 Vault 中保存和更新联系信息，修改已保存登录信息的用户名或描述，为它创建的账号生成密码，并删除它自己保存的内容。"
+    },
+    "gitlab_git_read": {
+      "label": "克隆仓库（git）",
+      "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。GitLab 令牌永远不会进入这台电脑。"
+    },
+    "gitlab_git_write": {
+      "label": "推送分支（git push）",
+      "description": "将提交推送到 agentes/{agent}/… 分支：绝不推送到默认分支，不强制推送，不推送标签。删除分支和推送到他人的分支需要先审批。"
+    },
+    "gitlab_pr_write": {
+      "label": "创建 Merge request",
+      "description": "创建 Merge request 并发表评论。"
+    },
+    "bitbucket_git_read": {
+      "label": "克隆仓库（git）",
+      "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。Bitbucket 令牌永远不会进入这台电脑。"
+    },
+    "bitbucket_git_write": {
+      "label": "推送分支（git push）",
+      "description": "将提交推送到 agentes/{agent}/… 分支：绝不推送到默认分支，不强制推送，不推送标签。删除分支和推送到他人的分支需要先审批。"
+    },
+    "bitbucket_pr_write": {
+      "label": "创建 Pull Request",
+      "description": "创建 Pull Request 并发表评论。"
+    },
+    "git_git_read": {
+      "label": "克隆仓库（git）",
+      "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。Git 令牌永远不会进入这台电脑。"
+    },
+    "git_git_write": {
+      "label": "推送分支（git push）",
+      "description": "将提交推送到 agentes/{agent}/… 分支：绝不推送到默认分支，不强制推送，不推送标签。删除分支和推送到他人的分支需要先审批。"
     },
     "github_git_read": {
       "label": "克隆仓库（git）",
@@ -11028,10 +11064,10 @@
       "agent": "智能体",
       "repo": "在哪里工作",
       "repoPlaceholder": "仓库或项目",
-      "repoSearch": "搜索，或输入 owner/name 或新名称",
+      "repoSearch": "搜索，或输入 owner/name、仓库地址或一个新名称",
       "newLocal": "电脑上的新项目：{{name}}",
       "useRepo": "使用 {{repo}}",
-      "repoNote": "不带 owner 的名称会在智能体的电脑上新建项目，不放在 GitHub 上。",
+      "repoNote": "不带 owner 的名称只会在智能体的电脑上创建项目，没有远程仓库。",
       "hint": "用 @ 呼叫他人加入会话",
       "start": "开始"
     },
@@ -11045,7 +11081,7 @@
       "closeHint": "会从列表中移除：工作树会被删除，分支会保留",
       "failed": "无法准备工作树。",
       "retry": "重试",
-      "githubAccess": "此工作区没有这个仓库的 GitHub 访问权限。请在“设置 › 连接器”中连接 GitHub，或在电脑上的项目中开始会话（只需输入名称）。"
+      "githubAccess": "此工作区无权访问该仓库。请在设置 › 连接器中连接它所在的平台（GitHub、GitLab 或 Bitbucket），或在电脑上的项目中开始会话（只需一个名称）。"
     },
     "panel": {
       "label": "会话面板",
@@ -12031,8 +12067,11 @@
       "home_only": "{{computer}} 上的 {{program}} 只为 root 安装了，智能体访问不到。",
       "not_reported": "{{computer}} 还在检查有哪些程序。完成后这里会自动更新。",
       "system": "{{program}} 暂时还不能在 {{computer}} 的系统上运行。",
+      "systemAntigravity": "Gemini 套餐暂时还不能在 {{computer}} 上使用：在 Windows 上，Antigravity CLI 把 Google 登录保存在凭据管理器中，agentes.chat 目前还无法按账号分开。请改用 Gemini API 密钥。",
+      "windows_sandbox": "{{computer}} 的 Windows 无法隔离 {{program}} 的命令。请改选 Claude 或 API 密钥，或把那台电脑更新到 Windows 11 24H2 或更高版本，并装好最新更新。",
       "no_computerCloud": "{{computer}} 一就绪即可使用。"
     },
+    "sandboxPartial": "在这个 Windows 上，Codex 的命令只能写入智能体的文件夹，但互联网只被部分屏蔽。装好最新更新的 Windows 11 24H2 或更高版本能完全屏蔽。",
     "notAvailableNow": "已选择，但目前不可用。",
     "offline": "{{computer}} 当前离线。",
     "modelLabel": "模型",
@@ -12107,7 +12146,7 @@
     "rule": "电脑有空闲内存时，新工作才会开始。人优先。一起被提到的智能体逐个开始。",
     "spill": {
       "title": "你的电脑",
-      "text": "这台电脑满了时，给你的回复可以在你的某台电脑上开始。长时间工作和智能体的文件仍留在这里。",
+      "text": "当这台电脑满载或不在线时，你的智能体可以在你的某台电脑上开始。任务、代码会话和有代码仓库的智能体会留在这里。",
       "plan": "你的 {{plan}} 套餐"
     },
     "youFirst": "你优先",
@@ -12935,6 +12974,7 @@
       "teamLocked": "只有管理连接器的人才能添加团队的连接。",
       "mailLocked": "邮箱始终属于连接它的人。",
       "done": "你的智能体只在你提出请求时使用它。",
+      "githubDone": "在代码会话中，你所请求工作的提交、推送和拉取请求都以你的名义发出。",
       "worksWhenAsked": "只在你提出请求时生效。",
       "remove": "移除",
       "removeName": "移除 {{name}}",
@@ -13693,6 +13733,7 @@
     },
     "label": {
       "git_clone": "克隆仓库",
+      "list_repositories": "列出仓库",
       "create_repository": "创建仓库",
       "delete_repository": "删除仓库",
       "fork_repository": "Fork 仓库",
@@ -14585,6 +14626,19 @@
       "asks_other": "{{count}} 项操作会在聊天中请求审批。",
       "adjust": "调整",
       "ok": "完成"
+    },
+    "git": {
+      "token": "访问令牌",
+      "address": "地址",
+      "addressHelp": {
+        "gitlab": "仅用于贵公司自行托管的 GitLab。留空则为 gitlab.com。",
+        "git": "git 服务器的位置，例如 https://git.company.com。"
+      },
+      "tokenHelp": {
+        "gitlab": "具有 api 和 write_repository 权限范围的 GitLab 访问令牌（个人、群组或项目）。它保存在服务器上：智能体的电脑永远拿不到它。",
+        "bitbucket": "具有仓库写入和拉取请求写入权限的工作区或仓库访问令牌。使用你自己的 API 令牌时，请输入你的 Atlassian 邮箱、冒号和令牌：you@company.com:TOKEN。",
+        "git": "服务器作为 git 密码接受的令牌。如果需要用户名，请输入 username:token。"
+      }
     },
     "telegram": {
       "token": "机器人令牌",
@@ -15534,6 +15588,7 @@
       "tooLarge": "这个文件已达到大小上限。请先从中删掉一些内容。",
       "assetTooLarge": "图片超过了 {{max}} MB，这是每张图片的上限。",
       "assetType": "这个文件只能放图片：PNG、JPEG、WebP 或 GIF。",
+      "fontInvalid": "无法使用这个字体：应用无法读取这个文件。请试试 .ttf、.otf 或 .woff 文件。",
       "liveOnly": "这个文件只能在原处修改，不能整个替换。"
     },
     "office": {
@@ -15555,7 +15610,7 @@
     "device": {
       "notLinkMaker": "只有创建链接的人才能让这台电脑加入。",
       "widenForbidden": "管理员只能缩小可以使用他人个人设备的人员范围。",
-      "spillOwnerOnly": "只有连接这台电脑的人才能让回复在这里思考。你可以把它关掉。",
+      "spillOwnerOnly": "只有连接这台电脑的人可以打开它的帮忙功能。你可以关闭它。",
       "tasksOwnerOnly": "只有连接这台电脑的人才能更改它同时运行的任务数。",
       "tasksCloud": "这台电脑用于任务的余量由 Cloud 自己决定。",
       "notHome": "智能体住在工作区的电脑上，点名时才使用这台电脑。"
@@ -15708,6 +15763,11 @@
       "line": "出口 IP {{ip}}",
       "hint": "智能体浏览网页时网站看到的地址。电脑的网络变化时会随之更新。",
       "waiting": "正在重新连接智能体的网络。网络恢复前，它们的连接会等待。"
+    },
+    "moving": {
+      "short": "正在迁移服务器",
+      "line": "正在迁移到新服务器… 几分钟后回来",
+      "named": "{{computer}} 正在迁移到新服务器… 几分钟后回来"
     },
     "online": "在线",
     "offline": "离线",
@@ -15991,10 +16051,12 @@
     "pushHarderHint": "同时运行更多任务：只留 0.5 GB 空闲内存，处理器忙碌时也不再暂停。你自己的应用可能会变慢。",
     "belongs": "归工作区所有",
     "belongsHint": "连接它的人离开后它仍会保留，没有所有者时所有人都可以使用。",
-    "spillOwn": "给你的回复可以在这里思考",
-    "spillOwnHint": "智能体的电脑满了时，它给你的回复会在这里开始。",
-    "spillOthers": "其他人的智能体也可以在这里思考",
-    "spillOthersHint": "智能体的电脑满了时，它给其他人的回复也可以在这里开始。",
+    "spillOwn": "团队的电脑满载或不在线时帮忙",
+    "spillOwnHint": "当你的智能体的电脑满载或不在线时，它们的回复、请求和例行任务可以用你的登录在这里思考。",
+    "spillTeamHint": "当某个智能体的电脑满载或不在线时，它的回复、请求和例行任务可以用其所有者在这台电脑上的登录在这里思考。",
+    "spillWorkspaceOff": "管理员已为整个工作区关闭此功能。",
+    "helpWorkspace": "团队的电脑满载或不在线时，其他电脑来帮忙",
+    "helpWorkspaceHint": "每台电脑只有在其所有者允许时才会帮忙。关闭：无论所有者如何选择，都不会有电脑帮忙。",
     "connectedBy": "由 {{name}} 连接",
     "downloadFor": "下载 {{system}} 版",
     "downloadApp": "下载应用",
@@ -17905,6 +17967,11 @@
       "cant": "已用{{via}}回答：{{plan}}现在无法思考。",
       "change": "更改"
     },
+    "spilled": {
+      "full": "在 {{to}} 上思考：{{from}} 已满载。",
+      "away": "在 {{to}} 上思考：{{from}} 不在线。",
+      "itsComputer": "它的电脑"
+    },
     "modelStandIn": {
       "text": "{{plan}} 用此密钥拒绝了 {{from}}。我改用可用的 {{to}} 回复了。",
       "useAll": "全部使用 {{model}}",
@@ -17921,6 +17988,10 @@
       "thinking": "思考中…",
       "held": "等待审批…",
       "said": "“{{text}}”"
+    },
+    "trail": {
+      "label": "{{name}} 目前做了什么",
+      "earlier_other": "之前的 {{count}} 步"
     },
     "consult": {
       "asking": "{{from}} 正在询问 {{to}}",
@@ -18158,6 +18229,7 @@
         "runningCommandAny": "运行了命令",
         "usingScreen": "使用了屏幕",
         "cloningRepo": "克隆了仓库",
+        "listingRepos": "已列出仓库",
         "openingPullRequest": "创建了拉取请求",
         "handingOff": "交付了报告",
         "recordingFindings": "记录了发现",
@@ -18279,6 +18351,7 @@
       "runningCommandAny": "运行命令",
       "usingScreen": "使用屏幕",
       "cloningRepo": "克隆仓库",
+      "listingRepos": "正在列出仓库",
       "openingPullRequest": "创建拉取请求",
       "handingOff": "交付报告",
       "recordingFindings": "记录发现",
@@ -19902,6 +19975,7 @@
       "offline": "{{computer}} 已离线",
       "offlineHelpPlain": "{{name}} 正在等待电脑恢复。",
       "offlineHelpPlain_female": "{{name}} 正在等待电脑恢复。",
+      "helping": "在此期间，新工作可以在 {{names}} 上思考。",
       "noRoom": "{{computer}} 显示的屏幕已达上限。请稍后再试。",
       "unavailable": "暂时无法显示 {{name}} 的屏幕",
       "unavailable_female": "暂时无法显示 {{name}} 的屏幕",
@@ -21165,6 +21239,92 @@
     "settingsText": "将技术详细信息发送给 agentes.chat 团队。"
   },
   "live": {
+    "type": {
+      "font": "字体",
+      "search": "搜索字体",
+      "noResults": "没有这个名称的字体",
+      "list": "字体",
+      "groups": {
+        "slides": "此演示文稿中",
+        "canvas": "此白板中",
+        "document": "此文档中",
+        "company": "公司字体",
+        "sans": "无衬线",
+        "serif": "衬线",
+        "display": "用于标题",
+        "mono": "等宽",
+        "handwriting": "手写"
+      },
+      "headings": "标题",
+      "body": "正文",
+      "fromDrive": "来自 Drive",
+      "ownFont": "文件字体",
+      "fileFonts": {
+        "slides": "演示文稿字体",
+        "document": "文档字体"
+      },
+      "fileFontsNote": "适用于整个文件。有自己字体的文字保持不变。",
+      "headingFont": "标题字体",
+      "bodyFont": "正文字体",
+      "bring": "从 Drive 导入字体…",
+      "bringButton": "从 Drive 导入",
+      "bringTitle": "从 Drive 导入字体",
+      "bringSearch": "在 Drive 中搜索字体",
+      "bringEmpty": "Drive 中没有字体。请先把 .ttf、.otf 或 .woff 文件上传到 Drive。",
+      "brought": "{{name}} 已加入文件",
+      "notFont": "这个文件不是字体。请选择 .ttf、.otf 或 .woff 文件。",
+      "done": "完成",
+      "text": "文字样式",
+      "glyph": "Aa",
+      "weight": "粗细",
+      "weights": {
+        "w300": "细",
+        "w400": "常规",
+        "w500": "中等",
+        "w600": "半粗",
+        "w700": "粗",
+        "w800": "特粗"
+      },
+      "tracking": "字间距",
+      "trackings": {
+        "tight": "更紧",
+        "normal": "常规",
+        "open": "宽松",
+        "wide": "很宽"
+      },
+      "lineHeight": "行高",
+      "caps": "全部大写",
+      "highlight": "高亮",
+      "highlights": {
+        "none": "无",
+        "yellow": "黄色",
+        "green": "绿色",
+        "blue": "蓝色",
+        "pink": "粉色",
+        "orange": "橙色"
+      },
+      "effects": "效果",
+      "shadow": "阴影",
+      "shadows": {
+        "none": "无",
+        "soft": "柔和",
+        "strong": "强烈"
+      },
+      "border": "边框",
+      "dashes": {
+        "solid": "实线",
+        "dashed": "虚线",
+        "dotted": "点线"
+      },
+      "gradient": "渐变",
+      "gradients": {
+        "none": "无",
+        "ocean": "海洋",
+        "graphite": "石墨",
+        "sunset": "日落",
+        "violet": "紫罗兰"
+      }
+    },
     "slides": {
       "rail": {
         "label": "幻灯片",

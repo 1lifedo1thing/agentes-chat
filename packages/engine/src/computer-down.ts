@@ -1,6 +1,6 @@
 import { and, count, type Database, eq, gte, inArray, schema, sql } from "@agenteschat/db";
 import { emailLocale, modeStamp, queueEmail } from "./email";
-import { getMachineById, type MachineRow, shownOnline } from "./machines";
+import { getMachineById, type MachineRow, shownMoving, shownOnline } from "./machines";
 import { noticeOn, noticePrefsOf } from "./notice-prefs";
 import { adminsOf } from "./notification-producers";
 import { type NotificationDeps, notify, resolveNotifications } from "./notifications";
@@ -11,7 +11,7 @@ const { agentRuns, agents, notifications, organizationMembers, organizations, ro
   schema;
 
 /*
- * "Computer down" and "back" (ADR 0227): who configures the workspace hears that a computer its agents work on has
+ * "Computer down" and "back" (ADR 0241): who configures the workspace hears that a computer its agents work on has
  * been away for a while, and again when it is back, with how long and what waited for it. Never for a computer asleep
  * by design (standby, ADR 0161) or one the operator is moving to another host: those are away by plan.
  */
@@ -22,8 +22,6 @@ export const DOWN_NOTICE_MS = 10 * 60_000;
 export const DOWN_EMAIL_MS = 30 * 60_000;
 /** Back for less than this before it went again: the same outage, told once. */
 export const DOWN_JOIN_MS = 30 * 60_000;
-/** A move the operator never said was over stops counting after this: the computer is down then. */
-export const MOVING_STALE_MS = 2 * 3600_000;
 
 /** Due a while after a computer's socket closes (`machine-hub`): says it is down if it still is. */
 export const COMPUTER_DOWN_JOB = "machine.down_notice";
@@ -98,8 +96,7 @@ async function recipientsOf(deps: NotificationDeps, m: MachineRow) {
 
 /** Away by plan or by its owner's choice: asleep in standby, moving hosts, removed, or its workspace not at work. */
 async function awayByPlan(db: Database, m: MachineRow, now: Date) {
-  if (m.deletedAt || shownOnline(m, now)) return true;
-  if (m.movingAt && now.getTime() - m.movingAt.getTime() < MOVING_STALE_MS) return true;
+  if (m.deletedAt || shownOnline(m, now) || shownMoving(m, now)) return true;
   return workRefusal(await orgStanding(db, m.orgId)) !== null;
 }
 

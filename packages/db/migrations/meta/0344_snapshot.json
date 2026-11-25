@@ -1,5 +1,5 @@
 {
-  "id": "81313358-b11c-4215-853b-c9e36cea16c1",
+  "id": "d2170596-4686-43bd-ad65-f3e7b4bbfa2f",
   "prevId": "f0d125c2-6939-444e-9adc-e92403d4465f",
   "version": "7",
   "dialect": "postgresql",
@@ -10837,6 +10837,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "font": {
+          "name": "font",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -13224,12 +13230,6 @@
         },
         "egress_waiting_at": {
           "name": "egress_waiting_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "moving_at": {
-          "name": "moving_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

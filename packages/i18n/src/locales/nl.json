@@ -704,6 +704,8 @@
       "confirmNo": "Dit was ik niet",
       "done": "Helemaal klaar.",
       "doneLead": "Je bent ingelogd in de agentes-app. Je kunt dit tabblad sluiten.",
+      "back": "Terug naar de app.",
+      "openApp": "App openen",
       "expired": "Dit verzoek is verlopen.",
       "expiredLead": "Ga terug naar de app en kies opnieuw {{provider}}.",
       "handover": "Inloggen met je account van het andere apparaat…",
@@ -1228,7 +1230,7 @@
         "fileLead": "Het bestand uit elke app die we kennen. Het wordt vanzelf herkend.",
         "paths": {
           "lead": "Kies hoe je ze ophaalt. Je controleert alles voordat er iets wordt aangemaakt.",
-          "best": "het meest volledig",
+          "best": "Het meest volledig",
           "safe": "Sleutels, wachtwoorden en sessies uit {{app}} komen nooit mee, welke weg je ook kiest.",
           "command": {
             "title": "Met een opdracht",
@@ -4365,6 +4367,7 @@
     "available": "Beschikbaar",
     "working": "Bezig",
     "waiting": "Wacht op jou",
+    "idle": "Inactief",
     "lower": {
       "online": "online",
       "away": "afwezig",
@@ -4517,7 +4520,8 @@
   "accountSwitch": {
     "limit": "Ging verder met het account <to/> omdat het account <from/> zijn limiet bereikte",
     "line": "Ging verder met het account <to/> omdat het account <from/> bijna aan zijn limiet zit",
-    "extra": "Ging verder met het account <to/> omdat het account <from/> in betaald extra gebruik zou gaan"
+    "extra": "Ging verder met het account <to/> omdat het account <from/> in betaald extra gebruik zou gaan",
+    "busy": "Ging verder met het account <to/> omdat het account <from/> al zoveel gesprekken tegelijk beantwoordde als het kan"
   },
   "channelRefs": {
     "list": "Kanalen",
@@ -6530,7 +6534,7 @@
         "cli_sandbox": "Het programma {{brain}} kan zijn sandbox niet starten op deze computer. Kies een andere AI in de instellingen van de agent.",
         "cli_system": "Het programma {{brain}} werkt nog niet op het systeem van deze computer. Kies een andere AI in de instellingen van de agent.",
         "account_missing": "Het account dat voor deze agent gekozen is staat niet meer op zijn computer. Kies een ander in de instellingen van de agent of voeg het opnieuw toe.",
-        "windows_sandbox": "Deze Windows-computer kan de opdrachten van Codex niet isoleren: hij heeft Windows 11 24H2 of nieuwer nodig. Werk Windows bij, kies Claude of een API-sleutel voor deze agent, of verplaats hem naar een Linux-computer.",
+        "windows_sandbox": "Codex kon op deze Windows-computer geen isolatie voor zijn opdrachten starten. Kies Claude of een API-sleutel voor deze agent, of werk de computer bij naar Windows 11 24H2 of nieuwer, met de nieuwste updates.",
         "our_error": "Er ging iets mis aan onze kant en de taak is gestopt. Vraag het over een poosje opnieuw.",
         "unknown": "Mislukt."
       }
@@ -8165,6 +8169,38 @@
     "vault_write": {
       "label": "Contacten in de Vault bewerken",
       "description": "Contactgegevens in de Vault opslaan en bijwerken, de gebruikersnaam van een opgeslagen login of een beschrijving wijzigen, wachtwoorden maken voor accounts die hij aanmaakt, en verwijderen wat hij heeft opgeslagen."
+    },
+    "gitlab_git_read": {
+      "label": "Repositories klonen (git)",
+      "description": "Repositories klonen en bijwerken op de computer van de agent met git, via onze proxy. Het GitLab-token komt nooit op de machine."
+    },
+    "gitlab_git_write": {
+      "label": "Branches pushen (git push)",
+      "description": "Commits pushen naar agentes/{agent}/…-branches: nooit naar de standaardbranch, geen force push, geen tags. Branches verwijderen en naar de branch van iemand anders pushen vragen eerst om goedkeuring."
+    },
+    "gitlab_pr_write": {
+      "label": "Merge requests openen",
+      "description": "Merge requests openen en erop reageren."
+    },
+    "bitbucket_git_read": {
+      "label": "Repositories klonen (git)",
+      "description": "Repositories klonen en bijwerken op de computer van de agent met git, via onze proxy. Het Bitbucket-token komt nooit op de machine."
+    },
+    "bitbucket_git_write": {
+      "label": "Branches pushen (git push)",
+      "description": "Commits pushen naar agentes/{agent}/…-branches: nooit naar de standaardbranch, geen force push, geen tags. Branches verwijderen en naar de branch van iemand anders pushen vragen eerst om goedkeuring."
+    },
+    "bitbucket_pr_write": {
+      "label": "Pull requests openen",
+      "description": "Pull requests openen en erop reageren."
+    },
+    "git_git_read": {
+      "label": "Repositories klonen (git)",
+      "description": "Repositories klonen en bijwerken op de computer van de agent met git, via onze proxy. Het Git-token komt nooit op de machine."
+    },
+    "git_git_write": {
+      "label": "Branches pushen (git push)",
+      "description": "Commits pushen naar agentes/{agent}/…-branches: nooit naar de standaardbranch, geen force push, geen tags. Branches verwijderen en naar de branch van iemand anders pushen vragen eerst om goedkeuring."
     },
     "github_git_read": {
       "label": "Repositories klonen (git)",
@@ -11477,10 +11513,10 @@
       "agent": "Agent",
       "repo": "Waar te werken",
       "repoPlaceholder": "Repository of project",
-      "repoSearch": "Zoek, of typ eigenaar/naam of een nieuwe naam",
+      "repoSearch": "Zoek, of typ owner/name, het adres van een repository of een nieuwe naam",
       "newLocal": "Nieuw project op de computer: {{name}}",
       "useRepo": "{{repo}} gebruiken",
-      "repoNote": "Een naam zonder eigenaar start een project op de computer van de agent, buiten GitHub.",
+      "repoNote": "Een naam zonder owner maakt een project alleen op de computer van de agent, zonder externe repository.",
       "hint": "@ haalt iemand bij de sessie",
       "start": "Starten"
     },
@@ -11494,7 +11530,7 @@
       "closeHint": "Verdwijnt uit de lijst: de worktree gaat weg, de branch blijft",
       "failed": "De worktree kon niet worden voorbereid.",
       "retry": "Opnieuw proberen",
-      "githubAccess": "Deze werkruimte heeft geen toegang tot deze repository op GitHub. Koppel GitHub in Instellingen › Connectors, of start een sessie in een project op de computer (alleen een naam)."
+      "githubAccess": "Deze workspace heeft geen toegang tot deze repository. Verbind de plek waar die staat (GitHub, GitLab of Bitbucket) in Instellingen › Connectoren, of start een sessie in een project op de computer (alleen een naam)."
     },
     "panel": {
       "label": "Sessiepaneel",
@@ -12531,8 +12567,11 @@
       "home_only": "{{program}} is op {{computer}} alleen voor root geïnstalleerd, waar de agents niet bij kunnen.",
       "not_reported": "{{computer}} controleert nog welke programma's erop staan. Dit verandert vanzelf als het klaar is.",
       "system": "{{program}} werkt nog niet op het systeem van {{computer}}.",
+      "systemAntigravity": "Gemini-abonnementen werken nog niet op {{computer}}: op Windows bewaart de Antigravity CLI de Google-aanmelding in Referentiebeheer, dat agentes.chat nog niet per account kan scheiden. Gebruik in plaats daarvan een Gemini-API-sleutel.",
+      "windows_sandbox": "Windows op {{computer}} kan de opdrachten van {{program}} niet isoleren. Kies in plaats daarvan Claude of een API-sleutel, of werk die computer bij naar Windows 11 24H2 of nieuwer, met de nieuwste updates.",
       "no_computerCloud": "Klaar zodra {{computer}} klaar is."
     },
+    "sandboxPartial": "Op deze Windows schrijven de opdrachten van Codex alleen in de mappen van de agents, maar internet is maar deels voor ze geblokkeerd. Windows 11 24H2 of nieuwer, met de nieuwste updates, blokkeert het helemaal.",
     "notAvailableNow": "Gekozen, maar nu niet beschikbaar.",
     "offline": "{{computer}} is nu offline.",
     "modelLabel": "Model",
@@ -12608,7 +12647,7 @@
     "rule": "Nieuw werk start als de computer vrij geheugen heeft. Mensen gaan voor. Samen genoemde agenten starten een voor een.",
     "spill": {
       "title": "Je computers",
-      "text": "Als deze computer vol is, kunnen antwoorden voor jou op een van jouw computers starten. Lange taken en de bestanden van de agenten blijven hier.",
+      "text": "Als deze computer vol of weg is, kunnen je agents op een van jouw computers beginnen. Missies, codesessies en agents met repository's blijven hier.",
       "plan": "je {{plan}}-abonnement"
     },
     "youFirst": "Jij bent eerst",
@@ -13476,6 +13515,7 @@
       "teamLocked": "Alleen wie connectors beheert voegt die van het team toe.",
       "mailLocked": "Een mailbox is altijd van wie hem verbindt.",
       "done": "Je agenten gebruiken het alleen als jij erom vraagt.",
+      "githubDone": "In codesessies gaan de commits, pushes en pull requests voor wat je vraagt op jouw naam de deur uit.",
       "worksWhenAsked": "Werkt alleen als jij erom vraagt.",
       "remove": "Verwijderen",
       "removeName": "{{name}} verwijderen",
@@ -14239,6 +14279,7 @@
     },
     "label": {
       "git_clone": "Repository klonen",
+      "list_repositories": "Repository's weergeven",
       "create_repository": "Repository maken",
       "delete_repository": "Repository verwijderen",
       "fork_repository": "Repository forken",
@@ -15152,6 +15193,19 @@
       "asks_other": "{{count}} acties vragen om goedkeuring in de chat.",
       "adjust": "Aanpassen",
       "ok": "Klaar"
+    },
+    "git": {
+      "token": "Toegangstoken",
+      "address": "Adres",
+      "addressHelp": {
+        "gitlab": "Alleen voor een GitLab dat je bedrijf zelf host. Leeg gelaten is het gitlab.com.",
+        "git": "Waar de git-server staat, bijvoorbeeld https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "Een GitLab-toegangstoken (persoonlijk, van een groep of project) met de scopes api en write_repository. Het blijft op de server: de computers van agents krijgen het nooit.",
+        "bitbucket": "Een toegangstoken van de workspace of de repository, met schrijfrechten voor repository's en pull requests. Met je eigen API-token typ je je Atlassian-e-mailadres, een dubbele punt en het token: you@company.com:TOKEN.",
+        "git": "Het token dat de server als git-wachtwoord accepteert. Als hij een gebruikersnaam wil, typ je username:token."
+      }
     },
     "telegram": {
       "token": "Bottoken",
@@ -16118,6 +16172,7 @@
       "tooLarge": "Dit bestand heeft de maximale grootte bereikt. Haal er eerst iets uit.",
       "assetTooLarge": "De afbeelding is groter dan {{max}} MB, de limiet per afbeelding.",
       "assetType": "In dit bestand passen alleen afbeeldingen: PNG, JPEG, WebP of GIF.",
+      "fontInvalid": "Dit lettertype kan niet worden gebruikt: het bestand is geen lettertype dat de app kan lezen. Probeer een .ttf-, .otf- of .woff-bestand.",
       "liveOnly": "Dit bestand wordt ter plekke gewijzigd en kan dus niet in zijn geheel worden vervangen."
     },
     "office": {
@@ -16139,7 +16194,7 @@
     "device": {
       "notLinkMaker": "Alleen wie de link heeft gemaakt, kan deze computer laten deelnemen.",
       "widenForbidden": "Admins kunnen alleen beperken wie iemands eigen apparaat mag gebruiken.",
-      "spillOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan antwoorden hier laten denken. Uitzetten kan wel.",
+      "spillOwnerOnly": "Alleen wie deze computer heeft gekoppeld kan zijn hulp aanzetten. Jij kunt hem uitzetten.",
       "tasksOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan wijzigen hoeveel taken hij tegelijk uitvoert.",
       "tasksCloud": "De Cloud bepaalt zelf hoeveel ruimte deze computer heeft voor taken.",
       "notHome": "Agents wonen op de computer van de workspace en gebruiken deze als ze hem bij naam noemen."
@@ -16293,6 +16348,11 @@
       "line": "Uitgaand IP {{ip}}",
       "hint": "Het adres dat websites zien als de agents browsen. Het verandert mee met het netwerk van de computer.",
       "waiting": "Het internet van de agents wordt opnieuw verbonden. Hun verbindingen wachten tot het terug is."
+    },
+    "moving": {
+      "short": "Verhuist van server",
+      "line": "Verhuist naar een nieuwe server… over een paar minuten terug",
+      "named": "{{computer}} verhuist naar een nieuwe server… over een paar minuten terug"
     },
     "online": "Online",
     "offline": "Offline",
@@ -16579,10 +16639,12 @@
     "pushHarderHint": "Meer taken tegelijk: er blijft maar 0,5 GB geheugen vrij en een drukke processor houdt ze niet tegen. Je eigen apps kunnen trager worden.",
     "belongs": "Hoort bij de werkruimte",
     "belongsHint": "Het blijft als de persoon die het koppelde vertrekt, en iedereen kan het gebruiken zolang niemand de eigenaar is.",
-    "spillOwn": "Jouw antwoorden kunnen hier denken",
-    "spillOwnHint": "Als de computer van een agent vol is, starten zijn antwoorden voor jou hier.",
-    "spillOthers": "Agenten van anderen kunnen hier denken",
-    "spillOthersHint": "Als de computer van een agent vol is, kunnen zijn antwoorden voor andere mensen ook hier starten.",
+    "spillOwn": "Helpen als de computer van het team vol of weg is",
+    "spillOwnHint": "Als de computer van je agents vol of weg is, kunnen hun antwoorden, vragen en routines hier denken met jouw aanmelding.",
+    "spillTeamHint": "Als de computer van een agent vol of weg is, kunnen zijn antwoorden, vragen en routines hier denken met de aanmelding van zijn eigenaar op deze computer.",
+    "spillWorkspaceOff": "Een admin heeft dit voor de workspace uitgezet.",
+    "helpWorkspace": "Computers helpen als die van het team vol of weg is",
+    "helpWorkspaceHint": "Elke computer helpt alleen als zijn eigenaar het toestaat. Uit: geen enkele helpt, wat de eigenaar ook koos.",
     "connectedBy": "Gekoppeld door {{name}}",
     "downloadFor": "Downloaden voor {{system}}",
     "downloadApp": "De app downloaden",
@@ -18527,6 +18589,11 @@
       "cant": "Beantwoord met {{via}}: {{plan}} kan nu niet denken.",
       "change": "Wijzigen"
     },
+    "spilled": {
+      "full": "Dacht op {{to}}: {{from}} was vol.",
+      "away": "Dacht op {{to}}: {{from}} was weg.",
+      "itsComputer": "zijn computer"
+    },
     "modelStandIn": {
       "text": "{{plan}} heeft {{from}} met deze sleutel geweigerd. Ik heb geantwoord met {{to}}, dat er wel mee werkt.",
       "useAll": "{{model}} voor iedereen gebruiken",
@@ -18544,6 +18611,11 @@
       "thinking": "Denkt na…",
       "held": "Wacht op goedkeuring…",
       "said": "‘{{text}}’"
+    },
+    "trail": {
+      "label": "Wat {{name}} tot nu toe deed",
+      "earlier_one": "{{count}} eerdere stap",
+      "earlier_other": "{{count}} eerdere stappen"
     },
     "consult": {
       "asking": "{{from}} vraagt {{to}} iets",
@@ -18784,6 +18856,7 @@
         "runningCommandAny": "Een opdracht uitgevoerd",
         "usingScreen": "Het scherm gebruikt",
         "cloningRepo": "Een repository gekloond",
+        "listingRepos": "Heeft de repository's weergegeven",
         "openingPullRequest": "Een pull request geopend",
         "handingOff": "Een rapport geleverd",
         "recordingFindings": "De bevindingen genoteerd",
@@ -18905,6 +18978,7 @@
       "runningCommandAny": "een opdracht aan het uitvoeren",
       "usingScreen": "het scherm aan het gebruiken",
       "cloningRepo": "een repository aan het klonen",
+      "listingRepos": "geeft de repository's weer",
       "openingPullRequest": "een pull request aan het openen",
       "handingOff": "een rapport aan het leveren",
       "recordingFindings": "de bevindingen aan het noteren",
@@ -20547,6 +20621,7 @@
       "offline": "{{computer}} is offline",
       "offlineHelpPlain": "{{name}} wacht tot de computer terug is.",
       "offlineHelpPlain_female": "{{name}} wacht tot de computer terug is.",
+      "helping": "Ondertussen kan nieuw werk op {{names}} denken.",
       "noRoom": "{{computer}} toont al zoveel schermen als hij kan. Probeer het zo opnieuw.",
       "unavailable": "Het scherm van {{name}} kan nu niet getoond worden",
       "unavailable_female": "Het scherm van {{name}} kan nu niet getoond worden",
@@ -21838,6 +21913,92 @@
     "settingsText": "Stuur de technische details naar het agentes.chat-team."
   },
   "live": {
+    "type": {
+      "font": "Lettertype",
+      "search": "Lettertype zoeken",
+      "noResults": "Geen lettertype met die naam",
+      "list": "Lettertypen",
+      "groups": {
+        "slides": "In deze presentatie",
+        "canvas": "Op dit whiteboard",
+        "document": "In dit document",
+        "company": "Van je bedrijf",
+        "sans": "Schreefloos",
+        "serif": "Met schreef",
+        "display": "Voor koppen",
+        "mono": "Monospace",
+        "handwriting": "Handschrift"
+      },
+      "headings": "Koppen",
+      "body": "Tekst",
+      "fromDrive": "Uit de Drive",
+      "ownFont": "Lettertype van het bestand",
+      "fileFonts": {
+        "slides": "Lettertypen van de presentatie",
+        "document": "Lettertypen van het document"
+      },
+      "fileFontsNote": "Ze gelden voor het hele bestand. Tekst met een eigen lettertype houdt dat.",
+      "headingFont": "Lettertype van de koppen",
+      "bodyFont": "Lettertype van de tekst",
+      "bring": "Lettertype uit de Drive halen…",
+      "bringButton": "Uit de Drive halen",
+      "bringTitle": "Lettertype uit de Drive halen",
+      "bringSearch": "Lettertypen in de Drive zoeken",
+      "bringEmpty": "Geen lettertypen in de Drive. Zet eerst een .ttf-, .otf- of .woff-bestand in de Drive.",
+      "brought": "{{name}} staat nu in het bestand",
+      "notFont": "Dit bestand is geen lettertype. Kies een .ttf, .otf of .woff.",
+      "done": "Klaar",
+      "text": "Tekststijl",
+      "glyph": "Aa",
+      "weight": "Dikte",
+      "weights": {
+        "w300": "Licht",
+        "w400": "Normaal",
+        "w500": "Medium",
+        "w600": "Halfvet",
+        "w700": "Vet",
+        "w800": "Extra vet"
+      },
+      "tracking": "Letterafstand",
+      "trackings": {
+        "tight": "Krapper",
+        "normal": "Normaal",
+        "open": "Ruim",
+        "wide": "Heel ruim"
+      },
+      "lineHeight": "Regelhoogte",
+      "caps": "Alles in hoofdletters",
+      "highlight": "Markering",
+      "highlights": {
+        "none": "Geen",
+        "yellow": "Geel",
+        "green": "Groen",
+        "blue": "Blauw",
+        "pink": "Roze",
+        "orange": "Oranje"
+      },
+      "effects": "Effecten",
+      "shadow": "Schaduw",
+      "shadows": {
+        "none": "Geen",
+        "soft": "Zacht",
+        "strong": "Sterk"
+      },
+      "border": "Rand",
+      "dashes": {
+        "solid": "Doorgetrokken",
+        "dashed": "Gestreept",
+        "dotted": "Gestippeld"
+      },
+      "gradient": "Verloop",
+      "gradients": {
+        "none": "Geen",
+        "ocean": "Oceaan",
+        "graphite": "Grafiet",
+        "sunset": "Zonsondergang",
+        "violet": "Violet"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Dia's",

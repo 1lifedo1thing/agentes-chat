@@ -3,7 +3,7 @@ import { computerOutageLine } from "@agenteschat/client/lib/computer-outage";
 import { placeOf } from "../../src/features/activity/logic";
 import { notification, translator } from "./fixtures";
 
-test("a computer that isn't answering, and back: the phone's row says which, since when, and what waits (ADR 0227)", async () => {
+test("a computer that isn't answering, and back: the phone's row says which, since when, and what waits (ADR 0241)", async () => {
   const t = await translator("pt-BR");
   const down = notification({
     id: "n1",

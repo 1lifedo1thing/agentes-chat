@@ -168,6 +168,12 @@ export const envVars = {
       "Directory containing the built web app (single-page app). Served by this server when it exists; otherwise only the API runs.",
     section: "Server",
   },
+  FONTS_DIR: {
+    schema: z.string().optional(),
+    description:
+      "Directory of the fonts live files use (ADR 0220): the catalog built by `scripts/fonts/build.py` (the image sets it). Served at `/api/fonts/*`, read to measure text, draw pictures and embed fonts in PDFs. Unset: the catalog is still offered, and every app and export falls back to system fonts.",
+    section: "Server",
+  },
   SHUTDOWN_DELAY_MS: {
     schema: z.coerce.number().int().min(0).max(5_000).default(0),
     description:
@@ -396,6 +402,12 @@ export const envVars = {
     schema: modelId.default("claude-sonnet-5-5"),
     description:
       "Unused: new agents start on Automático (`auto`, each run picks the model and effort), whatever this says. Still checked when set; to be removed.",
+    section: "Agents",
+  },
+  MODEL_PROGRESS_NOTES: {
+    schema: z.stringbool().default(true),
+    description:
+      "Ask the models that keep their notes between tool calls apart from the reply (Claude's progress updates, OpenAI's reasoning summaries) to send them, so the conversation shows what an agent is doing while it works. Their reasoning stays hidden either way. Off = only the words a model writes as text.",
     section: "Agents",
   },
   ROUTER_ENABLED: {
@@ -856,6 +868,30 @@ export const envVars = {
   CONNECTOR_LINEAR_CLIENT_SECRET: {
     schema: z.string().optional(),
     description: "Client secret of the Linear OAuth app for the Linear connector.",
+    section: "Connectors",
+    secret: true,
+  },
+  CONNECTOR_GITLAB_CLIENT_ID: {
+    schema: z.string().optional(),
+    description:
+      "Application ID of this server's GitLab application (gitlab.com › Preferences › Applications, confidential, scopes `api` and `write_repository`), so people connect GitLab by signing in (ADR 0227). Set together with `CONNECTOR_GITLAB_CLIENT_SECRET`. Redirect URI: `{PUBLIC_URL}/api/app/connectors/oauth/callback`. Without it, GitLab connects with an access token, as a GitLab of one's own always does.",
+    section: "Connectors",
+  },
+  CONNECTOR_GITLAB_CLIENT_SECRET: {
+    schema: z.string().optional(),
+    description: "Secret of the GitLab application for the GitLab connector.",
+    section: "Connectors",
+    secret: true,
+  },
+  CONNECTOR_BITBUCKET_CLIENT_ID: {
+    schema: z.string().optional(),
+    description:
+      "Key of this server's Bitbucket OAuth consumer (a workspace's settings › OAuth consumers; permissions: Account read, Repositories write, Pull requests write), so people connect Bitbucket by signing in (ADR 0227). Set together with `CONNECTOR_BITBUCKET_CLIENT_SECRET`. Callback URL: `{PUBLIC_URL}/api/app/connectors/oauth/callback`. Without it, Bitbucket connects with an access token.",
+    section: "Connectors",
+  },
+  CONNECTOR_BITBUCKET_CLIENT_SECRET: {
+    schema: z.string().optional(),
+    description: "Secret of the Bitbucket OAuth consumer for the Bitbucket connector.",
     section: "Connectors",
     secret: true,
   },

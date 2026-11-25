@@ -1,16 +1,15 @@
-# 0227. People hear when a computer stops answering, and when it is back
+# 0241. People hear when a computer stops answering, and when it is back
 
 - Status: Accepted
 - Date: 2026-11-24
 - Amends: ADR 0071 §8 (two kinds in the `computers` notice category), ADR 0106 (a webhook call's next run waits
   a little), ADR 0161 (standby is never told as down)
-- Code: db `packages/db/src/schema/machines.ts` (`machines.moving_at`, migration `0344_machine_moving`); engine
-  `computer-down.ts` (`outageStart`, `queueDownChecks`, `noticeComputerDown`, `noticeComputerBack`,
-  `machine.down_notice`), `machine-hub.ts` (`markOffline` queues the checks, `accept` tells the back, the hello clears
-  `moving_at`), `machines.ts` (`setMachineMoving`), `notifications.ts` (`computer_down`, `computer_back`,
+- Code: engine `computer-down.ts` (`outageStart`, `queueDownChecks`, `noticeComputerDown`, `noticeComputerBack`,
+  `machine.down_notice`; a move is `shownMoving` in `machines.ts`), `machine-hub.ts` (`markOffline` queues the checks,
+  `accept` tells the back), `notifications.ts` (`computer_down`, `computer_back`,
   `latest.since`, `runs`, `calls`), `notice-prefs.ts`, `push-messages.ts` + `push/messages/*`, `email.ts` + `email/words/*`
   (`computer_down`), `executor.ts` (`cliRetried`), `routine-hooks.ts` (`HOOK_RETRY_AFTER_MS`), `routine-events.ts`;
-  server `operator/machines.ts` (`PUT /orgs/{orgId}/machines/{machineId}/moving`), `routes/app/notifications.ts`;
+  server `routes/app/notifications.ts`;
   client `lib/computer-outage.ts`, `lib/notifications.ts`; web `pages/NotificationsPage.tsx`,
   `components/NotificationParts.tsx`, `lib/push-open.ts`; phone `features/activity/ActivityScreen.tsx`,
   `features/links/logic.ts`
@@ -37,8 +36,9 @@ the same way.
    (`computer_back`), with how long it was away and the runs and webhook calls that waited; the "down" row is done. By
    email only to those emailed it was down.
 4. **Never by plan.** No notice for a computer in standby (ADR 0161: it shows as online), for one the operator is
-   moving to another host (`PUT …/moving`, `moving_at`: its hello on the new host ends it, `false` calls it off, and
-   after 2 hours it counts as down again), nor in a workspace held, suspended or being deleted. A computer a person
+   moving to another server while its apps say so (`PUT …/moving`, `moving_at`, migration 0345, `shownMoving`: away,
+   for at most `MOVING_SHOWN_MS` after the latest `true`, then it counts as down), nor in a workspace held, suspended
+   or being deleted. A computer a person
    brought counts only while a run waits for it: one put away for the night is no outage.
 5. **Retries.** A webhook call whose run failed goes back with a wait before its next run (1 minute, then 5, its line
    held meanwhile), so a few minutes of a computer, a sign-in or our server failing don't use its three runs. A

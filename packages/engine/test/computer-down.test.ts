@@ -20,7 +20,7 @@ import {
 import { addMember, type Fixture, setup } from "./fixtures";
 import { pairMachine } from "./machine-fixtures";
 
-/** "Computer down" and "back" (ADR 0227): who hears it, when, and never for a computer away by plan. */
+/** "Computer down" and "back" (ADR 0241): who hears it, when, and never for a computer away by plan. */
 
 let f: Fixture;
 let hub: MachineHub | null = null;
@@ -134,7 +134,7 @@ describe("computer down", () => {
     // Taken out of standby it is waking: what this test's clock calls the past, so it is cleared here.
     await f.db.update(schema.machines).set({ wakeWantedAt: null }).where(eq(schema.machines.id, machineId));
 
-    expect(await setMachineMoving(f.db, f.org.id, machineId, true)).toEqual({ moving: true });
+    expect(await setMachineMoving({ db: f.db, pubsub: f.pubsub }, f.org.id, machineId, true)).toEqual({ moving: true });
     await noticeComputerDown(deps(DOWN_EMAIL_MS, "https://app.example.com"), machineId, "email");
     expect(await notices("computer_down")).toHaveLength(0);
     expect(await emails()).toEqual([]);

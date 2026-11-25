@@ -319,7 +319,7 @@ export function notificationHref(
   if (n.kind === "widget_alert" || n.kind === "widget_failed") return widgetHref(s.widgetId, s.dashboardId);
   if (n.kind === "dashboard_proposal") return boardHref(s.dashboardId);
   // A computer's disk is almost full (ADR 0115): that computer, where its shared folder's size shows.
-  // A computer that isn't answering, or is back (ADR 0227): that computer, where its agents can move elsewhere.
+  // A computer that isn't answering, or is back (ADR 0241): that computer, where its agents can move elsewhere.
   if (
     n.kind === "computer_disk_full" ||
     n.kind === "computer_no_chrome" ||

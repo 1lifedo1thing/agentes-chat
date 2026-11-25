@@ -338,7 +338,7 @@ describe("Notificações", () => {
     expect(read().querySelector(".nt-steprow")).toBeNull();
   });
 
-  test("a computer that isn't answering, then back: its name leads, since when or how long, what waited (ADR 0227)", async () => {
+  test("a computer that isn't answering, then back: its name leads, since when or how long, what waited (ADR 0241)", async () => {
     const since = new Date(Date.now() - 50 * 60_000).toISOString();
     const items = [
       notification({

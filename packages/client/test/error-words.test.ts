@@ -327,6 +327,13 @@ test("a computer that can't connect Claude this way is said in the person's lang
   expect(errorText(said, refusal)).toBe("errors.machine.accountMethodUnsupported");
 });
 
+test("a CLI that doesn't run on the computer's system refuses its sign-in in the person's words", () => {
+  const instance = i18next.createInstance();
+  void instance.init({ lng: "en", resources, initAsync: false });
+  const refusal = new ApiError(409, "account.system", "x", { program: "Grok Build", computer: "PC" });
+  expect(errorText(instance.t, refusal)).toBe("Grok Build doesn't run on PC's system yet.");
+});
+
 test("an agent that doesn't answer this person says whom it answers, in the person's words", () => {
   const instance = i18next.createInstance();
   void instance.init({ lng: "pt-BR", fallbackLng: "en", resources, initAsync: false });
@@ -419,6 +426,9 @@ const PLAIN_LINE = new Set([
   "message.not_comment",
   // Only an agent writes an SVG picture (ADR 0196 §8): the refusal goes back to its tool call, never to a person.
   "live.svg_invalid",
+  // Only an agent writes the markup `add_html` lays out (ADR 0220 §4): the refusal goes back to its tool call.
+  "live.html_invalid",
+  "live.html_too_large",
   // Only the outside chat surface's service meets these, on its own bridge routes (ADR 0187).
   "surface.busy",
   "surface.claim_limit",

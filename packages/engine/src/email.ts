@@ -383,7 +383,7 @@ export type EmailTemplate =
       personal?: true;
     }
   /**
-   * A computer the workspace's agents work on has been away for a while, or is back (`back`) after it was (ADR 0227):
+   * A computer the workspace's agents work on has been away for a while, or is back (`back`) after it was (ADR 0241):
    * its name, how long it was away, and the runs and webhook calls that waited. `url`: the computer's page.
    */
   | {

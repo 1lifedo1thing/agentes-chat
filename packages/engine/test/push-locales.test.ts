@@ -42,7 +42,7 @@ test("every push kind in every language: words, within the phone's limits (ADR 0
         // A personal workspace's words (ADR 0159), with no words of the agent's own to stand in for them.
         { actorName: "Ana", actorType: "user" as const, title: "Deploy", reason: "creator_left", personal: true },
         { actorType: "agent" as const, suggestedBy: "Bia", personal: true },
-        // A computer back after a long outage (ADR 0227): its name and how long, in the language's own units.
+        // A computer back after a long outage (ADR 0241): its name and how long, in the language's own units.
         { title: "Workspace computer", awayMs: 26 * 3600_000 + 59 * 60_000 },
       ]) {
         const { title, body } = renderPush(locale, { kind, waiting: true, ...variant });
@@ -74,7 +74,7 @@ test("a personal workspace's pushes speak of one person and their agents, never 
     expect({ locale, missing: keys.filter((k) => !(k in PUSH[locale])) }).toEqual({ locale, missing: [] });
 });
 
-test("a computer that isn't answering, and back with how long it was away (ADR 0227)", () => {
+test("a computer that isn't answering, and back with how long it was away (ADR 0241)", () => {
   const push = (locale: "en" | "pt-BR" | "ja", kind: string, awayMs?: number) =>
     renderPush(locale, { kind, waiting: false, title: "Workspace computer", awayMs });
   expect(push("en", "computer_down")).toEqual({

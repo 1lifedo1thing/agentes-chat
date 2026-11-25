@@ -4,7 +4,7 @@ import type { AppNotification } from "../api/types";
 import { formatTime } from "./format";
 import { workDuration } from "./long-work";
 
-/** A computer that isn't answering, or is back (ADR 0227): the inbox's kinds. */
+/** A computer that isn't answering, or is back (ADR 0241): the inbox's kinds. */
 export const isComputerOutage = (n: Pick<AppNotification, "kind">) =>
   n.kind === "computer_down" || n.kind === "computer_back";
 

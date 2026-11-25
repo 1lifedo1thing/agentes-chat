@@ -235,7 +235,7 @@ pub fn open(app: &AppHandle, url: Option<Url>) -> Result<(), String> {
         // ADR 0154), that it takes the person's app icon (`appIcon`, ADR 0179) and how this computer draws
         // (`renderer`, and Linux's `system` facts: graphics.rs); nothing else.
         .initialization_script(format!(
-            "window.__agentesDesktop = Object.freeze({{ version: {version:?}, platform: {PLATFORM:?}, servers: true, files: true, connectorReturn: true, workspaces: true, appIcon: true, renderer: {renderer:?}, system: {system} }});",
+            "window.__agentesDesktop = Object.freeze({{ version: {version:?}, platform: {PLATFORM:?}, servers: true, files: true, connectorReturn: true, signedInLink: true, workspaces: true, appIcon: true, renderer: {renderer:?}, system: {system} }});",
             renderer = crate::graphics::renderer(),
             system = serde_json::to_string(&crate::graphics::system()).unwrap_or_else(|_| "null".into()),
         ))
@@ -304,12 +304,15 @@ pub fn open(app: &AppHandle, url: Option<Url>) -> Result<(), String> {
         (Some(x), Some(y)) => builder.position(x, y),
         _ => builder.center(),
     };
+    #[cfg(target_os = "windows")]
+    let builder = builder.zoom_hotkeys_enabled(true);
     #[cfg(target_os = "macos")]
     let builder = builder
         .title_bar_style(tauri::TitleBarStyle::Overlay)
         // The buttons are placed by `place_lights` (on every fit), not with `traffic_light_position`.
         .hidden_title(true);
     let built = builder.build().map_err(|e| e.to_string())?;
+    crate::bench::window_built();
     // Linux's side of lib.rs `on_web_content_process_terminate` (macOS only in Tauri): a web process that died
     // leaves the window blank, so the page loads again.
     #[cfg(target_os = "linux")]

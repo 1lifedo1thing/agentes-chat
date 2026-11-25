@@ -1209,7 +1209,7 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         statusOnly: job.payload.statusOnly === true,
       });
     },
-    // A computer still away a while after its socket closed: who configures the workspace hears it (ADR 0227).
+    // A computer still away a while after its socket closed: who configures the workspace hears it (ADR 0241).
     [COMPUTER_DOWN_JOB]: async (job) => {
       await noticeComputerDown(
         { db: deps.db, pubsub: deps.pubsub, home: deps.email ? (deps.emailArt?.home ?? null) : null },

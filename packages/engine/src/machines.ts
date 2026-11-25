@@ -191,6 +191,22 @@ export const shownOnline = (
   now = new Date(),
 ) => machineOnline(row, now) || shownStandby(row, now);
 
+/** The longest the apps say a computer is moving: one whose move never said it ended shows its real state after. */
+export const MOVING_SHOWN_MS = 2 * 60 * 60_000;
+
+/**
+ * Moving to another server as people see it: the workspace's own computer, away, while the operator says it moves
+ * (`moving_at`), for at most `MOVING_SHOWN_MS`. Online, it works as ever: nothing to say.
+ */
+export const shownMoving = (
+  row: Pick<MachineRow, "online" | "lastSeenAt" | "deletedAt" | "kind" | "movingAt">,
+  now = new Date(),
+) =>
+  row.kind === "managed" &&
+  row.movingAt !== null &&
+  !machineOnline(row, now) &&
+  now.getTime() - row.movingAt.getTime() < MOVING_SHOWN_MS;
+
 export type OfflineCause = "unresponsive" | "stopped" | "dropped";
 
 /**
@@ -577,6 +593,8 @@ async function machineViews(db: Database, actorId: string, orgId: string, only?:
       offlineCause: offlineCause(m, online),
       /** The workspace's own computer is asleep in standby (ADR 0161) and wakes as it should: nothing is wrong. */
       standby: shownStandby(m, now),
+      /** The workspace's own computer is away moving to another server (`shownMoving`): back in a few minutes. */
+      moving: shownMoving(m, now),
       networkTransition: managed ? m.networkTransition : null,
       /** The workspace's own computer's agents wait for their way out, as the operator says: a line, never an error. */
       egressWaiting: managed && machineOnline(m, now) && m.egressWaitingAt !== null,
@@ -614,6 +632,8 @@ async function machineViews(db: Database, actorId: string, orgId: string, only?:
       cliInstall: !managed && m.protocol >= CLI_INSTALL_PROTOCOL,
       /** The coding CLIs there that can't start, with their own error line; admins and the pairer only. */
       cliErrors: (admin || mine) && !managed ? (m.executors?.broken ?? null) : null,
+      /** What holds Codex's commands on a Windows computer (`CODEX_UNELEVATED_PROTOCOL`); null elsewhere or unknown. */
+      codexSandbox: m.os === "windows" ? (m.executors?.codex?.sandbox ?? null) : null,
       pairedBy: m.pairedByUserId ? { id: m.pairedByUserId, name: pairedByName ?? "" } : null,
       // A private agent stays out for whom it is unlisted (`listsAgentTo`), but not on the computer of who paired it.
       agents: using
@@ -732,14 +752,19 @@ export async function setMachineEgressWaiting(
 }
 
 /**
- * `PUT …/machines/{machineId}/moving`: the operator says the workspace's own computer is moving to another host
- * (`moving_at` keeps the first time), or no longer; its runner's next hello says it too. Null: the workspace has no
- * such managed computer.
+ * `PUT …/machines/{machineId}/moving`: the operator says the workspace's own computer is moving to another server
+ * (`moving_at` the latest word, which `MOVING_SHOWN_MS` counts from: a move that waits for its next step says it
+ * again), or no longer; its people's apps read it again. Null: the workspace has no such managed computer.
  */
-export async function setMachineMoving(db: Database, orgId: string, machineId: string, moving: boolean) {
-  const [row] = await db
+export async function setMachineMoving(
+  deps: { db: Database; pubsub?: PubSub },
+  orgId: string,
+  machineId: string,
+  moving: boolean,
+) {
+  const [row] = await deps.db
     .update(machines)
-    .set({ movingAt: moving ? sql`coalesce(${machines.movingAt}, now())` : null })
+    .set({ movingAt: moving ? sql`now()` : null })
     .where(
       and(
         eq(machines.orgId, orgId),
@@ -749,7 +774,9 @@ export async function setMachineMoving(db: Database, orgId: string, machineId: s
       ),
     )
     .returning({ id: machines.id });
-  return row ? { moving } : null;
+  if (!row) return null;
+  await publishMachineUpdated(deps.pubsub, orgId, machineId, { moving });
+  return { moving };
 }
 
 /** How many `deletedAgentIds` lists: a computer that misses one only keeps that agent's transcripts. */
