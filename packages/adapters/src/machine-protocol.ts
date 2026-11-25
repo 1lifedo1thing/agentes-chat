@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 79;
+export const MACHINE_PROTOCOL_VERSION = 80;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -1856,6 +1856,18 @@ export const isGitRepoName = (v: unknown): v is string =>
   /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/.test(v) &&
   v.split("/").every((part) => part !== "." && part !== "..");
 
+/**
+ * Protocol 79: `git.sync` takes a repository of any git host (ADR 0227), whose path may be deeper or shallower than
+ * GitHub's `owner/name` (`group/subgroup/project`, `project.git`); the proxy address it comes with says which host. An
+ * older runner refuses those, so the server asks it only for two-part paths.
+ */
+export const GIT_HOST_PATH_PROTOCOL = 79;
+/** A repository's path on its host: one to twenty-one parts, none of them `.` or `..`. */
+export const isGitRepoPath = (v: unknown): v is string =>
+  typeof v === "string" &&
+  /^[A-Za-z0-9_.-]{1,100}(\/[A-Za-z0-9_.-]{1,100}){0,20}$/.test(v) &&
+  v.split("/").every((part) => part !== "." && part !== "..");
+
 /** Largest pieces of a `git.sync`. */
 export const GIT_SYNC_LIMITS = {
   repos: 50,
@@ -2506,7 +2518,7 @@ export const AGY_COPY_PROTOCOL = 76;
 export const TASK_ROOM_PROTOCOL = 78;
 
 /**
- * Protocol 79 (ADR 0237): a person's computer may lend its internet connection to its workspace's own computer.
+ * Protocol 80 (ADR 0237): a person's computer may lend its internet connection to its workspace's own computer.
  * `egress.dial` asks it to open one TCP connection to `host`:`port` (`EGRESS_SHARE`'s ports only, a name it resolves
  * itself or a public address, never one on its own network) and to carry its bytes on a data socket it dials for
  * `streamId`; it answers once that socket is ready. A data socket's `stream.hello` may carry `egress`: the workspace's
@@ -2514,7 +2526,7 @@ export const TASK_ROOM_PROTOCOL = 78;
  * carries it, or closes the socket (`STREAM_CLOSE.unreachable`: none is lent now; `refused`: that destination isn't
  * carried). The server asks no older runner, and `welcome.egressRelay` goes to the workspace's computer alone.
  */
-export const EGRESS_SHARE_PROTOCOL = 79;
+export const EGRESS_SHARE_PROTOCOL = 80;
 /** What a lent connection carries, at most. */
 export const EGRESS_SHARE = {
   /** The web only: anything else leaves the workspace's computer its usual way. */
@@ -2865,6 +2877,18 @@ export interface AgentScope {
    * lines its commits end with. The runner hands them to git in the agent's own processes alone (`co-authors.ts`).
    */
   coAuthors?: string[];
+  /**
+   * On a code session's work (`exec`, `brain.turn`): the person its commits are authored as, when they connected a
+   * GitHub account as their own (ADR 0215 §13). The runner hands it to git in the agent's own processes alone, never
+   * to a repository's config. A runner that doesn't know it leaves the checkout's author, the agent.
+   */
+  author?: CommitAuthor;
+}
+
+/** Who a commit is authored as: a name and an address, each one line. */
+export interface CommitAuthor {
+  name: string;
+  email: string;
 }
 
 /** What the server asks. Paths are always relative to the workspace (the agent's folder when `agent` is set). */

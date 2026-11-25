@@ -43,6 +43,7 @@ import { UUID } from "./authority";
 import { TtlCache } from "./cache";
 import { type MachinePhoneRow, publishDevicesChanged, syncMachinePhones } from "./devices";
 import { cutText } from "./format";
+import { codeCommitAuthor } from "./git/person-account";
 import { agentCoAuthorLine } from "./git/signature";
 import {
   applyAccessDecided,
@@ -1053,8 +1054,21 @@ export function createMachineHub(deps: MachineHubDeps) {
     if (!agent) return request;
     const runs = request.op === "exec" || request.op === "brain.turn" || request.op === "task.start";
     const line = runs ? await agentCoAuthorLine(db, orgId, agent).catch(() => null) : null;
-    if (scope.name && !line) return request;
-    return { ...request, agent: { ...scope, name: scope.name || agent.name, ...(line ? { coAuthors: [line] } : {}) } };
+    // A code session's turn is authored as the person who asked, by the GitHub account they connected as their own
+    // (ADR 0215 §13); its commands carry theirs already (`withMachineSandbox`).
+    const author =
+      scope.author ??
+      (request.op === "brain.turn" ? await codeCommitAuthor(db, orgId, request.runId).catch(() => null) : null);
+    if (scope.name && !line && !author) return request;
+    return {
+      ...request,
+      agent: {
+        ...scope,
+        name: scope.name || agent.name,
+        ...(line ? { coAuthors: [line] } : {}),
+        ...(author ? { author } : {}),
+      },
+    };
   }
 
   /** Bridge calls of work already on the machine stop with its workspace (`standing.ts`). */
