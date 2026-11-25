@@ -21895,6 +21895,91 @@
     "settingsText": "Stuur de technische details naar het agentes.chat-team."
   },
   "live": {
+    "type": {
+      "font": "Lettertype",
+      "search": "Lettertype zoeken",
+      "noResults": "Geen lettertype met die naam",
+      "list": "Lettertypen",
+      "groups": {
+        "slides": "In deze presentatie",
+        "canvas": "Op dit whiteboard",
+        "document": "In dit document",
+        "company": "Van je bedrijf",
+        "sans": "Schreefloos",
+        "serif": "Met schreef",
+        "display": "Voor koppen",
+        "mono": "Monospace",
+        "handwriting": "Handschrift"
+      },
+      "headings": "Koppen",
+      "body": "Tekst",
+      "fromDrive": "Uit de Drive",
+      "ownFont": "Lettertype van het bestand",
+      "fileFonts": {
+        "slides": "Lettertypen van de presentatie",
+        "document": "Lettertypen van het document"
+      },
+      "fileFontsNote": "Ze gelden voor het hele bestand. Tekst met een eigen lettertype houdt dat.",
+      "headingFont": "Lettertype van de koppen",
+      "bodyFont": "Lettertype van de tekst",
+      "bring": "Lettertype uit de Drive halen…",
+      "bringButton": "Uit de Drive halen",
+      "bringTitle": "Lettertype uit de Drive halen",
+      "bringSearch": "Lettertypen in de Drive zoeken",
+      "bringEmpty": "Geen lettertypen in de Drive. Zet eerst een .ttf-, .otf- of .woff-bestand in de Drive.",
+      "brought": "{{name}} staat nu in het bestand",
+      "notFont": "Dit bestand is geen lettertype. Kies een .ttf, .otf of .woff.",
+      "done": "Klaar",
+      "text": "Tekststijl",
+      "weight": "Dikte",
+      "weights": {
+        "w300": "Licht",
+        "w400": "Normaal",
+        "w500": "Medium",
+        "w600": "Halfvet",
+        "w700": "Vet",
+        "w800": "Extra vet"
+      },
+      "tracking": "Letterafstand",
+      "trackings": {
+        "tight": "Krapper",
+        "normal": "Normaal",
+        "open": "Ruim",
+        "wide": "Heel ruim"
+      },
+      "lineHeight": "Regelhoogte",
+      "caps": "Alles in hoofdletters",
+      "highlight": "Markering",
+      "highlights": {
+        "none": "Geen",
+        "yellow": "Geel",
+        "green": "Groen",
+        "blue": "Blauw",
+        "pink": "Roze",
+        "orange": "Oranje"
+      },
+      "effects": "Effecten",
+      "shadow": "Schaduw",
+      "shadows": {
+        "none": "Geen",
+        "soft": "Zacht",
+        "strong": "Sterk"
+      },
+      "border": "Rand",
+      "dashes": {
+        "solid": "Doorgetrokken",
+        "dashed": "Gestreept",
+        "dotted": "Gestippeld"
+      },
+      "gradient": "Verloop",
+      "gradients": {
+        "none": "Geen",
+        "ocean": "Oceaan",
+        "graphite": "Grafiet",
+        "sunset": "Zonsondergang",
+        "violet": "Violet"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Dia's",

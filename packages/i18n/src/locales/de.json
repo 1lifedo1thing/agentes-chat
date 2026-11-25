@@ -21712,6 +21712,91 @@
     "settingsText": "Sende die technischen Details an das agentes.chat-Team."
   },
   "live": {
+    "type": {
+      "font": "Schriftart",
+      "search": "Schriftart suchen",
+      "noResults": "Keine Schriftart mit diesem Namen",
+      "list": "Schriftarten",
+      "groups": {
+        "slides": "In dieser Präsentation",
+        "canvas": "Auf diesem Whiteboard",
+        "document": "In diesem Dokument",
+        "company": "Von Ihrem Unternehmen",
+        "sans": "Serifenlos",
+        "serif": "Mit Serifen",
+        "display": "Für Überschriften",
+        "mono": "Festbreite",
+        "handwriting": "Handschrift"
+      },
+      "headings": "Überschriften",
+      "body": "Text",
+      "fromDrive": "Aus dem Drive",
+      "ownFont": "Schriftart der Datei",
+      "fileFonts": {
+        "slides": "Schriftarten der Präsentation",
+        "document": "Schriftarten des Dokuments"
+      },
+      "fileFontsNote": "Sie gelten für die ganze Datei. Ein Text mit eigener Schriftart behält sie.",
+      "headingFont": "Schriftart der Überschriften",
+      "bodyFont": "Schriftart des Texts",
+      "bring": "Schriftart aus dem Drive holen…",
+      "bringButton": "Aus dem Drive holen",
+      "bringTitle": "Schriftart aus dem Drive holen",
+      "bringSearch": "Schriftarten im Drive suchen",
+      "bringEmpty": "Keine Schriftarten im Drive. Lade zuerst eine .ttf-, .otf- oder .woff-Datei in den Drive hoch.",
+      "brought": "{{name}} ist jetzt in der Datei",
+      "notFont": "Diese Datei ist keine Schriftart. Wähle eine .ttf-, .otf- oder .woff-Datei.",
+      "done": "Fertig",
+      "text": "Textstil",
+      "weight": "Stärke",
+      "weights": {
+        "w300": "Leicht",
+        "w400": "Normal",
+        "w500": "Mittel",
+        "w600": "Halbfett",
+        "w700": "Fett",
+        "w800": "Extrafett"
+      },
+      "tracking": "Zeichenabstand",
+      "trackings": {
+        "tight": "Enger",
+        "normal": "Normal",
+        "open": "Weit",
+        "wide": "Sehr weit"
+      },
+      "lineHeight": "Zeilenhöhe",
+      "caps": "Alles in Großbuchstaben",
+      "highlight": "Hervorhebung",
+      "highlights": {
+        "none": "Keine",
+        "yellow": "Gelb",
+        "green": "Grün",
+        "blue": "Blau",
+        "pink": "Rosa",
+        "orange": "Orange"
+      },
+      "effects": "Effekte",
+      "shadow": "Schatten",
+      "shadows": {
+        "none": "Keiner",
+        "soft": "Weich",
+        "strong": "Stark"
+      },
+      "border": "Rahmen",
+      "dashes": {
+        "solid": "Durchgehend",
+        "dashed": "Gestrichelt",
+        "dotted": "Gepunktet"
+      },
+      "gradient": "Verlauf",
+      "gradients": {
+        "none": "Keiner",
+        "ocean": "Ozean",
+        "graphite": "Graphit",
+        "sunset": "Sonnenuntergang",
+        "violet": "Violett"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Folien",

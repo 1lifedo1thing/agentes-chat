@@ -30,6 +30,11 @@
 .lf-doc__style-name {
   white-space: nowrap;
 }
+/* The text style menu's "Aa" and its chevron (ADR 0220 §8). */
+.sheet-tools__menu.lf-doc__aa {
+  gap: var(--space-1);
+  padding: 0 var(--space-1) 0 var(--space-2);
+}
 /* Each style in the menu looks like itself, quietly. */
 .lf-doc__style-item[data-style="h1"],
 .lf-doc__style-item[data-style="h2"],

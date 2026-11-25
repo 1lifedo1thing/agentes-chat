@@ -22645,7 +22645,7 @@ export const en = {
         slides: "Presentation fonts",
         document: "Document fonts",
       },
-      fileFontsNote: "They apply to the whole file; a text with a font of its own keeps it.",
+      fileFontsNote: "They apply to the whole file. A text with a font of its own keeps it.",
       headingFont: "Heading font",
       bodyFont: "Text font",
       bring: "Bring a font from the Drive…",

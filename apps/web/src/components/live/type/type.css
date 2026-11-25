@@ -35,15 +35,19 @@
   border: 0;
   background: none;
   font: inherit;
+  line-height: 20px;
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-/* A row: the family in its own face, a note (its role, where it came from) at the end. */
+/*
+ * A row: the family in its own face, a note (its role, where it came from) at the end, on the list's own 20 px line
+ * so a family drawn larger keeps the menu's row height.
+ */
 .lf-fontrow {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
   width: 100%;
@@ -54,9 +58,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 17px;
+  line-height: 20px;
 }
 .lf-fontrow__note {
   flex: none;
+  line-height: 20px;
   font-size: var(--text-xs);
   color: var(--ink-muted);
 }

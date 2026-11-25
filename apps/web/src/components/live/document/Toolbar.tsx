@@ -224,7 +224,7 @@ export function DocToolbar(props: DocToolbarProps) {
           <Button
             size="sm"
             variant="ghost"
-            className="sheet-tools__menu"
+            className="sheet-tools__menu lf-doc__aa"
             aria-label={t("live.type.text")}
             title={t("live.type.text")}
             disabled={format.style === "code"}

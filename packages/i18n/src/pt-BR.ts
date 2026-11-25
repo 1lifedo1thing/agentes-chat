@@ -22499,7 +22499,7 @@ export const ptBR = {
         slides: "Fontes da apresentação",
         document: "Fontes do documento",
       },
-      fileFontsNote: "Valem para todo o arquivo; um texto com fonte própria continua com a dele.",
+      fileFontsNote: "Valem para todo o arquivo. Um texto com fonte própria continua com a dele.",
       headingFont: "Fonte dos títulos",
       bodyFont: "Fonte do texto",
       bring: "Trazer fonte do Drive…",

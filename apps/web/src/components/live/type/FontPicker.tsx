@@ -211,7 +211,7 @@ export function FontPicker({
                       onFileFonts();
                     }}
                   >
-                    <Icon name="textTool" size={18} />
+                    <Icon name="textTool" />
                     <span className="ac-menu__label">{`${fileFonts}…`}</span>
                   </button>
                 )}
@@ -224,7 +224,7 @@ export function FontPicker({
                       onBring();
                     }}
                   >
-                    <Icon name="drive" size={18} />
+                    <Icon name="drive" />
                     <span className="ac-menu__label">{t("live.type.bring")}</span>
                   </button>
                 )}
