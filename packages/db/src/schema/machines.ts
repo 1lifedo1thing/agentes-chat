@@ -51,9 +51,17 @@ export interface MachineExecutors {
   /**
    * `path`: the copy its runner starts, the newest it found. `loggedIn`/`authMethod`/`plan`: its own sign-in as its
    * app-server's `account/read` says (`chatgpt` with its plan, `api_key`, `provider`), else `codex login status` on a
-   * sign-in it found (absent = unknown).
+   * sign-in it found (absent = unknown). `sandbox` (Windows, runner protocol 80): what holds its commands there, `none`
+   * where nothing could; absent until its runner knows.
    */
-  codex?: { version: string; path?: string; loggedIn?: boolean; authMethod?: string; plan?: string };
+  codex?: {
+    version: string;
+    path?: string;
+    loggedIn?: boolean;
+    authMethod?: string;
+    plan?: string;
+    sandbox?: "mxc" | "unelevated" | "none";
+  };
   /** Cursor's CLI (protocol 36, ADR 0114) and the models its sign-in lists; `inPlan`: the CLI said the plan includes it. */
   cursor?: { version: string; models?: { id: string; label?: string; inPlan?: boolean }[] };
   /** OpenCode's CLI (protocol 39, ADR 0132) and the models it lists; `free`: OpenCode's free tier. */
@@ -82,6 +90,8 @@ export interface MachineExecutors {
   desktopUse?: { available: boolean; reason?: string; code?: string };
   /** `hello.mode` (ADR 0058 §10): each agent works as its own OS user; absent = all as the runner's user. */
   mode?: "system";
+  /** `hello.windowsBuild` (runner protocol 80): a Windows computer's build (`10.0.19045`); absent elsewhere or older. */
+  windowsBuild?: string;
   /**
    * `hello.clis` (ADR 0228 §6): the coding CLIs its runner fetches by itself there, and where each fetch stands
    * (`fetching` with bytes done and total, `ready`, or `failed` with why), updated by its `cli.fetch` frames.

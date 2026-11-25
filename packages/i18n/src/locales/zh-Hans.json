@@ -4359,7 +4359,8 @@
   "accountSwitch": {
     "limit": "因 <from/> 账号已达上限，改用 <to/> 账号继续",
     "line": "因 <from/> 账号接近上限，改用 <to/> 账号继续",
-    "extra": "因 <from/> 账号将进入付费额外用量，改用 <to/> 账号继续"
+    "extra": "因 <from/> 账号将进入付费额外用量，改用 <to/> 账号继续",
+    "busy": "<from/> 账号已在同时回复它能承担的最多对话，因此改用 <to/> 账号继续"
   },
   "channelRefs": {
     "list": "频道",
@@ -6289,7 +6290,7 @@
         "cli_sandbox": "程序 {{brain}} 无法在这台电脑上启动它的沙盒。请在智能体设置中选择其他 AI。",
         "cli_system": "程序 {{brain}} 暂时还不能在这台电脑的系统上运行。请在智能体设置中选择其他 AI。",
         "account_missing": "为这个智能体选择的账号已不在它的电脑上。请在智能体设置中选择另一个账号，或重新添加。",
-        "windows_sandbox": "这台 Windows 电脑无法隔离 Codex 的命令：需要 Windows 11 24H2 或更高版本。请更新 Windows，为这个智能体选择 Claude 或 API 密钥，或把它移到一台 Linux 电脑上。",
+        "windows_sandbox": "Codex 在这台 Windows 电脑上无法为它的命令启动任何隔离。请为这个智能体选择 Claude 或 API 密钥，或把电脑更新到 Windows 11 24H2 或更高版本，并装好最新更新。",
         "our_error": "我们这边出了点问题，任务已停止。请稍后再提一次。",
         "unknown": "失败。"
       }
@@ -12078,8 +12079,10 @@
       "home_only": "{{computer}} 上的 {{program}} 只为 root 安装了，智能体访问不到。",
       "not_reported": "{{computer}} 还在检查有哪些程序。完成后这里会自动更新。",
       "system": "{{program}} 暂时还不能在 {{computer}} 的系统上运行。",
+      "windows_sandbox": "{{computer}} 的 Windows 无法隔离 {{program}} 的命令。请改选 Claude 或 API 密钥，或把那台电脑更新到 Windows 11 24H2 或更高版本，并装好最新更新。",
       "no_computerCloud": "{{computer}} 一就绪即可使用。"
     },
+    "sandboxPartial": "在这个 Windows 上，Codex 的命令只能写入智能体的文件夹，但互联网只被部分屏蔽。装好最新更新的 Windows 11 24H2 或更高版本能完全屏蔽。",
     "notAvailableNow": "已选择，但目前不可用。",
     "offline": "{{computer}} 当前离线。",
     "modelLabel": "模型",

@@ -3229,8 +3229,8 @@ export interface RunAccountSwitch {
   from: RunAccount;
   /** The last one it moved to. */
   to: RunAccount;
-  /** Its plan's limit, the pause line (99%) of long work, or the paid extra usage `from` would go into. */
-  cause: "limit" | "line" | "extra";
+  /** Its plan's limit, the pause line (99%) of long work, the paid extra usage `from` would go into, or `from` busy with all the runs it takes at once. */
+  cause: "limit" | "line" | "extra" | "busy";
 }
 
 export interface RunStep {
@@ -5353,6 +5353,12 @@ export interface Machine {
   cliFetchable?: string[];
   /** Where each fetch of a coding CLI stands there (`CliFetch`), by CLI; live as `machine.updated` with `cliFetch`. */
   cliFetch?: Partial<Record<string, CliFetch>> | null;
+  /**
+   * Windows: what holds Codex's commands there: `mxc`, `unelevated` (Codex's own sandbox where MXC is missing: writes
+   * held to the agent's folders, the internet only partly blocked) or `none` (nothing could). Null or absent elsewhere,
+   * until its runner knows, or from an older server.
+   */
+  codexSandbox?: "mxc" | "unelevated" | "none" | null;
   /** ADR 0036 §8 (protocol 10): what the machine allows, as last reported. Absent until the machine reports it. */
   access?: MachineAccess | null;
   /** ADR 0040 (protocol 12): whether the agent browser can run there; null or absent when its runner doesn't say. */
@@ -6504,7 +6510,9 @@ export type BrainUnavailable =
   /** It is there and can't start: the computer's row has its error (`Machine.cliErrors`). */
   | "cant_start"
   /** It is there at a version agentes.chat holds back: too old, or a blocked one (`BrainOption.outdated`). */
-  | "cli_outdated";
+  | "cli_outdated"
+  /** Codex on a Windows computer where no sandbox could hold its commands. */
+  | "windows_sandbox";
 
 export interface BrainModelOption {
   /** What is stored (`fable`, `opus`, `sonnet`, `haiku`, a Codex model). */
@@ -6526,6 +6534,11 @@ export interface BrainOption {
   reason?: BrainUnavailable;
   models: BrainModelOption[];
   defaultModel: string | null;
+  /**
+   * `partial`: Codex on a Windows computer without MXC, in Codex's own sandbox: its commands write only in the agent's
+   * folders, but the internet is kept from them only in part. Absent from an older server.
+   */
+  sandbox?: "partial";
   /**
    * Antigravity: the newest Gemini isn't among its models, and why: the computer's agentes.chat is too old to bring a
    * CLI that runs it (`app_old`), its CLI predates it where the computer's setup installs it (`cli_old`), or no

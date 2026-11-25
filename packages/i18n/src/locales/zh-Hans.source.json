@@ -11086,6 +11086,9 @@
   "accountSwitch.extra": {
     "value": "Went on with the <to/> account because the <from/> account would go into paid extra usage"
   },
+  "accountSwitch.busy": {
+    "value": "Went on with the <to/> account because the <from/> account was already answering as many conversations as it can at once"
+  },
   "channelRefs.list": {
     "value": "Channels"
   },
@@ -16081,7 +16084,7 @@
     "value": "The account chosen for this agent isn't on its computer anymore. Choose another one in the agent's settings, or add it again."
   },
   "agentPage.activity.errors.windows_sandbox": {
-    "value": "This Windows computer can't isolate Codex's commands: it needs Windows 11 24H2 or newer. Update Windows, choose Claude or an API key for this agent, or move it to a Linux computer."
+    "value": "Codex couldn't start any isolation for its commands on this Windows computer. Choose Claude or an API key for this agent, or update the computer to Windows 11 24H2 or newer, with its latest updates."
   },
   "agentPage.activity.errors.our_error": {
     "value": "Something went wrong on our side and it stopped. Ask again in a little while."
@@ -30480,8 +30483,14 @@
   "brain.reasons.system": {
     "value": "{{program}} doesn't run on {{computer}}'s system yet."
   },
+  "brain.reasons.windows_sandbox": {
+    "value": "{{computer}}'s Windows can't isolate {{program}}'s commands. Choose Claude or an API key instead, or update that computer to Windows 11 24H2 or newer, with its latest updates."
+  },
   "brain.reasons.no_computerCloud": {
     "value": "Ready as soon as {{computer}} is."
+  },
+  "brain.sandboxPartial": {
+    "value": "On this Windows, Codex's commands write only in the agents' folders, but the internet is only partly blocked for them. Windows 11 24H2 or newer, with its latest updates, blocks it fully."
   },
   "brain.notAvailableNow": {
     "value": "Chosen, but unavailable right now."

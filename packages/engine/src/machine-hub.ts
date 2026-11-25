@@ -824,7 +824,8 @@ export function createMachineHub(deps: MachineHubDeps) {
         // Protocol 12: whether it can run the agent browser (ADR 0040), kept with what it found; protocol 18:
         // the same for the agents' desktops and the terminal, and whether each agent is its own OS user (ADR 0058);
         // protocol 21: whether agents can use their desktops (ADR 0062); protocol 50: which Claude sign-ins for all
-        // agents it can make (an older runner says nothing: `claudeLoginMethodsOf` reads that).
+        // agents it can make (an older runner says nothing: `claudeLoginMethodsOf` reads that); protocol 80: a Windows
+        // computer's build.
         ...(frame.executors ||
         frame.browser ||
         frame.desktop ||
@@ -832,7 +833,8 @@ export function createMachineHub(deps: MachineHubDeps) {
         frame.desktopUse ||
         frame.claudeLoginMethods ||
         frame.toolchains ||
-        frame.clis
+        frame.clis ||
+        frame.windowsBuild
           ? {
               executors: {
                 // A runner that hasn't looked yet leaves the CLIs out: the last ones stored stand.
@@ -846,6 +848,7 @@ export function createMachineHub(deps: MachineHubDeps) {
                 // ADR 0228 §6: what its runner fetches by itself, and where each fetch stands since it started.
                 ...(frame.clis ? { copies: frame.clis } : {}),
                 ...(system ? { mode: "system" as const } : {}),
+                ...(frame.windowsBuild ? { windowsBuild: frame.windowsBuild } : {}),
                 ...(frame.claudeLoginMethods ? { claudeLoginMethods: frame.claudeLoginMethods } : {}),
                 ...(loginBlocked ? { claudeLoginBlocked: loginBlocked } : {}),
                 ...(frame.authEgressGroup ? { authEgressGroup: true as const } : {}),

@@ -619,6 +619,7 @@ const CLOUD_REASON = {
   not_reported: "stuck",
   // The Cloud's computers run Linux, where every CLI runs: never said there.
   system: "stuck",
+  windows_sandbox: "stuck",
   cant_start: "stuck",
   // The Cloud's programs are updated with its image: said as being updated.
   cli_outdated: "installing",
