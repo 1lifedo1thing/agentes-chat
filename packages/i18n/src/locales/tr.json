@@ -2482,10 +2482,50 @@
       "gone": "Bu geri alma bağlantısı artık çalışmıyor",
       "sender": "O gönderen"
     },
+    "page": {
+      "opening": "Sayfa açılıyor",
+      "gone": "Bu bağlantı artık çalışmıyor",
+      "lead": "Onaylamak için PIN'ini yaz.",
+      "leadFirst": "Onaylamak için 6 haneli bir PIN seç. {{surface}} üzerinden bunun gibi işlemleri onaylar.",
+      "choosePin": "PIN seç",
+      "repeatPin": "Tekrar yaz",
+      "pin": "PIN'in",
+      "mismatch": "İki PIN eşleşmiyor. İkincisini tekrar yaz.",
+      "approve": "Onayla",
+      "refuse": "Reddet",
+      "forgot": "PIN'ini mi unuttun?",
+      "emailed": "Sana e-postayla bir bağlantı gönderdik. PIN'ini orada seç, sonra bu sayfaya dön.",
+      "notYours": "Buna uygulamada {{who}} karar verir.",
+      "notYoursSomeone": "Buna uygulamada onaylama yetkisi olan biri karar verir.",
+      "approved": "Onaylandı",
+      "refused": "Reddedildi",
+      "expired": "Bu isteğin süresi doldu",
+      "back": "{{surface}} uygulamasına dön. Asistanın orada devam eder.",
+      "setFirst": "Önce PIN'ini seç",
+      "setFirstLead": "{{surface}} üzerinden onaylamak için PIN gerekir ve sohbetteki bir bağlantı onu seçemez. PIN'i oturum açtığın uygulamada seç, sonra bu sayfaya dön.",
+      "setFirstLeadEmail": "{{surface}} üzerinden onaylamak için PIN gerekir ve sohbetteki bir bağlantı onu seçemez. PIN'i oturum açtığın uygulamada ya da e-postayla gönderdiğimiz bağlantıyla seç. Sonra bu sayfaya dön.",
+      "openApp": "Uygulamada seç",
+      "emailMe": "Bana bağlantı gönder"
+    },
+    "pinReset": {
+      "title": "PIN'ini seç",
+      "lead": "Altı rakam. Sohbet uygulamandan istediğin işlemleri onaylamak için gireceksin.",
+      "button": "PIN'imi kaydet",
+      "done": "PIN kaydedildi",
+      "doneLead": "{{surface}} üzerinden açılan sayfaya dön ve bu PIN'le onayla.",
+      "gone": "Bu bağlantı artık çalışmıyor"
+    },
     "via": "{{surface}} aracılığıyla",
     "viaTip": "{{person}} tarafından {{surface}} üzerinden gönderildi",
     "forwarded": "{{surface}} üzerinden iletildi",
-    "forwardedTip": "{{person}} bunu {{surface}} üzerinden iletti. Bu sözler başka birine ait."
+    "forwardedTip": "{{person}} bunu {{surface}} üzerinden iletti. Bu sözler başka birine ait.",
+    "pin": {
+      "set": "PIN belirle",
+      "change": "PIN'i değiştir",
+      "title": "{{surface}} PIN'in",
+      "text": "{{surface}} üzerinden istediğin işlemleri onaylamak için girdiğin altı rakam. Sohbette asla gönderilmez.",
+      "save": "PIN'i kaydet"
+    }
   },
   "team": {
     "title": "Ekip",
@@ -3027,7 +3067,6 @@
       "mineHelp": "{{name}} ile konuşman, kendi planınla ya da seninle paylaşılan bir planla düşünür, yalnızca seninki.",
       "connectMine": "Planımı bağla",
       "useWorkspace": "Çalışma alanınınkini kullan",
-      "useMine": "Planımı kullan",
       "mineYours": "senin planın",
       "mineOf": "{{owner}} kişisinin planı",
       "mineKey": "çalışma alanı anahtarı",
@@ -4261,6 +4300,8 @@
     "aloneLine": "Sohbete kendiliğinden katılır",
     "aloneLine_female": "Sohbete kendiliğinden katılır",
     "mentionLine": "Birinin @{{handle}} yazmasını bekler",
+    "lead": "Kanalın sorumlusu",
+    "leadHelp": "Tüm ekibe söyleneni alır ve ajanlar arasında işin ilerlemesini sağlar",
     "readOnly": "Üyeleri yalnızca kanalı oluşturan kişi ve yöneticiler değiştirebilir.",
     "people": "Kişiler",
     "agents": "Ajanlar"
@@ -5936,6 +5977,19 @@
           "missed_other": "{{count}} ajan değişmedi."
         },
         "add": {
+          "pickTitle": "Hesap ekle",
+          "pickFoot": "Yapay zekânın kendi sayfasında giriş yaparsınız.",
+          "have_one": "{{count}} hesabınız var",
+          "have_other": "{{count}} hesabınız var",
+          "others": "Başka bir plan",
+          "key": "API anahtarı",
+          "keyLine": "Kullandıkça öde",
+          "titlePlan": "{{plan}} ekle",
+          "againTitle": "{{brand}} hesabına yeniden giriş yap",
+          "haveNote": "Burada zaten {{accounts}} var. Başka bir hesapla giriş yapmak için önce tarayıcıda {{brand}} hesabından çıkın ya da bağlantıyı kopyalayıp gizli bir pencerede açın.",
+          "againNote": "{{account}} olarak yeniden giriş yapın. İşiniz biter bitmez {{name}} yeniden onunla düşünür.",
+          "footSignIn": "Şifrenizi {{brand}} sayfasında girersiniz.",
+          "footKey": "Anahtar şifrelenmiş olarak doğrudan {{computer}} bilgisayarına gider.",
           "title": {
             "claude_code": "Claude hesabı ekle",
             "codex": "ChatGPT hesabı ekle",
@@ -6017,34 +6071,24 @@
           "title": "{{name}} için kim düşünüyor",
           "only": "Yalnızca {{name}} için.",
           "more": "Diğer seçenekler",
-          "switch": "Hesabı değiştir",
-          "switchTitle": "{{name}} için hesabı değiştir",
-          "inUse": "Kullanımda",
-          "switchTo": "{{label}} hesabına geç",
-          "teamTitle": "Ekibin hesabını değiştir",
-          "teamAria": "Kimin için",
-          "justOne": "Yalnızca {{name}}",
-          "everyone": "Bu hesaptaki herkes",
-          "target": "Geçilecek hesap",
-          "switchMany_one": "{{count}} ajanı değiştir",
-          "switchMany_other": "{{count}} ajanın hepsini değiştir",
-          "limitTitle": "{{name}} için kullanılan hesap sınıra ulaştı",
           "limitBack": "{{account}} {{when}} geri dönüyor",
           "limitSoon": "{{account}} plan yenilenince geri dönüyor",
           "limitHelp": "Bu arada {{name}}, zaten bağlı olan başka bir hesapla düşünebilir.",
           "fullWait": "Bu hesapta {{name}}, plan yenilenene kadar bekler.",
-          "seeUsage": "Kullanımı gör",
-          "wait": "Bekle",
           "modelTitle": "{{name}} için model",
           "moreTitle": "{{name}} için diğer seçenekler",
           "computer": "Bilgisayar",
-          "doneTitle": "Her şey hazır",
-          "doneSub": "Devam eden işler yeni hesapla sürüyor.",
           "finish": "Bitti",
           "undo": "Geri al",
           "undone": "Eski haline döndü.",
           "missed_one": "{{names}} önceki hesabıyla kaldı.",
-          "missed_other": "{{names}} önceki hesaplarıyla kaldı."
+          "missed_other": "{{names}} önceki hesaplarıyla kaldı.",
+          "added": "Hesap eklendi. {{name}} artık {{account}} ile düşünüyor.",
+          "alsoUses_one": "{{names}} da {{account}} ile düşünüyor.",
+          "alsoUses_other": "{{names}} da {{account}} ile düşünüyor.",
+          "alsoSwitch": "Onları da değiştir",
+          "signedOut": "{{account}}, {{brand}} hesabından çıktı. Yeniden giriş yapana ya da başka bir hesap seçene kadar {{name}} yanıt vermeyecek.",
+          "empty": "{{name}} için henüz düşünecek bir yapay zekâ hesabı yok."
         }
       },
       "computer": {
@@ -6392,7 +6436,8 @@
         "stuck": "Takıldığı için durdu.",
         "brain_interrupted": "Yapay zeka bitirmeden durdu.",
         "brain_unavailable": "Bilgisayarındaki yapay zeka yanıt veremedi. Bilgisayarı kontrol edip yeniden isteyin.",
-        "empty_reply": "Model hiçbir şey döndürmedi.",
+        "empty_reply": "Yapay zeka yanıt yazmadan sırasını bitirdi. Tekrar deneyin ya da ajanın ayarlarından başka bir model seçin.",
+        "empty_reply_limit": "Yapay zeka yanıt yazmadan önce çıktı sınırına ulaştı. Tekrar deneyin ya da ajanın ayarlarından başka bir model seçin.",
         "model_refused": "Model yanıt vermeyi reddetti.",
         "agent_archived": "Ajan arşivlendi.",
         "code_session_unavailable": "Oturumun worktree'si bilgisayarda kullanılamıyor.",
@@ -8038,6 +8083,38 @@
       "label": "Vault iletişim bilgilerini düzenleme",
       "description": "Vault'ta iletişim bilgilerini kaydetme ve güncelleme, kayıtlı bir girişin kullanıcı adını ya da bir açıklamayı değiştirme, açtığı hesaplar için şifre oluşturma ve kendi kaydettiklerini silme."
     },
+    "gitlab_git_read": {
+      "label": "Depo klonlama (git)",
+      "description": "Proxy'miz üzerinden git ile ajanın bilgisayarına depo klonlama ve güncelleme. GitLab token'ı asla makineye girmez."
+    },
+    "gitlab_git_write": {
+      "label": "Dal gönderme (git push)",
+      "description": "agentes/{agent}/… dallarına commit gönderme: asla varsayılan dala değil, force push yok, etiket yok. Dal silmek ve başkasının dalına göndermek önce onay ister."
+    },
+    "gitlab_pr_write": {
+      "label": "Merge request açma",
+      "description": "Merge request açma ve yorum yapma."
+    },
+    "bitbucket_git_read": {
+      "label": "Depo klonlama (git)",
+      "description": "Proxy'miz üzerinden git ile ajanın bilgisayarına depo klonlama ve güncelleme. Bitbucket token'ı asla makineye girmez."
+    },
+    "bitbucket_git_write": {
+      "label": "Dal gönderme (git push)",
+      "description": "agentes/{agent}/… dallarına commit gönderme: asla varsayılan dala değil, force push yok, etiket yok. Dal silmek ve başkasının dalına göndermek önce onay ister."
+    },
+    "bitbucket_pr_write": {
+      "label": "Pull request açma",
+      "description": "Pull request açma ve yorum yapma."
+    },
+    "git_git_read": {
+      "label": "Depo klonlama (git)",
+      "description": "Proxy'miz üzerinden git ile ajanın bilgisayarına depo klonlama ve güncelleme. Git token'ı asla makineye girmez."
+    },
+    "git_git_write": {
+      "label": "Dal gönderme (git push)",
+      "description": "agentes/{agent}/… dallarına commit gönderme: asla varsayılan dala değil, force push yok, etiket yok. Dal silmek ve başkasının dalına göndermek önce onay ister."
+    },
     "github_git_read": {
       "label": "Depo klonlama (git)",
       "description": "Proxy'miz üzerinden git ile ajanın bilgisayarına depo klonlama ve güncelleme. GitHub token'ı asla makineye girmez."
@@ -9127,6 +9204,7 @@
       "provider_unavailable": "Model yanıt vermedi",
       "gave_up": "Model birkaç denemeden sonra yanıt vermedi",
       "empty_reply": "Model boş yanıt verdi",
+      "empty_reply_limit": "Model yanıt vermeden önce çıktı sınırına ulaştı",
       "model_refused": "Model yanıt vermeyi reddetti",
       "runner_outdated": "Bilgisayardaki programın güncellenmesi gerekiyor",
       "too_many_tool_calls": "Tek çalıştırma için adım sınırını aştı",
@@ -10672,6 +10750,9 @@
     "of": "{{name}} kişisinin",
     "moreSpeed": "Hız ve bağlam penceresi",
     "whoThinks": "Kim düşünüyor",
+    "thinks_one": "{{names}} bununla düşünüyor",
+    "thinks_other": "{{names}} bununla düşünüyor",
+    "thinksNone": "Bununla düşünen ajan yok",
     "bulk": {
       "sub": "Yapay zekâyı, sonra onu kullanacak ajanları seçin."
     },
@@ -10681,10 +10762,14 @@
       "search": "Ada, yapay zekâya, plana veya sahibine göre arayın",
       "noMatch": "Eşleşen hesap yok.",
       "noModel": "Eşleşen model yok.",
+      "empty": "Henüz hesap yok.",
+      "add": "Hesap ekle",
+      "addLine": "Claude, ChatGPT, Gemini ve diğerleri ya da bir API anahtarı",
+      "manage": "Hesapları yönet",
       "groups": {
-        "yours": "Sizin",
+        "yours": "Hesaplarınız",
         "others": "Ekibin",
-        "keys": "Çalışma alanının"
+        "keys": "API anahtarları"
       }
     },
     "order": {
@@ -11291,10 +11376,10 @@
       "agent": "Ajan",
       "repo": "Nerede çalışılacak",
       "repoPlaceholder": "Depo veya proje",
-      "repoSearch": "Arayın ya da sahip/ad veya yeni bir ad yazın",
+      "repoSearch": "Arayın ya da owner/name, deponun adresini veya yeni bir ad yazın",
       "newLocal": "Bilgisayarda yeni proje: {{name}}",
       "useRepo": "{{repo}} kullan",
-      "repoNote": "Sahibi olmayan bir ad, ajanın bilgisayarında GitHub dışında bir proje başlatır.",
+      "repoNote": "owner içermeyen bir ad, yalnızca ajanın bilgisayarında, uzak depo olmadan bir proje oluşturur.",
       "hint": "@ birini oturuma çağırır",
       "start": "Başlat"
     },
@@ -11308,7 +11393,7 @@
       "closeHint": "Listeden kalkar: worktree silinir, dal kalır",
       "failed": "Worktree hazırlanamadı.",
       "retry": "Tekrar dene",
-      "githubAccess": "Bu çalışma alanının bu depo için GitHub erişimi yok. GitHub'ı Ayarlar › Bağlayıcılar bölümünden bağlayın ya da bilgisayardaki bir projede oturum başlatın (yalnızca bir ad)."
+      "githubAccess": "Bu çalışma alanının bu depoya erişimi yok. Deponun bulunduğu yeri (GitHub, GitLab veya Bitbucket) Ayarlar › Bağlayıcılar’dan bağlayın ya da bilgisayardaki bir projede (yalnızca bir ad) oturum başlatın."
     },
     "panel": {
       "label": "Oturum paneli",
@@ -12210,8 +12295,6 @@
     "steered": "{{name}} görev sırasında aldı",
     "stillWorking": "{{name}} hâlâ çalışıyor",
     "inProgress": "sürüyor",
-    "quiet": "{{minutes}} dakikadır yenilik yok",
-    "refresh": "Yenile",
     "stop": "Durdur",
     "stopping": "Durduruluyor…",
     "stopHint": "Görevi durdur · Esc",
@@ -13288,6 +13371,7 @@
       "teamLocked": "Ekibinkileri yalnızca bağlayıcıları yönetenler ekler.",
       "mailLocked": "Bir posta kutusu her zaman onu bağlayan kişinindir.",
       "done": "Ajanların onu yalnızca sen istediğinde kullanır.",
+      "githubDone": "Kod oturumlarında, istediğiniz işin commit’leri, push’ları ve pull request’leri sizin adınıza gider.",
       "worksWhenAsked": "Yalnızca sen istediğinde çalışır.",
       "remove": "Kaldır",
       "removeName": "{{name}} kaldır",
@@ -14051,6 +14135,7 @@
     },
     "label": {
       "git_clone": "Depoyu klonla",
+      "list_repositories": "Depoları listele",
       "create_repository": "Depo oluştur",
       "delete_repository": "Depoyu sil",
       "fork_repository": "Depoyu fork'la",
@@ -14965,6 +15050,19 @@
       "adjust": "Ayarla",
       "ok": "Tamam"
     },
+    "git": {
+      "token": "Erişim belirteci",
+      "address": "Adres",
+      "addressHelp": {
+        "gitlab": "Yalnızca şirketinizin kendi barındırdığı bir GitLab için. Boş bırakılırsa gitlab.com olur.",
+        "git": "Git sunucusunun bulunduğu yer, örneğin https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "api ve write_repository kapsamlarına sahip bir GitLab erişim belirteci (kişisel, grup veya proje). Sunucuda kalır: ajanların bilgisayarlarına hiç gitmez.",
+        "bitbucket": "Depolara ve pull request’lere yazma izni olan bir çalışma alanı veya depo erişim belirteci. Kendi API belirtecinizle, Atlassian e-postanızı, iki nokta üst üste ve belirteci yazın: you@company.com:TOKEN.",
+        "git": "Sunucunun git parolası olarak kabul ettiği belirteç. Kullanıcı adı isterse username:token yazın."
+      }
+    },
     "telegram": {
       "token": "Bot token'ı",
       "steps": "Telegram'da @BotFather'ı açın, /newbot gönderin, bir ad ve “bot” ile biten bir kullanıcı adı seçin, sonra verdiği token'ı buraya yapıştırın. Bir grubu okumak için botu gruba ekleyin. Bir kanalda paylaşmak için orada yönetici yapın."
@@ -15599,7 +15697,15 @@
       "linkGone": "Bu bağlantı artık beklemiyor: 10 dakika sonra süresi doldu ya da iptal edildi. Yeniden başlamak için yeni bir kod oluşturun.",
       "taken": "Bu gönderen başka bir agentes.chat hesabına bağlı. Önce oradaki bağlantıyı kaldırın, sonra yeni bir kod gönderin.",
       "undoGone": "Bu geri alma bağlantısı zaten kullanılmış ya da süresi dolmuş. Bunun yerine bildirim ayarlarınızdan bağlantıyı kaldırın.",
-      "codeGone": "Bu kod yanlış, kullanılmış ya da 10 dakika sonra süresi dolmuş. Yeni bir kod oluşturup tekrar gönderin."
+      "codeGone": "Bu kod yanlış, kullanılmış ya da 10 dakika sonra süresi dolmuş. Yeni bir kod oluşturup tekrar gönderin.",
+      "pageGone": "Bu bağlantının süresi doldu. Sohbette asistanından yenisini iste.",
+      "pageElsewhere": "Bu bağlantı başka bir cihazda açıldı. Sohbette asistanından yenisini iste.",
+      "pinWrong": "PIN yanlış. Kalan deneme: {{left}}.",
+      "pinLocked": "Çok fazla yanlış PIN. Daha sonra tekrar dene ya da uygulamada yeni bir PIN seç.",
+      "pinShape": "PIN'in 6 hanelidir.",
+      "pinResetGone": "Bu bağlantı zaten kullanıldı ya da süresi doldu. “PIN'ini mi unuttun?” ile yenisini iste.",
+      "pinUnset": "Önce PIN'ini seç. PIN'i oturum açtığın uygulamada seç.",
+      "emailUnverified": "E-posta adresin henüz doğrulanmadı. PIN'ini uygulamada seç."
     },
     "wallpaper": {
       "notYours": "Bu fotoğraf sizin değil.",
@@ -15646,6 +15752,8 @@
       "deleteName": "Silmek için kanalın adını yazın.",
       "generalKept": "#general silinemez.",
       "generalStays": "Herkes #general kanalında kalır.",
+      "leadChannelOnly": "Yalnızca kanalların sorumlu ajanı olur.",
+      "leadNotMember": "Sorumlu ajan kanalda olmalı.",
       "mcpUnreachable": "MCP sunucusuna bağlanılamadı. Adresini kontrol edip tekrar deneyin.",
       "notApproved": "Bu hizmet henüz agentes.chat için onay vermedi.",
       "alreadyInvited": "Bu kişinin zaten bir daveti var.",
@@ -15920,6 +16028,7 @@
       "tooLarge": "Bu dosya boyut sınırına ulaştı. Önce içinden bir şey kaldırın.",
       "assetTooLarge": "Görsel, görsel başına sınır olan {{max}} MB'ı aşıyor.",
       "assetType": "Bu dosyaya yalnızca görsel eklenebilir: PNG, JPEG, WebP veya GIF.",
+      "fontInvalid": "Bu yazı tipi kullanılamıyor: dosya, uygulamanın okuyabildiği bir yazı tipi değil. Bir .ttf, .otf veya .woff dosyası deneyin.",
       "liveOnly": "Bu dosya bulunduğu yerde düzenlenir, bu yüzden bütünüyle başkasıyla değiştirilemez."
     },
     "office": {
@@ -17750,7 +17859,7 @@
     "telemetry": {
       "title": "Kullanım istatistikleri",
       "label": "agentes.chat'e anonim kullanım istatistikleri gönder",
-      "help": "Kişi ve ajan sayısı, makine boyutları, kullanılan yapay zeka token'ları ve ajanların tarayıcılarının ne kadar veri gönderip aldığı gibi sayılar. Asla mesajlar, dosyalar, adlar ya da siteler değil.",
+      "help": "Kişi ve ajan sayısı, makine boyutları, kullanılan yapay zeka token'ları, ajanların tarayıcılarının ne kadar veri gönderip aldığı ve uygulamaların ne kadar hızlı açılıp çalıştığı gibi sayılar. Asla mesajlar, dosyalar, adlar ya da siteler değil.",
       "envOff": "Bu sunucunun ayarlarında kapatıldı (TELEMETRY=off).",
       "envOffDesktop": "Bu sunucunun bilgisayarındaki agentes.chat uygulamasında kapatıldı (Tercihler › Sunucular).",
       "envOffHere": "Bu bilgisayardaki agentes.chat uygulamasında kapatıldı.",
@@ -17826,7 +17935,6 @@
     "removeUsedNone_one": "{{agents}} bu anahtarla düşünüyor ve başka bir şeyi yok. Anahtar gidince sen başka bir yapay zekâ bağlayana kadar yanıt vermez.",
     "removeUsedNone_other": "{{agents}} bu anahtarla düşünüyor ve başka bir şeyleri yok. Anahtar gidince sen başka bir yapay zekâ bağlayana kadar yanıt vermezler.",
     "noKeys": "API anahtarıyla doğrudan sağlayıcıya ödeme yapar ve modelleri seçersiniz.",
-    "noKeysTitle": "Kendi yapay zeka anahtarınızı getirin",
     "platformAvailable": "Bu sunucunun Claude anahtarı da kullanılabilir.",
     "usageTitle": "Türe göre API harcaması",
     "usageAgentLine": "{{spent}} / {{budget}}",
@@ -18564,6 +18672,7 @@
         "runningCommandAny": "Bir komut çalıştırdı",
         "usingScreen": "Ekranı kullandı",
         "cloningRepo": "Bir depoyu klonladı",
+        "listingRepos": "Depoları listeledi",
         "openingPullRequest": "Bir pull request açtı",
         "handingOff": "Bir rapor teslim etti",
         "recordingFindings": "Bulguları not etti",
@@ -18685,6 +18794,7 @@
       "runningCommandAny": "komut çalıştırıyor",
       "usingScreen": "ekranı kullanıyor",
       "cloningRepo": "depo klonluyor",
+      "listingRepos": "depoları listeliyor",
       "openingPullRequest": "pull request açıyor",
       "handingOff": "rapor teslim ediyor",
       "recordingFindings": "bulguları not ediyor",
@@ -18895,6 +19005,8 @@
       "surfaceUnlinked": "{{surface}} kimliği değiştiği için ayrıldı. Sensen Ayarlar'dan yeniden bağla.",
       "surfaceVoiceDropped": "O sesli mesajı anlayamadım. Tekrar gönderebilir ya da yazabilir misin?",
       "done": "Bitti.",
+      "no_reply": "Yapay zeka yanıt yazmadan sırasını bitirdi. Değiştirdikleri aşağıda. Yanıtını yeniden isteyin.",
+      "no_reply_limit": "Yapay zeka yanıt yazmadan önce çıktı sınırına ulaştı. Değiştirdikleri aşağıda. Yanıtını yeniden isteyin.",
       "stretch_paused_runs_one": "{{agents}} devam etmeden önce size danışmak için durdu",
       "stretch_paused_runs_other": "{{agents}} devam etmeden önce size danışmak için durdu",
       "stretch_paused_spend_one": "{{agents}} size danışmak için durdu · aylık bütçenin %{{percent}} kadarını kullandı",

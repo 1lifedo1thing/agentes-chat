@@ -2399,10 +2399,50 @@
       "gone": "Tautan pembatalan ini sudah tidak berfungsi",
       "sender": "Pengirim itu"
     },
+    "page": {
+      "opening": "Membuka halaman",
+      "gone": "Tautan ini sudah tidak berlaku",
+      "lead": "Ketik PIN kamu untuk menyetujuinya.",
+      "leadFirst": "Pilih PIN 6 digit untuk menyetujuinya. PIN ini mengonfirmasi tindakan seperti ini dari {{surface}}.",
+      "choosePin": "Pilih PIN",
+      "repeatPin": "Ketik sekali lagi",
+      "pin": "PIN kamu",
+      "mismatch": "Kedua PIN tidak sama. Ketik ulang yang kedua.",
+      "approve": "Setujui",
+      "refuse": "Tolak",
+      "forgot": "Lupa PIN?",
+      "emailed": "Kami sudah mengirim tautan lewat email. Pilih PIN kamu di sana, lalu kembali ke halaman ini.",
+      "notYours": "{{who}} yang memutuskan ini di aplikasi.",
+      "notYoursSomeone": "Orang yang bisa menyetujuinya memutuskan ini di aplikasi.",
+      "approved": "Disetujui",
+      "refused": "Ditolak",
+      "expired": "Permintaan ini sudah kedaluwarsa",
+      "back": "Kembali ke {{surface}}. Asistenmu melanjutkan di sana.",
+      "setFirst": "Pilih PIN kamu dulu",
+      "setFirstLead": "Menyetujui dari {{surface}} butuh PIN, dan tautan dari chat tidak bisa memilihnya. Pilih di aplikasi dalam keadaan masuk, lalu kembali ke halaman ini.",
+      "setFirstLeadEmail": "Menyetujui dari {{surface}} butuh PIN, dan tautan dari chat tidak bisa memilihnya. Pilih di aplikasi dalam keadaan masuk, atau lewat tautan yang kami kirim ke email kamu. Lalu kembali ke halaman ini.",
+      "openApp": "Pilih di aplikasi",
+      "emailMe": "Kirim tautan ke email saya"
+    },
+    "pinReset": {
+      "title": "Pilih PIN kamu",
+      "lead": "Enam digit. Kamu akan mengetiknya untuk menyetujui tindakan yang kamu minta dari aplikasi chat.",
+      "button": "Simpan PIN saya",
+      "done": "PIN tersimpan",
+      "doneLead": "Kembali ke halaman dari {{surface}} dan setujui dengan PIN itu.",
+      "gone": "Tautan ini sudah tidak berlaku"
+    },
     "via": "via {{surface}}",
     "viaTip": "Dikirim oleh {{person}} di {{surface}}",
     "forwarded": "diteruskan via {{surface}}",
-    "forwardedTip": "{{person}} meneruskan ini dari {{surface}}. Kata-kata ini milik orang lain."
+    "forwardedTip": "{{person}} meneruskan ini dari {{surface}}. Kata-kata ini milik orang lain.",
+    "pin": {
+      "set": "Atur PIN",
+      "change": "Ganti PIN",
+      "title": "PIN {{surface}} kamu",
+      "text": "Enam digit yang kamu ketik untuk menyetujui tindakan yang kamu minta dari {{surface}}. PIN ini tidak pernah dikirim di chat.",
+      "save": "Simpan PIN"
+    }
   },
   "team": {
     "title": "Tim",
@@ -2916,7 +2956,6 @@
       "mineHelp": "Percakapanmu dengan {{name}} berpikir dengan paketmu atau paket yang dibagikan kepadamu, dan hanya percakapanmu.",
       "connectMine": "Hubungkan paket saya",
       "useWorkspace": "Pakai milik workspace",
-      "useMine": "Pakai paket saya",
       "mineYours": "paket kamu",
       "mineOf": "paket {{owner}}",
       "mineKey": "kunci workspace",
@@ -4128,6 +4167,8 @@
     "aloneLine": "Ikut percakapan atas inisiatif sendiri",
     "aloneLine_female": "Ikut percakapan atas inisiatif sendiri",
     "mentionLine": "Menunggu seseorang menulis @{{handle}}",
+    "lead": "Penanggung jawab kanal",
+    "leadHelp": "Menerima yang disampaikan ke seluruh tim dan menjaga pekerjaan terus berjalan di antara agen",
     "readOnly": "Hanya pembuat kanal dan admin yang bisa mengubah anggota.",
     "people": "Orang",
     "agents": "Agen"
@@ -5744,6 +5785,18 @@
           "missed_other": "{{count}} agen tidak berubah."
         },
         "add": {
+          "pickTitle": "Tambah akun",
+          "pickFoot": "Kamu masuk di halaman AI itu sendiri.",
+          "have_other": "Kamu punya {{count}}",
+          "others": "Paket lain",
+          "key": "Kunci API",
+          "keyLine": "Bayar sesuai pemakaian",
+          "titlePlan": "Tambah {{plan}}",
+          "againTitle": "Masuk lagi ke {{brand}}",
+          "haveNote": "Kamu sudah punya {{accounts}} di sini. Untuk masuk dengan akun lain, keluar dulu dari {{brand}} di browser, atau salin tautannya dan buka di jendela pribadi.",
+          "againNote": "Masuk lagi sebagai {{account}}. {{name}} kembali berpikir dengannya begitu kamu selesai.",
+          "footSignIn": "Kamu mengetik kata sandi di halaman {{brand}}.",
+          "footKey": "Kuncinya dikirim terenkripsi langsung ke {{computer}}.",
           "title": {
             "claude_code": "Tambah akun Claude",
             "codex": "Tambah akun ChatGPT",
@@ -5825,32 +5878,22 @@
           "title": "Siapa yang berpikir untuk {{name}}",
           "only": "Hanya untuk {{name}}.",
           "more": "Opsi lainnya",
-          "switch": "Ganti akun",
-          "switchTitle": "Ganti akun {{name}}",
-          "inUse": "Sedang dipakai",
-          "switchTo": "Ganti ke {{label}}",
-          "teamTitle": "Ganti akun tim",
-          "teamAria": "Untuk siapa",
-          "justOne": "Hanya {{name}}",
-          "everyone": "Semua di akun ini",
-          "target": "Ganti ke",
-          "switchMany_other": "Ganti {{count}} agen",
-          "limitTitle": "Akun {{name}} mencapai batas",
           "limitBack": "{{account}} kembali {{when}}",
           "limitSoon": "{{account}} kembali saat paketnya diperbarui",
           "limitHelp": "Sementara itu {{name}} bisa berpikir dengan akun lain yang sudah terhubung.",
           "fullWait": "Di akun ini {{name}} menunggu sampai paketnya diperbarui.",
-          "seeUsage": "Lihat penggunaan",
-          "wait": "Tunggu",
           "modelTitle": "Model {{name}}",
           "moreTitle": "Opsi lainnya untuk {{name}}",
           "computer": "Komputer",
-          "doneTitle": "Beres",
-          "doneSub": "Yang sedang berjalan lanjut dengan akun baru.",
           "finish": "Selesai",
           "undo": "Batalkan",
           "undone": "Kembali seperti semula.",
-          "missed_other": "{{names}} tetap memakai akun sebelumnya."
+          "missed_other": "{{names}} tetap memakai akun sebelumnya.",
+          "added": "Akun ditambahkan. {{name}} sekarang berpikir dengan {{account}}.",
+          "alsoUses_other": "{{names}} juga berpikir dengan {{account}}.",
+          "alsoSwitch": "Ganti juga",
+          "signedOut": "{{account}} keluar dari {{brand}}. {{name}} tidak akan menjawab sampai kamu masuk lagi atau memilih akun lain.",
+          "empty": "{{name}} belum punya akun AI untuk berpikir."
         }
       },
       "computer": {
@@ -6183,7 +6226,8 @@
         "stuck": "Berhenti karena macet.",
         "brain_interrupted": "AI berhenti sebelum selesai.",
         "brain_unavailable": "AI di komputernya tidak bisa menjawab. Periksa komputernya lalu minta lagi.",
-        "empty_reply": "Model tidak mengembalikan apa pun.",
+        "empty_reply": "AI mengakhiri gilirannya tanpa menulis balasan. Coba lagi, atau pilih model lain di pengaturan agen.",
+        "empty_reply_limit": "AI mencapai batas keluarannya sebelum menulis balasan. Coba lagi, atau pilih model lain di pengaturan agen.",
         "model_refused": "Model menolak menjawab.",
         "agent_archived": "Agen sudah diarsipkan.",
         "code_session_unavailable": "Worktree sesi tidak tersedia di komputer.",
@@ -7813,6 +7857,38 @@
       "label": "Mengedit kontak Vault",
       "description": "Menyimpan dan memperbarui kontak di Vault, mengubah nama pengguna login tersimpan atau deskripsi, membuat kata sandi untuk akun yang ia buat, dan menghapus yang ia simpan."
     },
+    "gitlab_git_read": {
+      "label": "Kloning repositori (git)",
+      "description": "Kloning dan perbarui repositori di komputer agen dengan git, lewat proxy kami. Token GitLab tidak pernah masuk ke mesin itu."
+    },
+    "gitlab_git_write": {
+      "label": "Push branch (git push)",
+      "description": "Push commit ke branch agentes/{agent}/…: tidak pernah ke branch default, tanpa force push, tanpa tag. Menghapus branch dan push ke branch orang lain minta persetujuan dulu."
+    },
+    "gitlab_pr_write": {
+      "label": "Buka merge request",
+      "description": "Buka merge request dan beri komentar."
+    },
+    "bitbucket_git_read": {
+      "label": "Kloning repositori (git)",
+      "description": "Kloning dan perbarui repositori di komputer agen dengan git, lewat proxy kami. Token Bitbucket tidak pernah masuk ke mesin itu."
+    },
+    "bitbucket_git_write": {
+      "label": "Push branch (git push)",
+      "description": "Push commit ke branch agentes/{agent}/…: tidak pernah ke branch default, tanpa force push, tanpa tag. Menghapus branch dan push ke branch orang lain minta persetujuan dulu."
+    },
+    "bitbucket_pr_write": {
+      "label": "Buka pull request",
+      "description": "Buka pull request dan beri komentar."
+    },
+    "git_git_read": {
+      "label": "Kloning repositori (git)",
+      "description": "Kloning dan perbarui repositori di komputer agen dengan git, lewat proxy kami. Token Git tidak pernah masuk ke mesin itu."
+    },
+    "git_git_write": {
+      "label": "Push branch (git push)",
+      "description": "Push commit ke branch agentes/{agent}/…: tidak pernah ke branch default, tanpa force push, tanpa tag. Menghapus branch dan push ke branch orang lain minta persetujuan dulu."
+    },
     "github_git_read": {
       "label": "Kloning repositori (git)",
       "description": "Kloning dan perbarui repositori di komputer agen dengan git, lewat proxy kami. Token GitHub tidak pernah masuk ke mesin itu."
@@ -8889,6 +8965,7 @@
       "provider_unavailable": "Modelnya tidak menjawab",
       "gave_up": "Modelnya tidak menjawab setelah beberapa kali dicoba",
       "empty_reply": "Modelnya tidak menjawab apa-apa",
+      "empty_reply_limit": "Model mencapai batas keluarannya sebelum menjawab",
       "model_refused": "Modelnya menolak menjawab",
       "runner_outdated": "Program di komputer perlu diperbarui",
       "too_many_tool_calls": "Melewati batas langkah untuk satu proses",
@@ -10355,6 +10432,8 @@
     "of": "milik {{name}}",
     "moreSpeed": "Kecepatan dan jendela konteks",
     "whoThinks": "Siapa yang berpikir",
+    "thinks_other": "{{names}} berpikir dengannya",
+    "thinksNone": "Tidak ada agen yang berpikir dengannya",
     "bulk": {
       "sub": "Pilih AI-nya, lalu agen yang memakainya."
     },
@@ -10364,10 +10443,14 @@
       "search": "Cari menurut nama, AI, paket, atau pemilik",
       "noMatch": "Tidak ada akun yang cocok.",
       "noModel": "Tidak ada model yang cocok.",
+      "empty": "Belum ada akun.",
+      "add": "Tambah akun",
+      "addLine": "Claude, ChatGPT, Gemini, dan lainnya, atau kunci API",
+      "manage": "Kelola akun",
       "groups": {
-        "yours": "Milikmu",
+        "yours": "Akunmu",
         "others": "Milik tim",
-        "keys": "Milik ruang kerja"
+        "keys": "Kunci API"
       }
     },
     "order": {
@@ -10964,10 +11047,10 @@
       "agent": "Agen",
       "repo": "Di mana bekerja",
       "repoPlaceholder": "Repositori atau proyek",
-      "repoSearch": "Cari, atau ketik owner/name atau nama baru",
+      "repoSearch": "Cari, atau ketik owner/name, alamat repositori, atau nama baru",
       "newLocal": "Proyek baru di komputer: {{name}}",
       "useRepo": "Pakai {{repo}}",
-      "repoNote": "Nama tanpa owner membuat proyek di komputer agen, di luar GitHub.",
+      "repoNote": "Nama tanpa owner membuat proyek hanya di komputer agen, tanpa repositori remote.",
       "hint": "@ memanggil seseorang ke sesi",
       "start": "Mulai"
     },
@@ -10981,7 +11064,7 @@
       "closeHint": "Sesi keluar dari daftar: worktree dihapus, branch tetap ada",
       "failed": "Worktree tidak bisa disiapkan.",
       "retry": "Coba lagi",
-      "githubAccess": "Ruang kerja ini tidak punya akses GitHub untuk repositori ini. Hubungkan GitHub di Pengaturan › Konektor, atau mulai sesi di proyek di komputer (cukup sebuah nama)."
+      "githubAccess": "Workspace ini tidak punya akses ke repositori ini. Hubungkan tempat repositori itu berada (GitHub, GitLab, atau Bitbucket) di Pengaturan › Konektor, atau mulai sesi pada proyek di komputer (cukup sebuah nama)."
     },
     "panel": {
       "label": "Panel sesi",
@@ -11834,8 +11917,6 @@
     "steered": "{{name}} menerimanya saat sedang mengerjakan tugas",
     "stillWorking": "{{name}} masih bekerja",
     "inProgress": "sedang berjalan",
-    "quiet": "tidak ada kabar selama {{minutes}} mnt",
-    "refresh": "Muat ulang",
     "stop": "Hentikan",
     "stopping": "Menghentikan…",
     "stopHint": "Hentikan tugas · Esc",
@@ -12877,6 +12958,7 @@
       "teamLocked": "Hanya orang yang mengelola konektor yang menambahkan milik tim.",
       "mailLocked": "Kotak surat selalu milik orang yang menghubungkannya.",
       "done": "Agenmu hanya memakainya saat kamu meminta.",
+      "githubDone": "Di sesi kode, commit, push, dan pull request untuk hal yang Anda minta dikirim atas nama Anda.",
       "worksWhenAsked": "Hanya berfungsi saat kamu meminta.",
       "remove": "Hapus",
       "removeName": "Hapus {{name}}",
@@ -13635,6 +13717,7 @@
     },
     "label": {
       "git_clone": "Clone repositori",
+      "list_repositories": "Daftar repositori",
       "create_repository": "Buat repositori",
       "delete_repository": "Hapus repositori",
       "fork_repository": "Fork repositori",
@@ -14528,6 +14611,19 @@
       "adjust": "Sesuaikan",
       "ok": "Selesai"
     },
+    "git": {
+      "token": "Token akses",
+      "address": "Alamat",
+      "addressHelp": {
+        "gitlab": "Hanya untuk GitLab yang dijalankan sendiri oleh perusahaan Anda. Jika kosong, berarti gitlab.com.",
+        "git": "Lokasi server git, misalnya https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "Token akses GitLab (pribadi, grup, atau proyek) dengan cakupan api dan write_repository. Token tetap di server: komputer agen tidak pernah menerimanya.",
+        "bitbucket": "Token akses workspace atau repositori dengan izin tulis repositori dan pull request. Dengan token API Anda sendiri, ketik email Atlassian Anda, titik dua, lalu tokennya: you@company.com:TOKEN.",
+        "git": "Token yang diterima server sebagai kata sandi git. Jika server meminta nama pengguna, ketik username:token."
+      }
+    },
     "telegram": {
       "token": "Token bot",
       "steps": "Di Telegram, buka @BotFather, kirim /newbot, pilih nama dan username yang berakhiran “bot”, lalu tempel token yang diberikannya di sini. Untuk membaca grup, tambahkan bot ke grup itu. Untuk memposting di kanal, jadikan admin di sana."
@@ -15145,7 +15241,15 @@
       "linkGone": "Tautan ini tidak lagi menunggu: kedaluwarsa setelah 10 menit atau dibatalkan. Buat kode baru untuk mulai lagi.",
       "taken": "Pengirim itu tertaut ke akun agentes.chat lain. Lepaskan tautannya di sana, lalu kirim kode baru.",
       "undoGone": "Tautan pembatalan ini sudah dipakai atau kedaluwarsa. Lepaskan tautan lewat pengaturan notifikasimu saja.",
-      "codeGone": "Kode ini salah, sudah dipakai, atau kedaluwarsa setelah 10 menit. Buat kode baru dan kirim lagi."
+      "codeGone": "Kode ini salah, sudah dipakai, atau kedaluwarsa setelah 10 menit. Buat kode baru dan kirim lagi.",
+      "pageGone": "Tautan ini sudah kedaluwarsa. Minta yang baru ke asistenmu di chat.",
+      "pageElsewhere": "Tautan ini sudah dibuka di perangkat lain. Minta yang baru ke asistenmu di chat.",
+      "pinWrong": "PIN salah. Sisa percobaan: {{left}}.",
+      "pinLocked": "Terlalu banyak PIN salah. Coba lagi nanti, atau pilih PIN baru di aplikasi.",
+      "pinShape": "PIN kamu terdiri dari 6 digit.",
+      "pinResetGone": "Tautan ini sudah dipakai atau kedaluwarsa. Minta yang baru lewat “Lupa PIN?”.",
+      "pinUnset": "Pilih PIN kamu dulu. Pilih di aplikasi dalam keadaan masuk.",
+      "emailUnverified": "Alamat email kamu belum diverifikasi. Pilih PIN kamu di aplikasi saja."
     },
     "wallpaper": {
       "notYours": "Foto itu bukan milikmu.",
@@ -15192,6 +15296,8 @@
       "deleteName": "Ketik nama kanal untuk menghapusnya.",
       "generalKept": "#general tidak bisa dihapus.",
       "generalStays": "Semua orang tetap di #general.",
+      "leadChannelOnly": "Hanya kanal yang punya agen penanggung jawab.",
+      "leadNotMember": "Agen penanggung jawab harus ada di kanal.",
       "mcpUnreachable": "Tidak bisa terhubung ke server MCP. Periksa alamatnya dan coba lagi.",
       "notApproved": "Layanan ini belum menyetujui agentes.chat.",
       "alreadyInvited": "Orang ini sudah punya undangan.",
@@ -15466,6 +15572,7 @@
       "tooLarge": "File ini sudah mencapai batas ukurannya. Hapus sesuatu darinya dulu.",
       "assetTooLarge": "Gambar ini lebih dari {{max}} MB, batas untuk setiap gambar.",
       "assetType": "Hanya gambar yang bisa masuk ke file ini: PNG, JPEG, WebP, atau GIF.",
+      "fontInvalid": "Font ini tidak bisa dipakai: file ini bukan font yang bisa dibaca aplikasi. Coba file .ttf, .otf, atau .woff.",
       "liveOnly": "File ini diubah langsung di tempatnya, jadi tidak bisa diganti seluruhnya."
     },
     "office": {
@@ -17276,7 +17383,7 @@
     "telemetry": {
       "title": "Statistik pemakaian",
       "label": "Kirim statistik pemakaian anonim ke agentes.chat",
-      "help": "Angka seperti jumlah orang, agen, ukuran mesin, token AI yang terpakai, dan berapa banyak data yang dikirim dan diterima browser agen. Tidak pernah pesan, file, nama, atau situs.",
+      "help": "Angka seperti jumlah orang, agen, ukuran mesin, token AI yang terpakai, berapa banyak data yang dikirim dan diterima browser agen, dan seberapa cepat aplikasi terbuka dan berjalan. Tidak pernah pesan, file, nama, atau situs.",
       "envOff": "Dimatikan di pengaturan server ini (TELEMETRY=off).",
       "envOffDesktop": "Dimatikan di aplikasi agentes.chat di komputer server ini (Preferensi › Server).",
       "envOffHere": "Dimatikan di aplikasi agentes.chat di komputer ini.",
@@ -17347,7 +17454,6 @@
     "removeUsedOther_other": "{{agents}} berpikir dengan kunci ini. Setelah kunci hilang, mereka pindah ke kunci lain, atau meminta AI jika tidak ada yang cocok dengan modelnya.",
     "removeUsedNone_other": "{{agents}} berpikir dengan kunci ini dan tidak punya yang lain. Setelah kunci hilang, mereka berhenti menjawab sampai kamu menghubungkan AI lain.",
     "noKeys": "Dengan kunci API, kamu membayar langsung ke penyedia dan memilih modelnya.",
-    "noKeysTitle": "Bawa kunci AI-mu sendiri",
     "platformAvailable": "Kunci Claude server ini juga tersedia.",
     "usageTitle": "Pengeluaran API per jenis",
     "usageAgentLine": "{{spent}} dari {{budget}}",
@@ -18076,6 +18182,7 @@
         "runningCommandAny": "Menjalankan perintah",
         "usingScreen": "Memakai layar",
         "cloningRepo": "Meng-clone repositori",
+        "listingRepos": "Menampilkan daftar repositori",
         "openingPullRequest": "Membuka pull request",
         "handingOff": "Mengirim laporan",
         "recordingFindings": "Mencatat temuan",
@@ -18197,6 +18304,7 @@
       "runningCommandAny": "menjalankan perintah",
       "usingScreen": "memakai layar",
       "cloningRepo": "meng-clone repositori",
+      "listingRepos": "menampilkan daftar repositori",
       "openingPullRequest": "membuka pull request",
       "handingOff": "mengirim laporan",
       "recordingFindings": "mencatat temuan",
@@ -18406,6 +18514,8 @@
       "surfaceUnlinked": "Tautan {{surface}} diputus karena identitasnya berubah. Tautkan lagi di Pengaturan kalau itu kamu.",
       "surfaceVoiceDropped": "Aku tidak bisa menangkap pesan suara itu. Bisa kirim lagi atau ketik saja?",
       "done": "Selesai.",
+      "no_reply": "AI mengakhiri gilirannya tanpa menulis balasan. Yang diubahnya ada di bawah. Minta lagi jawabannya.",
+      "no_reply_limit": "AI mencapai batas keluarannya sebelum menulis balasan. Yang diubahnya ada di bawah. Minta lagi jawabannya.",
       "stretch_paused_runs_other": "{{agents}} berhenti sebentar untuk memastikan denganmu sebelum lanjut",
       "stretch_paused_spend_other": "{{agents}} berhenti untuk memastikan denganmu · memakai {{percent}}% anggaran bulan ini",
       "stretch_paused_spend_cost_other": "{{agents}} berhenti untuk memastikan denganmu · memakai {{amount}} ({{percent}}% anggaran bulan ini)",

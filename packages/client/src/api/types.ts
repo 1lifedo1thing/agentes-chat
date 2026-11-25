@@ -25,14 +25,17 @@ export interface Health {
  * milliseconds but the heap (bytes) and the counts.
  */
 export interface ClientVitalsReport {
-  platform: "ios" | "android" | "web";
-  /** From the app's start to the launch splash leaving. */
+  /** The desktop app reports as its system (`macos`, `windows`, `linux`): each one's web view is its own. */
+  platform: "ios" | "android" | "web" | "macos" | "windows" | "linux";
+  /** From the app's start to its first screen: the launch splash leaving, a page's first paint. */
   coldStartMs?: number;
   /** From the app's start to its first list drawn with rows. */
   firstRowsMs?: number;
   jsLagP95Ms?: number;
   jsLagMaxMs?: number;
   heapBytes?: number;
+  /** The desktop app's: the memory of the processes behind its main window's web view. */
+  webviewBytes?: number;
   /** Reads (GETs) in the 10 s after the app came back to the front. */
   getsPerReturn?: number;
   reconnects?: number;
@@ -364,6 +367,8 @@ export interface SurfaceLink {
   confirmedAt: string | null;
   /** Pending only: when it stops counting. */
   expiresAt: string | null;
+  /** A PIN confirms actions asked from the surface (ADR 0226). */
+  pinSet: boolean;
 }
 
 /** `GET /me/surface-links`: `allowed`, never `AuthConfig.surface`, decides whether the apps offer linking. */
@@ -382,6 +387,36 @@ export interface SurfaceLinkCode {
   /** Opens the surface with the code typed. */
   openUrl: string;
   expiresAt: string;
+}
+
+/** A page the outside chat surface linked to (ADR 0226): one action to confirm with the person's PIN. */
+export interface SurfacePage {
+  kind: "confirm" | "screen" | "control";
+  /** When the page stops opening. */
+  expiresAt: string;
+  surface: string;
+  /** The approval's workspace: its notification settings choose the PIN in the app. */
+  orgId: string;
+  /**
+   * `set` false: approving waits until the PIN is chosen somewhere trusted. `canChoose`: none set and this browser is
+   * signed in as the person, so approving here chooses it. `lockedUntil`: wrong ones lock approving until then.
+   * `resetByEmail`: the server can email a link to choose it (none yet, or forgotten).
+   */
+  pin: { set: boolean; lockedUntil: string | null; canChoose: boolean; resetByEmail: boolean };
+  approval: {
+    id: string;
+    tool: string;
+    params: Record<string, unknown>;
+    title: string;
+    detail: string;
+    why: string | null;
+    kind: string;
+    titleParams: Record<string, string | number | boolean>;
+    status: string;
+    canDecide: boolean;
+    /** Who decides it, in words, when it isn't the person. */
+    approverLabel: string | null;
+  } | null;
 }
 
 export interface User {
@@ -1476,6 +1511,8 @@ export interface Channel {
   position?: number;
   /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). Regular channels only. */
   replyInThreads?: boolean;
+  /** The agent responsible for the channel, one of its member agents; null or absent: none. */
+  leadAgentId?: string | null;
   /**
    * Channel list only (`chat.channels`): messages since you last read it
    * (since you joined, if never), not yours; a thread reply counts only in a
@@ -1516,6 +1553,8 @@ export interface ChannelInput {
   audienceRoleIds?: string[];
   /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). */
   replyInThreads?: boolean;
+  /** The agent responsible for the channel, one of its member agents; null: none. */
+  leadAgentId?: string | null;
 }
 
 /** A `#channel` link's card (`chat.card`): what the channel is and who is in it. */
@@ -2062,7 +2101,11 @@ export type ChannelEvent =
       consultedAgentId: string;
       kind?: "note";
     }
-  /** That question, or that work (`note`), came back (answered, expired or failed). */
+  /**
+   * That question, or that work (`note`), came back (answered, expired or failed). `goesOn: false`: work whose result
+   * woke nobody, so the agent that handed it isn't writing; `stillOutAgentId`: a colleague still at work on another
+   * part that turn handed off.
+   */
   | {
       type: "agent.consulted";
       channelId: string;
@@ -2072,6 +2115,8 @@ export type ChannelEvent =
       consultedAgentId: string;
       status: ConsultationStatus;
       kind?: "note";
+      goesOn?: false;
+      stillOutAgentId?: string;
     }
   /**
    * A question or a hand-off still out changed without closing (the consulted agent waits on a person, is back at
@@ -2462,6 +2507,8 @@ export interface ConnectorDef {
   soon?: boolean;
   /** A connector of ours that needs a developer app this self-hosted server hasn't registered (ADR 0170). */
   needsApp?: boolean;
+  /** A git host at an address of one's own: the connect form asks for it (`required`) or offers it. */
+  address?: "optional" | "required";
   /** Connects through Composio (ADR 0107): its page signs in. Unavailable on a server without Composio. */
   via?: "composio";
   /** Where it connects, by the way this server picked (a `remote_mcp` entry's address). */
@@ -2547,7 +2594,7 @@ export interface GitHubAppInfo {
 
 /** A repository the organization's GitHub reaches. */
 export interface GitHubRepository {
-  /** `owner/name`. */
+  /** `owner/name`; on another git host, with the host first (`gitlab:group/project`). */
   fullName: string;
   owner: string;
   name: string;
@@ -2558,8 +2605,22 @@ export interface GitHubRepository {
 /** The repositories the organization's GitHub reaches (its connection and the app's installations), by account. */
 export interface GitHubRepositories {
   connected: boolean;
-  accounts: { login: string; type: string; repositories: GitHubRepository[] }[];
+  accounts: GitHostAccount[];
+  /** What the organization's other git hosts reach (GitLab, Bitbucket), by group or workspace. */
+  elsewhere?: GitHostAccount[];
   truncated: boolean;
+}
+
+/** An account, group or workspace of a git host and its repositories. */
+export interface GitHostAccount {
+  /** `github`, `gitlab`, `bitbucket`; absent from an older server: GitHub. */
+  host?: string;
+  hostLabel?: string;
+  /** What its repositories' names start with, before the last slash (`acme`, `gitlab:acme/web`). */
+  prefix?: string;
+  login: string;
+  type: string;
+  repositories: GitHubRepository[];
 }
 
 /** The organizations the GitHub connection reaches now (`null`: GitHub didn't answer) and GitHub's page to grant more. */
@@ -3983,6 +4044,14 @@ export interface ArtifactFileContent {
   /** A picture's own size (pixels), when the server read it: its box has its proportions before it loads. */
   width?: number;
   height?: number;
+  /** An audio file's wave and length, once an app measured it. */
+  wave?: FileWave;
+}
+
+/** An audio file's wave (0–1 per bar) and its length. */
+export interface FileWave {
+  peaks: number[];
+  durationMs: number;
 }
 
 export interface ArtifactAuthor {
