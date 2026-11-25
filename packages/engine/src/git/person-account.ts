@@ -83,6 +83,9 @@ export async function personAccountOfRun(
 export const onSessionRepo = (account: PersonAccount, repo: string) =>
   account.repo.toLowerCase() === repo.toLowerCase();
 
+/** More runs than this at once in one session is nothing we tell apart: the workspace's. */
+const LIVE_RUNS = 6;
+
 /**
  * The account a push goes as: every ref it updates is the branch of one code session of this agent on this
  * repository, and a person is behind the run working in that session now. The proxy's credential names the agent
@@ -109,7 +112,7 @@ export async function personAccountOfPush(
     )
     .limit(1);
   if (!session) return null;
-  const [run] = await db
+  const live = await db
     .select({ id: agentRuns.id })
     .from(agentRuns)
     .where(
@@ -121,8 +124,15 @@ export async function personAccountOfPush(
       ),
     )
     .orderBy(desc(agentRuns.createdAt))
-    .limit(1);
-  const account = run ? await personAccountOfRun(db, push.orgId, run.id) : null;
+    .limit(LIVE_RUNS);
+  const [run] = live;
+  if (!run || live.length === LIVE_RUNS) return null;
+  // The push names no run. With more than one working in the session, it is a person's only when the same person is
+  // behind every one of them: otherwise one's work could leave with another's account, and it goes as the workspace.
+  const behindEach = await Promise.all(live.map((r) => runAuthorityById(db, push.orgId, r.id)));
+  const people = new Set(behindEach.map((a) => (a.kind === "person" ? a.personId : "")));
+  if (people.size !== 1 || people.has("")) return null;
+  const account = await personAccountOfRun(db, push.orgId, run.id);
   return account && onSessionRepo(account, push.repo) ? account : null;
 }
 

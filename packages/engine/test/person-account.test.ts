@@ -145,6 +145,26 @@ describe("a person's own GitHub account in a code session", () => {
     expect(await push(["refs/heads/agentes/dev/other"])).toBeNull();
     expect(await push(["refs/heads/agentes/dev/fix-login", "refs/heads/agentes/dev/other"])).toBeNull();
     expect(await push(["refs/heads/agentes/dev/fix-login"], "acme/api")).toBeNull();
+    // Someone else's run working in the same session at the same time: the push names no run, so it is nobody's.
+    const other = await addMember(f.db, f.org.id, "member", "Bia");
+    const [channel] = await f.db.select().from(schema.channels).where(eq(schema.channels.id, run.channelId));
+    const theirs = await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: channel?.id ?? "",
+      author: { type: "person", userId: other.id },
+      body: "And the logout",
+    });
+    const [second] = await f.db.transaction((tx) => createAgentRuns(tx, theirs as never, [f.agent.id], "mention"));
+    await f.db
+      .update(schema.agentRuns)
+      .set({ status: "running" })
+      .where(eq(schema.agentRuns.id, second?.id ?? ""));
+    expect(await push(["refs/heads/agentes/dev/fix-login"])).toBeNull();
+    await f.db
+      .update(schema.agentRuns)
+      .set({ status: "done" })
+      .where(eq(schema.agentRuns.id, second?.id ?? ""));
+    expect(await push(["refs/heads/agentes/dev/fix-login"])).toMatchObject({ personId: f.owner.id });
     // Its run ended: nobody is asking now.
     await f.db.update(schema.agentRuns).set({ status: "done" }).where(eq(schema.agentRuns.id, run.id));
     expect(await push(["refs/heads/agentes/dev/fix-login"])).toBeNull();
