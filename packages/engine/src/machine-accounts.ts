@@ -66,7 +66,18 @@ import {
   SHARED_SIGN_INS,
   sharedSignIn,
 } from "@agenteschat/providers/plans";
-import { PLAN_PAUSE, planCheckedAt, planFull, planState, resetSinceRead } from "@agenteschat/ui/plan-state";
+import {
+  PLAN_PAUSE,
+  PLAN_STALE_MS,
+  planCheckedAt,
+  planFull,
+  planOwn,
+  planState,
+  resetSinceRead,
+  windowReadAt,
+  windowStale,
+} from "@agenteschat/ui/plan-state";
+import { accountPersonOf, loginPermissions, managesAccount } from "./ai-accounts/serves";
 import { recordAudit } from "./audit";
 import { liveModelLimits } from "./brains/select";
 import { BRAIN_PLAN_NAMES } from "./brains/types";
@@ -83,6 +94,7 @@ import {
 } from "./machines";
 import { recordAccountFailure } from "./operator-events";
 import { can, requirePermission } from "./organizations";
+import { runState } from "./run-state";
 import { runnerUpdateWay } from "./runner-update";
 import { scrubSignIns } from "./tool-detail";
 import { agentsMovedOnto, usageWaitKey, wakeAgentsBrainWaits, wakeOnRoom } from "./usage-pause";
@@ -160,8 +172,10 @@ export interface MachineAccountView {
   shared: boolean;
   /** Claude's organization it is signed in to (opaque, protocol 50), for its owner's eyes only; null: not known. */
   providerOrgId: string | null;
-  /** Who it thinks for (ADR 0059 §3): everyone in the workspace, or only its owner. */
+  /** Who it thinks for (ADR 0059 §3), as older apps read it: `everyone` while "Usar em agentes" is everyone, else `owner`. */
   serves: PlanServes;
+  /** In an agent's "Quem pensa": it may think for that agent (`accountServesSql` for the agent's owner). */
+  usable?: boolean;
   /** Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6); null: after the placed ones, oldest first. */
   useOrder: number | null;
   /**
@@ -308,13 +322,17 @@ const runMayMoveTo = (row: Pick<MachineAccountRow, "kind" | "provider" | "authMe
 /** The accounts of an order of use that have a place in it (`MachineAccountView.movable`). */
 const movableRow = and(eq(machineAccounts.shared, true), eq(machineAccounts.status, "active"));
 
-/** People would see a difference: a window moved a point or more, its reset moved, one came or went, or the limit. */
+/**
+ * People would see a difference: a window moved a point or more, its reset moved, it was read again or carried over
+ * (`PlanWindow.at`), one came or went, or the limit.
+ */
 export function usageMoved(prev: PlanUsage | null | undefined, next: PlanUsage | null | undefined): boolean {
   if (!prev || !next) return Boolean(prev) !== Boolean(next);
   if (Boolean(prev.limited) !== Boolean(next.limited) || prev.windows.length !== next.windows.length) return true;
   return next.windows.some((w) => {
     const p = prev.windows.find((x) => x.kind === w.kind && x.label === w.label);
-    return !p || Math.abs(p.usedPercent - w.usedPercent) >= 1 || p.resetsAt !== w.resetsAt;
+    // A window read again after its number went out of date shows a number again, not how old it is.
+    return !p || Math.abs(p.usedPercent - w.usedPercent) >= 1 || p.resetsAt !== w.resetsAt || p.at !== w.at;
   });
 }
 
@@ -536,8 +554,6 @@ export async function releaseAgents(
       brainAccountLentBy: null,
       brain: sql`case when ${ownSignIn} then "agents"."brain" else 'model' end`,
       // Someone else's plan leaves with its switch: its owner's own sign-in doesn't answer others.
-      // `brain_extra_usage` is unused here; the previous release still reads it during a deploy or after a rollback.
-      brainExtraUsage: sql`case when ${lent} then false else "agents"."brain_extra_usage" end`,
       audienceMode: sql`case when ${lent} and ${ownSignIn} then 'owner' else "agents"."audience_mode" end`,
       updatedAt: now,
     })
@@ -825,13 +841,24 @@ async function settleAccount(
   // The runner says it when it knows it; one that just started doesn't yet (the last stays).
   const usage = info.usage ? { usage: accountReading(row.provider, row.usage, info.usage) } : {};
   if (signingIn) {
-    // A login of an account its owner already has here (one per agent) takes that account's name.
+    // A login of an account its owner already has here (one per agent) takes that account's name and permissions.
+    const sibling = await sameAccount(db, row, identity);
     const label =
-      (await sameAccount(db, row, identity))?.label ??
+      sibling?.label ??
       defaultAccountLabel(kindOf(row), await takenLabels(db, orgId, row.createdBy, row.id), row.provider);
     const [done] = await db
       .update(machineAccounts)
-      .set({ email, plan, keyHint, ...state, label, shared, ...usage, updatedAt: now })
+      .set({
+        email,
+        plan,
+        keyHint,
+        ...state,
+        label,
+        ...(sibling ? loginPermissions(sibling) : {}),
+        shared,
+        ...usage,
+        updatedAt: now,
+      })
       .where(
         and(eq(machineAccounts.orgId, orgId), eq(machineAccounts.id, row.id), eq(machineAccounts.status, "signing_in")),
       )
@@ -874,7 +901,11 @@ async function settleAccount(
  * engine keeps them, `noteModelLimit`), and on a plan whose models have their own limits a refusal with no window
  * full is a model's (`refusalScope`), not the account's.
  */
-function accountReading(provider: string | null, prev: PlanUsage | null | undefined, next: PlanUsage): PlanUsage {
+function accountReading(
+  provider: string | null,
+  prev: (PlanUsage & { checkedAt?: string }) | null | undefined,
+  next: PlanUsage,
+): PlanUsage & { checkedAt?: string } {
   const { limited, models: _, answered: __, ...rest } = next;
   const models = liveModelLimits(prev);
   const perModel = planOf(provider)?.limitsPerModel === true;
@@ -883,6 +914,8 @@ function accountReading(provider: string | null, prev: PlanUsage | null | undefi
     ...(limited && !(perModel && !planFull(next)) ? { limited } : {}),
     ...(models ? { models } : {}),
     ...(perModel && prev?.answered ? { answered: prev.answered } : {}),
+    // The sweep's last ask outlives a reading: it tells whether an out-of-date window was asked about already.
+    ...(prev?.checkedAt ? { checkedAt: prev.checkedAt } : {}),
   };
 }
 
@@ -978,6 +1011,7 @@ export async function syncMachineAccounts(
           .values({
             ...candidate,
             label: same?.label ?? defaultAccountLabel(a.kind, await takenLabels(tx, orgId, owner, a.id), provider),
+            ...(same ? loginPermissions(same) : {}),
             email: a.email ?? null,
             plan: a.plan ?? null,
             keyHint: a.keyHint ?? null,
@@ -1097,7 +1131,10 @@ export async function refreshAiAccounts(deps: MachineAccountHubDeps, userId: str
  * The sweep (every minute) that notices a plan freed before its stored reset (Claude's "reset for free", extra usage
  * bought, a new week): every account whose last reading is at its limit, or at the long-work pause line (`PLAN_PAUSE`)
  * with work waiting on it, is read again on its computer, and so, once, is one whose window reset since its reading
- * (`resetSinceRead`), so the meter doesn't keep a day-old reading. A CLI login or a key gets the free probe every
+ * (`resetSinceRead`), so the meter doesn't keep a day-old reading. Also read again, while turns ran on the account
+ * since: once, a window whose own reading went out of date (`windowStale`: a turn's event that doesn't name a window
+ * keeps its old number, and a provider can start a new week early); and, for `PLAN_STALE_MS` after a refusal for
+ * the limit that a turn since got past, a window read before that refusal. A CLI login or a key gets the free probe every
  * `PLAN_RECHECK_MS`; a Claude setup token, which can't read its usage without a model call, a one-shot check on the
  * cheapest model every `TOKEN_RECHECK_MS` (`list.recheck`, protocol 62), refused while still full. A computer's own
  * sign-ins (`executors.ownUsage`, asked as `OWN_USAGE_ID`s) get the free probe too. A reading with room goes on from
@@ -1113,6 +1150,9 @@ export async function recheckStuckPlans(deps: Pick<MachineAccountHubDeps, "db" |
       kind: machineAccounts.kind,
       authMethod: machineAccounts.authMethod,
       usage: machineAccounts.usage,
+      lastSuccessAt: machineAccounts.lastSuccessAt,
+      lastFailureAt: machineAccounts.lastFailureAt,
+      lastFailureCause: machineAccounts.lastFailureCause,
     })
     .from(machineAccounts)
     .where(
@@ -1123,7 +1163,12 @@ export async function recheckStuckPlans(deps: Pick<MachineAccountHubDeps, "db" |
           select 1 from jsonb_array_elements(coalesce(${machineAccounts.usage}->'windows', '[]'::jsonb)) w
           where (w->>'usedPercent')::numeric >= ${PLAN_PAUSE}
             or (w->>'resetsAt' <= ${new Date(now).toISOString()}
-              and w->>'resetsAt' > greatest(${machineAccounts.usage}->>'at', ${machineAccounts.usage}->>'checkedAt'))))`,
+              and w->>'resetsAt' > greatest(${machineAccounts.usage}->>'at', ${machineAccounts.usage}->>'checkedAt'))
+            or (coalesce(w->>'at', ${machineAccounts.usage}->>'at') < ${new Date(now - PLAN_STALE_MS).toISOString()}
+              and ${machineAccounts.lastSuccessAt} > (coalesce(w->>'at', ${machineAccounts.usage}->>'at'))::timestamptz)
+            or (${machineAccounts.lastFailureCause} = 'quota'
+              and ${machineAccounts.lastFailureAt} > ${new Date(now - PLAN_STALE_MS).toISOString()}::timestamptz
+              and ${machineAccounts.lastSuccessAt} > ${machineAccounts.lastFailureAt})))`,
       ),
     );
   const owned = (
@@ -1139,7 +1184,7 @@ export async function recheckStuckPlans(deps: Pick<MachineAccountHubDeps, "db" |
   );
   if (rows.length === 0 && owned.length === 0) return [];
   const { agentRuns } = schema;
-  const waitKey = sql<string>`${agentRuns.transcript}->'waitingForBrain'->>'waitKey'`;
+  const waitKey = sql<string>`${runState}->'waitingForBrain'->>'waitKey'`;
   const waiting = new Set(
     (
       await db
@@ -1149,7 +1194,7 @@ export async function recheckStuckPlans(deps: Pick<MachineAccountHubDeps, "db" |
           and(
             eq(agentRuns.status, "waiting_input"),
             inArray(agentRuns.orgId, [...new Set([...rows, ...owned].map((r) => r.orgId))]),
-            sql`${agentRuns.transcript}->'waitingForBrain'->>'code' in ('plan_limit', 'usage_pause')`,
+            sql`${runState}->'waitingForBrain'->>'code' in ('plan_limit', 'usage_pause')`,
           ),
         )
     ).map((r) => r.key),
@@ -1161,19 +1206,23 @@ export async function recheckStuckPlans(deps: Pick<MachineAccountHubDeps, "db" |
     accountId: string | undefined,
     usage: NonNullable<(typeof rows)[number]["usage"]>,
     token: boolean,
+    turns?: Pick<(typeof rows)[number], "lastSuccessAt" | "lastFailureAt" | "lastFailureCause">,
   ) => {
     const { state, used } = planState(usage, now);
     const key = usageWaitKey({ code: "plan_limit", machineId, kind, accountId });
-    if (state !== "limited" && !(used >= PLAN_PAUSE && waiting.has(key)) && !resetSinceRead(usage, now)) return;
-    const last = Date.parse(planCheckedAt(usage) ?? "") || 0;
-    if (now - last < (token ? TOKEN_RECHECK_MS : PLAN_RECHECK_MS)) return;
+    const every = token ? TOKEN_RECHECK_MS : PLAN_RECHECK_MS;
+    const asked = Date.parse(usage.checkedAt ?? "") || 0;
+    const stuck = state === "limited" || (used >= PLAN_PAUSE && waiting.has(key)) || resetSinceRead(usage, now);
+    if (!stuck || now - (Date.parse(planCheckedAt(usage) ?? "") || 0) < every) {
+      if (!turns || !outdated(usage, turns, asked, every, now)) return;
+    }
     const m = byMachine.get(machineId) ?? { fresh: [], tokens: [], own: [] };
     m.fresh.push(accountId ?? OWN_USAGE_ID[kind]);
     if (token && accountId) m.tokens.push(accountId);
     if (!accountId) m.own.push(kind);
     byMachine.set(machineId, m);
   };
-  for (const r of rows) if (r.usage) consider(r.machineId, kindOf(r), r.id, r.usage, r.authMethod === "setup_token");
+  for (const r of rows) if (r.usage) consider(r.machineId, kindOf(r), r.id, r.usage, r.authMethod === "setup_token", r);
   for (const o of owned) consider(o.machineId, o.kind, undefined, o.usage, false);
   const asked: string[] = [];
   await Promise.all(
@@ -1205,6 +1254,33 @@ export async function recheckStuckPlans(deps: Pick<MachineAccountHubDeps, "db" |
     }),
   );
   return asked;
+}
+
+/**
+ * A reading that turns on the account outran (`recheckStuckPlans`): a window whose own reading went out of date
+ * before the last turn, not asked about since it did; or, within `PLAN_STALE_MS` of a refusal for the limit that a
+ * turn since got past, a window of the plan's own (`planOwn`) read before that refusal, asked at most every `every`.
+ * `asked`: the sweep's last ask.
+ */
+function outdated(
+  usage: PlanUsage & { checkedAt?: string },
+  turns: { lastSuccessAt: Date | null; lastFailureAt: Date | null; lastFailureCause: string | null },
+  asked: number,
+  every: number,
+  now = Date.now(),
+) {
+  const worked = turns.lastSuccessAt?.getTime() ?? 0;
+  const readAt = (w: PlanUsage["windows"][number]) => Date.parse(windowReadAt(usage, w) ?? "") || 0;
+  const stale = usage.windows.filter((w) => windowStale(usage, w, now) && readAt(w) < worked);
+  if (stale.some((w) => asked < readAt(w) + PLAN_STALE_MS)) return true;
+  const refused = turns.lastFailureCause === "quota" ? (turns.lastFailureAt?.getTime() ?? 0) : 0;
+  return (
+    refused > now - PLAN_STALE_MS &&
+    worked > refused &&
+    now - asked >= every &&
+    // The plan's own: extra usage or a model's week the check never names again would ask every time.
+    usage.windows.some((w) => planOwn(w) && readAt(w) < refused)
+  );
 }
 
 /** The runner protocol from which a sign-in of that kind can be made for all agents where each is its own OS user. */
@@ -1788,11 +1864,11 @@ export async function renameMachineAccount(
   if (!label || label.length > MACHINE_ACCOUNT_LIMITS.labelChars) {
     throw new ValidationError("Give the account a name of up to 40 characters", "account.invalid_label");
   }
-  const { machine } = await memberMachine(deps.db, userId, orgId, machineId);
+  const { membership, machine } = await memberMachine(deps.db, userId, orgId, machineId);
   const account = await getListedAccount(deps.db, orgId, machine.id, accountId);
   if (!account) throw new NotFoundError("Account not found", "account.not_found");
-  if (account.createdBy !== userId) {
-    throw new ForbiddenError("Only the account's owner can rename it", "account.not_owner");
+  if (!managesAccount(account, accountPersonOf(userId, membership))) {
+    throw new ForbiddenError("Only whoever manages this account can rename it", "account.not_owner");
   }
   const logins = await sameLogins(deps.db, account);
   const renamed = logins.filter((r) => r.label !== label);
@@ -1840,7 +1916,7 @@ export async function removeMachineAccount(
   const account = await getListedAccount(deps.db, orgId, machine.id, accountId);
   if (!account) throw new NotFoundError("Account not found", "account.not_found");
   const allowed =
-    account.createdBy === userId ||
+    managesAccount(account, accountPersonOf(userId, membership)) ||
     machine.pairedByUserId === userId ||
     (can(membership, "configure") && (machine.pairedByUserId === null || account.createdBy === null));
   if (!allowed) {

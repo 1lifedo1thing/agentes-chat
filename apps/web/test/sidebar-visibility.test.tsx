@@ -4,7 +4,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { NEW_CHANNEL_EVENT } from "@/components/Sidebar";
+import { NEW_CHANNEL_EVENT } from "@/components/sidebar-state";
 import { ADA_ID, ATLAS_ID, createFakeApi, ENG_ID, GENERAL_ID, meWithRole, ORG_ID, seedDm, seedState } from "./fake-api";
 import { renderApp, screen, settle } from "./render";
 
@@ -122,20 +122,16 @@ describe("what a member's sidebar lists", () => {
     expect(offered).not.toContain("Ada");
   });
 
-  test("Edit agents showing the rest lists only the agents whose DM opens: someone's private agent stays in Team", async () => {
+  test("Edit agents showing the rest lists only the agents whose DM opens: someone's private agent stays unlisted", async () => {
     const keyHolder = acme("member");
     meWithRole(keyHolder, ["manage_agents"]);
     keyHolder.sidebarView = { agentSort: "workspace", showAllAgents: true, pins: null };
     await go(keyHolder);
-    // Ada answers only João: the key doesn't reach her (ADR 0085 addendum), and her row would open a DM the server
-    // refuses.
+    // Ada answers only João: the key doesn't reach her (ADR 0085 addendum), and private means unlisted, so not even
+    // Team counts her.
     expect(agentRows()).toEqual(["Atlas"]);
     expect(sections()).not.toContain("Integrations");
-    expect(
-      within(nav())
-        .getByRole("link", { name: /Mais 1 agente na Equipe/ })
-        .getAttribute("href"),
-    ).toBe(`/org/${ORG_ID}/team`);
+    expect(nav().querySelector(".sidebar__see-all")).toBeNull();
     cleanup();
     // With nobody responsible for her, the key reaches her: she shows, locked, and her row opens her DM.
     const ownerless = acme("member");

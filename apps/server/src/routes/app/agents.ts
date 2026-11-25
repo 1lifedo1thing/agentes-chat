@@ -48,6 +48,7 @@ import {
   listCredentials,
   listEndpoint,
   listFormerAgents,
+  listsAgentTo,
   listTeamTemplates,
   type Membership,
   moveAgentToGroup,
@@ -68,6 +69,7 @@ import {
   rightHandWidgetsReady,
   SETUP_AGENTS_MAX,
   seesAgentDetails,
+  seesAgentFactsOnly,
   setAgentBrain,
   setReportsTo,
   speakerOf,
@@ -171,6 +173,8 @@ const toAgent = (
     canTalk: canTalkTo(a, viewerId, speakerOf(viewer)),
     ...agentRights(a, viewerId, viewer),
     editors: seesDetails ? editorsOf(a) : { userIds: [], roleIds: [] },
+    factsOnly: seesAgentFactsOnly(a, viewerId, viewer),
+    listed: listsAgentTo(a, viewerId, viewer),
   };
 };
 
@@ -188,6 +192,10 @@ const AgentFields = z.object({
     .optional()
     .openapi({ description: "Provider credential of this organization. Null = platform key (Cloud only)." }),
   ownerUserId: z.string().nullable().optional(),
+  ownerRoleId: z.uuid().nullable().optional().openapi({
+    description:
+      "A role that answers for it instead of a person (ADR 0085, addendum of 2026-11-21): one of the workspace's own. Naming it clears `ownerUserId`, and naming a person clears it.",
+  }),
   monthlyBudgetUsd: z.number().min(0).nullable().optional().openapi({
     description:
       "Spend cap per calendar month (UTC), admins only. Null = the workspace default (every agent has a budget).",
@@ -803,7 +811,7 @@ export function agentRoutes(deps: AppDeps) {
       security,
       summary: "Each agent's presence (online, busy, away, out of office, offline) and what it says it is doing",
       description:
-        "From its work (ADR 0084): `busy` on a routine, a task, a run going for over 2 minutes or one rated heavy, or when it said so; `online` while answering, waiting on an answer or active in the last 30 minutes (one never active, in the 30 minutes since it was made; the right hand always); `away` after that; `out` (out of office, §12) while its plan is at its limit or its monthly budget is spent, with an `out_of_plan`/`out_of_budget` line whose `until` says when it is back, and the router leaves it out of messages nobody mentioned it in; `offline` when held. An agent with no AI is drawn offline by the apps (`ai-status`). `status`: its own words (`set_status`), a line picked for its run (`kind` + `subject`), or what its run waits on; gone when the run ends unless it set `until`. Refreshed on `agent.status` events and every 30 seconds while open.",
+        'From its work (ADR 0084): `busy` on a routine, a task, a run going for over 2 minutes or one rated heavy, or when it said so; `online` while answering, or active in the last 10 minutes (a run waiting on an answer or an approval counts from its last change; one never active, from when it was made); `away` after that, the right hand too (the apps say "Inativo"); `out` (out of office, §12) while its plan is at its limit or its monthly budget is spent, with an `out_of_plan`/`out_of_budget` line whose `until` says when it is back, and the router leaves it out of messages nobody mentioned it in; `offline` when held. An agent with no AI is drawn offline by the apps (`ai-status`). `status`: its own words (`set_status`), a line picked for its run (`kind` + `subject`), or what its run waits on; gone when the run ends unless it set `until`. Refreshed on `agent.status` events and every 30 seconds while open.',
       request: { params: OrgParams },
       responses: {
         200: json(
@@ -863,6 +871,9 @@ export function agentRoutes(deps: AppDeps) {
                   description:
                     "Something of its own thinks now (a run, or long work at work): drawn at work whatever its AI reads as for the viewer.",
                 }),
+                budgetPaused: z.literal(true).optional().openapi({
+                  description: "Work of its waits on its monthly budget: #general's team-stalled line names it.",
+                }),
                 work: z
                   .object({
                     state: WorkState.openapi({
@@ -879,7 +890,7 @@ export function agentRoutes(deps: AppDeps) {
                       description:
                         "Where it shows when you read it: its conversation, or for work another agent handed it, where that agent handed it off. Null otherwise.",
                     }),
-                    channelKind: z.enum(["channel", "dm", "task", "file"]).nullable(),
+                    channelKind: z.enum(["channel", "dm", "task", "file", "code"]).nullable(),
                     channelName: z.string().nullable(),
                     threadId: z.uuid().nullable(),
                     messageId: z
@@ -916,6 +927,7 @@ export function agentRoutes(deps: AppDeps) {
     role: z.string(),
     appearance: AgentAppearance.nullable(),
     ownerUserId: z.string().nullable(),
+    ownerRoleId: z.uuid().nullable().openapi({ description: "A role that answers for it instead of a person." }),
     reportsToAgentId: z.uuid().nullable().openapi({ description: "Responde a: the agent it reports to, if any." }),
     capabilities: z.array(z.string()).openapi({
       description:
@@ -927,6 +939,10 @@ export function agentRoutes(deps: AppDeps) {
       .openapi({ description: "The channels it is in that the current person may see, in the sidebar's order." }),
     canTalk: z.boolean(),
     seesDetails: z.boolean().openapi({ description: "Whether the current person sees how it works." }),
+    factsOnly: z.boolean().optional().openapi({
+      description:
+        "A teammate's private agent seen through \"Editar agentes\" (ADR 0085, addendum of 2026-11-24): listed on Equipe with a lock, its page shows its facts and this month's usage, never how it works, and nothing to change. Absent (older servers): false.",
+    }),
     canManage: z.boolean().openapi({
       description: "Whether the current person manages it (`manage_agents` where it reaches, ADR 0085 addendum).",
     }),
@@ -1076,7 +1092,7 @@ export function agentRoutes(deps: AppDeps) {
           },
           // New agents start on "Automático".
           NEW_AGENT_DEFAULTS,
-          // The person's Criar agente: what they pick is what the next one starts with (ADR 0094).
+          // The person's Criar agente: where it thinks is where the next one starts (ADR 0094; its model starts on Automático).
           { remember: true, pubsub: adapters.pubsub },
         );
       const agent = proposal
@@ -1592,7 +1608,8 @@ export function agentRoutes(deps: AppDeps) {
         (rest.name !== undefined ||
           rest.handle !== undefined ||
           appearance !== undefined ||
-          rest.ownerUserId !== undefined)
+          rest.ownerUserId !== undefined ||
+          rest.ownerRoleId !== undefined)
       ) {
         await publishMachineAgentsChanged(adapters.pubsub, orgId);
       }
@@ -1959,7 +1976,7 @@ export function agentRoutes(deps: AppDeps) {
             brain: BrainKind.optional(),
             model: z.string().max(80).nullable().optional().openapi({
               description:
-                "Claude Code: `opus`, `sonnet`, `haiku`, a Claude model id or one of a coding plan's models by id (`@agenteschat/providers/plans`; another account runs `sonnet` for it); Codex: a model name; `auto` (each run picks the tier). Null = the brain's default; omitted = keep (reset when the brain changes).",
+                "Claude Code: `fable`, `opus`, `sonnet`, `haiku`, a Claude model id or one of a coding plan's models by id (`@agenteschat/providers/plans`; another account runs `sonnet` for it); Codex: a model name; `auto` (each run picks the tier). Null = the brain's default; omitted = keep (reset when the brain changes).",
             }),
             fallback: z.boolean().optional().openapi({
               deprecated: true,

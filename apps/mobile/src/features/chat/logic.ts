@@ -64,12 +64,19 @@ export const BUBBLES_EDGE = 16;
 /** Where someone else's bubbles stop at the right: air beside them, and room for the times a pull shows. */
 export const BUBBLES_END = 60;
 
+/**
+ * A `compact` row's face, at the rows' edge (`MSG_INSET`) beside the name on its first line, and the gap to the
+ * words. No column of times: a pull to the left shows them, as in bubbles (`timesOnPull`).
+ */
+export const COMPACT_FACE = 18;
+export const COMPACT_GAP = 6;
+
 /** How far a row's body stands in from the conversation's edges, at each end. */
 export const ROW_BODY_INSET: Record<ChatStyle, { left: number; right: number }> = {
   left: { left: MSG_TEXT, right: 16 },
   comfortable: { left: MSG_TEXT, right: 16 },
   bubbles: { left: 48, right: BUBBLES_END },
-  compact: { left: 74, right: 12 },
+  compact: { left: MSG_INSET + COMPACT_FACE + COMPACT_GAP, right: 12 },
 };
 
 interface InsetLook {
@@ -519,16 +526,23 @@ export function awayRun(entries: ActivityEntry[], runs: LiveRun[]): LiveRun | un
 }
 
 /**
- * Who may press "Parar" (the web's `useStopRun`): admins, the agent's owner,
- * or the person whose message started the run. The server checks it again.
+ * Who may press "Parar" (the web's `useStopRun`): admins, the agent's owner (or one who holds the role that answers
+ * for it: `owns`, ADR 0085, addendum of 2026-11-21), or the person whose message started the run. The server checks it
+ * again.
  */
 export function mayStopRun(
   run: Pick<LiveRun, "agentId" | "threadId" | "triggerMessageId">,
-  who: { meId: string | null; manageAgents: boolean; agentOwnerId: string | null | undefined; messages: Message[] },
+  who: {
+    meId: string | null;
+    manageAgents: boolean;
+    agentOwnerId: string | null | undefined;
+    owns?: boolean;
+    messages: Message[];
+  },
 ): boolean {
   if (who.manageAgents) return true;
   if (!who.meId) return false;
-  if (who.agentOwnerId === who.meId) return true;
+  if (who.owns || who.agentOwnerId === who.meId) return true;
   const rootId = run.triggerMessageId ?? run.threadId;
   const root = who.messages.find((m) => m.id === rootId);
   return root?.author.type === "person" && root.author.id === who.meId;

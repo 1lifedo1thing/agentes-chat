@@ -37,7 +37,7 @@ import {
 } from "@agenteschat/client/lib/action-cards";
 import { delegateUndoLine } from "@agenteschat/client/lib/approval-words";
 import { createsRoutinesFor } from "@agenteschat/client/lib/audience";
-import { connectedItems, itemName, personalAllowed } from "@agenteschat/client/lib/connected";
+import { connectedItems, itemName, personalServesAgents } from "@agenteschat/client/lib/connected";
 import { setDraftFor } from "@agenteschat/client/lib/drafts";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { joinNames, whenAt } from "@agenteschat/client/lib/format";
@@ -56,14 +56,14 @@ import { useTranslation } from "react-i18next";
 import { useConnectedById } from "@/components/AccessLevels";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOpenAgentPanel } from "@/components/agent-panel-context";
-import { useConnectAi } from "@/components/ConnectAi";
 import { ConnectFlow, type FlowState } from "@/components/ConnectFlow";
-import { ConnectorIcon } from "@/components/ConnectorCatalog";
+import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { CostlyProposalCardView } from "@/components/CostlyProposalCard";
 import { CalendarProposalCardView } from "@/components/calendar/ProposalCard";
+import { useConnectAi } from "@/components/connect-ai-context";
 import { useInviteDialog } from "@/components/invite/InviteDialog";
 import { MailIcon } from "@/components/MailConnect";
-import { useNewAgent } from "@/components/new-agent/NewAgentDialog";
+import { useNewAgent } from "@/components/new-agent/new-agent-context";
 import { useOrg } from "@/components/org-context";
 import { PersonLimitCardView } from "@/components/PeopleUsage";
 import {
@@ -221,7 +221,7 @@ function ConnectAppCardView({ card }: { card: ConnectAppCard }) {
     );
   }
   const admin = can(org, "manage_connectors");
-  const may = admin || personalAllowed(card.connector);
+  const may = admin || personalServesAgents(card.connector);
   return (
     <>
       <RequestOpen

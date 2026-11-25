@@ -4,8 +4,8 @@ import {
   isOpenHandoff,
   keys,
   machineProfiles,
-  useAgents,
   useAgentsBrowserHandoffs,
+  useAllAgents,
   useAllowMachineTool,
   useApi,
   useBrowserHandoffMutations,
@@ -18,13 +18,15 @@ import {
   useReduceMachineAccess,
 } from "@agenteschat/client";
 import { computerName, setupView } from "@agenteschat/client/lib/computer";
+import { mayChangeTasks, offlineCauseText, taskLimitLine } from "@agenteschat/client/lib/devices";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { firstName, formatTime, joinNames } from "@agenteschat/client/lib/format";
+import { clockAt, firstName, formatTime, joinNames } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import {
   allowedFolders,
   allowsInApp,
   canReduceAccess,
+  codexSandboxNote,
   commandInReason,
   computerKind,
   computerState,
@@ -223,14 +225,16 @@ function MachinePage({ machineId }: { machineId: string }) {
       ? { icon: "pause", label: paused }
       : m.online
         ? { icon: "check", label: t("machines.online") }
-        : { icon: "circle", label: t("machines.offline") };
+        : m.moving
+          ? { icon: "swap", label: t("machines.moving.short") }
+          : { icon: "circle", label: t("machines.offline") };
   // One facts line, and why it's paused while it is.
   const facts = [
     managed
       ? [setup?.specs ? t("computerSetup.specs", setup.specs) : null, m.online ? null : seenText(t, i18n.language, m)]
           .filter(Boolean)
           .join(" · ")
-      : [t(`machines.os.${osOf(m.os)}`), m.arch, seenText(t, i18n.language, m)].filter(Boolean).join(" · "),
+      : [t(`machines.os.${osOf(m.os)}`), seenText(t, i18n.language, m)].filter(Boolean).join(" · "),
     isPaused(m) ? (pausedByText(t, i18n.language, m.paused, meId ?? "") ?? t("machines.pausedHint")) : null,
   ].filter((x): x is string => Boolean(x));
   // What most people never need, behind one "Detalhes" row, as the web's.
@@ -249,6 +253,14 @@ function MachinePage({ machineId }: { machineId: string }) {
     m.workspace && m.mode !== "system" ? `${t("machines.workspace")} ${m.workspace}` : null,
     m.pairedBy ? t("machines.pairedBy", { name: m.pairedBy.name }) : null,
   ].filter((x): x is string => Boolean(x));
+  // Offline with a known cause: the sentence with its way out, in place of the row's short words.
+  const s = device?.status;
+  const causeLine =
+    s?.kind === "offline" && s.cause && s.lastSeenAt
+      ? offlineCauseText(t, s.cause, clockAt(i18n.language, s.lastSeenAt), "line")
+      : device
+        ? taskLimitLine(t, device, mayChangeTasks(device, meId ?? "", can(org, "configure")))
+        : null;
   const egressIp = managed && m.online ? (m.egress?.ip ?? null) : null;
   const flag = egressIp ? countryFlagSvg(m.egress?.country) : null;
 
@@ -256,7 +268,7 @@ function MachinePage({ machineId }: { machineId: string }) {
     <SettingsPage title={title}>
       <View style={styles.head}>
         <ComputerPortrait kind={computerKind(m.os)} state={computerState(m)} size={96} />
-        {device ? <StatusLine status={device.status} center /> : null}
+        {device ? <StatusLine status={device.status} center text={causeLine} /> : null}
         {status ? (
           <View style={styles.chips}>
             <Chip icon={status.icon} label={status.label} />
@@ -457,7 +469,7 @@ function useAskReduce(machineId: string) {
 
 /** An agent's name: from the workspace's agents, else from the computer's list. */
 function useAgentName(m: Pick<Machine, "agents"> | undefined) {
-  const agents = useAgents(useOrgId());
+  const agents = useAllAgents(useOrgId());
   return (id: string) => agents.data?.find((a) => a.id === id)?.name ?? m?.agents.find((a) => a.id === id)?.name ?? "";
 }
 
@@ -577,13 +589,17 @@ function ToolsSection({ machine: m, onReduce }: { machine: Machine; onReduce: (r
           ]
             .filter(Boolean)
             .join(" ");
+          const label = t(`machines.access.tool.${tool}`);
+          // Codex on Windows: what holds its commands there, when that is less than MXC.
+          const note = tool === "codex" ? codexSandboxNote(t, m) : null;
           return (
             <GroupedRow
               key={tool}
               {...(tool === "commands"
                 ? { icon: "code" as const }
                 : { leading: <ProviderLogo id={tool} size="sm" off={!on} /> })}
-              label={t(`machines.access.tool.${tool}`)}
+              label={label}
+              {...(note ? { hint: { name: t("common.about", { label }), text: note } } : {})}
               sub={sub}
               subLines={3}
               media

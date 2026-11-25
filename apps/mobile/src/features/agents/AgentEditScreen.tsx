@@ -37,7 +37,7 @@ import { useWidenAsk } from "../chat/ReachLines";
 import { useFailed } from "../routines/hooks";
 import { usePersonalView } from "../settings/hooks";
 import { Gap, NEXT_FIELD, SettingsPage, useUnsavedGuard } from "../settings/parts";
-import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
+import { useColors, useDirectory, useOrgId, useOwnsAgent } from "../shared/hooks";
 import { FocusLive, successHaptic } from "../shared/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
 import { BrakesSection } from "./BrakesSection";
@@ -71,7 +71,6 @@ export function AgentEditScreen({ id }: { id: string }) {
   const toast = useToast();
   const failed = useFailed();
   const dir = useDirectory();
-  const meId = useMeId();
   const org = useOrg().org;
   const agent = dir.agentById.get(id);
   const update = useUpdateAgent(useOrgId(), id);
@@ -79,7 +78,9 @@ export function AgentEditScreen({ id }: { id: string }) {
   // Who manages this agent (the server's `canManage`: "Editar qualquer agente" where it reaches).
   const admin = managesAgent(agent);
   const rightHand = isRightHand(agent);
-  const owner = Boolean(meId && agent?.ownerUserId === meId);
+  // Its owner, or one who holds the role that answers for it (ADR 0085, addendum of 2026-11-21).
+  const owns = useOwnsAgent();
+  const owner = owns(agent);
   const fields = editableFields({ admin, editor: editsAgent(agent), owner });
   const onPlan = engineOfBrain(agent?.brain?.kind) !== "agent";
   const { personal, others } = usePersonalView();
@@ -106,8 +107,8 @@ export function AgentEditScreen({ id }: { id: string }) {
   const nameMissing = Boolean(draft && fields.has("name") && !draft.name.trim());
   const tooLong = Boolean(draft && fields.has("instructions") && overLimit(draft.instructions, INSTRUCTIONS_LIMIT));
   const taken = useMemo(
-    () => takenHandles(dir.agents, [...dir.memberById.values()], id),
-    [dir.agents, dir.memberById, id],
+    () => takenHandles([...dir.agentById.values()], [...dir.memberById.values()], id),
+    [dir.agentById, dir.memberById, id],
   );
   const moved = Boolean(saved && draft && draft.handle !== saved.handle);
   const handleIssue = moved && draft ? handleProblemText(t, draft.handle, taken) : null;

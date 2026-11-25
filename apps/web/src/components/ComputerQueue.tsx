@@ -142,7 +142,7 @@ export function QueueDialog({
       closeLabel={t("common.close")}
       width={440}
       className="cq-dialog"
-      subtitle={queue ? queueStatusText(t, queueView(queue, names.viewerId)) : undefined}
+      subtitle={queue ? queueStatusText(t, queueView(queue, names.viewerId), queue) : undefined}
     >
       <DialogBody>
         {queue ? (
@@ -247,9 +247,9 @@ function QueueLists({
                 onStop={() => stop([w.runId], undefined, true)}
                 stopping={stopping.has(w.runId)}
               >
-                <span className="cq__l1">
+                <span className="cq__l1 ac-tailrow">
                   <b>{agentName(w.agentId)}</b>
-                  <span className="cq__time">{queueLeftText(t, w, now)}</span>
+                  <span className="cq__time ac-tail">{queueLeftText(t, w, now)}</span>
                 </span>
                 <span className="cq__l2">
                   {[
@@ -282,10 +282,10 @@ function QueueLists({
                   onStop={() => stop([w.runId], undefined, true)}
                   stopping={stopping.has(w.runId)}
                 >
-                  <span className="cq__l1">
+                  <span className="cq__l1 ac-tailrow">
                     <b>{agentName(w.agentId)}</b>
                     <span className="cq__nth">{nthText(t, i18n.language, w.position)}</span>
-                    <span className="cq__time">{queueStartText(t, w, names.agent, now)}</span>
+                    <span className="cq__time ac-tail">{queueStartText(t, w, names.agent, now)}</span>
                   </span>
                   <span className="cq__l2">
                     {[queuePurposeText(t, w.purpose, names), queueWhereText(t, names.place(w.where))].join(" · ")}
@@ -304,8 +304,8 @@ function QueueLists({
 }
 
 /**
- * "More computers, shorter line": the viewer's other online computers, each with its switch for their replies to start
- * there while this one is full (`spill.own`). Nothing when they have none.
+ * "Your computers": the viewer's other computers, each with its switch to help while this one is full or away
+ * (`spill.own`). Nothing when they have none, or while an admin turned devices' help off for the workspace.
  */
 function SpillHere({ machineId }: { machineId: string }) {
   const { t } = useTranslation();
@@ -316,7 +316,7 @@ function SpillHere({ machineId }: { machineId: string }) {
   const mine = (devices.data?.devices ?? []).filter(
     (d) => d.id !== machineId && d.ownerUserId === me.user.id && d.machineKind === "connected" && !d.systemMode,
   );
-  if (mine.length === 0) return null;
+  if (mine.length === 0 || devices.data?.devicesHelp === false) return null;
   return (
     <section className="cq-spill" aria-labelledby="cq-spill-title">
       <h3 className="cq__title" id="cq-spill-title">
@@ -333,7 +333,6 @@ function SpillHere({ machineId }: { machineId: string }) {
             <Switch
               aria-label={`${t("devices.spillOwn")}: ${d.name}`}
               checked={d.spill.own}
-              disabled={update.isPending}
               onCheckedChange={(own) => update.mutate({ id: d.id, spill: { own } })}
             />
           </li>
