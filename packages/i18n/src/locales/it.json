@@ -20973,6 +20973,14 @@
       "ended": "Lo schermo si è chiuso.",
       "retrying": "Nuovo tentativo…"
     },
+    "open": {
+      "gaveUp": "Non è stato possibile aprire lo schermo di {{name}}.",
+      "slow": "Ci sta mettendo più del solito.",
+      "late": "{{computer}} ha impiegato troppo a rispondere.",
+      "dropped": "La connessione è caduta.",
+      "offline": "{{computer}} non risponde.",
+      "refused": "{{computer}} non è riuscito ad aprire lo schermo."
+    },
     "retry": "Riprova",
     "takeover": "Prendi il controllo",
     "takeBrowser": "Prendi il browser",

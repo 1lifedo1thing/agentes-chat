@@ -103,6 +103,7 @@ import {
   notifyComputerDiskFull,
   notifyComputerNoChrome,
 } from "./notification-producers";
+import { recordDesktopStarted } from "./operator-events";
 import { enqueue } from "./outbox";
 import { isRightHand } from "./right-hand";
 import { assertCanWork, standingRefusal } from "./standing";
@@ -570,6 +571,8 @@ export interface MachineBrowserHooks {
   pointer?(machineId: string, frame: Extract<RunnerFrame, { type: "browser.pointer" }>): void;
   /** The same on its desktop (ADR 0062): to whoever has that screen open. */
   desktopPointer?(machineId: string, frame: Extract<RunnerFrame, { type: "desktop.pointer" }>): void;
+  /** The computer starts the desktop for one of its streams first (`stream.starting`). */
+  streamStarting?(machineId: string, streamId: string): void;
   /** This socket's computer is asked to end a desktop (`desktop.session.stop`), named by its screen's id. */
   desktopStopped?(machineId: string, screenId: string): void;
   closed?(machineId: string): void;
@@ -1651,7 +1654,13 @@ export function createMachineHub(deps: MachineHubDeps) {
       else if (frame.type === "browser.stream.ended") browserHooks.streamEnded?.(conn.machineId, frame);
       else if (frame.type === "browser.pointer") browserHooks.pointer?.(conn.machineId, frame);
       else if (frame.type === "desktop.pointer") browserHooks.desktopPointer?.(conn.machineId, frame);
-      else if (frame.type === "pong") await touch(conn, frame);
+      else if (frame.type === "stream.starting") browserHooks.streamStarting?.(conn.machineId, frame.streamId);
+      else if (frame.type === "desktop.started") {
+        const { type: _, ...start } = frame;
+        await recordDesktopStarted(db, { orgId: conn.orgId, machineId: conn.machineId, ...start }).catch(
+          () => undefined,
+        );
+      } else if (frame.type === "pong") await touch(conn, frame);
       else if (frame.type === "task.event") {
         await applyTaskEvent({ db, pubsub }, conn.machineId, frame).catch(() => undefined);
       } else if (frame.type === "mcp.call") {

@@ -707,6 +707,7 @@ export class RunnerDaemon implements RequestObserver {
       // System mode: the agents' Chromes are their workers'.
       inUse: (agentId) => (this.session?.supervisor ?? this.session?.browser)?.onDesktopInUse(agentId) ?? false,
       onViewers: () => this.session?.supervisor?.stateChanged(),
+      onStarted: (agent, start) => void this.send({ type: "desktop.started", agentId: agent.id, ...start }),
       openBrowser: (agent, installing) => this.openBrowser(agent, installing),
       runner: this.self.command,
       shared: () => this.shared,
@@ -1742,6 +1743,7 @@ export class RunnerDaemon implements RequestObserver {
       xcodeOpen: () => this.iphoneSetup().open("xcode"),
       reportParts: () => this.reportParts(),
       egressShare: this.egressShare,
+      streamStarting: (streamId) => void this.send({ type: "stream.starting", streamId }),
     };
     // `hello` lists the accounts it already knows; a fresh look (each runs its CLI) never delays connecting:
     // it lands in `hello` if it finishes first, else comes after as `accounts.changed`. Nothing reaches the

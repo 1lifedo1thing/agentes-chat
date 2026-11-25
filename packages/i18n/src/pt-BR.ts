@@ -20996,6 +20996,19 @@ export const ptBR = {
       ended: "A tela fechou.",
       retrying: "Tentando de novo…",
     },
+    /**
+     * Under "Abrindo o computador do {{name}}…" once it took long (`slow`) or a try failed, the cause; `gaveUp` once it
+     * stopped trying by itself. Each with Tentar de novo.
+     */
+    open: {
+      gaveUp: "Não deu para abrir a tela do {{name}}.",
+      gaveUp_female: "Não deu para abrir a tela da {{name}}.",
+      slow: "Está demorando mais que o normal.",
+      late: "O {{computer}} demorou a responder.",
+      dropped: "A conexão caiu.",
+      offline: "O {{computer}} não está respondendo.",
+      refused: "O {{computer}} não conseguiu abrir a tela.",
+    },
     retry: "Tentar de novo",
     takeover: "Assumir o controle",
     /** Where this person may drive the agent's browser but not its whole computer (`controlRefusal`). */

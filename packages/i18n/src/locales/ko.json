@@ -19616,6 +19616,14 @@
       "ended": "화면이 닫혔어요.",
       "retrying": "다시 시도하는 중…"
     },
+    "open": {
+      "gaveUp": "{{name}}의 화면을 열지 못했어요.",
+      "slow": "평소보다 오래 걸리고 있어요.",
+      "late": "{{computer}}의 응답이 너무 늦었어요.",
+      "dropped": "연결이 끊겼어요.",
+      "offline": "{{computer}}이(가) 응답하지 않아요.",
+      "refused": "{{computer}}이(가) 화면을 열지 못했어요."
+    },
     "retry": "다시 시도",
     "takeover": "제어하기",
     "takeBrowser": "브라우저 제어하기",

@@ -21531,6 +21531,14 @@
       "ended": "Ekran został zamknięty.",
       "retrying": "Ponawiam próbę…"
     },
+    "open": {
+      "gaveUp": "Nie udało się otworzyć ekranu agenta {{name}}.",
+      "slow": "Trwa to dłużej niż zwykle.",
+      "late": "{{computer}} zbyt długo nie odpowiadał.",
+      "dropped": "Połączenie zostało przerwane.",
+      "offline": "{{computer}} nie odpowiada.",
+      "refused": "{{computer}} nie mógł otworzyć ekranu."
+    },
     "retry": "Spróbuj ponownie",
     "takeover": "Przejmij kontrolę",
     "takeBrowser": "Przejmij przeglądarkę",
