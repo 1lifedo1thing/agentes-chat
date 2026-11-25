@@ -2886,6 +2886,7 @@ export const ptBR = {
     nameLabel: "Nome",
     nameHelp: "Muda para todo mundo. Os links antigos continuam funcionando.",
     replyInThreads: "Agentes respondem em threads",
+    replyInChannel: "Agentes respondem no canal",
     replyInThreadsHelp:
       "O agente chamado no canal responde na thread abaixo da mensagem, e o canal mostra uma linha para ela. O que já está em andamento fica onde está.",
     nameTaken: "Já existe #{{name}}.",

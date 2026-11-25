@@ -3018,6 +3018,7 @@ export const en = {
     nameLabel: "Name",
     nameHelp: "Changes for everyone. Old links keep working.",
     replyInThreads: "Agents reply in threads",
+    replyInChannel: "Agents reply in the channel",
     replyInThreadsHelp:
       "An agent called in the channel answers in the thread under that message, and the channel shows one line for it. Work already going stays where it is.",
     nameTaken: "There is already #{{name}}.",

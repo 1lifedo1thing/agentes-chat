@@ -4,7 +4,7 @@
 - Date: 2026-11-20
 - Extends: 0032 ("One reply placement": `replyThreadOf`), 0112 (the floor and one active run per conversation),
   0190 (a run asked in the main timeline that answers under its trigger)
-- Code: db `channels.reply_in_threads`, `agent_runs.reply_in_thread` (migration 0314; on by default since 0325, automatic since 0347: see the addendum);
+- Code: db `channels.reply_in_threads`, `agent_runs.reply_in_thread` (migration 0314; on by default since 0325);
   engine `runs.ts`
   (`replyThreadOf`), `run-scope.ts` (`inChannelRun`, `joinsRun`, `askedBy`, `placeAfter`, `repliesInThreadSql`),
   `messages.ts` (the `floor_runs`, `active`, `runs` and `opened` parts of `insertMessageWithRuns`,
@@ -118,21 +118,17 @@ in the thread under the message that made it, as bots do in other chat apps (iss
 - **A message calling several agents joins any of them already at work, the rest answering under it.** One message
   then opened two threads, its answer split between the earlier request's thread and its own.
 
-## Addendum (2026-11-25): automatic until someone chooses
+## Addendum (2026-11-25): who a channel starts with sets its default
 
-A thread keeps the main timeline clear for the other people reading it. In a personal workspace (ADR 0159), or in a
-channel where one person talks to agents, there is nobody else, and every answer one click away in a thread only got
-in the way. So `channels.reply_in_threads` is null until someone flips the switch (migration 0347: no default, and the
-channels 0325 turned on without anyone choosing go back to null). Null reads as on only in a team workspace with two or
-more people in the channel; a choice, on or off, always wins. One SQL rule says it, `channelRepliesInThreadsSql`
-(`run-scope.ts`), used where a run is created (`repliesInThreadSql`), by the join rule's `several` (`joinsRun`), by
-`post_message`'s `move_here`, and for what the apps show on the switch (`listChannels`, and
-`channelRepliesInThreads` in the channel's POST and PATCH answers). The run's copy (`agent_runs.reply_in_thread`) is
-unchanged: a person joining or leaving never moves a run already made, as turning the switch never did.
+A thread keeps the main timeline clear for the other people reading it. A channel made with no one but its creator,
+or any channel of a personal workspace (ADR 0159), has nobody else, and every answer one click away in a thread only
+got in the way. So `createChannel` writes `reply_in_threads = false` when no other person is among the members it is
+made with (`members`, added right after the creator with `addChannelMember`'s checks; the web's new-channel dialog and
+the right hand's `create_channel` pass who they pick) or when the workspace is personal; a personal workspace's
+`#general` starts off too (`createOrganization`). Otherwise the column's default stays. It is only the starting
+value: people joining or leaving later change nothing, and the switch, or an agent, changes it like any other choice.
 
-Alternatives considered:
+Agents change it with the workspace action `update_channel` (`reply_in_threads`, applied at once with Undo, under the
+same `manage_channels` as the rest of the action); its card says "Agents reply in threads" or "Agents reply in the
+channel".
 
-- **Choosing the value once, when the channel is created.** A channel starts with its creator alone, so nearly every
-  team channel, `#general` included, would have stayed off after the team arrived.
-- **Hiding the switch while it doesn't apply.** Personal mode changes defaults and what is in sight, never what exists
-  (ADR 0159 §1): someone alone may still want each request in its own thread.

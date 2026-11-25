@@ -54,7 +54,6 @@ import {
 } from "./permissions";
 import { refuseRightHand } from "./right-hand";
 import { isRoutineRoomKey } from "./routine-brief";
-import { channelRepliesInThreadsSql } from "./run-scope";
 import { accountInUse, readRefusal, STANDING_COLUMNS } from "./standing";
 import {
   adminChannelSql,
@@ -63,6 +62,7 @@ import {
   fileConversationReaderSql,
   taskReaderSql,
 } from "./task-access";
+import { isPersonalWorkspace } from "./workspace-mode";
 
 const { channels, channelMembers, agents, organizationMembers, organizations, users } = schema;
 
@@ -192,6 +192,8 @@ export async function createChannel(
     /** Private only: people holding one of these roles also see it and may join (ADR 0125). */
     audienceRoleIds?: string[];
     categoryId?: string | null;
+    /** Who joins it right after its creator, with the same checks as adding them one by one (`addChannelMember`). */
+    members?: ({ userId: string } | { agentId: string })[];
   },
   options: { pubsub?: PubSub } = {},
 ): Promise<Channel> {
@@ -206,6 +208,11 @@ export async function createChannel(
   }
   const visibility = input.visibility ?? "public";
   const audienceRoleIds = await channelRoleIds(db, orgId, visibility, input.audienceRoleIds);
+  const members = input.members ?? [];
+  // Answers in threads keep the main timeline clear for the other people in it (ADR 0214): a channel made with no one
+  // but its creator, or in a personal workspace (ADR 0159), starts with them in the main timeline instead.
+  const alone = !members.some((m) => "userId" in m && m.userId !== actorId);
+  const threadsOff = alone || (await isPersonalWorkspace(db, orgId));
   try {
     const made = await db.transaction(async (tx) => {
       const [channel] = await tx
@@ -219,6 +226,7 @@ export async function createChannel(
           createdByUserId: actorId,
           categoryId,
           position: await endOfCategory(tx, orgId, categoryId),
+          ...(threadsOff ? { replyInThreads: false } : {}),
         })
         .returning();
       if (!channel) throw new Error("channel insert returned nothing");
@@ -226,23 +234,15 @@ export async function createChannel(
       return channel;
     });
     await publishChannelsChanged(options.pubsub, orgId);
+    for (const member of members) {
+      if ("userId" in member && member.userId === actorId) continue;
+      await addChannelMember(db, actorId, orgId, made.id, member, options);
+    }
     return made;
   } catch (error) {
     if (isUniqueViolation(error)) throw new ConflictError(`#${name} already exists`);
     throw error;
   }
-}
-
-/**
- * Whether agents asked in the channel's main timeline answer in threads now (ADR 0214): its own choice, else on in a
- * team workspace once two people are in it. What the apps show on its switch.
- */
-export async function channelRepliesInThreads(db: Executor, channelId: string): Promise<boolean> {
-  const [row] = rowsOf<{ threads: boolean | string }>(
-    await db.execute(sql`select ${channelRepliesInThreadsSql(sql`c`)} as threads from ${channels} c
-      where c.id = ${channelId}::uuid`),
-  );
-  return row?.threads === true || row?.threads === "t";
 }
 
 /** The most unread messages counted per channel (clients show "99+"). */
@@ -277,10 +277,7 @@ export interface ChannelListItem {
   categoryId: string | null;
   /** Order inside its category. */
   position: number;
-  /**
-   * Agents asked in its main timeline answer in the thread under that message (ADR 0214): its own choice, else on
-   * in a team workspace once two people are in it (`channelRepliesInThreadsSql`).
-   */
+  /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). */
   replyInThreads: boolean;
   /** The agent responsible for the channel (ADR 0095, addendum of 2026-11-23); null: none. */
   leadAgentId: string | null;
@@ -369,7 +366,7 @@ export async function listChannels(db: Database, userId: string, orgId: string):
     and u.meta->>'mediaAfter' is null`;
   const rows = rowsOf<ChannelListRow>(
     await db.execute(sql`select c.id, c.org_id, c.name, c.topic, c.visibility, c.audience_role_ids, c.created_by_user_id, c.created_at,
-        c.category_id, c.position, ${channelRepliesInThreadsSql(sql`c`)} as reply_in_threads, c.lead_agent_id,
+        c.category_id, c.position, c.reply_in_threads, c.lead_agent_id,
         (cm.id is not null) as is_member,
         (cm.id is null and c.visibility <> 'public' and not ${channelAudienceSql("c", sql`${userId}`)}) as seen_as_admin,
         coalesce(un.n, 0) as unread_count, coalesce(un.m, 0) as mention_count,

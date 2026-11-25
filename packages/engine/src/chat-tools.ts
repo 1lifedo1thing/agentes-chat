@@ -24,7 +24,6 @@ import { actingRoutineOfCall, personBehindCall } from "./requester";
 import { isRightHandId } from "./right-hand";
 import { isRoutineRoomKey } from "./routine-brief";
 import { personCanPost } from "./routine-state";
-import { channelRepliesInThreadsSql } from "./run-scope";
 import type { ArtifactLink } from "./run-tools";
 import { replyThreadOf } from "./runs";
 import { accountInUse } from "./standing";
@@ -223,7 +222,7 @@ export function createChatToolSource(deps: {
               name: channels.name,
               visibility: channels.visibility,
               dmKey: channels.dmKey,
-              replyInThreads: channelRepliesInThreadsSql(sql`${channels}`),
+              replyInThreads: channels.replyInThreads,
             })
             .from(channels)
             .where(

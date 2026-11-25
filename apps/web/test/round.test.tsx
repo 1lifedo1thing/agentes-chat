@@ -165,13 +165,11 @@ describe("Criar canal", () => {
       topic: "Leads e propostas",
       visibility: "private",
       audienceRoleIds: [],
+      // Who it starts with goes with it: the server decides from them whether its agents answer in threads.
+      members: [{ agentId: ADA_ID }],
     });
     const created = state.channels.find((c) => c.name === "vendas-sul");
-    expect(state.calls.find((c) => c.method === "chat.addMember")?.args).toEqual([
-      ORG_ID,
-      created?.id,
-      { agentId: ADA_ID },
-    ]);
+    expect(state.calls.some((c) => c.method === "chat.addMember")).toBe(false);
     expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/c/${created?.id}`);
   });
 });
