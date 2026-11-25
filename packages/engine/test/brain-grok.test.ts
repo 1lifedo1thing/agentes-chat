@@ -1,17 +1,15 @@
 import { expect, test } from "bun:test";
-import { GROK_PROTOCOL, LOCKED_BRAIN_PROTOCOL, SHARED_GROK_PROTOCOL } from "@agenteschat/adapters";
+import {
+  GROK_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
+  LOCKED_BRAIN_PROTOCOL,
+  SHARED_GROK_PROTOCOL,
+} from "@agenteschat/adapters";
 import { GROK_BUILD_MODELS, loginPerAgent, sharedSignIn } from "@agenteschat/providers/plans";
 import { brainOptions, defaultBrainModel, grokModels, isBrainKind } from "../src/brain-settings";
 import { type BrainTurnRequest, type ComputerBrainLink, GrokBrain } from "../src/brains/codex";
 import { computerBrainUnavailable, NO_AI_CODES, UNAVAILABLE_CODES } from "../src/brains/select";
-import {
-  BRAIN_NAMES,
-  BRAIN_PLAN_NAMES,
-  type BrainEvent,
-  type BrainTurn,
-  isComputerBrain,
-  SYSTEM_REFUSED,
-} from "../src/brains/types";
+import { BRAIN_NAMES, BRAIN_PLAN_NAMES, type BrainEvent, type BrainTurn, isComputerBrain } from "../src/brains/types";
 import { defaultAccountLabel, sharesSignIns } from "../src/machine-accounts";
 import type { MachineStatus } from "../src/machine-hub";
 import { scrubSignIns } from "../src/tool-detail";
@@ -181,15 +179,19 @@ test("the right hand's reply never carries an xAI key", () => {
   expect(out.found).toBeGreaterThan(0);
 });
 
-test("a Grok turn on a Windows computer is refused before its runner is asked, as its system's, never retried", async () => {
-  const windows = link({ os: "windows" });
-  expect(await collect(brain(windows).run(turn(), io()))).toEqual([
-    { type: "error", code: SYSTEM_REFUSED, message: "Grok Build doesn't run on this computer's system yet." },
-  ]);
-  expect(windows.sent).toEqual([]);
-  // Linux and macOS, and a computer that never said its system, still get the turn.
-  for (const os of ["linux", "darwin", undefined]) {
-    const l = link({ ...(os ? { os } : {}), events: [{ type: "done", text: "ok", session: { id: "s" } }] });
+test("a Grok turn on a Windows computer reaches its runner from `GROK_WINDOWS_PROTOCOL` on, like Linux and macOS", async () => {
+  // An older Windows runner is refused as too old (brain-codex.test.ts), never as its system's.
+  for (const [os, protocol] of [
+    ["windows", GROK_WINDOWS_PROTOCOL],
+    ["linux", undefined],
+    ["darwin", undefined],
+    [undefined, undefined],
+  ] as const) {
+    const l = link({
+      ...(os ? { os } : {}),
+      ...(protocol ? { protocol } : {}),
+      events: [{ type: "done", text: "ok", session: { id: "s" } }],
+    });
     await collect(brain(l).run(turn(), io()));
     expect(l.sent).toHaveLength(1);
   }

@@ -2294,7 +2294,7 @@ export const en = {
       threads: { title: "Threads you follow", help: "Replies in threads you wrote in or follow" },
       tasks: { title: "Tasks", help: "Tasks for you, comments and when one changes stage" },
       routines: { title: "Routines and missions", help: "When they stop, fail or wait for their computer" },
-      computers: { title: "Computers", help: "A new computer joined or the workspace's one is ready" },
+      computers: { title: "Computers", help: "A computer joined, is ready, or stopped answering" },
       reactions: { title: "Reactions", help: "When someone reacts to a message of yours" },
     },
   },
@@ -2355,8 +2355,8 @@ export const en = {
       newChannel: "New channel",
       /** A personal workspace calls its channels group conversations (ADR 0159). */
       newChannelPersonal: "New group conversation",
-      addToChannels: "New channel or category",
-      addToChannelsPersonal: "New group conversation or category",
+      addToChannels: "New channel",
+      addToChannelsPersonal: "New group conversation",
       newMessage: "New message",
       addMembers: "Add people or agents",
       channelSettings: "Channel settings",
@@ -2528,7 +2528,11 @@ export const en = {
     delete: "Delete department",
     deleteTitle: "Delete the department {{name}}?",
     deleteText: "Its agents go back to Agents.",
+    /** After deleteText when the department holds channels (ADR 0240). */
+    deleteChannels: "Its channels go back to Channels.",
     dropHere: "Drag agents here",
+    /** The sidebar's empty department: agents and channels both drop there (ADR 0240). */
+    dropHereAll: "Drag agents or channels here",
     moved: "{{name}} moved to {{group}}",
     movedOut: "{{name}} left {{group}}",
     undo: "Undo",
@@ -2652,6 +2656,18 @@ export const en = {
       unlinkText: "{{assistant}} stops answering you there. You can link it again any time.",
       unlinked: "{{surface}} unlinked",
     },
+    /** Settings › Notifications: the unread nudge under the linked chat app's row (ADR 0234). */
+    nudge: {
+      title: "Unread reminder",
+      hint: "When something waits unread in the app, {{assistant}} reminds you on {{surface}}, at most once a day. Not when your phone gets push notifications.",
+      after: "Remind after",
+      hours: "{{hours}} h",
+      quiet: "Quiet hours",
+      quietHint: "No reminders between these hours, in your time zone.",
+      quietFrom: "From",
+      quietTo: "Until",
+      quietRange: "{{from}} to {{to}}",
+    },
     /** The page the "linked" email's undo opens. Signed out, so it learns the app's name only from the answer. */
     undo: {
       title: "Unlink the chat app?",
@@ -2713,6 +2729,8 @@ export const en = {
       set: "Set PIN",
       change: "Change PIN",
       title: "Your {{surface}} PIN",
+      /** The settings row's name, right under the app's own row: the app's name, which can be long, stays out of it. */
+      row: "Your PIN",
       text: "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat.",
       save: "Save PIN",
     },
@@ -3492,6 +3510,9 @@ export const en = {
       set_notifications_off: "Turn off your notifications for <b>{{category}}</b>",
       set_my_timezone: "Set your time zone to <b>{{timezone}}</b>",
       set_my_timezone_workspace: "Follow the workspace's time zone again",
+      set_computer_help: "Let <b>{{computer}}</b> help when your agents' computer is full or away",
+      set_computer_help_first: "Use <b>{{computer}}</b> for your agents' work",
+      set_computer_help_off: "Stop using <b>{{computer}}</b> for your agents",
       set_invitation_roles: "Change the roles the invitation of <b>{{email}}</b> gives: {{change}}",
       update_channel: "Change the channel <b>#{{channel}}</b>",
       archive_channel: "Archive <b>#{{channel}}</b>",
@@ -3938,6 +3959,16 @@ export const en = {
       plan: "With a plan",
       key: "With an API key",
     },
+    /**
+     * A plan's line in the pickers when it doesn't run on the computer's system (`planOffSystem`), in place of its
+     * tiers: `system` is "Windows", "macOS"…
+     */
+    offSystem: "Doesn't run on {{system}} yet",
+    /** The heading over those plans at the end of the plans' select. */
+    offSystemGroup: "Don't run on {{system}} yet",
+    /** Under "More plans" while it's folded: the plans in it that don't run on the computer's system. */
+    offSystemSome_one: "{{names}} doesn't run on {{system}} yet",
+    offSystemSome_other: "{{names}} don't run on {{system}} yet",
     pick: {
       plan: "Plan",
       placeholder: "Choose a plan",
@@ -3958,6 +3989,7 @@ export const en = {
         /** Shown plainly wherever a personal Gemini plan is connected or chosen: Google's own rule for consumer plans. */
         warning:
           "Google says using a personal Gemini plan inside other apps can get the account suspended. To avoid that risk, use a Gemini API key or Gemini Enterprise.",
+        windowsOne: "On Windows, a computer uses one Gemini account at a time.",
       },
       /** OpenCode's CLI (ADR 0132): its free models with no sign-in, or a key from OpenCode's console. */
       zen: { title: "OpenCode", tiers: "Free models, or your OpenCode key" },
@@ -4469,6 +4501,9 @@ export const en = {
       changed_set_notifications_off: "Turned off your notifications for <b>{{category}}</b>",
       changed_set_my_timezone: "Set your time zone to <b>{{timezone}}</b>",
       changed_set_my_timezone_workspace: "Your time zone follows the workspace's again",
+      changed_set_computer_help: "<b>{{computer}}</b> now helps when your agents' computer is full or away",
+      changed_set_computer_help_first: "Your agents' work now starts on <b>{{computer}}</b>",
+      changed_set_computer_help_off: "<b>{{computer}}</b> no longer helps your agents",
       changed_set_invitation_roles: "Changed the roles the invitation of <b>{{email}}</b> gives: {{change}}",
       changed_update_channel: "Changed the channel <b>#{{channel}}</b>",
       changed_archive_channel: "Archived <b>#{{channel}}</b>",
@@ -4622,52 +4657,8 @@ export const en = {
     create: "Create #{{name}}",
   },
   channelCategories: {
-    newCategory: "New category",
-    newCategoryHelp: "Goes to the end of the list. You can drag it later.",
-    newCategoryDesc: "Groups channels under one name in everyone's sidebar.",
-    name: "Name",
-    namePlaceholder: "e.g. Product",
-    nameEmpty: "Give the category a name.",
-    nameTaken: "There is already a category {{name}}.",
-    channels: "Channels that go into it",
-    channelsSearch: "Search channels",
-    channelsEmpty: "No channel matches “{{q}}”.",
-    inCategory: "Now in {{name}}",
-    noCategory: "No category",
-    noCategoryDesc: "On top, with no header",
-    create: "Create category",
-    createWith_one: "Create with {{count}} channel",
-    createWith_other: "Create with {{count}} channels",
-    created: "{{name}} created.",
-    rename: "Rename",
-    renameTitle: "Rename category",
-    save: "Save",
-    delete: "Delete category",
-    deleteDesc: "Its channels go to the top",
-    deleted_one: "{{name}} deleted. {{count}} channel went to the top.",
-    deleted_other: "{{name}} deleted. {{count}} channels went to the top.",
-    deletedEmpty: "{{name}} deleted.",
     undo: "Undo",
-    collapseAll: "Close all",
-    expandAll: "Open all",
-    newChannelHere: "New channel here",
-    newChannelIn: "New channel in {{name}}",
-    options: "{{name}} options",
-    category: "Category",
     categoryHelp: "Where the channel shows in everyone's sidebar.",
-    newCategoryOption: "New category…",
-    move: "Move to…",
-    moveTitle: "Move #{{channel}}",
-    moveDesc: "Changes where the channel sits in everyone's sidebar. Who takes part stays the same.",
-    moveSearch: "Search categories",
-    moveEmpty: "No category matches “{{q}}”.",
-    moveTo: "Move to {{name}}",
-    moveSame: "Move",
-    moveNow: "Now",
-    moveEmptyCategory: "No channels yet",
-    moveCreate: "Create “{{name}}”",
-    moved: "#{{channel}} is now in {{name}}.",
-    newWithChannel: "New category with this channel",
     editChannel: "Edit channel",
   },
   channelMembers: {
@@ -4844,6 +4835,10 @@ export const en = {
     },
     bySelf: "Written by {{name}} · clears when it's done",
     byAuto: "What it's doing now",
+    /** Under its line when its work is in a conversation the reader doesn't read (someone else's DM). */
+    byPrivate: "In a private conversation · only the people in it see the details",
+    /** The line's tip and name for screen readers when it opens where the work is. */
+    openWork: "Open the conversation",
   },
   /**
    * An agent's work in a list's line and on its profile card (ADR 0084 addendum of 2026-11-13), lowercase: where it
@@ -4858,6 +4853,8 @@ export const en = {
     /** Its own work in the conversation the list belongs to (the members column). */
     here: "here",
     routine: "on a routine",
+    /** In a conversation the reader doesn't read (someone else's DM, a private channel). */
+    private: "in a private conversation",
     /** After "Waiting for you" on the profile card. */
     yourApproval: "your approval",
     yourAnswer: "your answer",
@@ -5525,8 +5522,19 @@ export const en = {
     canceledChip: "Canceled · {{when}}",
     /** After an approved request's outcome on a shared card: it runs in the order asked. */
     line: {
-      after: "runs after “{{title}}”",
       notRun: "not run: the request before it wasn't approved",
+    },
+    /** Approved, and waiting for a request asked before it (ADR 0182): what it waits for, and a way past it. */
+    held: {
+      waiting: "Waiting for <link/>",
+      runNow: "Run this now",
+    },
+    /** Every waiting request of one agent, decided at once (the inbox, the phone's list of what waits on you). */
+    byAgent: {
+      head_one: "{{count}} request from {{name}}",
+      head_other: "{{count}} requests from {{name}}",
+      approve: "Approve all",
+      refuse: "Refuse all",
     },
     waitingFor: "Waiting for {{name}}",
     waitingAdmin: "Waiting for an admin",
@@ -6143,8 +6151,6 @@ export const en = {
       queued: "In line",
       notRun: "Not run",
     },
-    /** Approved, waiting for a request the agent asked before it on the same card to be decided and done. */
-    queuedLine: "Approved. Runs after “{{title}}”, asked before it.",
     /** Approved before a request asked ahead of it was refused or expired: it didn't run. */
     notRunRefused: "“{{title}}”, asked before this, was refused after this was approved, so this didn't run.",
     notRunExpired: "“{{title}}”, asked before this, expired undecided after this was approved, so this didn't run.",
@@ -13007,9 +13013,6 @@ export const en = {
       not_reported: "{{computer}} is still checking which programs it has. This changes by itself when it's done.",
       /** The runner doesn't run this program on that computer's system (Cursor on Windows, for one). */
       system: "{{program}} doesn't run on {{computer}}'s system yet.",
-      /** The Antigravity CLI on Windows (ADR 0143). The button to use an API key follows. */
-      systemAntigravity:
-        "Gemini plans don't run on {{computer}} yet: on Windows the Antigravity CLI keeps its Google sign-in in the Credential Manager, which agentes.chat can't yet keep apart for each account. Use a Gemini API key instead.",
       /** Codex on a Windows computer where neither MXC nor Codex's own sandbox could start. */
       windows_sandbox:
         "{{computer}}'s Windows can't isolate {{program}}'s commands. Choose Claude or an API key instead, or update that computer to Windows\u00a011\u00a024H2 or newer, with its latest updates.",
@@ -13111,7 +13114,14 @@ export const en = {
     /** The viewer's own computers that may take their replies while this one is full (`machines.spill_own`). */
     spill: {
       title: "Your computers",
-      text: "When this computer is full or away, your agents can start on one of yours. Missions, code sessions and agents with repositories stay here.",
+      text: "When this computer is full or away, your agents can start on one of yours. One you use for their work takes their asks, routines and long work first. Missions, code sessions and agents with repositories stay here.",
+      /** How each of the viewer's computers helps (`spill.own`, `spill.first`). */
+      use: {
+        label: "How {{name}} helps",
+        off: "Doesn't help",
+        help: "When this one is full or away",
+        first: "For my agents' work",
+      },
       /** The viewer's own sign-in there, "Claude Max". */
       plan: "your {{plan}} plan",
     },
@@ -13158,6 +13168,8 @@ export const en = {
     },
     /** A turn waiting its turn, one line whatever holds it (its computer or its AI sign-in): the agent's row where "thinking" shows otherwise, and the task manager. */
     waiting: "In line · starts soon",
+    /** The same line while it waits behind another agent's turn on that computer: {{name}} is that agent; `_female` where your language says it differently for a feminine name. */
+    waitingAfter: "In line, after {{name}}",
     /** Places in line by the language's ordinal rule (one: 1st, 21st; two: 2nd; few: 3rd; other: 4th). Same text in each when your language has one form. */
     nth: {
       one: "{{n}}st",
@@ -15438,6 +15450,16 @@ export const en = {
     seeAsks: "See what asks for approval",
     agentTitle: "What {{name}} can use",
     agentSub: "By connector and subject. By default, sensitive actions ask for approval.",
+    /** A server by address's own instructions (MCP's `instructions`), under its tools in the review. */
+    instructions: {
+      title: "Server instructions",
+      hint: "Agents that use these tools get this text after their own instructions.",
+      /** `used` and `max` come formatted ("1,234", "4,000"). */
+      chars: "{{used}} of {{max}} characters",
+      cut: "Cut at {{max}} characters",
+      off: "Agents don't get this text.",
+      none: "The server sends no instructions.",
+    },
   },
   connectFlow: {
     steps: "Steps",
@@ -15491,6 +15513,8 @@ export const en = {
      */
     ownClient: {
       title: "Use your own OAuth app",
+      /** Opened before the server's address is typed (or while it isn't https): the form reads that address. */
+      addressFirst: "Enter the server's https address first.",
       notApproved:
         "{{name}} only lets in apps it approved, and agentes.chat isn't one yet. You can connect it with your own app there.",
       askAdmin: "An admin can connect it with the workspace's own app.",
@@ -16356,6 +16380,8 @@ export const en = {
       /** Reconnecting an account whose saved headers, kept encrypted, could no longer be opened. */
       headersUnreadable: "The saved headers couldn't be read. Type them again, or remove them.",
       noOAuth: "The MCP server doesn't sign in with OAuth, so it takes no app of yours. Connect it with an API key.",
+      oauthDiscovery:
+        "The MCP server signs in with OAuth, but its sign-in details at {{host}} couldn't be read. Try again in a few minutes.",
       ownClientInUse: "Accounts still sign in with the app saved before. Disconnect them first, then change it.",
       ownClientId: "Check the client ID: one word, as the provider shows it.",
     },
@@ -16605,6 +16631,9 @@ export const en = {
       notLinkMaker: "Only the person who made the link can let this computer join.",
       widenForbidden: "Admins can only narrow who can use someone's own device.",
       spillOwnerOnly: "Only the person who connected this computer can turn its help on. You can turn it off.",
+      shareOwnerOnly:
+        "Only the person who connected this computer can let agents use its internet. You can turn it off.",
+      shareConnectedOnly: "Only a computer someone connected can share its internet with the agents.",
       tasksOwnerOnly: "Only the person who connected this computer can change how many tasks it runs at once.",
       tasksCloud: "The Cloud sizes this computer's room for tasks itself.",
       notHome: "Agents live on the workspace computer and use this one when they name it.",
@@ -16626,6 +16655,8 @@ export const en = {
       adminAskSelf: "You can do this here yourself.",
       accountMethodUnsupported:
         "This computer can't connect Claude this way yet. Update the agentes.chat program on it, or use an API key.",
+      windowsOneGemini:
+        "On Windows, a computer uses one Gemini account at a time. Remove the other Gemini account from this computer to sign in with this one.",
       brainUnavailable: "This AI isn't set up on {{computer}} yet. Set it up there, or choose another one.",
       offline: "{{name}} is offline right now. Try again once it's back.",
       paused: "{{name}} is paused: nothing new starts on it until it's resumed.",
@@ -16779,6 +16810,10 @@ export const en = {
       line: "Exit IP {{ip}}",
       hint: "The address websites see when the agents browse. It updates when the computer’s network changes.",
       waiting: "Reconnecting the agents’ internet. Their connections wait until it’s back.",
+      /** The workspace's computer opens websites through a person's computer's internet (ADR 0237). */
+      via: "Agents use the internet of {{name}}",
+      viaBy: "Agents use the internet of {{name}} ({{person}})",
+      viaHint: "Websites see that computer’s location. Its owner can turn it off on its page.",
     },
     /** The workspace's own computer, away while it moves to another server: never "offline" or "not answering". */
     moving: {
@@ -16928,6 +16963,21 @@ export const en = {
     },
     /** A notice row's headline: the computer's runner found no Google Chrome, which agents' browsers now run on. */
     chromeMissingNotice: "{{name}} needs Google Chrome for the agents' browser. Get it at google.com/chrome",
+    /** A notice row: a computer the agents work on has been away a while (`down`), and is back (`back`). */
+    outage: {
+      down: "{{name}} isn't answering",
+      back: "{{name}} is back",
+      /** When the outage began, at the time of day: "Since 14:05". */
+      since: "Since {{time}}",
+      backAfter: "Back after {{away}}",
+      /** What waits for it now (`down`), or waited (`back`): a list of `runs` and `calls`. */
+      waiting: "Waiting: {{what}}",
+      waited: "Waited: {{what}}",
+      runs_one: "{{count}} agent request",
+      runs_other: "{{count}} agent requests",
+      calls_one: "{{count}} webhook call",
+      calls_other: "{{count}} webhook calls",
+    },
     access: {
       folders: "Allowed folders",
       ownFolder: "Each agent's folder",
@@ -17058,9 +17108,23 @@ export const en = {
       "When an agent's computer is full or away, its replies, asks and routines can think here with its owner's sign-in on this computer.",
     /** Under the switch while an admin turned devices' help off for the whole workspace. */
     spillWorkspaceOff: "An admin turned this off for the workspace.",
+    /** `machines.spill_first`: its owner's agents' work starts here first. */
+    spillFirst: "Use this computer for my agents' work",
+    spillFirstHint:
+      "Your agents' asks, routines and long work start here whenever it is free, with the AI you connected here. Replies to people start here only when the team's computer is full or away.",
     /** Settings › Devices, admins: the workspace's switch over every computer's own (`devicesHelp`). */
     helpWorkspace: "Computers help when the team's is full or away",
     helpWorkspaceHint: "Each computer helps only if its owner allows it. Off: none helps, whatever its owner chose.",
+    /** A person's computer lends its internet to the workspace's own computer (ADR 0237). */
+    shareInternet: "Agents use this computer's internet",
+    shareInternetHint:
+      "Websites the agents open go out through this computer's connection, so they see your location. Only websites, up to 5 GB a day, and never anything on your own network. While this computer is offline, the agents use their usual connection.",
+    shareInternetInUse: "In use now",
+    shareInternetOther: "Agents use {{name}} now",
+    shareInternetPick: "Use this one",
+    /** Under Let it join, in a workspace with its own computer. */
+    shareInternetJoin:
+      "The agents will also open websites through this computer's internet, so sites see your location. You can turn it off on its page.",
     connectedBy: "Connected by {{name}}",
     downloadFor: "Download for {{system}}",
     downloadApp: "Download the app",
@@ -17686,6 +17750,17 @@ export const en = {
       toolRequest: "<b>{{who}}</b> asks you to turn on {{tool}} on your <b>{{deviceName}}</b>",
       cliRequest: "<b>{{who}}</b> asks you to install {{tool}} on your <b>{{deviceName}}</b>",
       folderRequest: "<b>{{who}}</b> asks for the folder {{path}} on your <b>{{deviceName}}</b>",
+      /**
+       * Once, for a computer paired before agents could use a person's internet (ADR 0237): to its owner, or to admins
+       * for a computer marked the workspace's. `deviceName` the computer's name.
+       */
+      internetShared: "Agents now open websites through the internet of <b>{{deviceName}}</b>",
+      /** Under it: what lending keeps out and what happens while the computer is offline. */
+      internetSharedLine:
+        "Only this workspace's agents, only websites, up to 5 GB a day, never anything on its own network. While it's offline, they use their usual connection.",
+      /** Its one button: stops lending this computer's internet. */
+      internetOff: "Turn off",
+      internetOffDone: "Agents no longer use the internet of {{deviceName}}.",
       once: "Allow once",
       always: "Always",
       no: "No",
@@ -19168,6 +19243,8 @@ export const en = {
       full: "Thought on {{to}}: {{from}} was full.",
       away: "Thought on {{to}}: {{from}} was away.",
       itsComputer: "its computer",
+      /** Its owner uses that computer for their agents' work (`spill.first`). */
+      chosen: "Thought on {{to}}, which its owner uses for their agents' work.",
     },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
@@ -21094,6 +21171,18 @@ export const en = {
       busy: "Too many people are watching right now.",
       ended: "The screen closed.",
       retrying: "Trying again…",
+    },
+    /**
+     * Under "Opening {{name}}'s computer…" once it took long (`slow`) or a try failed, the cause; `gaveUp` once it
+     * stopped trying by itself. Each with Try again.
+     */
+    open: {
+      gaveUp: "Couldn't open {{name}}'s screen.",
+      slow: "This is taking longer than usual.",
+      late: "{{computer}} took too long to answer.",
+      dropped: "The connection dropped.",
+      offline: "{{computer}} isn't answering.",
+      refused: "{{computer}} couldn't open the screen.",
     },
     retry: "Try again",
     takeover: "Take control",

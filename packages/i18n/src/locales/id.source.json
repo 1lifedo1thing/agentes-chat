@@ -5298,7 +5298,7 @@
     "value": "Computers"
   },
   "noticePrefs.category.computers.help": {
-    "value": "A new computer joined or the workspace's one is ready"
+    "value": "A computer joined, is ready, or stopped answering"
   },
   "noticePrefs.category.reactions.title": {
     "value": "Reactions"
@@ -5439,10 +5439,10 @@
     "value": "New group conversation"
   },
   "shell.sidebarMenu.addToChannels": {
-    "value": "New channel or category"
+    "value": "New channel"
   },
   "shell.sidebarMenu.addToChannelsPersonal": {
-    "value": "New group conversation or category"
+    "value": "New group conversation"
   },
   "shell.sidebarMenu.newMessage": {
     "value": "New message"
@@ -5900,8 +5900,14 @@
   "agentGroups.deleteText": {
     "value": "Its agents go back to Agents."
   },
+  "agentGroups.deleteChannels": {
+    "value": "Its channels go back to Channels."
+  },
   "agentGroups.dropHere": {
     "value": "Drag agents here"
+  },
+  "agentGroups.dropHereAll": {
+    "value": "Drag agents or channels here"
   },
   "agentGroups.moved": {
     "value": "{{name}} moved to {{group}}"
@@ -6152,6 +6158,33 @@
   "surface.row.unlinked": {
     "value": "{{surface}} unlinked"
   },
+  "surface.nudge.title": {
+    "value": "Unread reminder"
+  },
+  "surface.nudge.hint": {
+    "value": "When something waits unread in the app, {{assistant}} reminds you on {{surface}}, at most once a day. Not when your phone gets push notifications."
+  },
+  "surface.nudge.after": {
+    "value": "Remind after"
+  },
+  "surface.nudge.hours": {
+    "value": "{{hours}} h"
+  },
+  "surface.nudge.quiet": {
+    "value": "Quiet hours"
+  },
+  "surface.nudge.quietHint": {
+    "value": "No reminders between these hours, in your time zone."
+  },
+  "surface.nudge.quietFrom": {
+    "value": "From"
+  },
+  "surface.nudge.quietTo": {
+    "value": "Until"
+  },
+  "surface.nudge.quietRange": {
+    "value": "{{from}} to {{to}}"
+  },
   "surface.undo.title": {
     "value": "Unlink the chat app?"
   },
@@ -6286,6 +6319,9 @@
   },
   "surface.pin.title": {
     "value": "Your {{surface}} PIN"
+  },
+  "surface.pin.row": {
+    "value": "Your PIN"
   },
   "surface.pin.text": {
     "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
@@ -8042,6 +8078,15 @@
   "rightHand.action.set_my_timezone_workspace": {
     "value": "Follow the workspace's time zone again"
   },
+  "rightHand.action.set_computer_help": {
+    "value": "Let <b>{{computer}}</b> help when your agents' computer is full or away"
+  },
+  "rightHand.action.set_computer_help_first": {
+    "value": "Use <b>{{computer}}</b> for your agents' work"
+  },
+  "rightHand.action.set_computer_help_off": {
+    "value": "Stop using <b>{{computer}}</b> for your agents"
+  },
   "rightHand.action.set_invitation_roles": {
     "value": "Change the roles the invitation of <b>{{email}}</b> gives: {{change}}"
   },
@@ -8896,6 +8941,18 @@
   "connectAi.pay.key": {
     "value": "With an API key"
   },
+  "connectAi.offSystem": {
+    "value": "Doesn't run on {{system}} yet"
+  },
+  "connectAi.offSystemGroup": {
+    "value": "Don't run on {{system}} yet"
+  },
+  "connectAi.offSystemSome": {
+    "value": {
+      "one": "{{names}} doesn't run on {{system}} yet",
+      "other": "{{names}} don't run on {{system}} yet"
+    }
+  },
   "connectAi.pick.plan": {
     "value": "Plan"
   },
@@ -8946,6 +9003,9 @@
   },
   "connectAi.plan.gemini.warning": {
     "value": "Google says using a personal Gemini plan inside other apps can get the account suspended. To avoid that risk, use a Gemini API key or Gemini Enterprise."
+  },
+  "connectAi.plan.gemini.windowsOne": {
+    "value": "On Windows, a computer uses one Gemini account at a time."
   },
   "connectAi.plan.zen.title": {
     "value": "OpenCode"
@@ -10016,6 +10076,15 @@
   "agentActions.workspace.changed_set_my_timezone_workspace": {
     "value": "Your time zone follows the workspace's again"
   },
+  "agentActions.workspace.changed_set_computer_help": {
+    "value": "<b>{{computer}}</b> now helps when your agents' computer is full or away"
+  },
+  "agentActions.workspace.changed_set_computer_help_first": {
+    "value": "Your agents' work now starts on <b>{{computer}}</b>"
+  },
+  "agentActions.workspace.changed_set_computer_help_off": {
+    "value": "<b>{{computer}}</b> no longer helps your agents"
+  },
   "agentActions.workspace.changed_set_invitation_roles": {
     "value": "Changed the roles the invitation of <b>{{email}}</b> gives: {{change}}"
   },
@@ -10361,143 +10430,11 @@
   "newChannel.create": {
     "value": "Create #{{name}}"
   },
-  "channelCategories.newCategory": {
-    "value": "New category"
-  },
-  "channelCategories.newCategoryHelp": {
-    "value": "Goes to the end of the list. You can drag it later."
-  },
-  "channelCategories.newCategoryDesc": {
-    "value": "Groups channels under one name in everyone's sidebar."
-  },
-  "channelCategories.name": {
-    "value": "Name"
-  },
-  "channelCategories.namePlaceholder": {
-    "value": "e.g. Product"
-  },
-  "channelCategories.nameEmpty": {
-    "value": "Give the category a name."
-  },
-  "channelCategories.nameTaken": {
-    "value": "There is already a category {{name}}."
-  },
-  "channelCategories.channels": {
-    "value": "Channels that go into it"
-  },
-  "channelCategories.channelsSearch": {
-    "value": "Search channels"
-  },
-  "channelCategories.channelsEmpty": {
-    "value": "No channel matches “{{q}}”."
-  },
-  "channelCategories.inCategory": {
-    "value": "Now in {{name}}"
-  },
-  "channelCategories.noCategory": {
-    "value": "No category"
-  },
-  "channelCategories.noCategoryDesc": {
-    "value": "On top, with no header"
-  },
-  "channelCategories.create": {
-    "value": "Create category"
-  },
-  "channelCategories.createWith": {
-    "value": {
-      "one": "Create with {{count}} channel",
-      "other": "Create with {{count}} channels"
-    }
-  },
-  "channelCategories.created": {
-    "value": "{{name}} created."
-  },
-  "channelCategories.rename": {
-    "value": "Rename"
-  },
-  "channelCategories.renameTitle": {
-    "value": "Rename category"
-  },
-  "channelCategories.save": {
-    "value": "Save"
-  },
-  "channelCategories.delete": {
-    "value": "Delete category"
-  },
-  "channelCategories.deleteDesc": {
-    "value": "Its channels go to the top"
-  },
-  "channelCategories.deleted": {
-    "value": {
-      "one": "{{name}} deleted. {{count}} channel went to the top.",
-      "other": "{{name}} deleted. {{count}} channels went to the top."
-    }
-  },
-  "channelCategories.deletedEmpty": {
-    "value": "{{name}} deleted."
-  },
   "channelCategories.undo": {
     "value": "Undo"
   },
-  "channelCategories.collapseAll": {
-    "value": "Close all"
-  },
-  "channelCategories.expandAll": {
-    "value": "Open all"
-  },
-  "channelCategories.newChannelHere": {
-    "value": "New channel here"
-  },
-  "channelCategories.newChannelIn": {
-    "value": "New channel in {{name}}"
-  },
-  "channelCategories.options": {
-    "value": "{{name}} options"
-  },
-  "channelCategories.category": {
-    "value": "Category"
-  },
   "channelCategories.categoryHelp": {
     "value": "Where the channel shows in everyone's sidebar."
-  },
-  "channelCategories.newCategoryOption": {
-    "value": "New category…"
-  },
-  "channelCategories.move": {
-    "value": "Move to…"
-  },
-  "channelCategories.moveTitle": {
-    "value": "Move #{{channel}}"
-  },
-  "channelCategories.moveDesc": {
-    "value": "Changes where the channel sits in everyone's sidebar. Who takes part stays the same."
-  },
-  "channelCategories.moveSearch": {
-    "value": "Search categories"
-  },
-  "channelCategories.moveEmpty": {
-    "value": "No category matches “{{q}}”."
-  },
-  "channelCategories.moveTo": {
-    "value": "Move to {{name}}"
-  },
-  "channelCategories.moveSame": {
-    "value": "Move"
-  },
-  "channelCategories.moveNow": {
-    "value": "Now"
-  },
-  "channelCategories.moveEmptyCategory": {
-    "value": "No channels yet"
-  },
-  "channelCategories.moveCreate": {
-    "value": "Create “{{name}}”"
-  },
-  "channelCategories.moved": {
-    "value": "#{{channel}} is now in {{name}}."
-  },
-  "channelCategories.newWithChannel": {
-    "value": "New category with this channel"
   },
   "channelCategories.editChannel": {
     "value": "Edit channel"
@@ -10939,6 +10876,12 @@
   "presence.byAuto": {
     "value": "What it's doing now"
   },
+  "presence.byPrivate": {
+    "value": "In a private conversation · only the people in it see the details"
+  },
+  "presence.openWork": {
+    "value": "Open the conversation"
+  },
   "agentWork.working": {
     "value": "working"
   },
@@ -10956,6 +10899,9 @@
   },
   "agentWork.routine": {
     "value": "on a routine"
+  },
+  "agentWork.private": {
+    "value": "in a private conversation"
   },
   "agentWork.yourApproval": {
     "value": "your approval"
@@ -12460,11 +12406,26 @@
   "approval.canceledChip": {
     "value": "Canceled · {{when}}"
   },
-  "approval.line.after": {
-    "value": "runs after “{{title}}”"
-  },
   "approval.line.notRun": {
     "value": "not run: the request before it wasn't approved"
+  },
+  "approval.held.waiting": {
+    "value": "Waiting for <link/>"
+  },
+  "approval.held.runNow": {
+    "value": "Run this now"
+  },
+  "approval.byAgent.head": {
+    "value": {
+      "one": "{{count}} request from {{name}}",
+      "other": "{{count}} requests from {{name}}"
+    }
+  },
+  "approval.byAgent.approve": {
+    "value": "Approve all"
+  },
+  "approval.byAgent.refuse": {
+    "value": "Refuse all"
   },
   "approval.waitingFor": {
     "value": "Waiting for {{name}}"
@@ -13956,9 +13917,6 @@
   },
   "approvals.status.notRun": {
     "value": "Not run"
-  },
-  "approvals.queuedLine": {
-    "value": "Approved. Runs after “{{title}}”, asked before it."
   },
   "approvals.notRunRefused": {
     "value": "“{{title}}”, asked before this, was refused after this was approved, so this didn't run."
@@ -30489,9 +30447,6 @@
   "brain.reasons.system": {
     "value": "{{program}} doesn't run on {{computer}}'s system yet."
   },
-  "brain.reasons.systemAntigravity": {
-    "value": "Gemini plans don't run on {{computer}} yet: on Windows the Antigravity CLI keeps its Google sign-in in the Credential Manager, which agentes.chat can't yet keep apart for each account. Use a Gemini API key instead."
-  },
   "brain.reasons.windows_sandbox": {
     "value": "{{computer}}'s Windows can't isolate {{program}}'s commands. Choose Claude or an API key instead, or update that computer to Windows 11 24H2 or newer, with its latest updates."
   },
@@ -30667,7 +30622,19 @@
     "value": "Your computers"
   },
   "queue.spill.text": {
-    "value": "When this computer is full or away, your agents can start on one of yours. Missions, code sessions and agents with repositories stay here."
+    "value": "When this computer is full or away, your agents can start on one of yours. One you use for their work takes their asks, routines and long work first. Missions, code sessions and agents with repositories stay here."
+  },
+  "queue.spill.use.label": {
+    "value": "How {{name}} helps"
+  },
+  "queue.spill.use.off": {
+    "value": "Doesn't help"
+  },
+  "queue.spill.use.help": {
+    "value": "When this one is full or away"
+  },
+  "queue.spill.use.first": {
+    "value": "For my agents' work"
   },
   "queue.spill.plan": {
     "value": "your {{plan}} plan"
@@ -30758,6 +30725,9 @@
   },
   "queue.waiting": {
     "value": "In line · starts soon"
+  },
+  "queue.waitingAfter": {
+    "value": "In line, after {{name}}"
   },
   "queue.nth.one": {
     "value": "{{n}}st"
@@ -36910,6 +36880,24 @@
   "toolReview.agentSub": {
     "value": "By connector and subject. By default, sensitive actions ask for approval."
   },
+  "toolReview.instructions.title": {
+    "value": "Server instructions"
+  },
+  "toolReview.instructions.hint": {
+    "value": "Agents that use these tools get this text after their own instructions."
+  },
+  "toolReview.instructions.chars": {
+    "value": "{{used}} of {{max}} characters"
+  },
+  "toolReview.instructions.cut": {
+    "value": "Cut at {{max}} characters"
+  },
+  "toolReview.instructions.off": {
+    "value": "Agents don't get this text."
+  },
+  "toolReview.instructions.none": {
+    "value": "The server sends no instructions."
+  },
   "connectFlow.steps": {
     "value": "Steps"
   },
@@ -37023,6 +37011,9 @@
   },
   "connectFlow.ownClient.title": {
     "value": "Use your own OAuth app"
+  },
+  "connectFlow.ownClient.addressFirst": {
+    "value": "Enter the server's https address first."
   },
   "connectFlow.ownClient.notApproved": {
     "value": "{{name}} only lets in apps it approved, and agentes.chat isn't one yet. You can connect it with your own app there."
@@ -39091,6 +39082,9 @@
   "errors.connector.noOAuth": {
     "value": "The MCP server doesn't sign in with OAuth, so it takes no app of yours. Connect it with an API key."
   },
+  "errors.connector.oauthDiscovery": {
+    "value": "The MCP server signs in with OAuth, but its sign-in details at {{host}} couldn't be read. Try again in a few minutes."
+  },
   "errors.connector.ownClientInUse": {
     "value": "Accounts still sign in with the app saved before. Disconnect them first, then change it."
   },
@@ -39628,6 +39622,12 @@
   "errors.device.spillOwnerOnly": {
     "value": "Only the person who connected this computer can turn its help on. You can turn it off."
   },
+  "errors.device.shareOwnerOnly": {
+    "value": "Only the person who connected this computer can let agents use its internet. You can turn it off."
+  },
+  "errors.device.shareConnectedOnly": {
+    "value": "Only a computer someone connected can share its internet with the agents."
+  },
   "errors.device.tasksOwnerOnly": {
     "value": "Only the person who connected this computer can change how many tasks it runs at once."
   },
@@ -39678,6 +39678,9 @@
   },
   "errors.machine.accountMethodUnsupported": {
     "value": "This computer can't connect Claude this way yet. Update the agentes.chat program on it, or use an API key."
+  },
+  "errors.machine.windowsOneGemini": {
+    "value": "On Windows, a computer uses one Gemini account at a time. Remove the other Gemini account from this computer to sign in with this one."
   },
   "errors.machine.brainUnavailable": {
     "value": "This AI isn't set up on {{computer}} yet. Set it up there, or choose another one."
@@ -39996,6 +39999,15 @@
   },
   "machines.egress.waiting": {
     "value": "Reconnecting the agents’ internet. Their connections wait until it’s back."
+  },
+  "machines.egress.via": {
+    "value": "Agents use the internet of {{name}}"
+  },
+  "machines.egress.viaBy": {
+    "value": "Agents use the internet of {{name}} ({{person}})"
+  },
+  "machines.egress.viaHint": {
+    "value": "Websites see that computer’s location. Its owner can turn it off on its page."
   },
   "machines.moving.short": {
     "value": "Moving servers"
@@ -40377,6 +40389,36 @@
   "machines.chromeMissingNotice": {
     "value": "{{name}} needs Google Chrome for the agents' browser. Get it at google.com/chrome"
   },
+  "machines.outage.down": {
+    "value": "{{name}} isn't answering"
+  },
+  "machines.outage.back": {
+    "value": "{{name}} is back"
+  },
+  "machines.outage.since": {
+    "value": "Since {{time}}"
+  },
+  "machines.outage.backAfter": {
+    "value": "Back after {{away}}"
+  },
+  "machines.outage.waiting": {
+    "value": "Waiting: {{what}}"
+  },
+  "machines.outage.waited": {
+    "value": "Waited: {{what}}"
+  },
+  "machines.outage.runs": {
+    "value": {
+      "one": "{{count}} agent request",
+      "other": "{{count}} agent requests"
+    }
+  },
+  "machines.outage.calls": {
+    "value": {
+      "one": "{{count}} webhook call",
+      "other": "{{count}} webhook calls"
+    }
+  },
   "machines.access.folders": {
     "value": "Allowed folders"
   },
@@ -40725,11 +40767,35 @@
   "devices.spillWorkspaceOff": {
     "value": "An admin turned this off for the workspace."
   },
+  "devices.spillFirst": {
+    "value": "Use this computer for my agents' work"
+  },
+  "devices.spillFirstHint": {
+    "value": "Your agents' asks, routines and long work start here whenever it is free, with the AI you connected here. Replies to people start here only when the team's computer is full or away."
+  },
   "devices.helpWorkspace": {
     "value": "Computers help when the team's is full or away"
   },
   "devices.helpWorkspaceHint": {
     "value": "Each computer helps only if its owner allows it. Off: none helps, whatever its owner chose."
+  },
+  "devices.shareInternet": {
+    "value": "Agents use this computer's internet"
+  },
+  "devices.shareInternetHint": {
+    "value": "Websites the agents open go out through this computer's connection, so they see your location. Only websites, up to 5 GB a day, and never anything on your own network. While this computer is offline, the agents use their usual connection."
+  },
+  "devices.shareInternetInUse": {
+    "value": "In use now"
+  },
+  "devices.shareInternetOther": {
+    "value": "Agents use {{name}} now"
+  },
+  "devices.shareInternetPick": {
+    "value": "Use this one"
+  },
+  "devices.shareInternetJoin": {
+    "value": "The agents will also open websites through this computer's internet, so sites see your location. You can turn it off on its page."
   },
   "devices.connectedBy": {
     "value": "Connected by {{name}}"
@@ -42110,6 +42176,18 @@
   },
   "devices.notice.folderRequest": {
     "value": "<b>{{who}}</b> asks for the folder {{path}} on your <b>{{deviceName}}</b>"
+  },
+  "devices.notice.internetShared": {
+    "value": "Agents now open websites through the internet of <b>{{deviceName}}</b>"
+  },
+  "devices.notice.internetSharedLine": {
+    "value": "Only this workspace's agents, only websites, up to 5 GB a day, never anything on its own network. While it's offline, they use their usual connection."
+  },
+  "devices.notice.internetOff": {
+    "value": "Turn off"
+  },
+  "devices.notice.internetOffDone": {
+    "value": "Agents no longer use the internet of {{deviceName}}."
   },
   "devices.notice.once": {
     "value": "Allow once"
@@ -45569,6 +45647,9 @@
   },
   "chat.spilled.itsComputer": {
     "value": "its computer"
+  },
+  "chat.spilled.chosen": {
+    "value": "Thought on {{to}}, which its owner uses for their agents' work."
   },
   "chat.modelStandIn.text": {
     "value": "{{plan}} refused {{from}} with this key. I answered with {{to}}, which works with it."
@@ -49583,6 +49664,24 @@
   },
   "desktop.state.retrying": {
     "value": "Trying again…"
+  },
+  "desktop.open.gaveUp": {
+    "value": "Couldn't open {{name}}'s screen."
+  },
+  "desktop.open.slow": {
+    "value": "This is taking longer than usual."
+  },
+  "desktop.open.late": {
+    "value": "{{computer}} took too long to answer."
+  },
+  "desktop.open.dropped": {
+    "value": "The connection dropped."
+  },
+  "desktop.open.offline": {
+    "value": "{{computer}} isn't answering."
+  },
+  "desktop.open.refused": {
+    "value": "{{computer}} couldn't open the screen."
   },
   "desktop.retry": {
     "value": "Try again"

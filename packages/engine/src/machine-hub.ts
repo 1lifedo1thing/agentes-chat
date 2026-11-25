@@ -5,6 +5,7 @@ import {
   type BrowserHandoffInfo,
   brainTopic,
   CLAUDE_SHARED_PROTOCOL,
+  EGRESS_SHARE_PROTOCOL,
   type ErrorReporter,
   HEARTBEAT_MS,
   HELLO_TIMEOUT_MS,
@@ -40,6 +41,7 @@ import type { ToolImage } from "@agenteschat/providers";
 import { getAgentCached } from "./agents";
 import { UUID } from "./authority";
 import { TtlCache } from "./cache";
+import { noticeComputerBack, queueDownChecks } from "./computer-down";
 import { type MachinePhoneRow, publishDevicesChanged, syncMachinePhones } from "./devices";
 import { cutText } from "./format";
 import { codeCommitAuthor } from "./git/person-account";
@@ -75,6 +77,7 @@ import { type WakeWhy, wantMachine } from "./machine-wake";
 import {
   assertNotPaused,
   authenticateMachine,
+  cleanMachineName,
   deletedAgentIds,
   getMachineById,
   inStandby,
@@ -101,6 +104,7 @@ import {
   notifyComputerDiskFull,
   notifyComputerNoChrome,
 } from "./notification-producers";
+import { recordDesktopStarted } from "./operator-events";
 import { enqueue } from "./outbox";
 import { isRightHand } from "./right-hand";
 import { assertCanWork, standingRefusal } from "./standing";
@@ -568,6 +572,8 @@ export interface MachineBrowserHooks {
   pointer?(machineId: string, frame: Extract<RunnerFrame, { type: "browser.pointer" }>): void;
   /** The same on its desktop (ADR 0062): to whoever has that screen open. */
   desktopPointer?(machineId: string, frame: Extract<RunnerFrame, { type: "desktop.pointer" }>): void;
+  /** The computer starts the desktop for one of its streams first (`stream.starting`). */
+  streamStarting?(machineId: string, streamId: string): void;
   /** This socket's computer is asked to end a desktop (`desktop.session.stop`), named by its screen's id. */
   desktopStopped?(machineId: string, screenId: string): void;
   closed?(machineId: string): void;
@@ -678,6 +684,8 @@ export function createMachineHub(deps: MachineHubDeps) {
     };
     if (serverStop) await later(taskOfflineGraceMs, true);
     await later(serverStop ? SERVER_STOP_TASK_GRACE_MS : taskOfflineGraceMs, false);
+    // Still away a while later: who configures the workspace hears it (`computer_down`).
+    await queueDownChecks(db, row.orgId, machineId, new Date(disconnect.at)).catch(() => undefined);
     return true;
   };
 
@@ -800,6 +808,16 @@ export function createMachineHub(deps: MachineHubDeps) {
     const loginBlocked =
       frame.claudeLoginBlocked ??
       (frame.claudeLoginMethods?.includes("cli_login") ? undefined : machine.executors?.claudeLoginBlocked);
+    // Back from an outage its people were told of: they hear it, with what waited, before those runs go on.
+    await noticeComputerBack({ db, pubsub, home: deps.readyEmail?.publicUrl ?? null }, machine).catch((error) =>
+      deps.log?.warn("computer back notice failed", { machineId: machine.id, error: String(error) }),
+    );
+    const nextHostName =
+      machine.kind === "host" &&
+      frame.hostname &&
+      (!machine.name || (machine.hostname !== "" && machine.name === cleanMachineName(machine.hostname)))
+        ? cleanMachineName(frame.hostname)
+        : "";
     await db
       .update(machines)
       .set({
@@ -810,6 +828,7 @@ export function createMachineHub(deps: MachineHubDeps) {
         // Awake: whatever put it in standby is over (ADR 0161).
         standbyAt: null,
         wakeWantedAt: null,
+        ...(nextHostName && nextHostName !== machine.name ? { name: nextHostName } : {}),
         hostname: frame.hostname,
         os: frame.os,
         arch: frame.arch,
@@ -864,6 +883,7 @@ export function createMachineHub(deps: MachineHubDeps) {
         updatedAt: now,
       })
       .where(eq(machines.id, machine.id));
+    if (nextHostName) conn.name = nextHostName;
     // An older socket for this machine on another replica (the runner came back elsewhere) is dropped there.
     await pubsub
       .publish(MACHINE_CONTROL_TOPIC, {
@@ -888,10 +908,11 @@ export function createMachineHub(deps: MachineHubDeps) {
     send(conn, {
       type: "welcome",
       machineId: machine.id,
-      name: machine.name,
+      name: nextHostName || machine.name,
       heartbeatMs,
       mcpOnce: true,
       observeEgress: machine.kind === "managed",
+      ...(machine.kind === "managed" && frame.protocol >= EGRESS_SHARE_PROTOCOL ? { egressRelay: true } : {}),
     });
     // Pings start with `welcome` (the runner's watchdog starts there), not after the slower work below.
     startPings(conn);
@@ -1056,13 +1077,15 @@ export function createMachineHub(deps: MachineHubDeps) {
       throw new MachineRequestError("not_allowed", RIGHT_HAND_OWN_ID_MESSAGE);
     }
     if (!agent) return request;
-    const runs = request.op === "exec" || request.op === "brain.turn" || request.op === "task.start";
+    // A warm start carries what its turn will: the runner starts a new process for a turn whose agent differs.
+    const brain = request.op === "brain.turn" || request.op === "brain.warm";
+    const runs = brain || request.op === "exec" || request.op === "task.start";
     const line = runs ? await agentCoAuthorLine(db, orgId, agent).catch(() => null) : null;
     // A code session's turn is authored as the person who asked, by the GitHub account they connected as their own
     // (ADR 0215 §13); its commands carry theirs already (`withMachineSandbox`).
     const author =
       scope.author ??
-      (request.op === "brain.turn" ? await codeCommitAuthor(db, orgId, request.runId).catch(() => null) : null);
+      (brain && request.runId ? await codeCommitAuthor(db, orgId, request.runId).catch(() => null) : null);
     if (scope.name && !line && !author) return request;
     return {
       ...request,
@@ -1640,7 +1663,13 @@ export function createMachineHub(deps: MachineHubDeps) {
       else if (frame.type === "browser.stream.ended") browserHooks.streamEnded?.(conn.machineId, frame);
       else if (frame.type === "browser.pointer") browserHooks.pointer?.(conn.machineId, frame);
       else if (frame.type === "desktop.pointer") browserHooks.desktopPointer?.(conn.machineId, frame);
-      else if (frame.type === "pong") await touch(conn, frame);
+      else if (frame.type === "stream.starting") browserHooks.streamStarting?.(conn.machineId, frame.streamId);
+      else if (frame.type === "desktop.started") {
+        const { type: _, ...start } = frame;
+        await recordDesktopStarted(db, { orgId: conn.orgId, machineId: conn.machineId, ...start }).catch(
+          () => undefined,
+        );
+      } else if (frame.type === "pong") await touch(conn, frame);
       else if (frame.type === "task.event") {
         await applyTaskEvent({ db, pubsub }, conn.machineId, frame).catch(() => undefined);
       } else if (frame.type === "mcp.call") {

@@ -111,7 +111,7 @@ export function chatRoutes(deps: AppDeps) {
             seenAsAdmin: r.seenAsAdmin,
             createdByUserId: r.createdByUserId,
             createdAt: r.createdAt.toISOString(),
-            categoryId: r.categoryId,
+            groupId: r.groupId,
             position: r.position,
             replyInThreads: r.replyInThreads,
             leadAgentId: r.leadAgentId,
@@ -212,7 +212,7 @@ export function chatRoutes(deps: AppDeps) {
               description:
                 "Private only: people holding one of these roles (departments) also see it and may join (ADR 0125); empty: invite only.",
             }),
-            categoryId: z.uuid().nullable().optional().openapi({ description: "Put it in this sidebar category." }),
+            groupId: z.uuid().nullable().optional().openapi({ description: "Put it in this sector (`agent-groups`)." }),
             members: z
               .array(z.union([z.object({ userId: z.string() }), z.object({ agentId: z.uuid() })]))
               .max(200)
@@ -240,7 +240,7 @@ export function chatRoutes(deps: AppDeps) {
           isMember: true,
           createdByUserId: r.createdByUserId,
           createdAt: r.createdAt.toISOString(),
-          categoryId: r.categoryId,
+          groupId: r.groupId,
           position: r.position,
           replyInThreads: r.replyInThreads,
           leadAgentId: r.leadAgentId,
