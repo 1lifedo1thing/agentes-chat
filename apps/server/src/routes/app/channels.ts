@@ -349,7 +349,7 @@ export function channelRoutes(deps: AppDeps) {
       deprecated: true,
       summary: "Always empty: channels sit in sectors (`groupId`, `GET …/agent-groups`)",
       request: { params: OrgParams },
-      responses: { 200: json(z.object({ categories: z.array(z.never()) })), ...errors },
+      responses: { 200: json(z.object({ categories: z.array(z.object({})).max(0) })), ...errors },
     }),
     (c) => c.json({ categories: [] }, 200),
   );
