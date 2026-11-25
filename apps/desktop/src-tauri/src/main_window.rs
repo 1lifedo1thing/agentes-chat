@@ -368,6 +368,7 @@ fn reload_when_renderer_ends(app: AppHandle, view: &tauri::webview::PlatformWebv
     // handler on that same thread.
     unsafe {
         let Ok(core) = view.controller().CoreWebView2() else { return };
+        let last_reload = std::cell::Cell::new(None::<Instant>);
         let handler = ProcessFailedEventHandler::create(Box::new(move |sender, args| {
             let (Some(sender), Some(args)) = (sender, args) else { return Ok(()) };
             let mut kind = COREWEBVIEW2_PROCESS_FAILED_KIND::default();
@@ -379,6 +380,17 @@ fn reload_when_renderer_ends(app: AppHandle, view: &tauri::webview::PlatformWebv
             if let Ok(args) = args.cast::<ICoreWebView2ProcessFailedEventArgs2>() {
                 let _ = args.ExitCode(&mut code);
             }
+            // A renderer that ends again within a minute of the last reload would only crash again: WebView2's own
+            // page stays, with its Refresh button, instead of a reload loop. Unlike macOS and Linux, where the window
+            // would be left blank, Windows has that page to fall back on.
+            if last_reload.get().is_some_and(|at| at.elapsed() < Duration::from_secs(60)) {
+                crate::health::note(
+                    &app,
+                    &format!("the web process of {LABEL} ended again ({:#010x}): left as it is", code as u32),
+                );
+                return Ok(());
+            }
+            last_reload.set(Some(Instant::now()));
             crate::health::note(
                 &app,
                 &format!("the web process of {LABEL} ended ({:#010x}): loading it again", code as u32),
