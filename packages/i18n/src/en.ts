@@ -740,6 +740,10 @@ export const en = {
       confirmNo: "This wasn't me",
       done: "All set.",
       doneLead: "You're signed in to the agentes app. You can close this tab.",
+      /** Under "All set." once the browser hands the person back to the desktop app (and alone after a connector's sign-in). */
+      back: "Going back to the app.",
+      /** The button that opens the desktop app when the browser didn't, or the person dismissed its question. */
+      openApp: "Open the app",
       expired: "This request expired.",
       expiredLead: "Go back to the app and choose {{provider}} again.",
       handover: "Signing in with your account from the other device…",
@@ -1360,7 +1364,7 @@ export const en = {
         fileLead: "The file from any app we know. It is recognized on its own.",
         paths: {
           lead: "Choose how to bring them. You check everything before anything is made.",
-          best: "the most complete",
+          best: "The most complete",
           safe: "{{app}}'s keys, passwords and sessions never come, whichever way you pick.",
           command: {
             title: "With a command",
@@ -4746,6 +4750,8 @@ export const en = {
     available: "Available",
     working: "Working",
     waiting: "Waiting for you",
+    /** An agent idle a while (server `away`): never a person's "away", which reads as gone, nor asleep. */
+    idle: "Idle",
     lower: {
       online: "online",
       away: "away",
@@ -4915,6 +4921,7 @@ export const en = {
     limit: "Went on with the <to/> account because the <from/> account hit its limit",
     line: "Went on with the <to/> account because the <from/> account is near its limit",
     extra: "Went on with the <to/> account because the <from/> account would go into paid extra usage",
+    busy: "Went on with the <to/> account because the <from/> account was already answering as many conversations as it can at once",
   },
   channelRefs: {
     list: "Channels",
@@ -7041,9 +7048,9 @@ export const en = {
           "The {{brain}} program doesn't run on this computer's system yet. Choose another AI in the agent's settings.",
         account_missing:
           "The account chosen for this agent isn't on its computer anymore. Choose another one in the agent's settings, or add it again.",
-        /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */
+        /** A Codex turn on a Windows computer where no sandbox could hold its commands (runner `windows_sandbox`). */
         windows_sandbox:
-          "This Windows computer can't isolate Codex's commands: it needs Windows 11 24H2 or newer. Update Windows, choose Claude or an API key for this agent, or move it to a Linux computer.",
+          "Codex couldn't start any isolation for its commands on this Windows computer. Choose Claude or an API key for this agent, or update the computer to Windows\u00a011\u00a024H2 or newer, with its latest updates.",
         our_error: "Something went wrong on our side and it stopped. Ask again in a little while.",
         unknown: "Failed.",
       },
@@ -8659,6 +8666,44 @@ export const en = {
       label: "Edit Vault contacts",
       description:
         "Save and update contact details in the Vault, change a saved login's username or a description, make passwords for accounts it creates, and delete what it saved.",
+    },
+    gitlab_git_read: {
+      label: "Clone repositories (git)",
+      description:
+        "Clone and update repositories on the agent's computer with git, through our proxy. The GitLab token never enters the machine.",
+    },
+    gitlab_git_write: {
+      label: "Push branches (git push)",
+      description:
+        "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Deleting branches and pushing to someone else's branch ask for approval first.",
+    },
+    gitlab_pr_write: {
+      label: "Open merge requests",
+      description: "Open merge requests from a pushed branch. Merging stays with people.",
+    },
+    bitbucket_git_read: {
+      label: "Clone repositories (git)",
+      description:
+        "Clone and update repositories on the agent's computer with git, through our proxy. The Bitbucket token never enters the machine.",
+    },
+    bitbucket_git_write: {
+      label: "Push branches (git push)",
+      description:
+        "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Deleting branches and pushing to someone else's branch ask for approval first.",
+    },
+    bitbucket_pr_write: {
+      label: "Open pull requests",
+      description: "Open pull requests from a pushed branch. Merging stays with people.",
+    },
+    git_git_read: {
+      label: "Clone repositories (git)",
+      description:
+        "Clone and update repositories on the agent's computer with git, through our proxy. The server's token never enters the machine.",
+    },
+    git_git_write: {
+      label: "Push branches (git push)",
+      description:
+        "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Pushing to someone else's branch asks for approval first.",
     },
     github_git_read: {
       label: "Clone repositories (git)",
@@ -11904,11 +11949,11 @@ export const en = {
       agent: "Agent",
       repo: "Where to work",
       repoPlaceholder: "Repository or project",
-      repoSearch: "Search, or type owner/name or a new name",
+      repoSearch: "Search, or type owner/name, a repository's address or a new name",
       /** A name with no owner: a new project only on the agent's computer, no remote. */
       newLocal: "New project on the computer: {{name}}",
       useRepo: "Use {{repo}}",
-      repoNote: "A name with no owner starts a project on the agent's computer, outside GitHub.",
+      repoNote: "A name with no owner starts a project on the agent's computer only, with no remote repository.",
       hint: "@ calls someone into the session",
       start: "Start",
     },
@@ -11923,7 +11968,7 @@ export const en = {
       failed: "The worktree couldn't be prepared.",
       retry: "Try again",
       githubAccess:
-        "This workspace has no GitHub access for this repository. Connect GitHub in Settings\u00a0›\u00a0Connectors, or start a session on a project on the computer (just a name).",
+        "This workspace has no access to this repository. Connect where it lives (GitHub, GitLab or Bitbucket) in Settings\u00a0›\u00a0Connectors, or start a session on a project on the computer (just a name).",
     },
     panel: {
       label: "Session panel",
@@ -12946,8 +12991,17 @@ export const en = {
       not_reported: "{{computer}} is still checking which programs it has. This changes by itself when it's done.",
       /** The runner doesn't run this program on that computer's system (Cursor on Windows, for one). */
       system: "{{program}} doesn't run on {{computer}}'s system yet.",
+      /** Codex on a Windows computer where neither MXC nor Codex's own sandbox could start. */
+      windows_sandbox:
+        "{{computer}}'s Windows can't isolate {{program}}'s commands. Choose Claude or an API key instead, or update that computer to Windows\u00a011\u00a024H2 or newer, with its latest updates.",
       no_computerCloud: "Ready as soon as {{computer}} is.",
     },
+    /**
+     * Behind an ⓘ beside Codex on a Windows computer without MXC, where Codex runs in its own `unelevated` sandbox:
+     * writes held to the agents' folders, the internet blocked only through proxy settings a program may ignore.
+     */
+    sandboxPartial:
+      "On this Windows, Codex's commands write only in the agents' folders, but the internet is only partly blocked for them. Windows\u00a011\u00a024H2 or newer, with its latest updates, blocks it fully.",
     notAvailableNow: "Chosen, but unavailable right now.",
     offline: "{{computer}} is offline right now.",
     modelLabel: "Model",
@@ -13038,7 +13092,7 @@ export const en = {
     /** The viewer's own computers that may take their replies while this one is full (`machines.spill_own`). */
     spill: {
       title: "Your computers",
-      text: "When this computer is full, replies to you can start on one of yours. Long work and the agents' files stay here.",
+      text: "When this computer is full or away, your agents can start on one of yours. Missions, code sessions and agents with repositories stay here.",
       /** The viewer's own sign-in there, "Claude Max". */
       plan: "your {{plan}} plan",
     },
@@ -13962,6 +14016,8 @@ export const en = {
       teamLocked: "Only people who manage connectors add the team's.",
       mailLocked: "A mailbox always belongs to whoever connects it.",
       done: "Your agents use it only when you ask.",
+      /** After connecting GitHub as your own: what the account is for (it gives agents no tools). */
+      githubDone: "In code sessions, the commits, pushes and pull requests for what you ask go out in your name.",
       worksWhenAsked: "Works only when you ask.",
       remove: "Remove",
       removeName: "Remove {{name}}",
@@ -14561,6 +14617,7 @@ export const en = {
     label: {
       // GitHub and GitLab: repositories, code, branches
       git_clone: "Clone repository",
+      list_repositories: "List repositories",
       create_repository: "Create repository",
       delete_repository: "Delete repository",
       fork_repository: "Fork repository",
@@ -15497,6 +15554,21 @@ export const en = {
       asks_other: "{{count}} actions ask for approval in the chat.",
       adjust: "Adjust",
       ok: "Done",
+    },
+    git: {
+      token: "Access token",
+      address: "Address",
+      addressHelp: {
+        gitlab: "Only for a GitLab your company runs itself. Left blank, it is gitlab.com.",
+        git: "Where the git server is, like https://git.company.com.",
+      },
+      tokenHelp: {
+        gitlab:
+          "A GitLab access token (personal, group or project) with the api and write_repository scopes. It stays on the server: agents' computers never get it.",
+        bitbucket:
+          "A workspace or repository access token with repository write and pull request write. With your own API token, type your Atlassian email, a colon and the token: you@company.com:TOKEN.",
+        git: "The token the server takes as git's password. If it wants a username, type username:token.",
+      },
     },
     telegram: {
       token: "Bot token",
@@ -16460,6 +16532,8 @@ export const en = {
       tooLarge: "This file is at its size limit. Remove something from it first.",
       assetTooLarge: "The picture is over {{max}} MB, the limit per picture.",
       assetType: "Only pictures go in this file: PNG, JPEG, WebP or GIF.",
+      /** A font uploaded to the Drive or brought into a file is checked first (ADR 0220 §2). */
+      fontInvalid: "This font can't be used: the file isn't a font the app can read. Try a .ttf, .otf or .woff file.",
       liveOnly: "This file is changed right where it is, so it can't be replaced as a whole.",
     },
     /** Uploaded Office files the server reads to show or to make editable (ADR 0198). */
@@ -16483,7 +16557,7 @@ export const en = {
     device: {
       notLinkMaker: "Only the person who made the link can let this computer join.",
       widenForbidden: "Admins can only narrow who can use someone's own device.",
-      spillOwnerOnly: "Only the person who connected this computer can let replies think on it. You can turn it off.",
+      spillOwnerOnly: "Only the person who connected this computer can turn its help on. You can turn it off.",
       tasksOwnerOnly: "Only the person who connected this computer can change how many tasks it runs at once.",
       tasksCloud: "The Cloud sizes this computer's room for tasks itself.",
       notHome: "Agents live on the workspace computer and use this one when they name it.",
@@ -16660,6 +16734,12 @@ export const en = {
       line: "Exit IP {{ip}}",
       hint: "The address websites see when the agents browse. It updates when the computer’s network changes.",
       waiting: "Reconnecting the agents’ internet. Their connections wait until it’s back.",
+    },
+    /** The workspace's own computer, away while it moves to another server: never "offline" or "not answering". */
+    moving: {
+      short: "Moving servers",
+      line: "Moving to a new server… back in a few minutes",
+      named: "{{computer}} is moving to a new server… back in a few minutes",
     },
     online: "Online",
     offline: "Offline",
@@ -16924,10 +17004,18 @@ export const en = {
       "More tasks at once: only 0.5 GB of memory stays free and a busy processor doesn't hold them. Your own apps may slow down.",
     belongs: "Belongs to the workspace",
     belongsHint: "It stays when the person who connected it leaves, and everyone can use it while nobody owns it.",
-    spillOwn: "Your replies can think here",
-    spillOwnHint: "When an agent's computer is full, its replies to you start here.",
-    spillOthers: "Other people's agents can think here",
-    spillOthersHint: "When an agent's computer is full, its replies to other people can start here too.",
+    /** One switch per computer (`machines.spill_own`, ADR 0233): its owner's to turn on. */
+    spillOwn: "Help when the team's computer is full or away",
+    spillOwnHint:
+      "When your agents' computer is full or away, their replies, asks and routines can think here with your sign-in.",
+    /** The same switch on a computer marked the workspace's: anyone's agents, on their owner's sign-in there. */
+    spillTeamHint:
+      "When an agent's computer is full or away, its replies, asks and routines can think here with its owner's sign-in on this computer.",
+    /** Under the switch while an admin turned devices' help off for the whole workspace. */
+    spillWorkspaceOff: "An admin turned this off for the workspace.",
+    /** Settings › Devices, admins: the workspace's switch over every computer's own (`devicesHelp`). */
+    helpWorkspace: "Computers help when the team's is full or away",
+    helpWorkspaceHint: "Each computer helps only if its owner allows it. Off: none helps, whatever its owner chose.",
     connectedBy: "Connected by {{name}}",
     downloadFor: "Download for {{system}}",
     downloadApp: "Download the app",
@@ -18454,7 +18542,7 @@ export const en = {
     telemetry: {
       title: "Usage statistics",
       label: "Send anonymous usage statistics to agentes.chat",
-      help: "Counts such as people, agents, machine sizes, AI tokens used and how much data the agents' browsers send and receive. Never messages, files, names or sites.",
+      help: "Counts such as people, agents, machine sizes, AI tokens used, how much data the agents' browsers send and receive, and how fast the apps open and run. Never messages, files, names or sites.",
       envOff: "Turned off in this server's settings (TELEMETRY=off).",
       envOffDesktop: "Turned off in the agentes.chat app on this server's computer (Preferences\u00a0›\u00a0Servers).",
       envOffHere: "Turned off in the agentes.chat app on this computer.",
@@ -19027,6 +19115,15 @@ export const en = {
       cant: "Answered with {{via}}: {{plan}} can't think right now.",
       change: "Change",
     },
+    /**
+     * Under a reply that thought on another computer because the agent's own was full or away (`meta.spilled`, ADR
+     * 0233): `to` and `from` are computers' names, `itsComputer` stands in for an unknown `from`.
+     */
+    spilled: {
+      full: "Thought on {{to}}: {{from}} was full.",
+      away: "Thought on {{to}}: {{from}} was away.",
+      itsComputer: "its computer",
+    },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
       text: "{{plan}} refused {{from}} with this key. I answered with {{to}}, which works with it.",
@@ -19046,6 +19143,12 @@ export const en = {
       held: "Waiting for approval…",
       /** The agent's own words for its step (what it wrote before the call), quoted. */
       said: "“{{text}}”",
+    },
+    /** Under an agent at work, the last row of the conversation: what it did so far, a few lines, older ones as "+N". */
+    trail: {
+      label: "What {{name}} did so far",
+      earlier_one: "{{count}} earlier step",
+      earlier_other: "{{count}} earlier steps",
     },
     /** The working line while an agent asks another one (names come in bold). */
     consult: {
@@ -19326,6 +19429,7 @@ export const en = {
         runningCommandAny: "Ran a command",
         usingScreen: "Used the screen",
         cloningRepo: "Cloned a repository",
+        listingRepos: "Listed the repositories",
         openingPullRequest: "Opened a pull request",
         handingOff: "Delivered a report",
         recordingFindings: "Noted the findings",
@@ -19448,6 +19552,7 @@ export const en = {
       runningCommandAny: "running a command",
       usingScreen: "using the screen",
       cloningRepo: "cloning a repository",
+      listingRepos: "listing the repositories",
       openingPullRequest: "opening a pull request",
       handingOff: "delivering a report",
       recordingFindings: "noting the findings",
@@ -21166,6 +21271,8 @@ export const en = {
       notAnsweringHelp: "It usually comes back within a few minutes. We're on it.",
       offline: "{{computer}} is offline",
       offlineHelpPlain: "{{name}} waits for the computer to come back.",
+      /** Under it while computers that help take its new work (ADR 0233): `names` is a list of computers. */
+      helping: "Meanwhile, its new work can think on {{names}}.",
       noRoom: "{{computer}} is showing as many screens as it can. Try again in a moment.",
       unavailable: "{{name}}'s screen can't be shown right now",
       unavailableHelp: "Try again in a moment.",
@@ -22522,6 +22629,94 @@ export const en = {
   },
   /** Live files: spreadsheets, presentations and canvases people and agents edit together (ADR 0196). */
   live: {
+    /** Fonts and text styles people set in slides, canvases and documents (ADR 0220 §8). */
+    type: {
+      font: "Font",
+      search: "Search fonts",
+      noResults: "No font by that name",
+      list: "Fonts",
+      groups: {
+        slides: "In this presentation",
+        canvas: "On this canvas",
+        document: "In this document",
+        company: "From your company",
+        sans: "Sans serif",
+        serif: "Serif",
+        display: "For headings",
+        mono: "Monospaced",
+        handwriting: "Handwritten",
+      },
+      headings: "Headings",
+      body: "Text",
+      fromDrive: "From the Drive",
+      ownFont: "The file's font",
+      fileFonts: {
+        slides: "Presentation fonts",
+        document: "Document fonts",
+      },
+      fileFontsNote: "They apply to the whole file. A text with a font of its own keeps it.",
+      headingFont: "Heading font",
+      bodyFont: "Text font",
+      bring: "Bring a font from the Drive…",
+      bringButton: "Bring from the Drive",
+      bringTitle: "Bring a font from the Drive",
+      bringSearch: "Search the Drive's fonts",
+      bringEmpty: "No fonts in the Drive. Add a .ttf, .otf or .woff file to the Drive first.",
+      brought: "{{name}} is in the file now",
+      notFont: "This file isn't a font. Pick a .ttf, .otf or .woff file.",
+      done: "Done",
+      text: "Text style",
+      /** The text style menu's button: a sample of letters, as the language writes them. */
+      glyph: "Aa",
+      weight: "Weight",
+      weights: {
+        w300: "Light",
+        w400: "Regular",
+        w500: "Medium",
+        w600: "Semibold",
+        w700: "Bold",
+        w800: "Extra bold",
+      },
+      tracking: "Letter spacing",
+      trackings: {
+        tight: "Tighter",
+        normal: "Normal",
+        open: "Open",
+        wide: "Wide",
+      },
+      lineHeight: "Line height",
+      caps: "All caps",
+      highlight: "Highlight",
+      highlights: {
+        none: "None",
+        yellow: "Yellow",
+        green: "Green",
+        blue: "Blue",
+        pink: "Pink",
+        orange: "Orange",
+      },
+      effects: "Effects",
+      shadow: "Shadow",
+      shadows: {
+        none: "None",
+        soft: "Soft",
+        strong: "Strong",
+      },
+      border: "Border",
+      dashes: {
+        solid: "Solid",
+        dashed: "Dashed",
+        dotted: "Dotted",
+      },
+      gradient: "Gradient",
+      gradients: {
+        none: "None",
+        ocean: "Ocean",
+        graphite: "Graphite",
+        sunset: "Sunset",
+        violet: "Violet",
+      },
+    },
     /** The presentation editor (ADR 0196 §2): its rail, stage, toolbar, notes and presenting. */
     slides: {
       rail: {

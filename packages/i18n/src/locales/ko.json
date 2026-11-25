@@ -689,6 +689,8 @@
       "confirmNo": "제가 한 게 아니에요",
       "done": "모두 끝났어요.",
       "doneLead": "agentes 앱에 로그인했어요. 이 탭은 닫아도 돼요.",
+      "back": "앱으로 돌아가는 중입니다.",
+      "openApp": "앱 열기",
       "expired": "이 요청은 만료됐어요.",
       "expiredLead": "앱으로 돌아가 {{provider}}을(를) 다시 선택하세요.",
       "handover": "다른 기기의 계정으로 로그인하는 중…",
@@ -4194,6 +4196,7 @@
     "available": "응답 가능",
     "working": "작업 중",
     "waiting": "내 확인 대기",
+    "idle": "비활성",
     "lower": {
       "online": "온라인",
       "away": "자리 비움",
@@ -4346,7 +4349,8 @@
   "accountSwitch": {
     "limit": "<from/> 계정이 한도에 도달해서 <to/> 계정으로 이어서 했어요",
     "line": "<from/> 계정이 한도에 가까워서 <to/> 계정으로 이어서 했어요",
-    "extra": "<from/> 계정이 유료 추가 사용량으로 넘어가게 되어 <to/> 계정으로 이어서 했어요"
+    "extra": "<from/> 계정이 유료 추가 사용량으로 넘어가게 되어 <to/> 계정으로 이어서 했어요",
+    "busy": "<from/> 계정이 동시에 답할 수 있는 대화 수만큼 이미 답하고 있어서 <to/> 계정으로 이어서 진행했습니다"
   },
   "channelRefs": {
     "list": "채널",
@@ -6243,7 +6247,7 @@
         "cli_sandbox": "{{brain}} 프로그램이 이 컴퓨터에서 샌드박스를 시작할 수 없어요. 에이전트 설정에서 다른 AI를 고르세요.",
         "cli_system": "{{brain}} 프로그램은 아직 이 컴퓨터의 시스템에서 실행되지 않아요. 에이전트 설정에서 다른 AI를 고르세요.",
         "account_missing": "이 에이전트에 고른 계정이 더 이상 컴퓨터에 없어요. 에이전트 설정에서 다른 계정을 고르거나 다시 추가하세요.",
-        "windows_sandbox": "이 Windows 컴퓨터에서는 Codex의 명령을 격리할 수 없어요. Windows 11 24H2 이상이 필요해요. Windows를 업데이트하거나, 이 에이전트에 Claude나 API 키를 선택하거나, Linux 컴퓨터로 옮기세요.",
+        "windows_sandbox": "이 Windows 컴퓨터에서 Codex가 명령을 격리하는 방법을 하나도 시작하지 못했어요. 이 에이전트에 Claude나 API 키를 선택하거나, 컴퓨터를 최신 업데이트가 적용된 Windows 11 24H2 이상으로 업데이트하세요.",
         "our_error": "저희 쪽에서 문제가 생겨 작업이 멈췄어요. 잠시 후 다시 요청해 주세요.",
         "unknown": "실패했어요."
       }
@@ -7820,6 +7824,38 @@
     "vault_write": {
       "label": "Vault 연락처 편집",
       "description": "Vault에 연락처를 저장하고 업데이트하며, 저장된 로그인의 사용자 이름이나 설명을 바꾸고, 직접 만드는 계정의 비밀번호를 만들고, 자신이 저장한 것을 삭제해요."
+    },
+    "gitlab_git_read": {
+      "label": "저장소 클론(git)",
+      "description": "에이전트의 컴퓨터에서 git으로 저장소를 클론하고 업데이트해요. 프록시를 거치므로 GitLab 토큰은 컴퓨터에 들어가지 않아요."
+    },
+    "gitlab_git_write": {
+      "label": "브랜치 푸시(git push)",
+      "description": "agentes/{agent}/… 브랜치에 커밋을 푸시해요. 기본 브랜치에는 절대 푸시하지 않고, 강제 푸시와 태그도 없어요. 브랜치 삭제와 다른 사람의 브랜치에 푸시할 때는 먼저 승인을 요청해요."
+    },
+    "gitlab_pr_write": {
+      "label": "풀 리퀘스트 열기",
+      "description": "풀 리퀘스트를 열고 코멘트를 남겨요."
+    },
+    "bitbucket_git_read": {
+      "label": "저장소 클론(git)",
+      "description": "에이전트의 컴퓨터에서 git으로 저장소를 클론하고 업데이트해요. 프록시를 거치므로 Bitbucket 토큰은 컴퓨터에 들어가지 않아요."
+    },
+    "bitbucket_git_write": {
+      "label": "브랜치 푸시(git push)",
+      "description": "agentes/{agent}/… 브랜치에 커밋을 푸시해요. 기본 브랜치에는 절대 푸시하지 않고, 강제 푸시와 태그도 없어요. 브랜치 삭제와 다른 사람의 브랜치에 푸시할 때는 먼저 승인을 요청해요."
+    },
+    "bitbucket_pr_write": {
+      "label": "풀 리퀘스트 열기",
+      "description": "풀 리퀘스트를 열고 코멘트를 남겨요."
+    },
+    "git_git_read": {
+      "label": "저장소 클론(git)",
+      "description": "에이전트의 컴퓨터에서 git으로 저장소를 클론하고 업데이트해요. 프록시를 거치므로 Git 토큰은 컴퓨터에 들어가지 않아요."
+    },
+    "git_git_write": {
+      "label": "브랜치 푸시(git push)",
+      "description": "agentes/{agent}/… 브랜치에 커밋을 푸시해요. 기본 브랜치에는 절대 푸시하지 않고, 강제 푸시와 태그도 없어요. 브랜치 삭제와 다른 사람의 브랜치에 푸시할 때는 먼저 승인을 요청해요."
     },
     "github_git_read": {
       "label": "저장소 클론(git)",
@@ -10952,10 +10988,10 @@
       "agent": "에이전트",
       "repo": "작업할 곳",
       "repoPlaceholder": "저장소 또는 프로젝트",
-      "repoSearch": "검색하거나 owner/name 또는 새 이름을 입력하세요",
+      "repoSearch": "검색하거나 owner/name, 저장소 주소 또는 새 이름을 입력하세요",
       "newLocal": "컴퓨터의 새 프로젝트: {{name}}",
       "useRepo": "{{repo}} 사용",
-      "repoNote": "owner 없이 이름만 쓰면 GitHub 밖, 에이전트의 컴퓨터에 프로젝트를 만들어요.",
+      "repoNote": "owner 없는 이름은 원격 저장소 없이 에이전트의 컴퓨터에만 프로젝트를 만듭니다.",
       "hint": "@로 다른 사람을 세션에 부를 수 있어요",
       "start": "시작"
     },
@@ -10969,7 +11005,7 @@
       "closeHint": "목록에서 빠지고, 워크트리는 삭제되며 브랜치는 남아요",
       "failed": "워크트리를 준비하지 못했어요.",
       "retry": "다시 시도",
-      "githubAccess": "이 워크스페이스에는 이 저장소에 대한 GitHub 접근 권한이 없어요. 설정 › 커넥터에서 GitHub를 연결하거나, 컴퓨터의 프로젝트로 세션을 시작하세요(이름만 입력)."
+      "githubAccess": "이 워크스페이스는 이 저장소에 접근할 수 없습니다. 설정 › 커넥터에서 저장소가 있는 곳(GitHub, GitLab 또는 Bitbucket)을 연결하거나, 컴퓨터의 프로젝트(이름만)에서 세션을 시작하세요."
     },
     "panel": {
       "label": "세션 패널",
@@ -11954,8 +11990,10 @@
       "home_only": "{{computer}}의 {{program}}은(는) root 전용으로 설치되어 있어 에이전트가 닿지 못해요.",
       "not_reported": "{{computer}}에 어떤 프로그램이 있는지 아직 확인하는 중이에요. 끝나면 저절로 바뀌어요.",
       "system": "{{program}}은(는) 아직 {{computer}}의 시스템에서 실행되지 않아요.",
+      "windows_sandbox": "{{computer}}의 Windows에서는 {{program}}의 명령을 격리할 수 없어요. 대신 Claude나 API 키를 선택하거나, 그 컴퓨터를 최신 업데이트가 적용된 Windows 11 24H2 이상으로 업데이트하세요.",
       "no_computerCloud": "{{computer}}이(가) 준비되면 바로 쓸 수 있어요."
     },
+    "sandboxPartial": "이 Windows에서는 Codex의 명령이 에이전트 폴더에만 쓸 수 있지만, 인터넷은 일부만 차단돼요. 최신 업데이트가 적용된 Windows 11 24H2 이상에서는 완전히 차단돼요.",
     "notAvailableNow": "선택했지만 지금은 사용할 수 없어요.",
     "offline": "지금 {{computer}}이(가) 오프라인이에요.",
     "modelLabel": "모델",
@@ -12029,7 +12067,7 @@
     "rule": "새 작업은 컴퓨터에 남은 메모리가 있을 때 시작돼요. 사람이 먼저예요. 함께 멘션된 에이전트는 하나씩 시작해요.",
     "spill": {
       "title": "내 컴퓨터",
-      "text": "이 컴퓨터가 가득 차면 나에게 오는 답장이 내 컴퓨터에서 시작될 수 있어요. 긴 작업과 에이전트의 파일은 여기에 남아요.",
+      "text": "이 컴퓨터가 가득 찼거나 없을 때, 내 에이전트가 내 컴퓨터 중 하나에서 시작할 수 있습니다. 미션, 코드 세션, 저장소가 있는 에이전트는 여기 남습니다.",
       "plan": "내 {{plan}} 플랜"
     },
     "youFirst": "내 차례가 먼저",
@@ -12861,6 +12899,7 @@
       "teamLocked": "팀 연결은 커넥터를 관리하는 사람만 추가할 수 있어요.",
       "mailLocked": "메일함은 항상 연결한 사람의 것이에요.",
       "done": "에이전트는 내가 요청할 때만 사용해요.",
+      "githubDone": "코드 세션에서는 요청한 작업의 커밋, 푸시, 풀 리퀘스트가 내 이름으로 나갑니다.",
       "worksWhenAsked": "내가 요청할 때만 작동해요.",
       "remove": "제거",
       "removeName": "{{name}} 제거",
@@ -13619,6 +13658,7 @@
     },
     "label": {
       "git_clone": "저장소 클론",
+      "list_repositories": "저장소 목록 보기",
       "create_repository": "저장소 생성",
       "delete_repository": "저장소 삭제",
       "fork_repository": "저장소 포크",
@@ -14511,6 +14551,19 @@
       "asks_other": "작업 {{count}}개는 채팅에서 승인을 요청해요.",
       "adjust": "조정",
       "ok": "완료"
+    },
+    "git": {
+      "token": "액세스 토큰",
+      "address": "주소",
+      "addressHelp": {
+        "gitlab": "회사에서 직접 운영하는 GitLab일 때만 입력하세요. 비워 두면 gitlab.com입니다.",
+        "git": "git 서버가 있는 곳입니다. 예: https://git.company.com"
+      },
+      "tokenHelp": {
+        "gitlab": "api와 write_repository 범위가 있는 GitLab 액세스 토큰(개인, 그룹 또는 프로젝트). 서버에만 보관되며 에이전트의 컴퓨터에는 전달되지 않습니다.",
+        "bitbucket": "저장소와 풀 리퀘스트 쓰기 권한이 있는 워크스페이스 또는 저장소 액세스 토큰. 본인의 API 토큰을 쓰려면 Atlassian 이메일, 콜론, 토큰 순으로 입력하세요: you@company.com:TOKEN",
+        "git": "서버가 git 비밀번호로 받는 토큰입니다. 사용자 이름이 필요하면 username:token으로 입력하세요."
+      }
     },
     "telegram": {
       "token": "봇 토큰",
@@ -15460,6 +15513,7 @@
       "tooLarge": "이 파일이 크기 한도에 도달했어요. 먼저 내용을 조금 지우세요.",
       "assetTooLarge": "이미지가 {{max}} MB를 넘어요. 이미지 하나당 한도예요.",
       "assetType": "이 파일에는 PNG, JPEG, WebP, GIF 이미지만 넣을 수 있어요.",
+      "fontInvalid": "이 글꼴은 사용할 수 없어요. 앱이 읽을 수 있는 글꼴 파일이 아니에요. .ttf, .otf, .woff 파일로 시도해 보세요.",
       "liveOnly": "이 파일은 그 자리에서 바로 수정되기 때문에 통째로 바꿀 수 없어요."
     },
     "office": {
@@ -15481,7 +15535,7 @@
     "device": {
       "notLinkMaker": "링크를 만든 사람만 이 컴퓨터를 참여시킬 수 있어요.",
       "widenForbidden": "관리자는 다른 사람의 개인 기기를 쓸 수 있는 사람을 줄이는 것만 할 수 있어요.",
-      "spillOwnerOnly": "이 컴퓨터에서 답장이 생각하도록 허용할 수 있는 사람은 컴퓨터를 연결한 사람뿐입니다. 끄는 것은 할 수 있어요.",
+      "spillOwnerOnly": "이 컴퓨터를 연결한 사람만 돕기를 켤 수 있습니다. 끌 수는 있습니다.",
       "tasksOwnerOnly": "이 컴퓨터가 동시에 실행하는 작업 수는 컴퓨터를 연결한 사람만 바꿀 수 있어요.",
       "tasksCloud": "이 컴퓨터의 작업 여유는 Cloud가 알아서 정해요.",
       "notHome": "에이전트는 워크스페이스 컴퓨터에 있고, 이름을 부를 때 이 컴퓨터를 써요."
@@ -15635,6 +15689,11 @@
       "line": "출구 IP {{ip}}",
       "hint": "에이전트가 웹을 탐색할 때 사이트에 보이는 주소예요. 컴퓨터의 네트워크가 바뀌면 함께 바뀌어요.",
       "waiting": "에이전트의 인터넷을 다시 연결하고 있어요. 돌아올 때까지 연결이 기다려요."
+    },
+    "moving": {
+      "short": "서버 이전 중",
+      "line": "새 서버로 이전 중… 몇 분 후 돌아옵니다",
+      "named": "{{computer}}이(가) 새 서버로 이전 중… 몇 분 후 돌아옵니다"
     },
     "online": "온라인",
     "offline": "오프라인",
@@ -15906,10 +15965,12 @@
     "pushHarderHint": "더 많은 작업을 동시에: 메모리는 0.5GB만 비워 두고, 프로세서가 바빠도 멈추지 않아요. 내 앱이 느려질 수 있어요.",
     "belongs": "워크스페이스 소유",
     "belongsHint": "연결한 사람이 떠나도 남아 있고, 소유자가 없는 동안에는 누구나 사용할 수 있어요.",
-    "spillOwn": "내 답장을 여기서 생각할 수 있어요",
-    "spillOwnHint": "에이전트의 컴퓨터가 가득 차면 나에게 오는 답장이 여기서 시작돼요.",
-    "spillOthers": "다른 사람의 에이전트도 여기서 생각할 수 있어요",
-    "spillOthersHint": "에이전트의 컴퓨터가 가득 차면 다른 사람에게 가는 답장도 여기서 시작될 수 있어요.",
+    "spillOwn": "팀 컴퓨터가 가득 찼거나 없을 때 돕기",
+    "spillOwnHint": "에이전트의 컴퓨터가 가득 찼거나 없을 때, 그 답장, 요청, 루틴이 내 로그인으로 여기서 생각할 수 있습니다.",
+    "spillTeamHint": "에이전트의 컴퓨터가 가득 찼거나 없을 때, 그 답장, 요청, 루틴이 이 컴퓨터에 있는 소유자의 로그인으로 여기서 생각할 수 있습니다.",
+    "spillWorkspaceOff": "관리자가 워크스페이스 전체에서 이 기능을 껐습니다.",
+    "helpWorkspace": "팀 컴퓨터가 가득 찼거나 없을 때 다른 컴퓨터가 돕기",
+    "helpWorkspaceHint": "각 컴퓨터는 소유자가 허용할 때만 돕습니다. 끔: 소유자의 선택과 상관없이 아무 컴퓨터도 돕지 않습니다.",
     "connectedBy": "{{name}} 님이 연결함",
     "downloadFor": "{{system}}용 다운로드",
     "downloadApp": "앱 다운로드",
@@ -17269,7 +17330,7 @@
     "telemetry": {
       "title": "사용 통계",
       "label": "agentes.chat에 익명 사용 통계 보내기",
-      "help": "사람 수, 에이전트 수, 머신 크기, 사용한 AI 토큰, 에이전트 브라우저가 주고받은 데이터 양 같은 수치예요. 메시지, 파일, 이름, 사이트는 절대 보내지 않아요.",
+      "help": "사람 수, 에이전트 수, 머신 크기, 사용한 AI 토큰, 에이전트 브라우저가 주고받은 데이터 양, 앱이 열리고 동작하는 속도 같은 수치예요. 메시지, 파일, 이름, 사이트는 절대 보내지 않아요.",
       "envOff": "이 서버의 설정에서 꺼져 있어요(TELEMETRY=off).",
       "envOffDesktop": "이 서버 컴퓨터의 agentes.chat 앱에서 꺼져 있어요(환경설정 › 서버).",
       "envOffHere": "이 컴퓨터의 agentes.chat 앱에서 꺼져 있어요.",
@@ -17826,6 +17887,11 @@
       "cant": "{{via}}(으)로 답했어요: {{plan}}이(가) 지금 생각할 수 없어요.",
       "change": "변경"
     },
+    "spilled": {
+      "full": "{{to}}에서 생각했습니다: {{from}}이(가) 가득 찼습니다.",
+      "away": "{{to}}에서 생각했습니다: {{from}}이(가) 없었습니다.",
+      "itsComputer": "자기 컴퓨터"
+    },
     "modelStandIn": {
       "text": "{{plan}}이(가) 이 키로 {{from}}을(를) 거부했어요. 이 키로 작동하는 {{to}}(으)로 답했어요.",
       "useAll": "모두에게 {{model}} 사용",
@@ -17842,6 +17908,10 @@
       "thinking": "생각 중…",
       "held": "승인 대기 중…",
       "said": "“{{text}}”"
+    },
+    "trail": {
+      "label": "{{name}}이(가) 지금까지 한 일",
+      "earlier_other": "이전 단계 {{count}}개"
     },
     "consult": {
       "asking": "{{from}}이(가) {{to}}에게 묻는 중",
@@ -18068,6 +18138,7 @@
         "runningCommandAny": "명령을 실행했어요",
         "usingScreen": "화면을 사용했어요",
         "cloningRepo": "저장소를 클론했어요",
+        "listingRepos": "저장소 목록을 확인했습니다",
         "openingPullRequest": "pull request를 열었어요",
         "handingOff": "보고서를 전달했어요",
         "recordingFindings": "발견한 내용을 기록했어요",
@@ -18189,6 +18260,7 @@
       "runningCommandAny": "명령을 실행하는 중",
       "usingScreen": "화면을 사용하는 중",
       "cloningRepo": "저장소를 클론하는 중",
+      "listingRepos": "저장소 목록 확인 중",
       "openingPullRequest": "pull request를 여는 중",
       "handingOff": "보고서를 전달하는 중",
       "recordingFindings": "발견한 내용을 기록하는 중",
@@ -19708,6 +19780,7 @@
       "notAnsweringHelp": "보통 몇 분 안에 돌아와요. 해결 중이에요.",
       "offline": "{{computer}}이(가) 오프라인이에요",
       "offlineHelpPlain": "{{name}}은(는) 컴퓨터가 돌아오기를 기다려요.",
+      "helping": "그동안 새 작업은 {{names}}에서 생각할 수 있습니다.",
       "noRoom": "{{computer}}이(가) 표시할 수 있는 화면 수가 가득 찼어요. 잠시 후 다시 시도하세요.",
       "unavailable": "지금은 {{name}}의 화면을 표시할 수 없어요",
       "unavailableHelp": "잠시 후 다시 시도하세요.",
@@ -20965,6 +21038,92 @@
     "settingsText": "기술 세부 정보를 agentes.chat 팀에 보내세요."
   },
   "live": {
+    "type": {
+      "font": "글꼴",
+      "search": "글꼴 검색",
+      "noResults": "이 이름의 글꼴이 없습니다",
+      "list": "글꼴",
+      "groups": {
+        "slides": "이 프레젠테이션",
+        "canvas": "이 캔버스",
+        "document": "이 문서",
+        "company": "회사 글꼴",
+        "sans": "산세리프",
+        "serif": "세리프",
+        "display": "제목용",
+        "mono": "고정폭",
+        "handwriting": "손글씨"
+      },
+      "headings": "제목",
+      "body": "본문",
+      "fromDrive": "Drive에서",
+      "ownFont": "파일 글꼴",
+      "fileFonts": {
+        "slides": "프레젠테이션 글꼴",
+        "document": "문서 글꼴"
+      },
+      "fileFontsNote": "파일 전체에 적용됩니다. 자체 글꼴이 있는 텍스트는 그대로 유지됩니다.",
+      "headingFont": "제목 글꼴",
+      "bodyFont": "본문 글꼴",
+      "bring": "Drive에서 글꼴 가져오기…",
+      "bringButton": "Drive에서 가져오기",
+      "bringTitle": "Drive에서 글꼴 가져오기",
+      "bringSearch": "Drive에서 글꼴 검색",
+      "bringEmpty": "Drive에 글꼴이 없습니다. 먼저 .ttf, .otf 또는 .woff 파일을 Drive에 올리세요.",
+      "brought": "{{name}}이(가) 파일에 추가되었습니다",
+      "notFont": "이 파일은 글꼴이 아닙니다. .ttf, .otf 또는 .woff 파일을 고르세요.",
+      "done": "완료",
+      "text": "텍스트 스타일",
+      "glyph": "가",
+      "weight": "굵기",
+      "weights": {
+        "w300": "가늘게",
+        "w400": "보통",
+        "w500": "중간",
+        "w600": "약간 굵게",
+        "w700": "굵게",
+        "w800": "아주 굵게"
+      },
+      "tracking": "자간",
+      "trackings": {
+        "tight": "좁게",
+        "normal": "보통",
+        "open": "넓게",
+        "wide": "아주 넓게"
+      },
+      "lineHeight": "줄 높이",
+      "caps": "모두 대문자",
+      "highlight": "형광펜",
+      "highlights": {
+        "none": "없음",
+        "yellow": "노랑",
+        "green": "초록",
+        "blue": "파랑",
+        "pink": "분홍",
+        "orange": "주황"
+      },
+      "effects": "효과",
+      "shadow": "그림자",
+      "shadows": {
+        "none": "없음",
+        "soft": "부드럽게",
+        "strong": "강하게"
+      },
+      "border": "테두리",
+      "dashes": {
+        "solid": "실선",
+        "dashed": "파선",
+        "dotted": "점선"
+      },
+      "gradient": "그라데이션",
+      "gradients": {
+        "none": "없음",
+        "ocean": "바다",
+        "graphite": "흑연",
+        "sunset": "노을",
+        "violet": "보라"
+      }
+    },
     "slides": {
       "rail": {
         "label": "슬라이드",
