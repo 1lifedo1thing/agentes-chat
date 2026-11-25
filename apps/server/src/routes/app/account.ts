@@ -441,10 +441,10 @@ export function accountRoutes(deps: AppDeps) {
               .object({
                 name: z.string(),
                 accent: z.string().nullable().openapi({ description: "`#rrggbb`; null: the default." }),
-                logoUrl: z
-                  .string()
-                  .nullable()
-                  .openapi({ description: "Its logo (`GET /api/host-look/logo`); null: none." }),
+                logoUrl: z.string().nullable().openapi({
+                  description:
+                    "Its logo (`GET /api/host-look/logo`), ending with `#ink=light` when its ink is light; null: none.",
+                }),
                 poweredBy: z.boolean().openapi({ description: "Its pages end with the powered-by line." }),
               })
               .nullable()
