@@ -137,6 +137,7 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
     networkTransition?: unknown;
     standby?: unknown;
     cliFetch?: unknown;
+    moving?: unknown;
   };
   if (typeof e.machineId !== "string") return true;
   const machineId = e.machineId;
@@ -145,8 +146,10 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
     return true;
   }
   const list = keys.machines(orgId);
-  // Who waits for an offline computer changes when one comes back, goes away or its agents move.
-  if (e.type === "machine.status" || e.type === "machine.deleted" || e.type === "machine.agents_moved") {
+  // Who waits for an offline computer changes when one comes back, goes away or its agents move; whether it is
+  // moving to another server (`moving`, the server's to say: only while it is away) changes their words.
+  const moving = e.type === "machine.updated" && typeof e.moving === "boolean";
+  if (e.type === "machine.status" || e.type === "machine.deleted" || e.type === "machine.agents_moved" || moving) {
     void qc.invalidateQueries({ queryKey: keys.machineOutages(orgId) });
   }
   // Whether agents can use their browser (ADR 0040) and what can think for them follow the computer: its
@@ -185,6 +188,8 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
                 lastSeenAt: e.online === true ? now : m.lastSeenAt,
                 ...(online ? { offlineCause: null } : {}),
                 ...(e.online === true && m.standby ? { standby: false } : {}),
+                // Back on the new server: it moved.
+                ...(e.online === true && m.moving ? { moving: false } : {}),
               }
             : m,
         ),
