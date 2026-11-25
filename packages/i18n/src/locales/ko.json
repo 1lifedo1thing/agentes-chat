@@ -689,6 +689,8 @@
       "confirmNo": "제가 한 게 아니에요",
       "done": "모두 끝났어요.",
       "doneLead": "agentes 앱에 로그인했어요. 이 탭은 닫아도 돼요.",
+      "back": "앱으로 돌아가는 중입니다.",
+      "openApp": "앱 열기",
       "expired": "이 요청은 만료됐어요.",
       "expiredLead": "앱으로 돌아가 {{provider}}을(를) 다시 선택하세요.",
       "handover": "다른 기기의 계정으로 로그인하는 중…",
@@ -4193,6 +4195,7 @@
     "available": "응답 가능",
     "working": "작업 중",
     "waiting": "내 확인 대기",
+    "idle": "비활성",
     "lower": {
       "online": "온라인",
       "away": "자리 비움",
@@ -4348,7 +4351,8 @@
   "accountSwitch": {
     "limit": "<from/> 계정이 한도에 도달해서 <to/> 계정으로 이어서 했어요",
     "line": "<from/> 계정이 한도에 가까워서 <to/> 계정으로 이어서 했어요",
-    "extra": "<from/> 계정이 유료 추가 사용량으로 넘어가게 되어 <to/> 계정으로 이어서 했어요"
+    "extra": "<from/> 계정이 유료 추가 사용량으로 넘어가게 되어 <to/> 계정으로 이어서 했어요",
+    "busy": "<from/> 계정이 동시에 답할 수 있는 대화 수만큼 이미 답하고 있어서 <to/> 계정으로 이어서 진행했습니다"
   },
   "channelRefs": {
     "list": "채널",
@@ -6245,7 +6249,7 @@
         "cli_sandbox": "{{brain}} 프로그램이 이 컴퓨터에서 샌드박스를 시작할 수 없어요. 에이전트 설정에서 다른 AI를 고르세요.",
         "cli_system": "{{brain}} 프로그램은 아직 이 컴퓨터의 시스템에서 실행되지 않아요. 에이전트 설정에서 다른 AI를 고르세요.",
         "account_missing": "이 에이전트에 고른 계정이 더 이상 컴퓨터에 없어요. 에이전트 설정에서 다른 계정을 고르거나 다시 추가하세요.",
-        "windows_sandbox": "이 Windows 컴퓨터에서는 Codex의 명령을 격리할 수 없어요. Windows 11 24H2 이상이 필요해요. Windows를 업데이트하거나, 이 에이전트에 Claude나 API 키를 선택하거나, Linux 컴퓨터로 옮기세요.",
+        "windows_sandbox": "이 Windows 컴퓨터에서 Codex가 명령을 격리하는 방법을 하나도 시작하지 못했어요. 이 에이전트에 Claude나 API 키를 선택하거나, 컴퓨터를 최신 업데이트가 적용된 Windows 11 24H2 이상으로 업데이트하세요.",
         "our_error": "저희 쪽에서 문제가 생겨 작업이 멈췄어요. 잠시 후 다시 요청해 주세요.",
         "unknown": "실패했어요."
       }
@@ -11988,8 +11992,11 @@
       "home_only": "{{computer}}의 {{program}}은(는) root 전용으로 설치되어 있어 에이전트가 닿지 못해요.",
       "not_reported": "{{computer}}에 어떤 프로그램이 있는지 아직 확인하는 중이에요. 끝나면 저절로 바뀌어요.",
       "system": "{{program}}은(는) 아직 {{computer}}의 시스템에서 실행되지 않아요.",
+      "systemAntigravity": "{{computer}}에서는 아직 Gemini 요금제를 사용할 수 없어요. Windows에서는 Antigravity CLI가 Google 로그인을 자격 증명 관리자에 저장하는데, agentes.chat이 아직 계정별로 나눌 수 없어요. 대신 Gemini API 키를 사용하세요.",
+      "windows_sandbox": "{{computer}}의 Windows에서는 {{program}}의 명령을 격리할 수 없어요. 대신 Claude나 API 키를 선택하거나, 그 컴퓨터를 최신 업데이트가 적용된 Windows 11 24H2 이상으로 업데이트하세요.",
       "no_computerCloud": "{{computer}}이(가) 준비되면 바로 쓸 수 있어요."
     },
+    "sandboxPartial": "이 Windows에서는 Codex의 명령이 에이전트 폴더에만 쓸 수 있지만, 인터넷은 일부만 차단돼요. 최신 업데이트가 적용된 Windows 11 24H2 이상에서는 완전히 차단돼요.",
     "notAvailableNow": "선택했지만 지금은 사용할 수 없어요.",
     "offline": "지금 {{computer}}이(가) 오프라인이에요.",
     "modelLabel": "모델",
@@ -12063,7 +12070,7 @@
     "rule": "새 작업은 컴퓨터에 남은 메모리가 있을 때 시작돼요. 사람이 먼저예요. 함께 멘션된 에이전트는 하나씩 시작해요.",
     "spill": {
       "title": "내 컴퓨터",
-      "text": "이 컴퓨터가 가득 차면 나에게 오는 답장이 내 컴퓨터에서 시작될 수 있어요. 긴 작업과 에이전트의 파일은 여기에 남아요.",
+      "text": "이 컴퓨터가 가득 찼거나 없을 때, 내 에이전트가 내 컴퓨터 중 하나에서 시작할 수 있습니다. 미션, 코드 세션, 저장소가 있는 에이전트는 여기 남습니다.",
       "plan": "내 {{plan}} 플랜"
     },
     "youFirst": "내 차례가 먼저",
@@ -15531,7 +15538,7 @@
     "device": {
       "notLinkMaker": "링크를 만든 사람만 이 컴퓨터를 참여시킬 수 있어요.",
       "widenForbidden": "관리자는 다른 사람의 개인 기기를 쓸 수 있는 사람을 줄이는 것만 할 수 있어요.",
-      "spillOwnerOnly": "이 컴퓨터에서 답장이 생각하도록 허용할 수 있는 사람은 컴퓨터를 연결한 사람뿐입니다. 끄는 것은 할 수 있어요.",
+      "spillOwnerOnly": "이 컴퓨터를 연결한 사람만 돕기를 켤 수 있습니다. 끌 수는 있습니다.",
       "tasksOwnerOnly": "이 컴퓨터가 동시에 실행하는 작업 수는 컴퓨터를 연결한 사람만 바꿀 수 있어요.",
       "tasksCloud": "이 컴퓨터의 작업 여유는 Cloud가 알아서 정해요.",
       "notHome": "에이전트는 워크스페이스 컴퓨터에 있고, 이름을 부를 때 이 컴퓨터를 써요."
@@ -15684,6 +15691,11 @@
       "line": "출구 IP {{ip}}",
       "hint": "에이전트가 웹을 탐색할 때 사이트에 보이는 주소예요. 컴퓨터의 네트워크가 바뀌면 함께 바뀌어요.",
       "waiting": "에이전트의 인터넷을 다시 연결하고 있어요. 돌아올 때까지 연결이 기다려요."
+    },
+    "moving": {
+      "short": "서버 이전 중",
+      "line": "새 서버로 이전 중… 몇 분 후 돌아옵니다",
+      "named": "{{computer}}이(가) 새 서버로 이전 중… 몇 분 후 돌아옵니다"
     },
     "online": "온라인",
     "offline": "오프라인",
@@ -15955,10 +15967,12 @@
     "pushHarderHint": "더 많은 작업을 동시에: 메모리는 0.5GB만 비워 두고, 프로세서가 바빠도 멈추지 않아요. 내 앱이 느려질 수 있어요.",
     "belongs": "워크스페이스 소유",
     "belongsHint": "연결한 사람이 떠나도 남아 있고, 소유자가 없는 동안에는 누구나 사용할 수 있어요.",
-    "spillOwn": "내 답장을 여기서 생각할 수 있어요",
-    "spillOwnHint": "에이전트의 컴퓨터가 가득 차면 나에게 오는 답장이 여기서 시작돼요.",
-    "spillOthers": "다른 사람의 에이전트도 여기서 생각할 수 있어요",
-    "spillOthersHint": "에이전트의 컴퓨터가 가득 차면 다른 사람에게 가는 답장도 여기서 시작될 수 있어요.",
+    "spillOwn": "팀 컴퓨터가 가득 찼거나 없을 때 돕기",
+    "spillOwnHint": "에이전트의 컴퓨터가 가득 찼거나 없을 때, 그 답장, 요청, 루틴이 내 로그인으로 여기서 생각할 수 있습니다.",
+    "spillTeamHint": "에이전트의 컴퓨터가 가득 찼거나 없을 때, 그 답장, 요청, 루틴이 이 컴퓨터에 있는 소유자의 로그인으로 여기서 생각할 수 있습니다.",
+    "spillWorkspaceOff": "관리자가 워크스페이스 전체에서 이 기능을 껐습니다.",
+    "helpWorkspace": "팀 컴퓨터가 가득 찼거나 없을 때 다른 컴퓨터가 돕기",
+    "helpWorkspaceHint": "각 컴퓨터는 소유자가 허용할 때만 돕습니다. 끔: 소유자의 선택과 상관없이 아무 컴퓨터도 돕지 않습니다.",
     "connectedBy": "{{name}} 님이 연결함",
     "downloadFor": "{{system}}용 다운로드",
     "downloadApp": "앱 다운로드",
@@ -17875,6 +17889,11 @@
       "cant": "{{via}}(으)로 답했어요: {{plan}}이(가) 지금 생각할 수 없어요.",
       "change": "변경"
     },
+    "spilled": {
+      "full": "{{to}}에서 생각했습니다: {{from}}이(가) 가득 찼습니다.",
+      "away": "{{to}}에서 생각했습니다: {{from}}이(가) 없었습니다.",
+      "itsComputer": "자기 컴퓨터"
+    },
     "modelStandIn": {
       "text": "{{plan}}이(가) 이 키로 {{from}}을(를) 거부했어요. 이 키로 작동하는 {{to}}(으)로 답했어요.",
       "useAll": "모두에게 {{model}} 사용",
@@ -17891,6 +17910,10 @@
       "thinking": "생각 중…",
       "held": "승인 대기 중…",
       "said": "“{{text}}”"
+    },
+    "trail": {
+      "label": "{{name}}이(가) 지금까지 한 일",
+      "earlier_other": "이전 단계 {{count}}개"
     },
     "consult": {
       "asking": "{{from}}이(가) {{to}}에게 묻는 중",
@@ -19759,6 +19782,7 @@
       "notAnsweringHelp": "보통 몇 분 안에 돌아와요. 해결 중이에요.",
       "offline": "{{computer}}이(가) 오프라인이에요",
       "offlineHelpPlain": "{{name}}은(는) 컴퓨터가 돌아오기를 기다려요.",
+      "helping": "그동안 새 작업은 {{names}}에서 생각할 수 있습니다.",
       "noRoom": "{{computer}}이(가) 표시할 수 있는 화면 수가 가득 찼어요. 잠시 후 다시 시도하세요.",
       "unavailable": "지금은 {{name}}의 화면을 표시할 수 없어요",
       "unavailableHelp": "잠시 후 다시 시도하세요.",
@@ -21016,6 +21040,92 @@
     "settingsText": "기술 세부 정보를 agentes.chat 팀에 보내세요."
   },
   "live": {
+    "type": {
+      "font": "글꼴",
+      "search": "글꼴 검색",
+      "noResults": "이 이름의 글꼴이 없습니다",
+      "list": "글꼴",
+      "groups": {
+        "slides": "이 프레젠테이션",
+        "canvas": "이 캔버스",
+        "document": "이 문서",
+        "company": "회사 글꼴",
+        "sans": "산세리프",
+        "serif": "세리프",
+        "display": "제목용",
+        "mono": "고정폭",
+        "handwriting": "손글씨"
+      },
+      "headings": "제목",
+      "body": "본문",
+      "fromDrive": "Drive에서",
+      "ownFont": "파일 글꼴",
+      "fileFonts": {
+        "slides": "프레젠테이션 글꼴",
+        "document": "문서 글꼴"
+      },
+      "fileFontsNote": "파일 전체에 적용됩니다. 자체 글꼴이 있는 텍스트는 그대로 유지됩니다.",
+      "headingFont": "제목 글꼴",
+      "bodyFont": "본문 글꼴",
+      "bring": "Drive에서 글꼴 가져오기…",
+      "bringButton": "Drive에서 가져오기",
+      "bringTitle": "Drive에서 글꼴 가져오기",
+      "bringSearch": "Drive에서 글꼴 검색",
+      "bringEmpty": "Drive에 글꼴이 없습니다. 먼저 .ttf, .otf 또는 .woff 파일을 Drive에 올리세요.",
+      "brought": "{{name}}이(가) 파일에 추가되었습니다",
+      "notFont": "이 파일은 글꼴이 아닙니다. .ttf, .otf 또는 .woff 파일을 고르세요.",
+      "done": "완료",
+      "text": "텍스트 스타일",
+      "glyph": "가",
+      "weight": "굵기",
+      "weights": {
+        "w300": "가늘게",
+        "w400": "보통",
+        "w500": "중간",
+        "w600": "약간 굵게",
+        "w700": "굵게",
+        "w800": "아주 굵게"
+      },
+      "tracking": "자간",
+      "trackings": {
+        "tight": "좁게",
+        "normal": "보통",
+        "open": "넓게",
+        "wide": "아주 넓게"
+      },
+      "lineHeight": "줄 높이",
+      "caps": "모두 대문자",
+      "highlight": "형광펜",
+      "highlights": {
+        "none": "없음",
+        "yellow": "노랑",
+        "green": "초록",
+        "blue": "파랑",
+        "pink": "분홍",
+        "orange": "주황"
+      },
+      "effects": "효과",
+      "shadow": "그림자",
+      "shadows": {
+        "none": "없음",
+        "soft": "부드럽게",
+        "strong": "강하게"
+      },
+      "border": "테두리",
+      "dashes": {
+        "solid": "실선",
+        "dashed": "파선",
+        "dotted": "점선"
+      },
+      "gradient": "그라데이션",
+      "gradients": {
+        "none": "없음",
+        "ocean": "바다",
+        "graphite": "흑연",
+        "sunset": "노을",
+        "violet": "보라"
+      }
+    },
     "slides": {
       "rail": {
         "label": "슬라이드",

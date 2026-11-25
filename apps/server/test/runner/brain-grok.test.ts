@@ -13,6 +13,7 @@ import {
 } from "../../runner/accounts";
 import type { CodexBrainEvent } from "../../runner/brain-codex";
 import {
+  decodeGrokToolOutput,
   GROK_CHAT_DENIED,
   GROK_PLANTED,
   grokChatBreach,
@@ -527,3 +528,61 @@ test("the sandbox check binds each folder above the account's, as Grok Build doe
   }));
   expect(failed).toBe("bwrap: Can't mkdir parents for /var/lib/x: Permission denied");
 });
+
+test("decodeGrokToolOutput decodes Grok Build byte-array JSON envelopes as UTF-8 and leaves other output alone", () => {
+  const bashBytes = JSON.stringify({
+    type: "Bash",
+    output: [...Buffer.from("prov-grok-ok\n8\n", "utf8")],
+    output_file: null,
+  });
+  expect(decodeGrokToolOutput(bashBytes)).toBe("prov-grok-ok\n8\n");
+
+  const utf8Bytes = JSON.stringify({
+    type: "Bash",
+    output: [...Buffer.from("olá 🚀\n", "utf8")],
+    output_file: null,
+  });
+  expect(decodeGrokToolOutput(utf8Bytes)).toBe("olá 🚀\n");
+
+  const emptyOutputWithStderr = JSON.stringify({
+    type: "Bash",
+    output: [],
+    stderr: [...Buffer.from("permission denied\n", "utf8")],
+    output_file: null,
+  });
+  expect(decodeGrokToolOutput(emptyOutputWithStderr)).toBe("permission denied\n");
+
+  const splitStreams = JSON.stringify({
+    type: "Bash",
+    stdout: [...Buffer.from("out\n", "utf8")],
+    stderr: [...Buffer.from("warn\n", "utf8")],
+  });
+  expect(decodeGrokToolOutput(splitStreams)).toBe("out\nwarn\n");
+
+  // Plain text, untyped JSON, non-envelope JSON, and MCP tool results stay untouched.
+  expect(decodeGrokToolOutput("plain text")).toBe("plain text");
+  const untyped = JSON.stringify({ output: [1, 2, 3] });
+  expect(decodeGrokToolOutput(untyped)).toBe(untyped);
+  const scriptJson = JSON.stringify({ type: "report", output: [65, 66, 67] });
+  expect(decodeGrokToolOutput(scriptJson)).toBe(scriptJson);
+  expect(decodeGrokToolOutput(bashBytes, "mcp__agenteschat_agentes__run_code")).toBe(bashBytes);
+  expect(decodeGrokToolOutput(bashBytes, "use_tool")).toBe(bashBytes);
+});
+
+test.skipIf(!posix)(
+  "Grok Build native Bash byte-array tool output arrives as decoded UTF-8 text on tool_call",
+  async () => {
+    const root = tempDir("grok-bytes-");
+    dirs.push(root);
+    const { ctx, accountDir } = turnContext(root);
+    writeFileSync(path.join(accountDir, "auth.json"), "{}");
+    const frames: unknown[] = [];
+    await handleRequest(ctx, turn({ prompt: "BYTES" }), scopeOf(frames));
+    const calls = eventsOf(frames).filter((e) => e.type === "tool_call");
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({
+      name: "run_terminal_command",
+      executed: { content: "prov-grok-ok\n8\n" },
+    });
+  },
+);
