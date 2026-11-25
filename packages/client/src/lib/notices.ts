@@ -277,6 +277,7 @@ export function noticeView(
         from: handle ? (names.agentByHandle(handle) ?? handle) : "",
         to: names.author,
       });
+    }
     // Who joined or left the channel: everyone's line, with who added them.
     case "joined":
     case "left": {

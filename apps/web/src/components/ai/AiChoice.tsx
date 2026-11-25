@@ -351,7 +351,7 @@ export function AiChoiceFields({
     commit({ ...shown, model: v, ...(effort !== undefined ? { effort } : {}) }, row);
   };
 
-  const levels = row ? state.efforts(row) : [];
+  const levels = row ? state.efforts(row, isAuto(model) ? null : (shown?.model ?? null)) : [];
   const autoModel = isAuto(model);
   const effort = row ? effortOf(row.brain, shown?.effort) : null;
   const effortOptions: SelectOption<string>[] = autoModel

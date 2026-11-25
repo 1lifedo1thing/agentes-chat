@@ -20,7 +20,6 @@ import { DesktopTitleBar } from "@/components/DesktopTitleBar";
 import { DetailsHost } from "@/components/DetailsHost";
 import { InviteDialogProvider } from "@/components/invite/InviteDialog";
 import { LeaveChannelDialog } from "@/components/LeaveChannelDialog";
-import { RefetchBar } from "@/components/Loading";
 import { useHoldBannerWaits } from "@/components/lodi-cursor/arrivals";
 import { LodiCursor } from "@/components/lodi-cursor/LodiCursor";
 import { OutageNotices } from "@/components/MachineOutages";
