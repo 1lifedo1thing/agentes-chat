@@ -11290,7 +11290,7 @@
   },
   "code": {
     "ranSummary_other": "{{language}}を{{count}}行実行 · 出力 {{size}}",
-    "show": "{{name}}のコードを見る",
+    "see": "コードを見る",
     "hide": "コードを隠す",
     "running": "{{name}}が実行中",
     "source": "コード（{{language}}）",

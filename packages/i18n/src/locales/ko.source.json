@@ -28524,8 +28524,8 @@
       "other": "Ran {{count}} lines of {{language}} · output {{size}}"
     }
   },
-  "code.show": {
-    "value": "See {{name}}'s code"
+  "code.see": {
+    "value": "See code"
   },
   "code.hide": {
     "value": "Hide code"

@@ -11826,8 +11826,7 @@
   "code": {
     "ranSummary_one": "{{count}} regel {{language}} uitgevoerd · uitvoer {{size}}",
     "ranSummary_other": "{{count}} regels {{language}} uitgevoerd · uitvoer {{size}}",
-    "show": "Bekijk de code van {{name}}",
-    "show_female": "Bekijk de code van {{name}}",
+    "see": "Code bekijken",
     "hide": "Code verbergen",
     "running": "{{name}} is bezig",
     "source": "Code ({{language}})",

@@ -12313,8 +12313,7 @@ export const ptBR = {
   code: {
     ranSummary_one: "Rodou {{count}} linha de {{language}} · saída {{size}}",
     ranSummary_other: "Rodou {{count}} linhas de {{language}} · saída {{size}}",
-    show: "Ver código do {{name}}",
-    show_female: "Ver código da {{name}}",
+    see: "Ver código",
     hide: "Esconder código",
     running: "{{name}} está rodando",
     source: "Código ({{language}})",
