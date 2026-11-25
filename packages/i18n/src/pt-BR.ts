@@ -19998,7 +19998,8 @@ export const ptBR = {
     },
     offer_connect_app: {
       label: "Oferecer conectar um app ou MCP",
-      description: "Posta um card cujo botão abre a conexão de um app ou de um servidor MCP pelo endereço.",
+      description:
+        "Posta um card cujo botão abre a conexão de um app ou de um servidor MCP: do catálogo pelo nome, qualquer outro pelo endereço.",
     },
     offer_invites: {
       label: "Oferecer convidar pessoas",
