@@ -17812,7 +17812,7 @@
     "telemetry": {
       "title": "Kullanım istatistikleri",
       "label": "agentes.chat'e anonim kullanım istatistikleri gönder",
-      "help": "Kişi ve ajan sayısı, makine boyutları, kullanılan yapay zeka token'ları ve ajanların tarayıcılarının ne kadar veri gönderip aldığı gibi sayılar. Asla mesajlar, dosyalar, adlar ya da siteler değil.",
+      "help": "Kişi ve ajan sayısı, makine boyutları, kullanılan yapay zeka token'ları, ajanların tarayıcılarının ne kadar veri gönderip aldığı ve uygulamaların ne kadar hızlı açılıp çalıştığı gibi sayılar. Asla mesajlar, dosyalar, adlar ya da siteler değil.",
       "envOff": "Bu sunucunun ayarlarında kapatıldı (TELEMETRY=off).",
       "envOffDesktop": "Bu sunucunun bilgisayarındaki agentes.chat uygulamasında kapatıldı (Tercihler › Sunucular).",
       "envOffHere": "Bu bilgisayardaki agentes.chat uygulamasında kapatıldı.",

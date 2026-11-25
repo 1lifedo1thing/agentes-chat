@@ -18442,7 +18442,7 @@
     "telemetry": {
       "title": "Statistiques d'utilisation",
       "label": "Envoyer des statistiques d'utilisation anonymes à agentes.chat",
-      "help": "Des chiffres comme le nombre de personnes, d'agents, la taille des machines, les jetons d'IA utilisés et la quantité de données envoyées et reçues par les navigateurs des agents. Jamais de messages, fichiers, noms ou sites.",
+      "help": "Des chiffres comme le nombre de personnes, d'agents, la taille des machines, les jetons d'IA utilisés, la quantité de données envoyées et reçues par les navigateurs des agents et la vitesse à laquelle les apps s'ouvrent et répondent. Jamais de messages, fichiers, noms ou sites.",
       "envOff": "Désactivé dans les paramètres de ce serveur (TELEMETRY=off).",
       "envOffDesktop": "Désactivé dans l'app agentes.chat sur l'ordinateur de ce serveur (Préférences › Serveurs).",
       "envOffHere": "Désactivé dans l'app agentes.chat de cet ordinateur.",

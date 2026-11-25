@@ -296,6 +296,15 @@ export interface MachineSize {
   room?: TaskRoomReport;
 }
 
+/** A memory size as `MachineSize` says it: in GB (2^30 bytes), to 0.5. */
+export const halfGb = (bytes: number) => Math.round((bytes / 2 ** 30) * 2) / 2;
+
+/**
+ * A system's version as its numbers alone (`6.8.0-45-generic` → `6.8.0`): what a kernel's own name adds after them
+ * (a distribution's flavour, a custom build's name) stays home. Undefined when it doesn't start with a number.
+ */
+export const versionNumbers = (version: string) => /^\d{1,6}(?:\.\d{1,6}){0,3}/.exec(version)?.[0];
+
 /**
  * Protocol 22: how busy a computer got over the last day (`pong.load`): the 5-minute load average per
  * logical CPU (1 = every CPU busy) and the share of memory in use (0 to 1), average and highest over
