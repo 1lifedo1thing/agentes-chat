@@ -6,6 +6,7 @@ import {
   badActorReason,
   badActorRefusal,
   type CommandScope,
+  commandCall,
   commandKind,
   commandOf,
   deniedMessage,
@@ -649,7 +650,7 @@ export function runPermissionPrompt(
       ? deny(
           approvalMessage(
             "This agent is set to ask before every change",
-            tool === "Bash" ? ASK_IN_CHAT : ASK_WITH_WRITE_FILE,
+            commandCall(tool, input) ? ASK_IN_CHAT : ASK_WITH_WRITE_FILE,
           ),
           "asks",
         )

@@ -536,6 +536,21 @@ function pathsOf(word: string): string[] {
   });
 }
 
+/**
+ * The command a call runs, or null: Bash's, Claude Code's PowerShell tool's (`powershell`: PowerShell's text, read as
+ * a `powershell -Command` body is) and the command any other of Claude Code's own tools carries (its Monitor, a tool
+ * a later version adds), so a new way to run commands meets the same rules. An MCP server's tool is the person's
+ * own: what its command runs, and where, is that server's.
+ */
+export function commandCall(
+  toolName: string,
+  input: Record<string, unknown> | null | undefined,
+): { command: string; powershell: boolean } | null {
+  const command = input?.command;
+  if (typeof command !== "string" || toolName.startsWith("mcp__")) return null;
+  return { command, powershell: toolName === "PowerShell" };
+}
+
 /** Claude Code's own tools that read files, and the arguments that say where (Grep's `pattern` is a search, not a path). */
 const FILE_READ_TOOLS: Record<string, readonly string[]> = {
   Read: ["file_path"],
@@ -559,8 +574,8 @@ export function secretRead(
   const i = input ?? {};
   const keys = Object.hasOwn(FILE_READ_TOOLS, toolName) ? FILE_READ_TOOLS[toolName] : undefined;
   if (keys) return keys.some((k) => typeof i[k] === "string" && namesSecret(i[k] as string, scope));
-  if (toolName !== "Bash") return false;
-  const command = typeof i.command === "string" ? i.command : "";
+  const command = commandCall(toolName, i)?.command;
+  if (command === undefined) return false;
   if (SECRET_VARIABLE.test(command)) return true;
   const cmds = simpleCommands(command);
   if (cmds) {
@@ -1285,12 +1300,13 @@ export function deniedMessage(
   input: Record<string, unknown> | null | undefined,
   how: string = ASK_IN_CHAT,
 ): string | null {
-  const command = typeof input?.command === "string" ? input.command : "";
+  const command = commandCall(toolName, input)?.command;
+  const tool = command === undefined ? toolName : "Bash";
   const calls = [
     input,
-    ...(toolName === "Bash" ? commandWords(command).map((words) => ({ command: normalizedCommand(words) })) : []),
+    ...(command === undefined ? [] : commandWords(command).map((words) => ({ command: normalizedCommand(words) }))),
   ];
-  const hit = (rules: readonly string[]) => calls.some((c) => rules.some((rule) => ruleMatches(rule, toolName, c)));
+  const hit = (rules: readonly string[]) => calls.some((c) => rules.some((rule) => ruleMatches(rule, tool, c)));
   if (hit(TOKEN_RULES)) return SECRET_MESSAGE;
   const kind = SENSITIVE_KINDS.find((k) => hit(k.rules));
   return kind ? approvalMessage(kind.what, how) : null;
@@ -1905,7 +1921,7 @@ export function inlineCode(argv: readonly string[]): boolean {
 
 /** Any part of a shell call runs inline code. */
 export const inlineCodeCall = (toolName: string, input: Record<string, unknown> | null | undefined) =>
-  toolName === "Bash" && commandWords(typeof input?.command === "string" ? input.command : "").some(inlineCode);
+  commandWords(commandCall(toolName, input)?.command ?? "").some(inlineCode);
 
 /**
  * How an agent asks a person for a command it may not run alone: `run_code` with a `why` opens the approval
@@ -1965,9 +1981,10 @@ export const otherBranchPointer = (branches: readonly string[], handle: string) 
 /** The addresses a call opens: WebFetch's `url`, every http(s) argument of a curl or wget. */
 function outboundUrls(toolName: string, input: Record<string, unknown> | null | undefined): string[] {
   if (toolName === "WebFetch") return typeof input?.url === "string" ? [input.url] : [];
-  if (toolName !== "Bash" || typeof input?.command !== "string") return [];
+  const command = commandCall(toolName, input)?.command;
+  if (command === undefined) return [];
   const urls: string[] = [];
-  for (const s of simpleCommands(input.command) ?? []) {
+  for (const s of simpleCommands(command) ?? []) {
     const base = baseName(s.argv[0] ?? "");
     if (base !== "curl" && base !== "wget") continue;
     for (const a of s.argv.slice(1)) {
@@ -2123,9 +2140,11 @@ export function forbiddenReason(
     if (namesSecret(edited, scope)) return "it touches secrets";
     return insideOrTmp(scope, edited) ? null : "it changes files outside the mission folder";
   }
-  if (toolName !== "Bash") return null;
-  const command = typeof input?.command === "string" ? input.command : "";
-  const cmds = simpleCommands(command);
+  const call = commandCall(toolName, input);
+  if (call === null) return null;
+  // PowerShell's text is a script for an interpreter, as `powershell -Command`'s is.
+  if (call.powershell) return "it runs other commands";
+  const cmds = simpleCommands(call.command);
   if (!cmds || cmds.length === 0) return "it can't be read plainly";
   for (const s of cmds) {
     const [cmd = "", ...args] = s.argv;
@@ -2401,6 +2420,16 @@ function heredocs(text: string): { shell: string; bodies: Array<{ runner: string
 }
 
 /**
+ * A Windows shell's script (`-Command`'s words, a heredoc, piped text, Claude Code's PowerShell tool's), read into
+ * `out`: its commands, and PowerShell's whole text.
+ */
+function windowsScan(program: string, script: string, depth: number, out: Loose[]): void {
+  const t = windowsText(program, script);
+  if (program !== "cmd") out.push({ raw: [], argv: [], writes: [], reads: [], powershell: t });
+  looseScan(t, false, depth + 1, out);
+}
+
+/**
  * Every command a text may run, read loosely into `out`: lists, pipes, `$(…)`, backticks, a shell's or an
  * interpreter's quoted script, a heredoc fed to one (`code`: the text is Python or JavaScript, where every string may
  * be a command: `os.system("…")`, `subprocess.run(["…"])`). A quoted word given to anything else (a commit message, a
@@ -2408,12 +2437,7 @@ function heredocs(text: string): { shell: string; bodies: Array<{ runner: string
  */
 function looseScan(text: string, code: boolean, depth: number, out: Loose[]): void {
   if (depth > 4) return;
-  /** A Windows shell's script (`-Command`'s words, a heredoc, piped text): its commands, and PowerShell's whole. */
-  const windows = (program: string, script: string) => {
-    const t = windowsText(program, script);
-    if (program !== "cmd") out.push({ raw: [], argv: [], writes: [], reads: [], powershell: t });
-    looseScan(t, false, depth + 1, out);
-  };
+  const windows = (program: string, script: string) => windowsScan(program, script, depth, out);
   /** What a command runs when it is a Windows shell (`cmd /c …`, `powershell -c …`), behind a launcher too. */
   const windowsRun = (a: readonly string[]) => {
     const program = baseName(a[0] ?? "");
@@ -3017,6 +3041,11 @@ function badText(text: string, code: boolean, scope: CommandScope): string | nul
   if (code && ENV_DUMP_CODE.test(flat) && NET_CODE.test(flat)) return ENV_OUT;
   const cmds: Loose[] = [];
   looseScan(flat, code, 0, cmds);
+  return badCommands(cmds, scope);
+}
+
+/** Why the commands read from a text are refused: the first one's reason, or the whole environment sent out. */
+function badCommands(cmds: readonly Loose[], scope: CommandScope): string | null {
   let dumps = false;
   let sends = false;
   for (const s of cmds) {
@@ -3035,6 +3064,7 @@ function badText(text: string, code: boolean, scope: CommandScope): string | nul
  * changed or gone around; the runner; another user's files. Everything else is ordinary work: HTTP calls of any
  * method, ssh and rsync, pushes, pipes, heredocs, `$(…)`, `bash -c`, inline code, installs into the agent's own
  * user. The whole text is read, so a `bash -c`, a heredoc or inline code hides nothing that plain matching can see.
+ * Every tool's command is read (`commandCall`), Claude Code's PowerShell tool's as a `powershell -Command` body.
  */
 export function badActorReason(
   toolName: string,
@@ -3045,8 +3075,12 @@ export function badActorReason(
     ? [input?.file_path, input?.notebook_path].find((v): v is string => typeof v === "string")
     : undefined;
   if (file !== undefined) return namesSecret(file, scope) ? SECRETS : writeProblem(file, scope);
-  if (toolName !== "Bash") return null;
-  return badText(typeof input?.command === "string" ? input.command : "", false, scope);
+  const call = commandCall(toolName, input);
+  if (call === null) return null;
+  if (!call.powershell) return badText(call.command, false, scope);
+  const cmds: Loose[] = [];
+  windowsScan("powershell", call.command, 0, cmds);
+  return badCommands(cmds, scope);
 }
 
 /** `badActorReason` for `run_code`'s code (`language`: bash, python or node), where the computer's folders aren't known. */
