@@ -345,6 +345,7 @@ export * from "./settings-proposals";
 export * from "./setup-checklist";
 export * from "./setup-tools";
 export * from "./sidebar-items";
+export * from "./skill-library";
 export * from "./skill-tools";
 export * from "./skill-updates";
 export * from "./skills";

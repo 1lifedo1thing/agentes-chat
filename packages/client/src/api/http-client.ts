@@ -237,9 +237,11 @@ import type {
   SignInOptions,
   Skill,
   SkillDetail,
+  SkillDraft,
   SkillPick,
   SkillSettings,
   SkillSourceUpdate,
+  SkillSuggestion,
   SpeechKey,
   StartChoice,
   StorageConfig,
@@ -1553,6 +1555,18 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       settings: (orgId) => request<SkillSettings>(`${org(orgId)}/skill-settings`),
       saveSettings: (orgId, input) =>
         request<SkillSettings>(`${org(orgId)}/skill-settings`, { method: "PUT", json: input }),
+      draft: (orgId, input) => request<SkillDraft>(`${org(orgId)}/skills/draft`, { json: input }),
+      saveDraft: (orgId, input) => request<SkillDetail>(`${org(orgId)}/skills/drafted`, { json: input }),
+      rewrite: (orgId, id, words) =>
+        request<SkillDetail>(`${org(orgId)}/skills/${enc(id)}/rewrite`, { json: { words } }),
+      suggestions: async (orgId, agentId) =>
+        (await request<{ suggestions: SkillSuggestion[] }>(`${org(orgId)}/agents/${enc(agentId)}/skill-suggestions`))
+          .suggestions,
+      learns: async (orgId, agentId) =>
+        (await request<{ learnsSkills?: boolean }>(`${org(orgId)}/agents/${enc(agentId)}/skills`)).learnsSkills ?? true,
+      setLearns: (orgId, agentId, on) =>
+        request<void>(`${org(orgId)}/agents/${enc(agentId)}/learns-skills`, { method: "PUT", json: { on } }),
+      zipUrl: (orgId, id) => `${base}${org(orgId)}/skills/${enc(id)}/download`,
     },
     access: {
       get: (orgId, agentId, options) =>

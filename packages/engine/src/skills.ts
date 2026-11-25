@@ -15,6 +15,7 @@ import { appTokenForRepo, boundInstallations, type GitHubAppConfig, type GitHubH
 import { assertStorageRoom } from "./limits";
 import { assertPublicHttpsUrl, type ResolveHost } from "./net-guard";
 import { can, getMembership, type Membership, requirePermission } from "./organizations";
+import { agentSkillUses, describedHashOf, queueSkillDescribe, weekUsesBySkill } from "./skill-library";
 import { vaultPersonOfRun } from "./vault/access";
 import { inflateZipEntry, listZip, type ZipListing } from "./zip";
 
@@ -292,9 +293,24 @@ export interface SkillView {
    * Its last update from its link, or an agent's last change to it (`agentId`), while it can be undone (the skill is
    * still at the version it made).
    */
-  lastUpdate: { fromVersion: number; at: string; agentId: string | null; waited: boolean } | null;
+  lastUpdate: {
+    fromVersion: number;
+    at: string;
+    agentId: string | null;
+    waited: boolean;
+    /** A change a person asked for in words: who asked. */
+    byUserId: string | null;
+  } | null;
   /** "Agentes melhoram as skills sozinhos" set for this skill; null: the workspace's setting. */
   agentsImprove: boolean | null;
+  /** Its name for people, written when installed or made (`describeSkill`); null until then. */
+  title: string | null;
+  /** When to use it, one line for people; null until written. */
+  summary: string | null;
+  /** One of the app's icons (`SKILL_ICONS`); null until written. */
+  icon: string | null;
+  /** A person named it: new versions keep the title. */
+  titleByPerson: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -363,9 +379,14 @@ const view = (s: SkillRow): SkillView => ({
           at: s.lastUpdate.at,
           agentId: s.lastUpdate.agentId ?? null,
           waited: !!s.lastUpdate.waited,
+          byUserId: s.lastUpdate.byUserId ?? null,
         }
       : null,
   agentsImprove: s.agentsImprove,
+  title: s.title,
+  summary: s.summary,
+  icon: s.icon,
+  titleByPerson: s.titleByPerson,
   createdAt: s.createdAt.toISOString(),
   updatedAt: s.updatedAt.toISOString(),
 });
@@ -687,6 +708,7 @@ export async function saveSkill(
     }
   }
   await storeFiles(deps, row, row.version, files);
+  if (row.describedHash !== describedHashOf(row)) await queueSkillDescribe(deps.db, orgId, row.id);
   await recordAudit(deps.db, {
     orgId,
     actor: { type: "person", id: actorId },
@@ -1336,6 +1358,8 @@ export interface SkillChoice {
   name: string;
   description: string;
   replaces?: "installed" | "removed";
+  /** Another skill the link holds has this name (different content): one of them may be picked. */
+  sameName?: true;
 }
 
 /** A skill a GitHub link holds that can't be installed, with the refusal: its code, English text and params. */
@@ -1415,6 +1439,17 @@ async function readGithubLink(
   /** The skill at `dir` from its SKILL.md alone, refused as installing it would be for its limits or its text. */
   const about = async (dir: string) =>
     parseSkillMarkdown(new TextDecoder().decode(await repository.read(skillIn(dir).skillMd)));
+  /**
+   * What the skill at `dir` holds, to tell copies apart: its SKILL.md and the path and size of each of its files. Two
+   * folders with the same print hold the same skill.
+   */
+  const printOf = async (dir: string) => {
+    const skill = skillIn(dir);
+    const prefix = dir ? `${dir}/` : "";
+    const files = skill.files.map(([path, entry]) => `${path.slice(prefix.length)}:${entry.size}`).sort();
+    const md = new TextDecoder().decode(await repository.read(skill.skillMd));
+    return new Bun.CryptoHasher("sha256").update(`${md}\u0000${files.join("\n")}`).digest("hex");
+  };
   /** The skill at `dir`, ready to save: from the link itself when it points at the skill, else from its folder. */
   const skillAt = async (dir: string) => {
     const skill = await repositorySkill(repository.read, dir, skillIn(dir).files);
@@ -1430,7 +1465,7 @@ async function readGithubLink(
       sourceByFolder: repository.byFolder,
     };
   };
-  return { found, about, skillAt, via: repository.via };
+  return { found, about, printOf, skillAt, via: repository.via };
 }
 
 /**
@@ -1481,7 +1516,23 @@ export async function importSkillFromUrl(
   const choices: SkillChoice[] = [];
   const skipped: SkillSkipped[] = [];
   let refused: unknown;
+  // A repository may hold the same skill twice (a plugin's folder with a copy of its skills): it is offered once, from
+  // the folder nearest the repository's root, so "All" never picks two skills of one name.
+  const depth = (path: string) => (path ? path.split("/").length : 0);
+  const nearestFirst = [...link.found.keys()].sort((a, b) => depth(a) - depth(b) || (a < b ? -1 : 1));
+  const prints = new Set<string>();
+  const copies = new Set<string>();
+  for (const path of nearestFirst) {
+    try {
+      const print = await link.printOf(path);
+      if (prints.has(print)) copies.add(path);
+      prints.add(print);
+    } catch (err) {
+      if (!(err instanceof ValidationError)) throw err;
+    }
+  }
   for (const path of link.found.keys()) {
+    if (copies.has(path)) continue;
     try {
       const { name, description } = await link.about(path);
       choices.push({ path, name, description });
@@ -1492,6 +1543,10 @@ export async function importSkillFromUrl(
     }
   }
   if (choices.length === 0) throw refused;
+  // Two different skills of one name: each shows its folder, and only one of them may be picked.
+  const named = new Map<string, number>();
+  for (const c of choices) named.set(c.name, (named.get(c.name) ?? 0) + 1);
+  for (const c of choices) if ((named.get(c.name) ?? 0) > 1) c.sameName = true;
   const same = await deps.db
     .select({ slug: skills.slug, deletedAt: skills.deletedAt })
     .from(skills)
@@ -1566,7 +1621,10 @@ export async function importPickedSkills(
     names.push((await named(dir, () => link.about(dir))).name);
   }
   const twin = names.find((name, i) => names.indexOf(name) !== i);
-  if (twin) throw new ValidationError(`Two of the skills picked are named ${twin}. Pick one of them.`);
+  if (twin)
+    throw new ValidationError(`Two of the skills picked are named ${twin}. Pick one of them.`, "skill.picked_twice", {
+      name: twin,
+    });
   const installed: SkillDetail[] = [];
   for (const dir of dirs) {
     installed.push(
@@ -1671,22 +1729,36 @@ async function skillsWithCounts(db: Database, actorId: string, orgId: string, ot
       ),
     )
     .orderBy(asc(skills.name));
-  const counts = await db
-    .select({ skillId: agentSkills.skillId, n: sql<number>`count(*)::int` })
+  const on = await db
+    .select({ skillId: agentSkills.skillId, agentId: agentSkills.agentId })
     .from(agentSkills)
     .innerJoin(schema.agents, eq(schema.agents.id, agentSkills.agentId))
-    .where(and(eq(agentSkills.orgId, orgId), eq(agentSkills.enabled, true), isNull(schema.agents.archivedAt)))
-    .groupBy(agentSkills.skillId);
-  const byId = new Map(counts.map((c) => [c.skillId, Number(c.n)]));
-  /** How many active agents have each skill on. */
-  return rows.map((r) => ({ ...othersView(r, actorId), agentsCount: byId.get(r.id) ?? 0 }));
+    .where(
+      and(
+        eq(agentSkills.orgId, orgId),
+        eq(agentSkills.enabled, true),
+        isNull(schema.agents.archivedAt),
+        isNull(schema.agents.deletedAt),
+      ),
+    )
+    .orderBy(asc(schema.agents.name));
+  const byId = new Map<string, string[]>();
+  for (const o of on) byId.set(o.skillId, [...(byId.get(o.skillId) ?? []), o.agentId]);
+  const week = await weekUsesBySkill(db, orgId);
+  // Which active agents have each skill on, and how often agents loaded it in the last week.
+  return rows.map((r) => ({
+    ...othersView(r, actorId),
+    agentsCount: byId.get(r.id)?.length ?? 0,
+    agentIds: byId.get(r.id) ?? [],
+    weekUses: week.get(r.id)?.uses ?? 0,
+  }));
 }
 
 /** A skill as `actorId` may see it: someone else's personal skill shows its name and person only, never its text. */
 function othersView(s: SkillRow, actorId: string): SkillView {
   const v = view(s);
   if (!s.ownerUserId || s.ownerUserId === actorId) return v;
-  return { ...v, description: "", sourceUrl: null, sourceVia: null, metadata: {}, pendingUpdate: null };
+  return { ...v, description: "", summary: null, sourceUrl: null, sourceVia: null, metadata: {}, pendingUpdate: null };
 }
 
 export async function getSkill(db: Database, actorId: string, orgId: string, id: string): Promise<SkillDetail> {
@@ -2004,8 +2076,14 @@ export async function agentSkillList(db: Database, actorId: string, orgId: strin
       .where(and(eq(agentSkills.orgId, orgId), eq(agentSkills.agentId, agentId))),
   ]);
   const on = new Map(mine.map((m) => [m.skillId, m.enabled]));
+  const used = await agentSkillUses(db, orgId, agentId);
   return all
-    .map((s) => ({ ...s, enabled: on.get(s.id) ?? false }))
+    .map((s) => ({
+      ...s,
+      enabled: on.get(s.id) ?? false,
+      agentWeekUses: used.get(s.id)?.week ?? 0,
+      agentLastUsedAt: used.get(s.id)?.lastAt ?? null,
+    }))
     .filter((s) => !s.ownerUserId || s.ownerUserId === actorId || s.enabled);
 }
 

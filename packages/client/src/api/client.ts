@@ -326,11 +326,14 @@ import type {
   SignInOptions,
   Skill,
   SkillDetail,
+  SkillDraft,
+  SkillDraftInput,
   SkillInput,
   SkillPatch,
   SkillPick,
   SkillSettings,
   SkillSourceUpdate,
+  SkillSuggestion,
   SpeechKey,
   SpeechKeyInput,
   StartChoice,
@@ -1458,6 +1461,22 @@ export interface ApiClient {
     /** The workspace's skill settings (older servers: absent). */
     settings?(orgId: string): Promise<SkillSettings>;
     saveSettings?(orgId: string, input: SkillSettings): Promise<SkillSettings>;
+    /** A skill written from a person's words (nothing saved), or that draft with a change. */
+    draft?(orgId: string, input: SkillDraftInput): Promise<SkillDraft>;
+    /** Saves a written skill and turns it on for the agents chosen. */
+    saveDraft?(
+      orgId: string,
+      input: Omit<SkillDraft, "apps"> & { agentIds: string[]; personal?: boolean; defaultForNewAgents?: boolean },
+    ): Promise<SkillDetail>;
+    /** A change asked in words: a new version, with undo. */
+    rewrite?(orgId: string, id: string, words: string): Promise<SkillDetail>;
+    /** The library's skills that would help an agent, from its last week. */
+    suggestions?(orgId: string, agentId: string): Promise<SkillSuggestion[]>;
+    /** Whether the agent learns skills on its own. */
+    learns?(orgId: string, agentId: string): Promise<boolean>;
+    setLearns?(orgId: string, agentId: string, on: boolean): Promise<void>;
+    /** Where the browser downloads the skill's folder as a .zip. */
+    zipUrl?(orgId: string, id: string): string;
   };
   access: {
     /**
