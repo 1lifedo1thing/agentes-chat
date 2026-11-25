@@ -155,7 +155,7 @@ export function queueWaitText(
 ) {
   const ahead = w && w.position > 1 ? queue?.waiting[w.position - 2]?.agentId : undefined;
   const name = ahead && ahead !== w?.agentId ? agentName(ahead) : undefined;
-  return name ? t("queue.waitingAfter", { name }) : t("queue.waiting");
+  return name ? t("queue.waitingAfter", agentGrammar(name)) : t("queue.waiting");
 }
 
 /**

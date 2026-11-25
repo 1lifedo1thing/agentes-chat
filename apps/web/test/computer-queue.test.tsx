@@ -202,7 +202,7 @@ describe("a computer's line", () => {
     await settle(10);
     // Atlas is next with an estimate, Rio second behind it.
     const says = turns().map((t) => t.querySelector(".cq-turn__say")?.textContent);
-    expect(says).toEqual(["Na fila · começa em seguida", "Na fila, depois de Atlas"]);
+    expect(says).toEqual(["Na fila · começa em seguida", "Na fila, depois do Atlas"]);
     for (const turn of turns()) {
       expect(turn.textContent).not.toMatch(/Computador cheio|memória|Depois de|minutos?\b|Parar/);
       expect(within(turn).queryByRole("button", { name: /^Parar/ })).toBeNull();
@@ -301,7 +301,7 @@ describe("a computer's line", () => {
     const foot = row("m-ask").querySelector(".ac-msg__foot") as HTMLElement;
     expect(foot.textContent).toContain("Rio está na fila");
     expect(foot.textContent).not.toContain("próximo");
-    expect(turns()[0]?.querySelector(".cq-turn__say")?.textContent).toBe("Na fila, depois de Atlas");
+    expect(turns()[0]?.querySelector(".cq-turn__say")?.textContent).toBe("Na fila, depois do Atlas");
     expect(turns()[0]?.textContent).not.toContain("Você vai primeiro");
   });
 

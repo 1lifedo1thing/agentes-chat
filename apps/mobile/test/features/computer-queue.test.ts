@@ -106,7 +106,7 @@ describe("a shared computer's line on the phone", () => {
     const [pt, en] = await Promise.all([translator("pt-BR"), translator("en")]);
     const names: Record<string, string> = { nova: "Nova", rio: "Rio" };
     const name = (id: string) => names[id];
-    expect(queueWaitText(pt, queue, waitingFor(queue, undefined, "rio", "dev"), name)).toBe("Na fila, depois de Nova");
+    expect(queueWaitText(pt, queue, waitingFor(queue, undefined, "rio", "dev"), name)).toBe("Na fila, depois da Nova");
     expect(queueWaitText(en, queue, waitingFor(queue, undefined, "nova", "dm1"), name)).toBe("In line · starts soon");
     const row = await Bun.file(new URL("../../src/features/queue/parts.tsx", import.meta.url)).text();
     expect(row).toContain("{queueWaitText(t, queue, w, name)}");

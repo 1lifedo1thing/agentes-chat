@@ -150,7 +150,7 @@ test("rows: what each turn is for, never its content, where, and its estimate", 
 test("a waiting turn says plainly whose turn it waits behind", () => {
   const w = (i: number) => queue.waiting[i] ?? null;
   // Behind the turn just ahead of it, not the first in line.
-  expect(queueWaitText(pt, queue, w(1), agentName)).toBe("Na fila, depois de Theo");
+  expect(queueWaitText(pt, queue, w(1), agentName)).toBe("Na fila, depois do Theo");
   expect(queueWaitText(en, queue, w(2), agentName)).toBe("In line, after Kai");
   // The head waits for room, behind nobody in line.
   expect(queueWaitText(pt, queue, w(0), agentName)).toBe("Na fila · começa em seguida");
