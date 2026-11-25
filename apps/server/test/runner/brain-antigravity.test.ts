@@ -580,7 +580,7 @@ test.skipIf(!posix)(
     });
     managers.push(win);
     const first = await win.begin("antigravity", "0193eeee-0000-7000-8000-0000000000d3");
-    expect(first.url).toBe("https://accounts.google.com/o/oauth2/auth?client_id=agy&state=s1");
+    expect(first.url).toBe("https://accounts.google.com/o/oauth2/auth?client_id=agy&state=s1&prompt=select_account");
     await expect(win.begin("antigravity", "0193eeee-0000-7000-8000-0000000000d4")).rejects.toMatchObject({
       code: "bad_request",
       message: expect.stringContaining("one Gemini account at a time"),
