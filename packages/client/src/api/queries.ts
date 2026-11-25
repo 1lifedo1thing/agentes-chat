@@ -1391,6 +1391,20 @@ export function useConfirmSetup(orgId: string, agentId: string) {
   });
 }
 
+/** Closes a new agent's checklist on its page (its ×): gone at once; a refusal brings it back as the list is read again. */
+export function useCloseSetup(orgId: string, agentId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.agents.closeSetup(orgId, agentId),
+    onMutate: () =>
+      qc.setQueryData<Agent[]>(keys.agents(orgId), (list) =>
+        list?.map((a) => (a.id === agentId && a.setup ? { ...a, setup: { ...a.setup, closed: true as const } } : a)),
+      ),
+    onSettled: () => agentChanged(qc, orgId, agentId),
+  });
+}
+
 /**
  * Lets more people talk to the agent. `ask` gets the mailboxes saving `audience` would take from it (only a mailbox's
  * owner gives an agent access to it), maybe none, and nothing is saved without its yes: it asks when they are some or

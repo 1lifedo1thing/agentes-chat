@@ -193,6 +193,8 @@ export const agents = pgTable(
       hello?: string;
       starter?: string;
       apps?: Record<string, "read" | "write">;
+      /** Closed on its page (its ×): the page shows it no more; its chat's stays. */
+      closed?: boolean;
     }>(),
     /**
      * Its computer (ADR 0025): the connected machine it works on; null = none yet (the workspace's own computer

@@ -953,6 +953,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<Agent>(`${org(orgId)}/agents/${enc(agentId)}`, { method: "PATCH", json: input }),
       confirmSetup: (orgId, agentId, step) =>
         request<Agent>(`${org(orgId)}/agents/${enc(agentId)}/setup/${enc(step)}`, { json: {} }),
+      closeSetup: (orgId, agentId) =>
+        request<Agent>(`${org(orgId)}/agents/${enc(agentId)}/setup`, { method: "PATCH", json: { closed: true } }),
       mailLoss: async (orgId, agentId, audience) =>
         (
           await request<{ mailboxes: ForeignMailbox[] }>(`${org(orgId)}/agents/${enc(agentId)}/audience/mail-loss`, {
