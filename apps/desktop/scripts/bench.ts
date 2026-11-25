@@ -6,13 +6,14 @@
  *
  *   bun apps/desktop/scripts/bench.ts <app> <runner> <native folder> <seeded folder> <out folder> [warm openings]
  *
- * <app> is the app's own executable; <runner> and <native folder> the server it carries, started as it starts it
- * (server-smoke.ts) on a copy of <seeded folder> (apps/server/scripts/perf/seed.ts). Each opening runs the app with
- * `AGENTES_BENCH_OUT` and `AGENTES_BENCH_URL` (src-tauri/src/bench.rs): the first on a new profile, signing in
- * through a one-time link on its way to the workspace's busiest channel, the warm ones signed in and straight there,
- * then the floor. The app's list of servers is replaced, so a computer where the app already has one is refused.
- * Writes `bench.json` (each opening as the app wrote it, and the summary) and `bench.md` (the table, also added to
- * the job's summary on GitHub) in <out folder>.
+ * <app> is the app's own executable, or on macOS its `.app`, opened through Launch Services as people open it;
+ * <runner> and <native folder> the server it carries, started as it starts it (server-smoke.ts) on a copy of <seeded
+ * folder> (apps/server/scripts/perf/seed.ts). Each opening runs the app with `AGENTES_BENCH_OUT` and
+ * `AGENTES_BENCH_URL` (src-tauri/src/bench.rs): the first on a new profile, signing in through a one-time link on its
+ * way to the workspace's busiest channel, the warm ones signed in and straight there, then the floor. The app's list
+ * of servers is replaced, so a computer where the app already has one is refused. Writes `bench.json` (each opening
+ * as the app wrote it, and the summary), `bench.md` (the table, also added to the job's summary on GitHub) and each
+ * opening's output in <out folder>.
  */
 import {
   appendFileSync,
@@ -25,7 +26,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import os from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { percentile } from "../../../packages/engine/src/format";
 import { serverLog, startServer, stopServer } from "./server-smoke";
 
@@ -179,9 +180,12 @@ const RUN_LIMIT_MS = 6 * 60_000;
 /** The web view's processes go a moment after the app. */
 const BETWEEN_MS = 5_000;
 
+/** A file's last lines, or nothing. */
+const tail = (file: string) => (existsSync(file) ? readFileSync(file, "utf8").split("\n").slice(-30).join("\n") : "");
+
 async function main() {
-  const [app, runner, native, seeded, out, warmArg] = process.argv.slice(2);
-  if (!app || !runner || !native || !seeded || !out) {
+  const [app, runner, native, seeded, outArg, warmArg] = process.argv.slice(2);
+  if (!app || !runner || !native || !seeded || !outArg) {
     console.error(
       "usage: bun apps/desktop/scripts/bench.ts <app> <runner> <native folder> <seeded folder> <out folder> [warm openings]",
     );
@@ -193,6 +197,8 @@ async function main() {
     console.error(`The app on this computer already has its servers (${servers}): the bench would replace them.`);
     process.exit(2);
   }
+  // Whole: an app opened through Launch Services starts in `/`.
+  const out = resolve(outArg);
   mkdirSync(out, { recursive: true });
   mkdirSync(config, { recursive: true });
   const choose = (origin: string) => writeFileSync(servers, JSON.stringify({ current: origin, servers: [origin] }));
@@ -210,15 +216,28 @@ async function main() {
   const runs: Run[] = [];
   /** Opens the app on `page`: its opening must end on `ends` (a warm one that lost its sign-in would paint `/login`). */
   const open = async (kind: Kind, page: string, ends: string) => {
-    const file = join(out, `${kind}-${runs.length + 1}.json`);
+    const name = join(out, `${kind}-${runs.length + 1}`);
+    const file = `${name}.json`;
+    const bundle = app.endsWith(".app");
     const spawnedAtMs = Date.now();
-    const child = Bun.spawn([app], {
-      env: { ...process.env, AGENTES_BENCH_OUT: file, AGENTES_BENCH_URL: page },
-      stdout: "inherit",
-      stderr: "inherit",
-    });
+    // Only an app opened through Launch Services is its own responsible process, the one macOS counts WebKit's
+    // processes against (vitals.rs `tree`): started from a shell, they would be the shell's.
+    const child = bundle
+      ? Bun.spawn([
+          "open",
+          ...["-W", "-n", "--stdout", `${name}.out.log`, "--stderr", `${name}.err.log`],
+          ...["--env", `AGENTES_BENCH_OUT=${file}`, "--env", `AGENTES_BENCH_URL=${page}`, app],
+        ])
+      : Bun.spawn([app], {
+          env: { ...process.env, AGENTES_BENCH_OUT: file, AGENTES_BENCH_URL: page },
+          stdout: Bun.file(`${name}.out.log`),
+          stderr: Bun.file(`${name}.err.log`),
+        });
     const code = await Promise.race([child.exited, Bun.sleep(RUN_LIMIT_MS).then(() => null)]);
-    if (code === null) child.kill();
+    if (code === null) {
+      child.kill();
+      if (bundle) Bun.spawnSync(["pkill", "-f", join(app, "Contents", "MacOS")]);
+    }
     const run: Run = { kind, spawnedAtMs };
     try {
       Object.assign(run, JSON.parse(readFileSync(file, "utf8")) as Opening);
@@ -234,6 +253,7 @@ async function main() {
           ? `it opened on ${painted} instead of ${ends}`
           : undefined);
     console.log(`bench: ${kind} opening: ${run.failed ?? `the site painted at ${run.pageReadyMs} ms`}`);
+    if (run.failed) console.log(`${tail(`${name}.out.log`)}\n${tail(`${name}.err.log`)}`);
     runs.push(run);
     await Bun.sleep(BETWEEN_MS);
   };

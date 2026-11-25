@@ -325,8 +325,9 @@ mod system {
     }
 
     /// The processes the system counts against `app` (as Activity Monitor groups them), the app aside: WebKit's,
-    /// which launchd starts for it. The call that says it isn't public, so it is looked up as the app runs: without
-    /// it, none.
+    /// which launchd starts for it. Only an app opened as apps are (Finder, the Dock, `open`) is counted for itself:
+    /// started from a shell, it and its WebKit processes are counted against the shell's terminal, and this finds
+    /// none. The call that says it isn't public, so it is looked up as the app runs: without it, none either.
     fn working_for(app: libc::pid_t) -> Vec<libc::pid_t> {
         type Responsible = unsafe extern "C" fn(libc::pid_t) -> libc::pid_t;
         // SAFETY: a NUL-terminated name, looked up among the images the process already loaded.

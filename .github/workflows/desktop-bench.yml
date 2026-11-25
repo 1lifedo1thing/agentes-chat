@@ -122,9 +122,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/app"
           tar -xzf build/*.app.tar.gz -C "$RUNNER_TEMP/app"
           APP_DIR=$(ls -d "$RUNNER_TEMP"/app/*.app | head -1)
-          EXE=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_DIR/Contents/Info.plist")
           {
-            echo "APP=$APP_DIR/Contents/MacOS/$EXE"
+            echo "APP=$APP_DIR"
             echo "SERVER_RUNNER=$APP_DIR/Contents/MacOS/agentes-runner"
             echo "NATIVE=$APP_DIR/Contents/Resources"
           } >> "$GITHUB_ENV"
