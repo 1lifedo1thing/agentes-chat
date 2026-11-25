@@ -17,7 +17,7 @@ import {
 import { resolveChannelAgentAsks } from "./admin-asks";
 import { managesAgent, OWNER_COLUMNS, ownsAgent, REACH_COLUMNS } from "./audience";
 import { caches } from "./cache";
-import { endOfCategory, requireCategoryInOrg } from "./channel-categories";
+import { endOfSector, requireSectorInOrg } from "./channel-sectors";
 import { wordsOf } from "./confidential";
 import { ConflictError, ForbiddenError, isUniqueViolation, NotFoundError, ValidationError } from "./errors";
 import { publishChannelEvent, publishChannelsChanged, publishOrgEvent, publishUserEvent } from "./events";
@@ -62,6 +62,7 @@ import {
   fileConversationReaderSql,
   taskReaderSql,
 } from "./task-access";
+import { isPersonalWorkspace } from "./workspace-mode";
 
 const { channels, channelMembers, agents, organizationMembers, organizations, users } = schema;
 
@@ -190,14 +191,16 @@ export async function createChannel(
     visibility?: "public" | "private";
     /** Private only: people holding one of these roles also see it and may join (ADR 0125). */
     audienceRoleIds?: string[];
-    categoryId?: string | null;
+    /** Its sector (ADR 0240): whoever may create a channel may put it in an existing one. */
+    groupId?: string | null;
+    /** Who joins it right after its creator, with the same checks as adding them one by one (`addChannelMember`). */
+    members?: ({ userId: string } | { agentId: string })[];
   },
   options: { pubsub?: PubSub } = {},
 ): Promise<Channel> {
   await requirePermission(db, actorId, orgId, "create_channels");
-  // Whoever may create a channel may put it in an existing category (arranging categories is for admins).
-  const categoryId = input.categoryId ?? null;
-  if (categoryId) await requireCategoryInOrg(db, orgId, categoryId);
+  const groupId = input.groupId ?? null;
+  if (groupId) await requireSectorInOrg(db, orgId, groupId);
   const name = input.name.trim().toLowerCase();
   if (name.startsWith("dm-")) throw new ValidationError("Channel names can't start with dm-");
   if (!CHANNEL_NAME_PATTERN.test(name)) {
@@ -205,6 +208,11 @@ export async function createChannel(
   }
   const visibility = input.visibility ?? "public";
   const audienceRoleIds = await channelRoleIds(db, orgId, visibility, input.audienceRoleIds);
+  const members = input.members ?? [];
+  // Answers in threads keep the main timeline clear for the other people in it (ADR 0214): a channel made with no one
+  // but its creator, or in a personal workspace (ADR 0159), starts with them in the main timeline instead.
+  const alone = !members.some((m) => "userId" in m && m.userId !== actorId);
+  const threadsOff = alone || (await isPersonalWorkspace(db, orgId));
   try {
     const made = await db.transaction(async (tx) => {
       const [channel] = await tx
@@ -216,8 +224,9 @@ export async function createChannel(
           visibility,
           audienceRoleIds,
           createdByUserId: actorId,
-          categoryId,
-          position: await endOfCategory(tx, orgId, categoryId),
+          groupId,
+          position: await endOfSector(tx, orgId, groupId),
+          ...(threadsOff ? { replyInThreads: false } : {}),
         })
         .returning();
       if (!channel) throw new Error("channel insert returned nothing");
@@ -225,6 +234,10 @@ export async function createChannel(
       return channel;
     });
     await publishChannelsChanged(options.pubsub, orgId);
+    for (const member of members) {
+      if ("userId" in member && member.userId === actorId) continue;
+      await addChannelMember(db, actorId, orgId, made.id, member, options);
+    }
     return made;
   } catch (error) {
     if (isUniqueViolation(error)) throw new ConflictError(`#${name} already exists`);
@@ -260,9 +273,9 @@ export interface ChannelListItem {
   audienceRoleIds: string[];
   createdByUserId: string | null;
   createdAt: Date;
-  /** Its sidebar category; null: on top, with none. */
-  categoryId: string | null;
-  /** Order inside its category. */
+  /** Its sector (ADR 0240); null: under Canais, in none. */
+  groupId: string | null;
+  /** Order inside its sector (or among the channels in none). */
   position: number;
   /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). */
   replyInThreads: boolean;
@@ -304,7 +317,7 @@ interface ChannelListRow {
   audience_role_ids: string[] | string;
   created_by_user_id: string | null;
   created_at: Date | string;
-  category_id: string | null;
+  group_id: string | null;
   position: number | string;
   reply_in_threads: boolean | string;
   lead_agent_id: string | null;
@@ -353,7 +366,7 @@ export async function listChannels(db: Database, userId: string, orgId: string):
     and u.meta->>'mediaAfter' is null`;
   const rows = rowsOf<ChannelListRow>(
     await db.execute(sql`select c.id, c.org_id, c.name, c.topic, c.visibility, c.audience_role_ids, c.created_by_user_id, c.created_at,
-        c.category_id, c.position, c.reply_in_threads, c.lead_agent_id,
+        c.group_id, c.position, c.reply_in_threads, c.lead_agent_id,
         (cm.id is not null) as is_member,
         (cm.id is null and c.visibility <> 'public' and not ${channelAudienceSql("c", sql`${userId}`)}) as seen_as_admin,
         coalesce(un.n, 0) as unread_count, coalesce(un.m, 0) as mention_count,
@@ -406,7 +419,7 @@ export async function listChannels(db: Database, userId: string, orgId: string):
       audienceRoleIds: uuidArray(r.audience_role_ids),
       createdByUserId: r.created_by_user_id,
       createdAt: asDate(r.created_at),
-      categoryId: r.category_id,
+      groupId: r.group_id,
       position: Number(r.position),
       replyInThreads: r.reply_in_threads === true || r.reply_in_threads === "t",
       leadAgentId: r.lead_agent_id,

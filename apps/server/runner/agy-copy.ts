@@ -11,9 +11,10 @@ import { isExecutable, ownCommand, setAgyPick } from "./executors";
  * The Antigravity CLI the runner brings (ADR 0143). Which Gemini models the CLI lists and runs is its own catalog's,
  * and the runner keeps it from updating itself during turns, so a computer's `agy` would stay at the version its
  * person installed. Like the Cloud image's pin, this names one version and each system's build with Google's SHA-512
- * of it, read from the manifests its installer reads (`…/manifests/<platform>.json`, 2026-11-21). It is a floor: an
- * `agy` of the person's at this version or newer runs as it is. Outside system mode only (there the computer's setup
- * installs the CLI for the agents' users), on macOS and Linux.
+ * of it, read from the manifests its installer reads (`…/manifests/<platform>.json`, 2026-11-21; Windows'
+ * 2026-11-24). It is a floor: an `agy` of the person's at this version or newer runs as it is. Outside system mode only (there the computer's setup
+ * installs the CLI for the agents' users). Google's Windows builds are the bare `.exe`, a newer version than the others'
+ * (its own `version`: the manifests serve only their current one).
  */
 export const AGY_PIN = {
   version: "1.5.14",
@@ -48,10 +49,25 @@ export const AGY_PIN = {
       sha512:
         "f6e35fc3dab2cd49fd4296ddee0841b9cc4c7020b6c6aaea6452c5b3452b0ad8d66451c9098e418ad6b2f6eabcc81cdf13105ed043903248b11d6fb24ae709ab",
     },
+    windows_amd64: {
+      version: "1.5.16",
+      url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.16-5250855658717184/windows-x64/cli_windows_x64.exe",
+      sha512:
+        "058a85911c40a0beba24d0ae4e3227ea5060388060d4746aa6b48722ff43516c16fbffe6d30e31e2c266d5b47495a7886f072cc4e0143b26eb3cd9a007578c83",
+    },
+    windows_arm64: {
+      version: "1.5.16",
+      url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.16-5250855658717184/windows-arm/cli_windows_arm64.exe",
+      sha512:
+        "a3d961732875eedc8cf9b946c542290616d41508ebc9144cb38787615f95b48ddfc9d3edd5bee06eaae061a0fa000a03c3db9efafcd046d90ec021ec4c54eea9",
+    },
   },
 } as const;
 
-export type AgyPin = { version: string; builds: Partial<Record<string, { url: string; sha512: string }>> };
+export type AgyPin = {
+  version: string;
+  builds: Partial<Record<string, { url: string; sha512: string; version?: string }>>;
+};
 
 /** Google's name for this system's build (`darwin_arm64`, `linux_amd64_musl`…), as its installer picks it; null: none. */
 export function agyPlatform(
@@ -60,8 +76,10 @@ export function agyPlatform(
   exists: (file: string) => boolean = existsSync,
 ): string | null {
   const cpu = arch === "x64" ? "amd64" : arch === "arm64" ? "arm64" : null;
-  if (!cpu || (platform !== "darwin" && platform !== "linux")) return null;
+  if (!cpu) return null;
   if (platform === "darwin") return `darwin_${cpu}`;
+  if (platform === "win32") return `windows_${cpu}`;
+  if (platform !== "linux") return null;
   const musl = exists("/lib/libc.musl-x86_64.so.1") || exists("/lib/libc.musl-aarch64.so.1");
   return `linux_${cpu}${musl ? "_musl" : ""}`;
 }
@@ -106,6 +124,9 @@ function versionOf(file: string): Promise<string | null> {
  */
 export class AgyCopy {
   private readonly pin: AgyPin;
+  private readonly build: { url: string; sha512: string; version?: string } | undefined;
+  /** This system's version of the pin. */
+  private readonly version: string;
   private running: Promise<void> | null = null;
   private fetching: Promise<void> | null = null;
   private failedAt = 0;
@@ -113,11 +134,15 @@ export class AgyCopy {
 
   constructor(private readonly opts: AgyCopyOptions) {
     this.pin = opts.pin ?? AGY_PIN;
+    const platform = opts.platform === undefined ? agyPlatform() : opts.platform;
+    this.build = platform ? this.pin.builds[platform] : undefined;
+    this.version = this.build?.version ?? this.pin.version;
   }
 
-  /** Where the pinned build's `antigravity` goes. */
+  /** Where the pinned build's `antigravity` goes (`antigravity.exe`: Google's Windows build is the program itself). */
   file(): string {
-    return path.join(this.opts.home, "bin", `agy-${this.pin.version}`, "antigravity");
+    const exe = this.build?.url.endsWith(".exe") ? ".exe" : "";
+    return path.join(this.opts.home, "bin", `agy-${this.version}`, `antigravity${exe}`);
   }
 
   check(): Promise<void> {
@@ -131,7 +156,7 @@ export class AgyCopy {
 
   private async look() {
     const own = await (this.opts.own ?? ownAgy)();
-    if (own && cliVersionAtLeast(own.version, this.pin.version) !== false) return this.use(undefined);
+    if (own && cliVersionAtLeast(own.version, this.version) !== false) return this.use(undefined);
     const file = this.file();
     if (isExecutable(file)) return this.use(file);
     if (!own && !this.opts.inUse()) return;
@@ -153,7 +178,7 @@ export class AgyCopy {
    */
   async ensure(): Promise<void> {
     const own = await (this.opts.own ?? ownAgy)();
-    if (own && cliVersionAtLeast(own.version, this.pin.version) !== false) return;
+    if (own && cliVersionAtLeast(own.version, this.version) !== false) return;
     const file = this.file();
     if (!isExecutable(file)) {
       try {
@@ -178,7 +203,7 @@ export class AgyCopy {
     if (this.picked === file) return;
     this.picked = file;
     setAgyPick(file);
-    this.opts.log(file ? `agy: running the runner's own ${this.pin.version}` : "agy: running the computer's own");
+    this.opts.log(file ? `agy: running the runner's own ${this.version}` : "agy: running the computer's own");
     this.opts.onChange();
     if (file) await this.prune(path.dirname(file));
   }
@@ -195,21 +220,21 @@ export class AgyCopy {
 
   /** The pinned build for this system, refused unless its SHA-512 is Google's; unpacked aside, then moved in place. */
   private async download(file: string) {
-    const platform = this.opts.platform === undefined ? agyPlatform() : this.opts.platform;
-    const build = platform ? this.pin.builds[platform] : undefined;
+    const build = this.build;
     if (!build) throw new Error(`no Antigravity CLI build for ${process.platform} ${process.arch}`);
     const dir = path.dirname(file);
     const staging = `${dir}.${process.pid}.tmp`;
     await rm(staging, { recursive: true, force: true });
     await mkdir(staging, { recursive: true, mode: 0o700 });
     try {
-      this.opts.log(`agy: downloading ${this.pin.version} (${platform})`);
+      this.opts.log(`agy: downloading ${this.version}`);
       const res = await (this.opts.fetch ?? fetch)(build.url, {
         redirect: "follow",
         signal: AbortSignal.timeout(AGY_DOWNLOAD_MS),
       });
       if (!res.ok || !res.body) throw new Error(`download failed: HTTP ${res.status}`);
-      const tarball = path.join(staging, "agy.tar.gz");
+      const bare = path.basename(file) !== "antigravity";
+      const tarball = path.join(staging, bare ? path.basename(file) : "agy.tar.gz");
       const hash = createHash("sha512");
       const out = createWriteStream(tarball, { mode: 0o600 });
       for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
@@ -218,13 +243,15 @@ export class AgyCopy {
       }
       await new Promise<void>((done, fail) => out.end((err?: Error | null) => (err ? fail(err) : done())));
       if (hash.digest("hex") !== build.sha512) throw new Error("the download didn't match Google's checksum");
-      await new Promise<void>((done, fail) =>
-        execFile("tar", ["-xzf", tarball, "-C", staging], { timeout: AGY_DOWNLOAD_MS }, (err) =>
-          err ? fail(new Error(`couldn't unpack it: ${err.message}`)) : done(),
-        ),
-      );
-      await rm(tarball, { force: true });
-      const binary = path.join(staging, "antigravity");
+      if (!bare) {
+        await new Promise<void>((done, fail) =>
+          execFile("tar", ["-xzf", tarball, "-C", staging], { timeout: AGY_DOWNLOAD_MS }, (err) =>
+            err ? fail(new Error(`couldn't unpack it: ${err.message}`)) : done(),
+          ),
+        );
+        await rm(tarball, { force: true });
+      }
+      const binary = path.join(staging, path.basename(file));
       if (!existsSync(binary)) throw new Error("the download has no antigravity binary");
       await chmod(binary, 0o755);
       await rm(dir, { recursive: true, force: true });

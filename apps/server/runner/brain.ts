@@ -87,7 +87,7 @@ import { DELEGATED_RESULT_CHARS, type DelegatedBridge } from "./delegated-tools"
 import { hostMemAvailable, MIN_FREE_BYTES } from "./desktop-session";
 import { RunnerError } from "./errors";
 import { descendantPids, killTree } from "./exec";
-import { cliSpawn } from "./executors";
+import { cliSpawn, endedNotFound, envValue } from "./executors";
 import { HARDENED_GIT_ARGS } from "./git-guard";
 import { readJson, writeJson } from "./json-file";
 import {
@@ -106,8 +106,9 @@ import { isInside, resolveForAgent } from "./paths";
 import { resetIso } from "./plan-usage";
 import { claudeAtLeast, REPO_PLUGIN_MIN_CLAUDE, repoPlugin, repoPluginPrint } from "./repo-plugin";
 import type { Spawn } from "./scope-gate";
-import { withSharedBin } from "./shared-folder";
+import { applySharedBin } from "./shared-folder";
 import { claudeSessionExists, claudeSessionFile, type TaskSecrets, WRONG_SESSION_FLAG } from "./tasks";
+import { turnZoneEnv } from "./turn-zone";
 
 /**
  * Brain turns (protocol 8, ADR 0032): Claude Code thinks for an agent on
@@ -1368,7 +1369,7 @@ export class ClaudeProcess {
     // A full path: the compiled runner would look the bare name up on the PATH it started with. On Windows, found on
     // the PATH (never in the agent's folder), a launcher through cmd.exe with every argument quoted (an empty
     // `--setting-sources` stays one).
-    const run = cliSpawn(command.length ? command : ["claude"], args, env.PATH);
+    const run = cliSpawn(command.length ? command : ["claude"], args, envValue(env, "PATH"));
     const runEnv = run.env ? { ...env, ...run.env } : env;
     const timeouts = { ...runEnv, ...settingsEnv };
     const bashDefault = Number(timeouts.BASH_DEFAULT_TIMEOUT_MS);
@@ -2162,6 +2163,8 @@ interface Live {
   dropped?: boolean;
   /** Started on a session of its own for the agent's next new conversation, which adopts it (`adoptReady`). */
   ready?: boolean;
+  /** Started by `brain.warm`, no turn on it yet: a later warm with another launch replaces it (`prewarm`). */
+  warmed?: boolean;
 }
 
 /** What the bridge needs for one process's MCP server: its local token, and the run it works for now. */
@@ -2682,14 +2685,6 @@ export class BrainManager {
     );
     if (adopted) return { open: true, started: false };
     return this.queue(brainKey(ctx.agent.id, at.session), async (key) => {
-      const open = this.live.get(key);
-      if (open && !open.proc.exited) {
-        if (!open.busy) {
-          open.lastUsed = Date.now();
-          this.armIdle(open);
-        }
-        return { open: true, started: false };
-      }
       const turn: BrainTurnRequest = {
         ...req,
         runId: "warm",
@@ -2698,6 +2693,21 @@ export class BrainManager {
         prompt: "",
         mcp: { token: "" },
       };
+      const sig = this.signature(at.cwd, turn, at.ctx);
+      const open = this.live.get(key);
+      // An earlier warm's guess (the server warms at once, then again with the model its run chose): the turn would
+      // start another process for this launch, so it starts now instead.
+      if (open && !open.proc.exited && open.warmed && !open.busy && open.sig !== sig) {
+        this.drop(open, "settings");
+        // Its guess was written as the session's text: a resumed start would read it back as kept, unchecked.
+        if (open.guessed !== undefined) rmSync(open.keptSystem, { force: true });
+      } else if (open && !open.proc.exited) {
+        if (!open.busy) {
+          open.lastUsed = Date.now();
+          this.armIdle(open);
+        }
+        return { open: true, started: false };
+      }
       await yieldRoute("claude_code", at.ctx.accountHome);
       if (this.closed) return no;
       if (this.alive(ctx.agent.id) >= this.max) {
@@ -2705,11 +2715,11 @@ export class BrainManager {
         if (!idle) return no;
         this.closeIdle(idle, "for another conversation", "cap");
       }
-      const sig = this.signature(at.cwd, turn, at.ctx);
       const resume = this.resumeFor(at.cwd, at.session, turn, at.ctx);
       const live = await this.spawn(key, at.session, at.cwd, turn, at.ctx, sig, true, resume);
       // `opening`: the turn would start from its own system text, not a kept one.
       if (live.opening) live.guessed = system;
+      live.warmed = true;
       live.busy = false;
       live.lastUsed = Date.now();
       this.armIdle(live);
@@ -2742,6 +2752,8 @@ export class BrainManager {
       coAuthors: coAuthorLines(ctx.agent),
       // Who its commits are by is in its env too: another person asking in a code session, a new one (resumed).
       author: commitAuthorEnv(ctx.agent).GIT_AUTHOR_EMAIL ?? null,
+      // Its clock's zone is in its env (`turnZoneEnv`): a turn for someone in another zone, a new one (resumed).
+      zone: turnZoneEnv(req.timeZone).TZ ?? null,
       // A code session's turn starts with its session's tools and the repository's plugin (ADR 0215 §6).
       code: req.codeSession === true,
     });
@@ -2793,12 +2805,15 @@ export class BrainManager {
     if (this.closed) return errorEvent("runner_stopping", "The runner is stopping.", true);
     const sig = this.signature(cwd, req, ctx);
     const system = typeof req.system === "string" ? req.system : "";
-    if (!ctx.delegated) {
+    // Only a turn that keeps its process is what the next warm start copies: a background turn's (a routine's) system
+    // text and folder are its own, and a warm start guessed from them is thrown away by the conversation's turn.
+    if (!ctx.delegated && req.keepAlive !== false) {
       this.systems.set(ctx.agent.id, system);
       this.cwds.set(ctx.agent.id, cwd);
-      if (req.keepAlive !== false) this.lastLaunch.set(ctx.agent.id, { req: launchOf(req), ctx, cwd });
+      this.lastLaunch.set(ctx.agent.id, { req: launchOf(req), ctx, cwd });
     }
     let live = this.live.get(key);
+    if (live) live.warmed = false;
     // Warmed with another system text than this turn's: that text would be the session's for good.
     if (live?.guessed !== undefined) {
       const guessed = live.guessed;
@@ -2855,7 +2870,7 @@ export class BrainManager {
       this.log(
         `[${ctx.agent.handle}] brain process for ${session.slice(0, 8)} died mid-turn (${died}); resuming one-shot`,
       );
-      if (live.proc.stderr.startsWith("ENOENT")) return this.cliMissing();
+      if (endedNotFound(live.proc.stderr, live.proc.exitCode)) return this.cliMissing();
       const resume = this.resumeFor(cwd, session, req, ctx, true);
       return this.oneShot(key, session, cwd, req, ctx, sig, resume, true, line);
     }
@@ -3126,7 +3141,7 @@ export class BrainManager {
       this.logStall(ctx, session, out.stalled, "ending the turn (it stalled before too)");
       return errorEvent("brain_stalled", stalledAgainMessage(out.stalled), false);
     }
-    if (live.proc.stderr.startsWith("ENOENT")) return this.cliMissing();
+    if (endedNotFound(live.proc.stderr, live.proc.exitCode)) return this.cliMissing();
     const fast = Date.now() - live.proc.startedAt <= FAST_FAIL_MS;
     // Never into `--resume` on a delegated CLI: a transcript it doesn't own is what that answer may mean.
     if (mayRetryFlag && fast && WRONG_SESSION_FLAG.test(live.proc.stderr) && (resume || !ctx.delegated)) {
@@ -3238,14 +3253,14 @@ export class BrainManager {
     // The tools the agents installed in the shared folder, for every process of its own: its subagents never read
     // where that folder is (single-user mode only, `withSharedBin`).
     if (!launched) {
-      const withShared = withSharedBin(env.PATH, this.opts.sharedFolder?.());
-      if (withShared) env.PATH = withShared;
+      applySharedBin(env, this.opts.sharedFolder?.());
     }
     const keyPlan = ctx.planKey ? planOf(ctx.planKey.provider) : undefined;
     const plan = keyPlan && planForTurn(keyPlan, req.model);
     if (plan && ctx.planKey) env[plan.claudeCode.tokenEnv] = ctx.planKey.key;
     // Protocol 28: the agent's context limit; Claude Code compacts the conversation there instead of at its window.
     if (isContextTokens(req.contextTokens)) env.CLAUDE_CODE_AUTO_COMPACT_WINDOW = String(req.contextTokens);
+    Object.assign(env, turnZoneEnv(req.timeZone));
     const model = plan ? claudeCodeModel(plan, req.model) : typeof req.model === "string" ? req.model : undefined;
     const branches = ownBranches(ctx.agent, missionBranchPrefix(ctx.agent.id, req.permissions?.branchPrefix));
     const allow = Array.isArray(req.permissions?.allow)
@@ -3281,6 +3296,8 @@ export class BrainManager {
         ...(mode === "chat" ? { chat: true } : {}),
         ...(delegated.task ? { task: delegated.task.kind } : {}),
         ...(persistent ? {} : { oneShot: true as const }),
+        // Its commands run in the agent's worker, with the CLI's clock too.
+        ...(req.timeZone && turnZoneEnv(req.timeZone).TZ ? { timeZone: req.timeZone } : {}),
       };
       this.bridge.set(id, { token, agentId: ctx.agent.id, cwd, folder: ctx.folder, runId: null, runToken: null });
       bridged = { frame, to: delegated };

@@ -370,7 +370,14 @@ export async function createOrganization(
     await ensureRightHand(tx, organization.id);
     const [general] = await tx
       .insert(channels)
-      .values({ orgId: organization.id, name: "general", createdByUserId: userId })
+      .values({
+        orgId: organization.id,
+        name: "general",
+        createdByUserId: userId,
+        // Everyone in a team's workspace ends up in #general, so its agents answer in threads (ADR 0214); a personal
+        // workspace's has no one else to keep its main timeline clear for.
+        ...(input.mode === "personal" ? { replyInThreads: false } : {}),
+      })
       .returning();
     if (!general) throw new Error("channel insert returned nothing");
     await tx.insert(channelMembers).values({ orgId: organization.id, channelId: general.id, userId });

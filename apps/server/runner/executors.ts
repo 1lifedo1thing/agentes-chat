@@ -36,6 +36,8 @@ type Run = ExecutorRun;
 
 /** Shells' "command not found" (127), "not executable" (126) and cmd.exe's (9009). */
 const NOT_FOUND_EXITS = new Set([126, 127, 9009]);
+/** cmd.exe's words for a program it can't find: the CLI, or the `node` an npm launcher runs. */
+const CMD_NOT_FOUND = /is not recognized as an internal or external command/i;
 
 /**
  * Only a binary that isn't there is missing: not found, or a shell saying so (Windows runs CLIs through cmd.exe, an
@@ -45,9 +47,14 @@ const NOT_FOUND_EXITS = new Set([126, 127, 9009]);
 const missing = (r: RunResult) =>
   (r.error as { code?: unknown } | undefined)?.code === "ENOENT" ||
   (r.status !== null && NOT_FOUND_EXITS.has(r.status)) ||
-  (process.platform === "win32" &&
-    r.status !== 0 &&
-    /is not recognized as an internal or external command/i.test(r.stderr ?? ""));
+  (process.platform === "win32" && r.status !== 0 && CMD_NOT_FOUND.test(r.stderr ?? ""));
+
+/**
+ * A CLI process that ended because it isn't there: the spawn's `ENOENT` (the runner's own prefix on its stderr), or
+ * cmd.exe's not found (exit 9009, its words), which a CLI started through cmd.exe on Windows ends with instead.
+ */
+export const endedNotFound = (stderr: string, exitCode: number | null) =>
+  stderr.startsWith("ENOENT") || exitCode === 9009 || CMD_NOT_FOUND.test(stderr);
 
 export const isExecutable = (file: string) => {
   try {
@@ -67,8 +74,13 @@ export function resolveCommand(
   command: string,
   pathList = process.env.PATH ?? "",
   sharedBin = process.env[SHARED_BIN_ENV],
+  platform: NodeJS.Platform = process.platform,
 ): string {
-  if (process.platform === "win32" || command.includes("/")) return command;
+  if (platform === "win32") {
+    if (command === "agy") return pickedAgy() ?? windowsExe(command, pathList) ?? command;
+    return command;
+  }
+  if (command.includes("/")) return command;
   const picked = command === "codex" ? pickedCodex() : command === "agy" ? pickedAgy() : undefined;
   if (picked) return picked;
   const dirs = pathList.split(delimiter).filter((dir) => dir && dir !== sharedBin);
@@ -86,8 +98,9 @@ export function ownCommand(
   command: string,
   pathList = process.env.PATH ?? "",
   sharedBin = process.env[SHARED_BIN_ENV],
+  platform: NodeJS.Platform = process.platform,
 ): string | null {
-  if (process.platform === "win32") return null;
+  if (platform === "win32") return windowsExe(command, pathList);
   return (
     onPath(
       command,
@@ -137,6 +150,12 @@ export function envValue(
   const upper = name.toUpperCase();
   const key = Object.keys(env).find((k) => k.toUpperCase() === upper);
   return key === undefined ? undefined : env[key];
+}
+
+/** `name` on the Windows PATH when it is a program that starts by itself (`.exe`, `.com`); null: none, or a launcher. */
+function windowsExe(name: string, pathList: string): string | null {
+  const found = findOnWindowsPath(name, pathList, envValue(process.env, "PATHEXT", "win32"));
+  return found && /\.(?:exe|com)$/i.test(found) ? found : null;
 }
 
 /** The extensions of a program the runner starts on Windows, in PATHEXT's order (never a script host's `.js` or `.vbs`). */
@@ -260,6 +279,8 @@ export function cliSpawn(
   } = {},
 ): CliRun {
   const [file = "", ...pre] = command;
+  const picked = platform === "win32" && file === "agy" ? pickedAgy() : undefined;
+  if (picked) return { file: picked, args: [...pre, ...args], env: { ...NO_CWD_LOOKUP } };
   if (platform === "win32" && command.length === 1) {
     const found = findOnWindowsPath(
       file,

@@ -1,4 +1,5 @@
-import { ApiError, useApproval, useChannels, useDecideApproval } from "@agenteschat/client";
+import { ApiError, useApproval, useApprovals, useChannels, useDecideApproval } from "@agenteschat/client";
+import { approvalLine } from "@agenteschat/client/lib/approval-card";
 import { aheadPhase } from "@agenteschat/client/lib/approval-kind";
 import { approvalEffects } from "@agenteschat/client/lib/approval-review";
 import {
@@ -54,6 +55,7 @@ import {
   ApprovalEmailLetter,
   ApprovalUndoChip,
   approvalTitleText,
+  HeldLine,
   promptRefusal,
   traitKey,
   useCancelAhead,
@@ -95,6 +97,7 @@ export function ApprovalSheet({
   const c = useColors();
   const insets = useSafeAreaInsets();
   const approval = useApproval(orgId, id);
+  const known = useApprovals(orgId).data;
   const channels = useChannels(orgId);
   const decide = useDecideApproval(orgId);
   const cancelAhead = useCancelAhead();
@@ -167,6 +170,7 @@ export function ApprovalSheet({
       );
   } else {
     const pending = a.status === "pending" && new Date(a.expiresAt).getTime() > now;
+    const waitsOn = approvalLine([a], known).get(a.id)?.waitsOn;
     const high = approvalRisk(a) === "high";
     // The owner it was asked under, else its agent's: a person, or a role (ADR 0085, addendum of 2026-11-21), which
     // decides as whoever holds it, unless the request names its own deciders.
@@ -246,6 +250,14 @@ export function ApprovalSheet({
                 : t("mobile.approval.onlyAdmins")}
           </Text>
         )
+      ) : waitsOn ? (
+        // Approved, waiting for a request asked before it: what for, and what moves it.
+        <>
+          <Text variant="small" tone="muted" style={styles.note}>
+            {t("mobile.approval.status.approved")}
+          </Text>
+          <HeldLine approval={a} waitsOn={waitsOn} />
+        </>
       ) : aheadPhase(a) === "scheduled" && runAt ? (
         <>
           <Text variant="small" tone="muted" style={styles.note}>

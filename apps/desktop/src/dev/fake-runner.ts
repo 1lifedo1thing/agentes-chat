@@ -221,7 +221,7 @@ const SIGN_IN_POOL: (() => FakeOrgSeed)[] = [
   () => joinedSeed({ id: `org_${rid()}`, name: "Estúdio Norte" }),
 ];
 
-const DEFAULT_CONFIG = { maxConcurrentTasks: 3, taskMaxSeconds: 4 * 3600, brainIdleMinutes: 3, brainMaxProcesses: 1 };
+const DEFAULT_CONFIG = { maxConcurrentTasks: 3, taskMaxSeconds: 4 * 3600, brainIdleMinutes: 30, brainMaxProcesses: 1 };
 
 export class FakeRunner {
   private seed: FakeOrgSeed | null;

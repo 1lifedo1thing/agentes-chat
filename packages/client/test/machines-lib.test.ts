@@ -24,6 +24,7 @@ import {
   computerState,
   desktopTargetOf,
   downloadHref,
+  egressViaText,
   folderName,
   foldersOfAgent,
   formatUserCode,
@@ -697,10 +698,14 @@ describe("one click where a tool is off (ADR 0036 §8)", () => {
     for (const no of [
       cliInstallCommand("claude_code", server),
       cliInstallCommand("opencode", server),
-      cliInstallCommand("grok", { ...server, os: "windows" }),
+      cliInstallCommand("antigravity", { ...server, os: "windows" }),
       cliInstallCommand("grok", { ...server, kind: "managed" }),
     ])
       expect(no).toBeNull();
+    // xAI's PowerShell installer, in a line cmd runs too.
+    expect(cliInstallCommand("grok", { ...server, os: "windows" })).toBe(
+      'powershell -ExecutionPolicy Bypass -Command "irm https://x.ai/cli/install.ps1 | iex"',
+    );
 
     const words = { program: "Antigravity CLI", computer: "srv-1" };
     expect(cliCommandWayOut(t, "antigravity", server, "not_installed", "srv-1")?.text).toBe(
@@ -761,9 +766,6 @@ describe("one click where a tool is off (ADR 0036 §8)", () => {
     );
     // No words from the runner (an older one): the plain line.
     expect(line("opencode", pc)).toBe(t("brain.reasons.cant_start", { program: "OpenCode", computer: "PC da Bia" }));
-    const gemini = line("antigravity", pc, { state: "unsupported", reason: "system" });
-    expect(gemini).toBe(t("brain.reasons.systemAntigravity", { computer: "PC da Bia" }));
-    expect(gemini).toContain("Gerenciador de Credenciais");
   });
 
   test("Prefiro no Terminal: the same switches as one command, only for who turns them on, where there may be no app", () => {
@@ -825,4 +827,18 @@ describe("one click where a tool is off (ADR 0036 §8)", () => {
     expect(browserNoAnswerMessage("the computer Desk did not answer within 120 s")).toBe(false);
     expect(browserNoAnswerMessage(null)).toBe(false);
   });
+});
+
+test("whose internet the workspace's computer uses: the computer and who connected it, only while it is online", () => {
+  const t = ((key: string, o?: Record<string, unknown>) => `${key}${o ? JSON.stringify(o) : ""}`) as never;
+  const via = { machineId: "m-ana", name: "Ana's iMac", userName: "Ana" };
+  expect(egressViaText(t, { kind: "managed", online: true, egressVia: via })).toBe(
+    'machines.egress.viaBy{"name":"Ana\'s iMac","person":"Ana"}',
+  );
+  expect(egressViaText(t, { kind: "managed", online: true, egressVia: { ...via, userName: null } })).toBe(
+    'machines.egress.via{"name":"Ana\'s iMac"}',
+  );
+  expect(egressViaText(t, { kind: "managed", online: false, egressVia: via })).toBeNull();
+  expect(egressViaText(t, { kind: "connected", online: true, egressVia: via })).toBeNull();
+  expect(egressViaText(t, { kind: "managed", online: true, egressVia: null })).toBeNull();
 });

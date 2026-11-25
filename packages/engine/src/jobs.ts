@@ -26,6 +26,7 @@ import { HANDOFF_REMIND_JOB, remindBrowserHandoff } from "./browser/handoff";
 import { typingLogFor } from "./burst";
 import { CHANNEL_DELETE_JOB, purgeChannel } from "./channel-deletion";
 import { tellChannelLead } from "./channel-lead";
+import { COMPUTER_DOWN_JOB, noticeComputerDown } from "./computer-down";
 import { crowdedAgents, publishQueueChanged } from "./computer-queue";
 import { forgetComposioAccount } from "./connectors/composio";
 import { CONNECTOR_FORGET_JOB, type ConnectorDeps } from "./connectors/connections";
@@ -250,10 +251,8 @@ export interface JobDeps extends RunExecutorDeps {
      * on the Cloud (`isAgentesCloud`), where Jev is ours. Absent: no plan step.
      */
     plans?: { hub: Pick<MachineCaller, "call" | "status">; publicUrl: string };
-    /** How long a person's message waits for their next one (`ROUTER_QUIET_MS` on a server); absent: no wait. */
+    /** A person's messages this close are one request to the router (`ROUTER_QUIET_MS` on a server). */
     quietMs?: number;
-    /** The wait ends early when the person isn't typing (token-trim B11). */
-    quietByTyping?: boolean;
   };
 }
 
@@ -316,7 +315,6 @@ export function messageRouter(deps: JobDeps): RouterDeps | null {
     outOfOffice: (orgId, ids) => outOfOfficeIds(deps.db, orgId, ids),
     routing: { jev: () => jevPicks(jev?.key), smallModel, plans },
     quietMs: router.quietMs,
-    quietByTyping: router.quietByTyping,
     pubsub: deps.pubsub,
     // Jev bills the platform: past the workspace's platform AI for the month, its own small model picks, else only
     // @mentions start agents.
@@ -333,8 +331,8 @@ async function jevPicks(key: JevKeySource | undefined): Promise<boolean> {
 
 /** Every outbox job kind the core knows. Modules can add more through the server's worker options. */
 export function createJobHandlers(deps: JobDeps): JobHandlers {
-  // Listening from now on, so typing sent while a run reads its context (before its quiet window) counts.
-  if (deps.quietByTyping || deps.router?.quietByTyping) typingLogFor(deps.pubsub);
+  // Listening from now on, so typing sent while a run reads its context (before its first model call) counts.
+  if (deps.quietMs) typingLogFor(deps.pubsub);
   const routing = messageRouter(deps);
 
   // An agent's @mention is credit or a reference: it wakes the other agent only when it plainly asks it something.
@@ -1177,6 +1175,10 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       // machine's queue per task end (also kicked for a resumed item queued with this job, its own id).
       await afterMachineTaskEnded(missions, String(job.payload.taskId)).catch(() => 0);
     },
+    // The runner's connection had no room for a queued task's start (`TASK_BUSY_RETRY_MS`): its queue tries again.
+    "machine.queue_retry": async (job) => {
+      await startQueuedMissionTasks(missions, String(job.payload.machineId)).catch(() => 0);
+    },
     // The `.agentes/` files of a mission changed (debounced): written to its machine.
     "mission.sync_files": async (job) => {
       await syncMissionFiles(missions, String(job.payload.missionId));
@@ -1209,11 +1211,20 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         statusOnly: job.payload.statusOnly === true,
       });
     },
+    // A computer still away a while after its socket closed: who configures the workspace hears it (ADR 0241).
+    [COMPUTER_DOWN_JOB]: async (job) => {
+      await noticeComputerDown(
+        { db: deps.db, pubsub: deps.pubsub, home: deps.email ? (deps.emailArt?.home ?? null) : null },
+        String(job.payload.machineId),
+        job.payload.stage === "email" ? "email" : "down",
+      );
+    },
     // A computer in standby wanted awake a grace ago: still asleep, people see it down (ADR 0161).
     [WAKE_OVERDUE_JOB]: async (job) => {
       await wakeOverdue({ db: deps.db, pubsub: deps.pubsub }, String(job.payload.machineId));
     },
-    // A task start cut by a drop, once it can't still be underway: the agent's journal on its computer settles it.
+    // A task start cut by a drop (or taken from the queue before a restart), once it can't still be underway: the
+    // agent's journal on its computer settles it.
     "machine.task_start_check": async (job) => {
       const hub = missions.hub;
       if (!hub) return;
@@ -1226,6 +1237,7 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
           startQueued: (machineId) => startQueuedMissionTasks(missions, machineId),
         },
         String(job.payload.taskId),
+        typeof job.payload.claimedAt === "string" ? job.payload.claimedAt : undefined,
       );
     },
     // A request to join through an invitation link, filed apart from the ask's reply (ADR 0068).

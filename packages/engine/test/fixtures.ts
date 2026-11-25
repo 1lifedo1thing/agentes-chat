@@ -258,7 +258,7 @@ export async function setup(
      * own stickers only.
      */
     gifs?: GifProvider | null;
-    /** How long a run started on a person's message waits for their next one (`waitForBurst`). None: no wait. */
+    /** The unit of how long a run holds its first model call while the person types (`waitWhileTyping`). None: never. */
     quietMs?: number;
     /** Add long work's tools (work_in_background, post_update, steer_work, stop_work; ADR 0121). */
     workTools?: boolean;

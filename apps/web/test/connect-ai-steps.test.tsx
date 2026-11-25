@@ -257,6 +257,72 @@ describe("Conectar uma IA: one picker, plans first", () => {
     }
   });
 
+  test("a plan that doesn't run on the computer's system says so in its row, before it is picked", async () => {
+    const opt = (kind: AgentBrain["options"][number]["kind"], off = false) => ({
+      kind,
+      available: !off,
+      models: [],
+      defaultModel: null,
+      ...(off ? { reason: "system" as const } : {}),
+    });
+    const { dialog } = await connect({
+      computers: [{ ...MAC, name: "Desktop", os: "windows" }],
+      brain: {
+        computer: { machineId: "machine_1", name: "Desktop", online: true, os: "windows" },
+        options: [
+          opt("claude_code"),
+          opt("codex"),
+          opt("cursor", true),
+          opt("opencode"),
+          opt("grok", true),
+          opt("antigravity", true),
+        ],
+      },
+    });
+    const rows = await openAiSelect(dialog);
+    // The ones that run there first; the others last, under a heading that names the system. Every row one line.
+    expect(rows.map((o) => o.textContent).slice(-3)).toEqual(["Gemini", "Grok", "Cursor"]);
+    const off = screen().getByRole("group", { name: "Ainda não rodam no Windows" });
+    expect(
+      within(off)
+        .getAllByRole("option")
+        .map((o) => o.textContent),
+    ).toEqual(["Gemini", "Grok", "Cursor"]);
+    expect(rows.some((o) => o.querySelector(".ac-menu__desc"))).toBe(false);
+    await closeAiSelect();
+  });
+
+  test("the team's plan cards say which plans don't run on the computer's system, folded or not", async () => {
+    const opt = (kind: AgentBrain["options"][number]["kind"], off = false) => ({
+      kind,
+      available: !off,
+      models: [],
+      defaultModel: null,
+      ...(off ? { reason: "system" as const } : {}),
+    });
+    const { dialog } = await connect({
+      crew: true,
+      computers: [{ ...MAC, name: "Desktop", os: "windows" }],
+      brain: {
+        computer: { machineId: "machine_1", name: "Desktop", online: true, os: "windows" },
+        options: [
+          opt("claude_code"),
+          opt("codex"),
+          opt("cursor", true),
+          opt("opencode"),
+          opt("grok", true),
+          opt("antigravity", true),
+        ],
+      },
+    });
+    const row = (name: RegExp) => within(dialog).getByRole("button", { name }).closest(".ac-optrow") as HTMLElement;
+    expect(shownText(row(/^Outro plano/))).toContain("Gemini, Grok e Cursor ainda não rodam no Windows");
+    await click(within(dialog).getByRole("button", { name: /^Outro plano/ }));
+    for (const name of ["Gemini", "Grok", "Cursor"])
+      expect(shownText(row(new RegExp(`^${name}`)))).toBe(`${name}Ainda não roda no Windows`);
+    expect(shownText(row(/^Claude/))).not.toContain("Windows");
+  });
+
   test("Settings › AI accounts opens the same picker: a plan or a key, then one select with Claude chosen and its sign-in", async () => {
     const { dialog } = await connect();
     const group = within(dialog).getByRole("group", { name: "Qual IA eles vão usar?" });
@@ -1045,7 +1111,7 @@ describe("Conectar uma IA: one picker, plans first", () => {
     expect(calls(state, "machines.checkClis")).toHaveLength(1);
   });
 
-  test("on a Windows PC: OpenCode that won't start says what it printed; Gemini says why it can't run there, the key beside", async () => {
+  test("on a Windows PC: OpenCode that won't start says what it printed", async () => {
     const said = "Error: Cannot find module 'opencode-windows-x64/package.json'";
     const name = "Estudio-PC";
     const { dialog, choose, state } = await connect({
@@ -1055,7 +1121,6 @@ describe("Conectar uma IA: one picker, plans first", () => {
         options: [
           ...fakeAgentBrain(ADA_ID).options,
           { kind: "opencode", available: false, reason: "cant_start", models: [], defaultModel: null },
-          { kind: "antigravity", available: false, reason: "system", models: [], defaultModel: null },
         ],
       },
     });
@@ -1065,13 +1130,24 @@ describe("Conectar uma IA: one picker, plans first", () => {
     await click(within(dialog).getByRole("button", { name: "Já instalei, verificar de novo" }));
     await settle(4);
     expect(calls(state, "machines.checkClis")).toHaveLength(1);
-    await choose("Gemini");
-    const gemini = within(dialog).getByRole("region", { name: "Seu plano do Gemini" });
-    expect(gemini.textContent).toContain(
-      "no Windows, o Antigravity CLI guarda o login do Google no Gerenciador de Credenciais",
-    );
-    expect(gemini.textContent).not.toContain("ainda não roda no sistema");
-    expect(within(gemini).getByRole("button", { name: "Usar uma chave de API agora" })).toBeTruthy();
+  });
+
+  test("Gemini on a Windows PC (ADR 0143): its sign-in says plainly that the computer uses one Gemini account at a time", async () => {
+    const one = "No Windows, um computador usa uma conta do Gemini por vez.";
+    const geminiOption = { kind: "antigravity" as const, available: true, models: [], defaultModel: null };
+    const open = async (os: string) => {
+      cleanup();
+      const { dialog, choose } = await connect({
+        computers: [{ ...MAC, brains: { claude_code: true, codex: true, antigravity: true } }],
+        machine: { os },
+        brain: { options: [...fakeAgentBrain(ADA_ID).options, geminiOption] },
+      });
+      await choose("Gemini");
+      await settle(4);
+      return shownText(within(dialog).getByRole("region", { name: "Seu plano do Gemini" }));
+    };
+    expect(await open("windows")).toContain(one);
+    expect(await open("darwin")).not.toContain(one);
   });
 
   test("a plan whose program is off on its computer: the cause alone, then one way out by whose computer it is", async () => {

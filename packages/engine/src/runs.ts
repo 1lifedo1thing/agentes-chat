@@ -477,6 +477,7 @@ export const SYSTEM_STOP_REASONS = [
   "agent_archived",
   "channel_deleted",
   "consultation_expired",
+  "rerouted",
   "mission_stopped",
   "mission_closed",
   "mission_executor_changed",

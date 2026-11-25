@@ -106,7 +106,6 @@ import type {
   CalendarRange,
   Channel,
   ChannelCard,
-  ChannelCategory,
   ChannelInput,
   ChannelMember,
   ChannelOverride,
@@ -346,6 +345,7 @@ import type {
   SurfaceLink,
   SurfaceLinkCode,
   SurfaceLinks,
+  SurfaceNudge,
   SurfacePage,
   TaskManagerView,
   TaskOutput,
@@ -551,6 +551,8 @@ export interface ApiClient {
     confirm(linkId: string): Promise<SurfaceLink>;
     /** Cancels a pending link or unlinks an active one. `surface.link_gone` (404). */
     remove(linkId: string): Promise<void>;
+    /** My unread nudge on an active link. `surface.link_gone` (404). */
+    setNudge(linkId: string, input: Partial<SurfaceNudge>): Promise<SurfaceNudge>;
     /** Chooses my PIN (ADR 0226), replacing any. `surface.pin_shape` (400), `surface.link_gone` (404), `rate_limited`. */
     setPin(linkId: string, pin: string): Promise<void>;
     /** "Not you? Unlink it" from the "linked" email: no session needed. `surface.undo_gone` (404), `rate_limited` (429). */
@@ -806,10 +808,10 @@ export interface ApiClient {
   /** Groups of agents (ADR 0083): everyone reads them, owners and admins change them; each change answers with all. */
   agentGroups: {
     list(orgId: string): Promise<AgentGroup[]>;
-    /** After the other groups, with `agentIds` in it in that order (out of any group they were in). */
+    /** After the other groups, with `agentIds` in it in that order (out of any group they were in), and `channelIds`. */
     create(
       orgId: string,
-      input: { name: string; agentIds?: string[]; color?: string; icon?: string },
+      input: { name: string; agentIds?: string[]; channelIds?: string[]; color?: string; icon?: string },
     ): Promise<AgentGroup[]>;
     /** Renames it, or moves it among the groups (`index`). */
     update(orgId: string, groupId: string, patch: AgentGroupPatch): Promise<AgentGroup[]>;
@@ -1027,21 +1029,20 @@ export interface ApiClient {
   };
   chat: {
     channels(orgId: string): Promise<Channel[]>;
-    createChannel(orgId: string, input: ChannelInput & { name: string; categoryId?: string | null }): Promise<Channel>;
-    /** The sidebar's categories, in order (ADR 0080). */
-    categories(orgId: string): Promise<ChannelCategory[]>;
-    /** Admins: a category at the end, optionally taking `channelIds` along. */
-    createCategory(orgId: string, input: { name: string; channelIds?: string[] }): Promise<ChannelCategory>;
-    renameCategory(orgId: string, categoryId: string, name: string): Promise<ChannelCategory>;
-    /** Its channels go on top, with no category. */
-    deleteCategory(orgId: string, categoryId: string): Promise<void>;
-    /** Before `beforeCategoryId`, or to the end (null). */
-    placeCategory(orgId: string, categoryId: string, beforeCategoryId: string | null): Promise<void>;
-    /** Into `categoryId` (null: none), before `beforeChannelId` or at the end. */
+    /** `members` join right after you; another person among them has its agents answer in threads (ADR 0214). */
+    createChannel(
+      orgId: string,
+      input: ChannelInput & {
+        name: string;
+        groupId?: string | null;
+        members?: ({ userId: string } | { agentId: string })[];
+      },
+    ): Promise<Channel>;
+    /** Into sector `groupId` (null: none, ADR 0240), before `beforeChannelId` or at the end. */
     place(
       orgId: string,
       channelId: string,
-      input: { categoryId: string | null; beforeChannelId?: string | null },
+      input: { groupId: string | null; beforeChannelId?: string | null },
     ): Promise<void>;
     join(orgId: string, channelId: string): Promise<void>;
     /** Out of a channel I'm in. The last person out of a private channel archives it. Never #general. */
@@ -1149,6 +1150,8 @@ export interface ApiClient {
     refuse(orgId: string, approvalId: string, reason?: string, via?: string): Promise<Approval>;
     /** Withdraws an action approved ahead before its time: its routine's run won't do it. */
     cancel(orgId: string, approvalId: string): Promise<Approval>;
+    /** "Rodar este agora": an approved action waiting for other runs' requests runs at once. */
+    runNow(orgId: string, approvalId: string): Promise<Approval>;
     /**
      * A card's "Aprovar tudo" / "Agora não para todos": exactly these ids; `skipped` the ones not decided. With
      * `only: "routine"` the server decides the ones it calls routine (`Approval.routine`) and skips the rest.
@@ -1564,16 +1567,24 @@ export interface ApiClient {
     ): Promise<CustomConnectStart>;
     /** Lists the server's tools again; new ones come back unclassified. */
     refresh(orgId: string, serverId: string): Promise<CustomServer>;
-    /** Saves the classification; only classified tools become available to agents. */
+    /**
+     * Saves the classification; only classified tools become available to agents. `useInstructions`, when given:
+     * whether agents get the server's own instructions.
+     */
     saveTools(
       orgId: string,
       serverId: string,
-      input: { label: string; tools: { name: string; access: ToolDecision; label: string; confirmed?: boolean }[] },
+      input: {
+        label: string;
+        tools: { name: string; access: ToolDecision; label: string; confirmed?: boolean }[];
+        useInstructions?: boolean;
+      },
     ): Promise<CustomServer>;
     disconnect(orgId: string, serverId: string): Promise<void>;
     /**
      * The workspace's own OAuth client for the server at this address, and the redirect URI to register (who manages
-     * connectors). A 400 `connector.no_oauth` when the server doesn't sign in with OAuth.
+     * connectors). A 400 `connector.no_oauth` when the server doesn't sign in with OAuth, `connector.oauth_discovery`
+     * when its OAuth details can't be read.
      */
     ownClient(orgId: string, serverUrl: string): Promise<OwnOAuthClient>;
     /**

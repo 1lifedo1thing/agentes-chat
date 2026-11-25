@@ -105,6 +105,9 @@ describe("chooseAutoModel", () => {
       reason: "The judge didn't answer in time: medium tier, medium effort.",
       source: "timeout",
     });
+    // Past 0.8 s the run doesn't wait for it.
+    const late: Judge = { name: "late", ask: () => Bun.sleep(900).then(() => ({})) };
+    expect(await chooseAutoModel(late, input)).toMatchObject({ source: "timeout" });
     const broken: Judge = {
       name: "broken",
       ask: async () => {
