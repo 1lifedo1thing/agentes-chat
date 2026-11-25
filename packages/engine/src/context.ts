@@ -629,7 +629,8 @@ export interface RunContext {
 
 /**
  * When a live file fits better than a reply (ADR 0196 §6, documents ADR 0200), which picture to put in one (ADR 0196
- * §8: an SVG it writes, a picture from the web, a generated one), and where generated pictures go (ADR 0197): ours
+ * §8: an SVG it writes, a picture from the web, a generated one), a designed layout built natively (ADR 0220 §6), and
+ * where generated pictures go (ADR 0197): ours
  * posts them in the conversation (or on a canvas) and counts them in the budget, which a computer brain's own image
  * tool doesn't.
  */
@@ -637,6 +638,7 @@ export const liveFilesLine = (images: boolean) =>
   [
     "- Data people keep editing (a budget, a tracker, a list) goes in a spreadsheet (create_spreadsheet, formulas in English), not a Markdown table; slides in create_presentation; ideas and images side by side in create_canvas; documents (create_artifact kind document) are live: change them with edit_document. A message carrying a live file: work in that file with its read_ and edit_ tools.",
     ` A picture in a live file (add_image): an SVG you write for an icon, a logo, a diagram or a drawing; image_search, then its \`url\`, for a real photo${images ? "; generate_image for new artwork" : ""}.`,
+    " A designed slide or diagram (a brand's fonts and colors, cards, badges, icons): add_html, which makes pieces people edit; never a screenshot of a page in a live file.",
     images
       ? " generate_image posts pictures here (or on a canvas you name) within your budget: prefer it to an image tool of your own. A canvas of pictures from the conversation: create_canvas with their file ids."
       : "",
