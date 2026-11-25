@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 79;
+export const MACHINE_PROTOCOL_VERSION = 80;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -295,6 +295,15 @@ export interface MachineSize {
   /** `TASK_ROOM_PROTOCOL`: tasks start on room here. */
   room?: TaskRoomReport;
 }
+
+/** A memory size as `MachineSize` says it: in GB (2^30 bytes), to 0.5. */
+export const halfGb = (bytes: number) => Math.round((bytes / 2 ** 30) * 2) / 2;
+
+/**
+ * A system's version as its numbers alone (`6.8.0-45-generic` → `6.8.0`): what a kernel's own name adds after them
+ * (a distribution's flavour, a custom build's name) stays home. Undefined when it doesn't start with a number.
+ */
+export const versionNumbers = (version: string) => /^\d{1,6}(?:\.\d{1,6}){0,3}/.exec(version)?.[0];
 
 /**
  * Protocol 22: how busy a computer got over the last day (`pong.load`): the 5-minute load average per
@@ -1854,6 +1863,18 @@ export const isGitRepoName = (v: unknown): v is string =>
   /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/.test(v) &&
   v.split("/").every((part) => part !== "." && part !== "..");
 
+/**
+ * Protocol 79: `git.sync` takes a repository of any git host (ADR 0227), whose path may be deeper or shallower than
+ * GitHub's `owner/name` (`group/subgroup/project`, `project.git`); the proxy address it comes with says which host. An
+ * older runner refuses those, so the server asks it only for two-part paths.
+ */
+export const GIT_HOST_PATH_PROTOCOL = 79;
+/** A repository's path on its host: one to twenty-one parts, none of them `.` or `..`. */
+export const isGitRepoPath = (v: unknown): v is string =>
+  typeof v === "string" &&
+  /^[A-Za-z0-9_.-]{1,100}(\/[A-Za-z0-9_.-]{1,100}){0,20}$/.test(v) &&
+  v.split("/").every((part) => part !== "." && part !== "..");
+
 /** Largest pieces of a `git.sync`. */
 export const GIT_SYNC_LIMITS = {
   repos: 50,
@@ -2534,14 +2555,14 @@ export function parseTaskRoom(v: unknown): TaskRoomReport | null {
 }
 
 /**
- * Protocol 79 (ADR 0228 §6): one way to every coding CLI. The server sends its pin list after `welcome`
+ * Protocol 80 (ADR 0228 §6): one way to every coding CLI. The server sends its pin list after `welcome`
  * (`clis.pins`, `@agenteschat/providers/cli-pins`); outside system mode the runner runs the person's own copy at the
  * pinned version or newer, else fetches the pinned build on demand, checks its hash and runs that one, never touching
  * the person's. `hello.clis` says which CLIs it can fetch on its system and where each fetch stands; `cli.fetch`
  * frames report a fetch as it goes (at most once a second or every 5%); the `cli.fetch` op starts one again at once
  * (the apps' "Try again"). An older runner brings only its Antigravity copy (`AGY_COPY_PROTOCOL`).
  */
-export const CLI_COPIES_PROTOCOL = 79;
+export const CLI_COPIES_PROTOCOL = 80;
 
 /** Why a fetch failed: no network, a download that isn't the vendor's build, no build for this system, a full disk. */
 export type CliFetchFailure = "offline" | "hash_mismatch" | "no_build" | "disk_full" | "failed";
@@ -2881,6 +2902,18 @@ export interface AgentScope {
    * lines its commits end with. The runner hands them to git in the agent's own processes alone (`co-authors.ts`).
    */
   coAuthors?: string[];
+  /**
+   * On a code session's work (`exec`, `brain.turn`): the person its commits are authored as, when they connected a
+   * GitHub account as their own (ADR 0215 §13). The runner hands it to git in the agent's own processes alone, never
+   * to a repository's config. A runner that doesn't know it leaves the checkout's author, the agent.
+   */
+  author?: CommitAuthor;
+}
+
+/** Who a commit is authored as: a name and an address, each one line. */
+export interface CommitAuthor {
+  name: string;
+  email: string;
 }
 
 /** What the server asks. Paths are always relative to the workspace (the agent's folder when `agent` is set). */

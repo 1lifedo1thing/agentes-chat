@@ -114,6 +114,7 @@ const KNOWN = {
   "live.too_large": "errors.live.tooLarge",
   "live.asset_too_large": "errors.live.assetTooLarge",
   "live.asset_type": "errors.live.assetType",
+  "live.font_invalid": "errors.live.fontInvalid",
   "artifact.live_only": "errors.live.liveOnly",
   // Uploaded Office files (ADR 0198): damaged, past what the server reads, of a kind only downloaded, locked with a
   // password, or past what a live file holds.

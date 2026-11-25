@@ -153,7 +153,10 @@ import type { TaskSecrets } from "./tasks";
 
 /** A fresh look at every account's status happens at most this often (each one runs the CLI). */
 export const ACCOUNTS_TTL_MS = 10 * 60_000;
-/** After an inconclusive status look (`statusUnknown`), the first retry runs after this, doubling up to `ACCOUNTS_TTL_MS`. */
+/**
+ * After an inconclusive status look (`statusUnknown`), the first retry runs after this, doubling while under
+ * `ACCOUNTS_TTL_MS`: past it, the next list looks again anyway.
+ */
 export const ACCOUNTS_RETRY_MS = 30_000;
 /** An account's usage is probed at most this often. */
 export const USAGE_TTL_MS = 5 * 60_000;
@@ -622,7 +625,10 @@ const GROK_AUTH_FILE = "auth.json";
 const MAX_GROK_AUTH_CHARS = 64_000;
 /** How long an access token lasts (7 days, its docs say): a copy dated further ahead than this isn't one. */
 export const GROK_TOKEN_MAX_MS = 8 * 24 * 3600_000;
-/** Within this of `expires_at`, Grok Build refreshes the OIDC token on startup (`PreRequest`). */
+/**
+ * Grok Build renews its OIDC token on startup when it is close to `expires_at` (`PreRequest`, a few minutes ahead):
+ * within this of `expires_at`, "not authenticated" may be that renewal still running. Its window with room to spare.
+ */
 const GROK_REFRESH_LEEWAY_MS = 15 * 60_000;
 
 export interface GrokAuth {
@@ -2794,15 +2800,17 @@ export class AccountManager {
           );
           const ttl = this.opts.listTtlMs ?? ACCOUNTS_TTL_MS;
           const base = this.opts.statusRetryMs ?? ACCOUNTS_RETRY_MS;
-          this.retryWait = unsure ? Math.min(this.retryWait ? this.retryWait * 2 : base, ttl) : 0;
-          if (unsure && !this.closed) {
+          const wait = unsure ? (this.retryWait ? this.retryWait * 2 : base) : 0;
+          this.retryWait = Math.min(wait, ttl);
+          // A wait as long as the list's TTL is no retry: the next `list` or `snapshot` looks again by itself, so an
+          // account that stays inconclusive (a CLI gone from the computer) never keeps a timer asking.
+          if (unsure && wait < ttl && !this.closed) {
             this.retryTimer = setTimeout(() => {
               this.retryTimer = null;
               if (!this.closed) void this.refresh().catch(() => undefined);
-            }, this.retryWait);
+            }, wait);
             this.retryTimer.unref?.();
           }
-          this.listing = null;
           if (changed || this.announce) this.changed();
           this.announce = false;
         }

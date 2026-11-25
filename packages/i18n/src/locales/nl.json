@@ -8179,6 +8179,38 @@
       "label": "Contacten in de Vault bewerken",
       "description": "Contactgegevens in de Vault opslaan en bijwerken, de gebruikersnaam van een opgeslagen login of een beschrijving wijzigen, wachtwoorden maken voor accounts die hij aanmaakt, en verwijderen wat hij heeft opgeslagen."
     },
+    "gitlab_git_read": {
+      "label": "Repositories klonen (git)",
+      "description": "Repositories klonen en bijwerken op de computer van de agent met git, via onze proxy. Het GitLab-token komt nooit op de machine."
+    },
+    "gitlab_git_write": {
+      "label": "Branches pushen (git push)",
+      "description": "Commits pushen naar agentes/{agent}/…-branches: nooit naar de standaardbranch, geen force push, geen tags. Branches verwijderen en naar de branch van iemand anders pushen vragen eerst om goedkeuring."
+    },
+    "gitlab_pr_write": {
+      "label": "Merge requests openen",
+      "description": "Merge requests openen en erop reageren."
+    },
+    "bitbucket_git_read": {
+      "label": "Repositories klonen (git)",
+      "description": "Repositories klonen en bijwerken op de computer van de agent met git, via onze proxy. Het Bitbucket-token komt nooit op de machine."
+    },
+    "bitbucket_git_write": {
+      "label": "Branches pushen (git push)",
+      "description": "Commits pushen naar agentes/{agent}/…-branches: nooit naar de standaardbranch, geen force push, geen tags. Branches verwijderen en naar de branch van iemand anders pushen vragen eerst om goedkeuring."
+    },
+    "bitbucket_pr_write": {
+      "label": "Pull requests openen",
+      "description": "Pull requests openen en erop reageren."
+    },
+    "git_git_read": {
+      "label": "Repositories klonen (git)",
+      "description": "Repositories klonen en bijwerken op de computer van de agent met git, via onze proxy. Het Git-token komt nooit op de machine."
+    },
+    "git_git_write": {
+      "label": "Branches pushen (git push)",
+      "description": "Commits pushen naar agentes/{agent}/…-branches: nooit naar de standaardbranch, geen force push, geen tags. Branches verwijderen en naar de branch van iemand anders pushen vragen eerst om goedkeuring."
+    },
     "github_git_read": {
       "label": "Repositories klonen (git)",
       "description": "Repositories klonen en bijwerken op de computer van de agent met git, via onze proxy. Het GitHub-token komt nooit op de machine."
@@ -11490,10 +11522,10 @@
       "agent": "Agent",
       "repo": "Waar te werken",
       "repoPlaceholder": "Repository of project",
-      "repoSearch": "Zoek, of typ eigenaar/naam of een nieuwe naam",
+      "repoSearch": "Zoek, of typ owner/name, het adres van een repository of een nieuwe naam",
       "newLocal": "Nieuw project op de computer: {{name}}",
       "useRepo": "{{repo}} gebruiken",
-      "repoNote": "Een naam zonder eigenaar start een project op de computer van de agent, buiten GitHub.",
+      "repoNote": "Een naam zonder owner maakt een project alleen op de computer van de agent, zonder externe repository.",
       "hint": "@ haalt iemand bij de sessie",
       "start": "Starten"
     },
@@ -11507,7 +11539,7 @@
       "closeHint": "Verdwijnt uit de lijst: de worktree gaat weg, de branch blijft",
       "failed": "De worktree kon niet worden voorbereid.",
       "retry": "Opnieuw proberen",
-      "githubAccess": "Deze werkruimte heeft geen toegang tot deze repository op GitHub. Koppel GitHub in Instellingen › Connectors, of start een sessie in een project op de computer (alleen een naam)."
+      "githubAccess": "Deze workspace heeft geen toegang tot deze repository. Verbind de plek waar die staat (GitHub, GitLab of Bitbucket) in Instellingen › Connectoren, of start een sessie in een project op de computer (alleen een naam)."
     },
     "panel": {
       "label": "Sessiepaneel",
@@ -13491,6 +13523,7 @@
       "teamLocked": "Alleen wie connectors beheert voegt die van het team toe.",
       "mailLocked": "Een mailbox is altijd van wie hem verbindt.",
       "done": "Je agenten gebruiken het alleen als jij erom vraagt.",
+      "githubDone": "In codesessies gaan de commits, pushes en pull requests voor wat je vraagt op jouw naam de deur uit.",
       "worksWhenAsked": "Werkt alleen als jij erom vraagt.",
       "remove": "Verwijderen",
       "removeName": "{{name}} verwijderen",
@@ -14254,6 +14287,7 @@
     },
     "label": {
       "git_clone": "Repository klonen",
+      "list_repositories": "Repository's weergeven",
       "create_repository": "Repository maken",
       "delete_repository": "Repository verwijderen",
       "fork_repository": "Repository forken",
@@ -15167,6 +15201,19 @@
       "asks_other": "{{count}} acties vragen om goedkeuring in de chat.",
       "adjust": "Aanpassen",
       "ok": "Klaar"
+    },
+    "git": {
+      "token": "Toegangstoken",
+      "address": "Adres",
+      "addressHelp": {
+        "gitlab": "Alleen voor een GitLab dat je bedrijf zelf host. Leeg gelaten is het gitlab.com.",
+        "git": "Waar de git-server staat, bijvoorbeeld https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "Een GitLab-toegangstoken (persoonlijk, van een groep of project) met de scopes api en write_repository. Het blijft op de server: de computers van agents krijgen het nooit.",
+        "bitbucket": "Een toegangstoken van de workspace of de repository, met schrijfrechten voor repository's en pull requests. Met je eigen API-token typ je je Atlassian-e-mailadres, een dubbele punt en het token: you@company.com:TOKEN.",
+        "git": "Het token dat de server als git-wachtwoord accepteert. Als hij een gebruikersnaam wil, typ je username:token."
+      }
     },
     "telegram": {
       "token": "Bottoken",
@@ -16134,6 +16181,7 @@
       "tooLarge": "Dit bestand heeft de maximale grootte bereikt. Haal er eerst iets uit.",
       "assetTooLarge": "De afbeelding is groter dan {{max}} MB, de limiet per afbeelding.",
       "assetType": "In dit bestand passen alleen afbeeldingen: PNG, JPEG, WebP of GIF.",
+      "fontInvalid": "Dit lettertype kan niet worden gebruikt: het bestand is geen lettertype dat de app kan lezen. Probeer een .ttf-, .otf- of .woff-bestand.",
       "liveOnly": "Dit bestand wordt ter plekke gewijzigd en kan dus niet in zijn geheel worden vervangen."
     },
     "office": {
@@ -17964,7 +18012,7 @@
     "telemetry": {
       "title": "Gebruiksstatistieken",
       "label": "Anonieme gebruiksstatistieken naar agentes.chat sturen",
-      "help": "Aantallen zoals mensen, agents, machinegroottes, gebruikte AI-tokens en hoeveel data de browsers van de agents versturen en ontvangen. Nooit berichten, bestanden, namen of sites.",
+      "help": "Aantallen zoals mensen, agents, machinegroottes, gebruikte AI-tokens, hoeveel data de browsers van de agents versturen en ontvangen en hoe snel de apps openen en reageren. Nooit berichten, bestanden, namen of sites.",
       "envOff": "Uitgezet in de instellingen van deze server (TELEMETRY=off).",
       "envOffDesktop": "Uitgezet in de agentes.chat-app op de computer van deze server (Voorkeuren › Servers).",
       "envOffHere": "Uitgezet in de agentes.chat-app op deze computer.",
@@ -18788,6 +18836,7 @@
         "runningCommandAny": "Een opdracht uitgevoerd",
         "usingScreen": "Het scherm gebruikt",
         "cloningRepo": "Een repository gekloond",
+        "listingRepos": "Heeft de repository's weergegeven",
         "preparingCli": "{{app}} klaargezet",
         "openingPullRequest": "Een pull request geopend",
         "handingOff": "Een rapport geleverd",
@@ -18910,6 +18959,7 @@
       "runningCommandAny": "een opdracht aan het uitvoeren",
       "usingScreen": "het scherm aan het gebruiken",
       "cloningRepo": "een repository aan het klonen",
+      "listingRepos": "geeft de repository's weer",
       "preparingCli": "{{app}} aan het klaarzetten op {{computer}}",
       "preparingCliPct": "{{app}} aan het klaarzetten op {{computer}} ({{percent}}%)",
       "openingPullRequest": "een pull request aan het openen",
