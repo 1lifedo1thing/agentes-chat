@@ -4778,6 +4778,7 @@ export const ptBR = {
     limit: "Seguiu na conta <to/> porque a conta <from/> chegou ao limite",
     line: "Seguiu na conta <to/> porque a conta <from/> está perto do limite",
     extra: "Seguiu na conta <to/> porque a conta <from/> entraria no uso extra pago",
+    busy: "Seguiu na conta <to/> porque a conta <from/> já estava respondendo o máximo de conversas ao mesmo tempo",
   },
   channelRefs: {
     list: "Canais",

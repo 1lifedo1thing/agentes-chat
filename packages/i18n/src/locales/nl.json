@@ -4517,7 +4517,8 @@
   "accountSwitch": {
     "limit": "Ging verder met het account <to/> omdat het account <from/> zijn limiet bereikte",
     "line": "Ging verder met het account <to/> omdat het account <from/> bijna aan zijn limiet zit",
-    "extra": "Ging verder met het account <to/> omdat het account <from/> in betaald extra gebruik zou gaan"
+    "extra": "Ging verder met het account <to/> omdat het account <from/> in betaald extra gebruik zou gaan",
+    "busy": "Ging verder met het account <to/> omdat het account <from/> al zoveel gesprekken tegelijk beantwoordde als het kan"
   },
   "channelRefs": {
     "list": "Kanalen",

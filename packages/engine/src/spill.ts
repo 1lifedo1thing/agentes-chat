@@ -98,8 +98,11 @@ export interface AccountMove {
 export interface AccountSwitch {
   from: { id: string; name: string };
   to: { id: string; name: string };
-  /** What moved it: its plan's limit, the pause line (99%) of long work, or the paid extra usage it would go into. */
-  cause: "limit" | "line" | "extra";
+  /**
+   * What moved it: its plan's limit, the pause line (99%) of long work, the paid extra usage it would go into, or its
+   * sign-in thinking for all the runs it takes at once (`busy`).
+   */
+  cause: "limit" | "line" | "extra" | "busy";
 }
 
 /** Where `nextAccountPlan` landed: the plan on the next account, else how many accounts are all limited and the first reset. */

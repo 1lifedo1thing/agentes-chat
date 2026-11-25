@@ -4496,7 +4496,8 @@
   "accountSwitch": {
     "limit": "<from/> hesabı sınırına ulaştığı için <to/> hesabıyla devam etti",
     "line": "<from/> hesabı sınırına yaklaştığı için <to/> hesabıyla devam etti",
-    "extra": "<from/> hesabı ücretli ek kullanıma geçeceği için <to/> hesabıyla devam etti"
+    "extra": "<from/> hesabı ücretli ek kullanıma geçeceği için <to/> hesabıyla devam etti",
+    "busy": "<from/> hesabı aynı anda yanıtlayabileceği kadar sohbeti zaten yanıtladığı için <to/> hesabıyla devam etti"
   },
   "channelRefs": {
     "list": "Kanallar",

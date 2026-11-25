@@ -4661,7 +4661,8 @@
   "accountSwitch": {
     "limit": "Siguió con la cuenta <to/> porque la cuenta <from/> llegó a su límite",
     "line": "Siguió con la cuenta <to/> porque la cuenta <from/> está cerca de su límite",
-    "extra": "Siguió con la cuenta <to/> porque la cuenta <from/> entraría en el uso extra de pago"
+    "extra": "Siguió con la cuenta <to/> porque la cuenta <from/> entraría en el uso extra de pago",
+    "busy": "Siguió con la cuenta <to/> porque la cuenta <from/> ya estaba respondiendo todas las conversaciones que puede a la vez"
   },
   "channelRefs": {
     "list": "Canales",

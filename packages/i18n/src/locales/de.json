@@ -4517,7 +4517,8 @@
   "accountSwitch": {
     "limit": "Hat mit dem Konto <to/> weitergemacht, weil das Konto <from/> sein Limit erreicht hat",
     "line": "Hat mit dem Konto <to/> weitergemacht, weil das Konto <from/> fast am Limit ist",
-    "extra": "Hat mit dem Konto <to/> weitergemacht, weil das Konto <from/> in die kostenpflichtige Zusatznutzung gehen würde"
+    "extra": "Hat mit dem Konto <to/> weitergemacht, weil das Konto <from/> in die kostenpflichtige Zusatznutzung gehen würde",
+    "busy": "Hat mit dem Konto <to/> weitergemacht, weil das Konto <from/> schon so viele Gespräche gleichzeitig beantwortet hat, wie es kann"
   },
   "channelRefs": {
     "list": "Kanäle",

@@ -3229,8 +3229,8 @@ export interface RunAccountSwitch {
   from: RunAccount;
   /** The last one it moved to. */
   to: RunAccount;
-  /** Its plan's limit, the pause line (99%) of long work, or the paid extra usage `from` would go into. */
-  cause: "limit" | "line" | "extra";
+  /** Its plan's limit, the pause line (99%) of long work, the paid extra usage `from` would go into, or `from` busy with all the runs it takes at once. */
+  cause: "limit" | "line" | "extra" | "busy";
 }
 
 export interface RunStep {

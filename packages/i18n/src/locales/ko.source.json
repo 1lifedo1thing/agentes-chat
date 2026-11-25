@@ -11062,6 +11062,9 @@
   "accountSwitch.extra": {
     "value": "Went on with the <to/> account because the <from/> account would go into paid extra usage"
   },
+  "accountSwitch.busy": {
+    "value": "Went on with the <to/> account because the <from/> account was already answering as many conversations as it can at once"
+  },
   "channelRefs.list": {
     "value": "Channels"
   },
