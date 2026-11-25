@@ -605,8 +605,10 @@ export function secretRead(
   const i = input ?? {};
   const keys = Object.hasOwn(FILE_READ_TOOLS, toolName) ? FILE_READ_TOOLS[toolName] : undefined;
   if (keys) return keys.some((k) => typeof i[k] === "string" && namesSecret(i[k] as string, scope));
-  const command = commandCall(toolName, i)?.command;
-  if (command === undefined) return false;
+  const call = commandCall(toolName, i);
+  if (call === null) return false;
+  // PowerShell's text as `badActorReason` reads it: its backslash separates a path (`.\.env`), it escapes nothing.
+  const command = call.powershell ? windowsText("powershell", call.command) : call.command;
   if (SECRET_VARIABLE.test(command)) return true;
   const cmds = simpleCommands(command);
   if (cmds) {
@@ -2359,10 +2361,14 @@ const CODE_RUNNERS = /^(python[\d.]*|node|nodejs|bun|deno|ruby|perl|php|g?awk|ma
 const WINDOWS_SHELLS = /^(cmd|powershell|pwsh)$/;
 /**
  * A Windows shell's text as the loose scan reads it: a backslash is part of a path, not an escape; cmd's `^` escapes
- * the next character and its `'` is a plain one; PowerShell's backtick escapes (`r^eg` and `re`g` run `reg`).
+ * the next character and its `'` is a plain one; PowerShell's backtick escapes (`r^eg` and `re`g` run `reg`). Either
+ * escape at a line's end continues the line, which then reads as one.
  */
 const windowsText = (program: string, text: string) =>
-  text.replaceAll("\\", "/").replace(program === "cmd" ? /[\^']/g : /`/g, "");
+  text
+    .replaceAll("\\", "/")
+    .replace(program === "cmd" ? /\^\r?\n/g : /`\r?\n/g, " ")
+    .replace(program === "cmd" ? /[\^']/g : /`/g, "");
 /**
  * Programs that run the rest of their words as a command, after options of their own (`taskset -c 0 cmd`, `flock
  * file cmd`, `busybox cmd`, cmd's `start /b cmd` and `call cmd`, Git Bash's `start cmd` and `winpty cmd`). The
@@ -2370,6 +2376,31 @@ const windowsText = (program: string, text: string) =>
  */
 const LAUNCHERS =
   /^(setsid|nice|nohup|env|time|timeout|xargs|ionice|stdbuf|taskset|chrt|unbuffer|caffeinate|systemd-run|xvfb-run|dbus-run-session|parallel|screen|tmux|runuser|cgexec|numactl|prlimit|strace|ltrace|setpriv|chpst|flock|watch|script|eval|busybox|start|call|winpty)$/;
+/**
+ * Launchers' short options whose value is the next word unless it is glued on (`timeout -s KILL`, `stdbuf -o L`,
+ * `screen -dmS dev`, `tmux new -s dev`). A value that is a number or an assignment needs no entry, unless the
+ * launcher's own word could be taken for it (`flock -w 5 file`).
+ */
+const LAUNCHER_VALUES: Readonly<Record<string, string>> = {
+  timeout: "s",
+  flock: "wE",
+  script: "BcEFImOoTt",
+  tmux: "cefFLnsStTxy",
+  screen: "cehpsStTX",
+  stdbuf: "ioe",
+  env: "uCSP",
+  time: "fo",
+  xargs: "IdEaJ",
+  ionice: "c",
+  strace: "beEoPSuUX",
+  "systemd-run": "uHMpE",
+  "xvfb-run": "efp",
+};
+/**
+ * Launchers that read a word of their own before the command: `timeout`'s duration, `taskset`'s mask, `flock`'s and
+ * `script`'s file, `tmux`'s subcommand.
+ */
+const LAUNCHER_OPERAND = /^(timeout|taskset|flock|script|tmux)$/;
 /** What runs the text piped into it as commands (`echo '…' | bash`, `… | crontab -`, `… | powershell -Command -`). */
 const FED_COMMANDS = /^(sh|bash|zsh|dash|ksh|fish|at|batch|crontab|cmd|powershell|pwsh)$/;
 const SHELL_KEYWORDS = new Set(["if", "then", "else", "elif", "do", "while", "until", "!", "exec", "time"]);
@@ -2395,18 +2426,58 @@ function looseArgv(words: string[]): string[] {
 }
 
 /**
- * The commands a command runs after words of its own: a launcher's, where any of its first words but an option may
- * be where that command starts (`taskset -c 0 bash -c …`), and `find -exec`'s.
+ * Where the one command a launcher runs starts in its words, or -1: past the launcher's options with their values
+ * (`LAUNCHER_VALUES`, a number, an assignment), its own word (`LAUNCHER_OPERAND`), cmd's switches and title
+ * (`start /b "My App"`, `start /d dir ""`). The words after it are that command's arguments, never commands
+ * (`xargs grep -n sudo`).
+ */
+function commandStart(words: readonly string[]): number {
+  const launcher = baseName(words[0] ?? "");
+  const values = Object.hasOwn(LAUNCHER_VALUES, launcher) ? (LAUNCHER_VALUES[launcher] as string) : "";
+  let operand = LAUNCHER_OPERAND.test(launcher);
+  // cmd's title is quoted; Git Bash quotes a word for cmd only when it has a space.
+  let title = launcher === "start";
+  let options = true;
+  for (let k = 1; k < words.length; k++) {
+    const w = words[k] as string;
+    if (options && w === "--") options = false;
+    else if (options && w.startsWith("-")) {
+      // As getopt reads a cluster (`-dmS dev`, `-oL`): its first letter that takes a value takes the rest of the
+      // word, or the next word when it is the last.
+      const at = [...w.slice(1)].findIndex((c) => values.includes(c));
+      if (at >= 0 && at === w.length - 2 && !w.startsWith("--")) k++;
+    } else if (launcher === "start" && /^\/\/?[a-z]+$/i.test(w)) {
+      if (/^\/\/?d$/i.test(w)) k++;
+    } else if (operand) operand = false;
+    else if (title && (w === "" || /\s/.test(w))) title = false;
+    else if (w !== "" && !/^\d[\w.,:-]*$/.test(w) && !ASSIGNMENT.test(w)) return k;
+  }
+  return -1;
+}
+
+/**
+ * The commands a command runs after words of its own, each read as at the head: a launcher's (`taskset -c 0 bash
+ * -c …`), the launcher that one is in turn (`nice -n 5 taskset -c 0 cmd`), and `find -exec`'s.
  */
 function launched(words: readonly string[], argv: readonly string[]): Loose[] {
+  const starts = (w: readonly string[]) => {
+    const head = baseName(w[0] ?? "");
+    if (LAUNCHERS.test(head)) return commandStart(w);
+    return head === "find" ? w.findIndex((a) => /^-(exec|execdir|ok|okdir)$/.test(a)) + 1 : 0;
+  };
   const first = words.findIndex((w) => !ASSIGNMENT.test(w));
-  const own = first < 0 ? [] : words.slice(first);
-  const from = [own, argv].find((w) => LAUNCHERS.test(baseName(w[0] ?? ""))) ?? [];
-  const starts: string[][] = [];
-  for (let k = 1; k < from.length && k < 8; k++) if (!(from[k] as string).startsWith("-")) starts.push(from.slice(k));
-  const exec = baseName(argv[0] ?? "") === "find" ? argv.findIndex((a) => /^-(exec|execdir|ok|okdir)$/.test(a)) : -1;
-  if (exec >= 0) starts.push(argv.slice(exec + 1));
-  return starts.map((raw) => ({ raw, argv: looseArgv(raw), writes: [], reads: [] }));
+  // `looseArgv` has taken the wrappers off whose options it can tell (`env -u X taskset …`); else the words as written.
+  let from = starts(argv) > 0 ? argv : first < 0 ? [] : words.slice(first);
+  const runs: Loose[] = [];
+  for (let guard = 0; guard < 20; guard++) {
+    const at = starts(from);
+    if (at <= 0) break;
+    const raw = from.slice(at);
+    const run = looseArgv(raw);
+    runs.push({ raw, argv: run, writes: [], reads: [] });
+    from = starts(raw) > 0 ? raw : run;
+  }
+  return runs;
 }
 
 /**
@@ -2426,22 +2497,33 @@ const readerOfText = (text: string) => {
 };
 
 /**
- * The command line a scheduled task will run, as it is given (schtasks's `/tr`, `New-ScheduledTaskAction`'s
- * `-Execute` and `-Argument`), or null: judged now, as cron's lines piped to crontab are.
+ * The command line a scheduled task will run, as it is given (schtasks's `/tr`; `New-ScheduledTaskAction`'s
+ * `-Execute` and `-Argument`, by name or by place: `[-Execute] <String> [[-Argument] <String>]`), or null: judged
+ * now, as cron's lines piped to crontab are.
  */
 function taskAction(argv: readonly string[]): string | null {
   const at = argv.findIndex((a) => /^(schtasks|new-scheduledtaskaction)$/.test(baseName(a)));
   if (at < 0) return null;
   const words = argv.slice(at + 1);
-  const after = (name: RegExp) => {
-    const i = words.findIndex((w) => name.test(w));
-    return i < 0 ? "" : (words[i + 1] ?? "");
-  };
-  const line =
-    baseName(argv[at] as string) === "schtasks"
-      ? after(/^(\/\/?|-)tr$/i)
-      : `${after(/^-ex\w*$/i)} ${after(/^-ar\w*$/i)}`;
-  return line.trim() || null;
+  if (baseName(argv[at] as string) === "schtasks") {
+    const tr = words.findIndex((w) => /^(\/\/?|-)tr$/i.test(w));
+    return (tr < 0 ? "" : (words[tr + 1] ?? "")).trim() || null;
+  }
+  let execute: string | undefined;
+  let argument: string | undefined;
+  const placed: string[] = [];
+  for (let k = 0; k < words.length; k++) {
+    // A parameter by any prefix of its name (`-Ex`, `-Argument:x`); a quoted argument with a space isn't one.
+    const p = /^-([a-z]+)(?::(.*))?$/i.exec(words[k] as string);
+    if (!p) placed.push(words[k] as string);
+    // Every parameter but the switches (`-AsJob`, `-Verbose`, `-Debug`) takes a value.
+    else if (!/^(as|v|d)/i.test(p[1] as string)) {
+      const value = p[2] || words[++k] || "";
+      if (/^ex/i.test(p[1] as string)) execute = value;
+      else if (/^ar/i.test(p[1] as string)) argument = value;
+    }
+  }
+  return `${execute ?? placed.shift() ?? ""} ${argument ?? placed.shift() ?? ""}`.trim() || null;
 }
 
 /**
@@ -2877,39 +2959,93 @@ function ownAccount(account: string, scope: CommandScope) {
 
 /** PowerShell's cmdlets that change a scheduled task, or make the account one runs as. */
 const TASK_CHANGE = cmdlet("(register|set|unregister|enable|disable)-scheduledtask|new-scheduledtaskprincipal");
+/** A PowerShell statement's words: a quoted string without its quotes, `(`, `)`, `|`, or a run of anything else. */
+const POWERSHELL_WORD = /'([^']*)'|"([^"]*)"|[()|]|[^\s'"()|]+/g;
+/** A scheduled task's highest rights by name (`Highest`, `[RunLevelEnum]::Highest`). */
+const HIGHEST = /^(highest|.*::highest)$/;
+/** Windows' own scheduled tasks, under `\Microsoft\` (as `windowsText` writes it). */
+const WINDOWS_TASK = /^\/?microsoft\//;
+/** A principal's property or a splatted key, set anywhere in a text (`$p.UserId = "SYSTEM"`, `@{ RunLevel = 1 }`). */
+const PRINCIPAL_SET = /(?<![\w$:])(userid|user|groupid|runlevel)['"]?\s*=\s*(?:'([^']*)'|"([^"]*)"|([^\s;)}]+))/g;
+
+/**
+ * Whether a scheduled task's principal isn't the person's own, by a parameter's name (any prefix of it, as
+ * PowerShell binds it) or a property's, and its value: another account or `SYSTEM`, a group, the highest rights
+ * (`1` binds to `Highest`).
+ */
+function principalProblem(name: string, value: string, scope: CommandScope) {
+  if ("userid".startsWith(name)) return !ownAccount(value, scope);
+  if ("runlevel".startsWith(name)) return value === "1" || HIGHEST.test(value);
+  return "groupid".startsWith(name);
+}
 
 /**
  * Why a PowerShell statement that changes a scheduled task is refused: a task the person's own user doesn't run
- * (`-User` or `-UserId` another account or `SYSTEM`, `-GroupId`), with the highest rights, on another computer
- * (`-CimSession`), from XML that can't be read here, or Windows' own (a `-TaskPath` or `-TaskName` under
- * `\Microsoft\`, or every task `Get-ScheduledTask` lists piped in). The person's own tasks run, as crontab does.
+ * (`principalProblem` of `-User`, `-UserId`, `-GroupId`, `-RunLevel`, `New-ScheduledTaskPrincipal`'s first word, a
+ * word `Highest`), on another computer (`-CimSession`), from XML that can't be read here, or Windows' own (a task
+ * under `\Microsoft\`, or every task `Get-ScheduledTask` lists piped in). A parameter is read by any prefix of its
+ * name and only outside quoted strings (`-U SYSTEM`, not `-Argument 'pip install -U x'`). The person's own tasks run,
+ * as crontab does.
  */
 function taskProblem(statement: string, scope: CommandScope): string | null {
   if (!TASK_CHANGE.test(statement)) return null;
-  // Parameters by their names, not their shortest prefixes: an action's own arguments share the statement
-  // (`-Argument 'install -U x'`).
-  const user = /\s-user\w*[\s:]+['"]?([^'"\s;|)]+)/.exec(statement)?.[1];
-  return /\bhighest\b|\s-(cim|xml|group)\w*/.test(statement) ||
-    (user !== undefined && !ownAccount(user, scope)) ||
-    /-task(p|n)\w*[\s:]+['"]?\/?microsoft\//.test(statement) ||
-    /\bget-scheduledtask\s*(\*\s*)?\|/.test(statement)
-    ? SYSTEM_REASON
-    : null;
+  if (/\bget-scheduledtask\s*(\*\s*)?\|/.test(statement)) return SYSTEM_REASON;
+  const words = [...statement.matchAll(POWERSHELL_WORD)].map((m) => ({
+    text: m[1] ?? m[2] ?? m[0],
+    param: m[1] === undefined && m[2] === undefined ? /^-([a-z]+)(?::(.*))?$/.exec(m[0]) : null,
+  }));
+  // `New-ScheduledTaskPrincipal [-UserId] <String>`: the first word no parameter takes, unless one names the account.
+  let account = words.findIndex((w) => /(^|\/)new-scheduledtaskprincipal$/.test(w.text));
+  for (let i = 0; i < words.length; i++) {
+    const { text, param } = words[i] as (typeof words)[number];
+    if (param) {
+      const name = param[1] as string;
+      let value = param[2];
+      if (!value) {
+        while (words[i + 1]?.text === "(") i++;
+        value = words[i + 1]?.param ? "" : (words[++i]?.text ?? "");
+      }
+      if ("userid".startsWith(name) || "groupid".startsWith(name)) account = -1;
+      if (
+        principalProblem(name, value, scope) ||
+        "cimsession".startsWith(name) ||
+        "xml".startsWith(name) ||
+        (("taskname".startsWith(name) || "taskpath".startsWith(name)) && WINDOWS_TASK.test(value))
+      )
+        return SYSTEM_REASON;
+    } else if (/^[()|]$/.test(text)) {
+      if (i > account) account = -1;
+    } else if (
+      HIGHEST.test(text) ||
+      WINDOWS_TASK.test(text) ||
+      (account >= 0 && i > account && !ownAccount(text, scope))
+    )
+      return SYSTEM_REASON;
+    else if (i > account) account = -1;
+  }
+  return null;
 }
 
 /**
  * Why a PowerShell text is refused: its first statement with a change to the system (`POWERSHELL_CHANGES`,
  * `taskProblem`), or one carried across statements: shadow copies deleted in a script block
  * (`gwmi win32_shadowcopy | % { $_.Delete() }`), the registry changed by the location or a variable
- * (`cd HKCU:\…; ni .`, `$k = "HKCU:\…"; sp $k …`).
+ * (`cd HKCU:\…; ni .`, `$k = "HKCU:\…"; sp $k …`), a task's principal set apart from the cmdlet that changes the task
+ * (`$p.UserId = "SYSTEM"; Register-ScheduledTask … -Principal $p`).
  */
 function powershellProblem(text: string, scope: CommandScope): string | null {
   const flat = text.toLowerCase();
   if (/\bwin32_shadowcopy\b/.test(flat) && /\.delete\(|\bremove-(ciminstance|wmiobject)\b/.test(flat))
     return SYSTEM_REASON;
+  const statements = flat.split(/[;\n{}]/);
+  if (
+    statements.some((s) => TASK_CHANGE.test(s)) &&
+    [...flat.matchAll(PRINCIPAL_SET)].some((m) => principalProblem(m[1] as string, m[2] ?? m[3] ?? m[4] ?? "", scope))
+  )
+    return SYSTEM_REASON;
   const inHive = IN_HIVE.test(flat);
   const held = new Set([...flat.matchAll(HIVE_VARIABLE)].map((m) => m[1]));
-  for (const statement of flat.split(/[;\n{}]/)) {
+  for (const statement of statements) {
     if (ITEM_CHANGE.test(statement) && (inHive || [...statement.matchAll(/\$[\w:]+/g)].some((v) => held.has(v[0]))))
       return SYSTEM_REASON;
     const hit = POWERSHELL_CHANGES.find(([, ...all]) => all.every((r) => r.test(statement)));
