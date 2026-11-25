@@ -2475,6 +2475,17 @@
       "unlinkText": "{{assistant}} antwortet dir dort nicht mehr. Du kannst es jederzeit wieder verknüpfen.",
       "unlinked": "{{surface}} getrennt"
     },
+    "nudge": {
+      "title": "Erinnerung an Ungelesenes",
+      "hint": "Wenn in der App etwas ungelesen wartet, erinnert dich {{assistant}} auf {{surface}}, höchstens einmal am Tag. Nicht, wenn dein Handy Benachrichtigungen bekommt.",
+      "after": "Erinnern nach",
+      "hours": "{{hours}} Std.",
+      "quiet": "Ruhezeiten",
+      "quietHint": "Keine Erinnerungen zwischen diesen Zeiten, in deiner Zeitzone.",
+      "quietFrom": "Von",
+      "quietTo": "Bis",
+      "quietRange": "{{from}} bis {{to}}"
+    },
     "undo": {
       "title": "Die Chat-App trennen?",
       "lead": "Dein Konto wurde gerade mit einer Chat-App verknüpft. Wenn du das nicht warst, trenne sie hier.",
@@ -2527,6 +2538,7 @@
       "set": "PIN festlegen",
       "change": "PIN ändern",
       "title": "Deine {{surface}}-PIN",
+      "row": "Deine PIN",
       "text": "Sechs Ziffern, mit denen du Aktionen genehmigst, um die du über {{surface}} bittest. Sie wird nie im Chat gesendet.",
       "save": "PIN speichern"
     }

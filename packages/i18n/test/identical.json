@@ -1,6 +1,7 @@
 {
   "app": {
     "pt-BR": [
+      "surface.nudge.hours",
       "live.kinds.slideCount",
       "live.shell.formats.xlsx",
       "live.shell.formats.pptx",
@@ -348,6 +349,7 @@
       "live.type.glyph"
     ],
     "es": [
+      "surface.nudge.hours",
       "aiHub.modes.roles",
       "devices.iphone.path.general",
       "devices.cpus",
@@ -643,6 +645,7 @@
     ],
     "fr": [
       "agentPage.facts.budget",
+      "surface.nudge.hours",
       "usage.kinds.routines",
       "channel.tooLong.fileName",
       "calendar.moreRuns",
@@ -1681,6 +1684,7 @@
     ],
     "it": [
       "agentPage.facts.budget",
+      "surface.nudge.hours",
       "live.sheet.args.a1",
       "live.sheet.args.k",
       "live.sheet.args.x",

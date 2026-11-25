@@ -2475,6 +2475,17 @@
       "unlinkText": "{{assistant}} size orada artık yanıt vermez. İstediğiniz zaman yeniden bağlayabilirsiniz.",
       "unlinked": "{{surface}} bağlantısı kaldırıldı"
     },
+    "nudge": {
+      "title": "Okunmamış hatırlatıcısı",
+      "hint": "Uygulamada okunmamış bir şey beklediğinde {{assistant}} sana {{surface}} üzerinden hatırlatır, günde en fazla bir kez. Telefonuna bildirim geliyorsa hatırlatmaz.",
+      "after": "Şu süreden sonra hatırlat",
+      "hours": "{{hours}} sa",
+      "quiet": "Sessiz saatler",
+      "quietHint": "Bu saatler arasında hatırlatma yok, kendi saat diliminde.",
+      "quietFrom": "Başlangıç",
+      "quietTo": "Bitiş",
+      "quietRange": "{{from}} - {{to}}"
+    },
     "undo": {
       "title": "Sohbet uygulamasının bağlantısı kaldırılsın mı?",
       "lead": "Hesabınız az önce bir sohbet uygulamasına bağlandı. Bunu siz yapmadıysanız bağlantıyı buradan kaldırın.",
@@ -2527,6 +2538,7 @@
       "set": "PIN belirle",
       "change": "PIN'i değiştir",
       "title": "{{surface}} PIN'in",
+      "row": "PIN'in",
       "text": "{{surface}} üzerinden istediğin işlemleri onaylamak için girdiğin altı rakam. Sohbette asla gönderilmez.",
       "save": "PIN'i kaydet"
     }

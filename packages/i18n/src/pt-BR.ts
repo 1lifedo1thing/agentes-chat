@@ -2534,6 +2534,18 @@ export const ptBR = {
       unlinkText: "{{assistant}} para de responder você por lá. Você pode vincular de novo quando quiser.",
       unlinked: "{{surface}} desvinculado",
     },
+    /** Settings › Notifications: the unread nudge under the linked chat app's row (ADR 0234). */
+    nudge: {
+      title: "Lembrete de não lidas",
+      hint: "Quando algo fica sem ler no app, {{assistant}} lembra você no {{surface}}, no máximo uma vez por dia. Não quando seu celular recebe notificações.",
+      after: "Lembrar depois de",
+      hours: "{{hours}} h",
+      quiet: "Horário de silêncio",
+      quietHint: "Nenhum lembrete entre esses horários, no seu fuso horário.",
+      quietFrom: "De",
+      quietTo: "Até",
+      quietRange: "{{from}} às {{to}}",
+    },
     undo: {
       title: "Desvincular o app de chat?",
       lead: "Sua conta acabou de ser vinculada a um app de chat. Se não foi você, desvincule aqui.",
@@ -2590,6 +2602,7 @@ export const ptBR = {
       set: "Definir PIN",
       change: "Trocar PIN",
       title: "Seu PIN do {{surface}}",
+      row: "Seu PIN",
       text: "Seis dígitos que você digita para aprovar ações que pedir pelo {{surface}}. Ele nunca é enviado no chat.",
       save: "Salvar PIN",
     },

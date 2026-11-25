@@ -342,6 +342,7 @@ import type {
   SurfaceLink,
   SurfaceLinkCode,
   SurfaceLinks,
+  SurfaceNudge,
   SurfacePage,
   TaskManagerView,
   TaskOutput,
@@ -547,6 +548,8 @@ export interface ApiClient {
     confirm(linkId: string): Promise<SurfaceLink>;
     /** Cancels a pending link or unlinks an active one. `surface.link_gone` (404). */
     remove(linkId: string): Promise<void>;
+    /** My unread nudge on an active link. `surface.link_gone` (404). */
+    setNudge(linkId: string, input: Partial<SurfaceNudge>): Promise<SurfaceNudge>;
     /** Chooses my PIN (ADR 0226), replacing any. `surface.pin_shape` (400), `surface.link_gone` (404), `rate_limited`. */
     setPin(linkId: string, pin: string): Promise<void>;
     /** "Not you? Unlink it" from the "linked" email: no session needed. `surface.undo_gone` (404), `rate_limited` (429). */

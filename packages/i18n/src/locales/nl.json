@@ -2475,6 +2475,17 @@
       "unlinkText": "{{assistant}} antwoordt je daar niet meer. Je kunt het altijd opnieuw koppelen.",
       "unlinked": "{{surface}} ontkoppeld"
     },
+    "nudge": {
+      "title": "Herinnering aan ongelezen",
+      "hint": "Als er iets ongelezen in de app wacht, herinnert {{assistant}} je eraan op {{surface}}, hooguit één keer per dag. Niet als je telefoon meldingen krijgt.",
+      "after": "Herinneren na",
+      "hours": "{{hours}} u",
+      "quiet": "Stille uren",
+      "quietHint": "Geen herinneringen tussen deze tijden, in jouw tijdzone.",
+      "quietFrom": "Van",
+      "quietTo": "Tot",
+      "quietRange": "{{from}} tot {{to}}"
+    },
     "undo": {
       "title": "De chatapp ontkoppelen?",
       "lead": "Je account is net gekoppeld aan een chatapp. Was jij dat niet, ontkoppel hem dan hier.",
@@ -2527,6 +2538,7 @@
       "set": "Pincode instellen",
       "change": "Pincode wijzigen",
       "title": "Je {{surface}}-pincode",
+      "row": "Je pincode",
       "text": "Zes cijfers die je typt om acties goed te keuren die je via {{surface}} vraagt. Hij wordt nooit in de chat verstuurd.",
       "save": "Pincode opslaan"
     }

@@ -1767,6 +1767,13 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         if (!sf?.links.some((l) => l.id === linkId)) throw new ApiError(404, "surface.link_gone", "This link is gone");
         sf.links = sf.links.filter((l) => l.id !== linkId);
       },
+      setNudge: async (linkId, input) => {
+        log("surfaces.setNudge", linkId, input);
+        const link = state.surface?.links.find((l) => l.id === linkId && l.status === "active");
+        if (!link) throw new ApiError(404, "surface.link_gone", "This link is gone");
+        link.nudge = { ...link.nudge, ...input };
+        return link.nudge;
+      },
       undo: async () => {
         log("surfaces.undo");
         const undo = state.surface?.undo;

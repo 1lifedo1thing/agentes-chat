@@ -369,6 +369,17 @@ export interface SurfaceLink {
   expiresAt: string | null;
   /** A PIN confirms actions asked from the surface (ADR 0226). */
   pinSet: boolean;
+  /** The unread nudge on the surface (ADR 0234), the person's own. */
+  nudge: SurfaceNudge;
+}
+
+/** When the surface reminds the person of what waits unread: on, after how many hours, never in the quiet hours. */
+export interface SurfaceNudge {
+  on: boolean;
+  afterHours: number;
+  /** Whole hours of the day in the person's time zone; equal: no quiet hours. */
+  quietFrom: number;
+  quietTo: number;
 }
 
 /** `GET /me/surface-links`: `allowed`, never `AuthConfig.surface`, decides whether the apps offer linking. */
