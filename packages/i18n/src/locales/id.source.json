@@ -44026,7 +44026,7 @@
     "value": "Send anonymous usage statistics to agentes.chat"
   },
   "settings.telemetry.help": {
-    "value": "Counts such as people, agents, machine sizes, AI tokens used and how much data the agents' browsers send and receive. Never messages, files, names or sites."
+    "value": "Counts such as people, agents, machine sizes, AI tokens used, how much data the agents' browsers send and receive, and how fast the apps open and run. Never messages, files, names or sites."
   },
   "settings.telemetry.envOff": {
     "value": "Turned off in this server's settings (TELEMETRY=off)."

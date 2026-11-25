@@ -2371,8 +2371,15 @@
     {
       "idx": 340,
       "version": "7",
-      "when": 1795562304378,
-      "tag": "0343_machine_moving",
+      "when": 1795558902756,
+      "tag": "0343_client_vitals_day",
+      "breakpoints": true
+    },
+    {
+      "idx": 341,
+      "version": "7",
+      "when": 1795568166353,
+      "tag": "0344_machine_moving",
       "breakpoints": true
     }
   ]

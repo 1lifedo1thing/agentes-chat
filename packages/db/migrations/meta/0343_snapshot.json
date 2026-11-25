@@ -1,5 +1,5 @@
 {
-  "id": "d413bdb7-e54e-46bf-af8c-89c0f6a7f099",
+  "id": "f0d125c2-6939-444e-9adc-e92403d4465f",
   "prevId": "e337802a-e251-4d63-864b-4ae7e63829a0",
   "version": "7",
   "dialect": "postgresql",
@@ -13228,12 +13228,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "moving_at": {
-          "name": "moving_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "wanted_at": {
           "name": "wanted_at",
           "type": "timestamp with time zone",
@@ -25070,6 +25064,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "client_vitals": {
+          "name": "client_vitals",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},

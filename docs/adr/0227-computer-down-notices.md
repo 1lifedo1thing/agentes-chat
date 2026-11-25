@@ -4,7 +4,7 @@
 - Date: 2026-11-24
 - Amends: ADR 0071 §8 (two kinds in the `computers` notice category), ADR 0106 (a webhook call's next run waits
   a little), ADR 0161 (standby is never told as down)
-- Code: db `packages/db/src/schema/machines.ts` (`machines.moving_at`, migration `0343_machine_moving`); engine
+- Code: db `packages/db/src/schema/machines.ts` (`machines.moving_at`, migration `0344_machine_moving`); engine
   `computer-down.ts` (`outageStart`, `queueDownChecks`, `noticeComputerDown`, `noticeComputerBack`,
   `machine.down_notice`), `machine-hub.ts` (`markOffline` queues the checks, `accept` tells the back, the hello clears
   `moving_at`), `machines.ts` (`setMachineMoving`), `notifications.ts` (`computer_down`, `computer_back`,

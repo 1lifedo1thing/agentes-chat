@@ -25,14 +25,17 @@ export interface Health {
  * milliseconds but the heap (bytes) and the counts.
  */
 export interface ClientVitalsReport {
-  platform: "ios" | "android" | "web";
-  /** From the app's start to the launch splash leaving. */
+  /** The desktop app reports as its system (`macos`, `windows`, `linux`): each one's web view is its own. */
+  platform: "ios" | "android" | "web" | "macos" | "windows" | "linux";
+  /** From the app's start to its first screen: the launch splash leaving, a page's first paint. */
   coldStartMs?: number;
   /** From the app's start to its first list drawn with rows. */
   firstRowsMs?: number;
   jsLagP95Ms?: number;
   jsLagMaxMs?: number;
   heapBytes?: number;
+  /** The desktop app's: the memory of the processes behind its main window's web view. */
+  webviewBytes?: number;
   /** Reads (GETs) in the 10 s after the app came back to the front. */
   getsPerReturn?: number;
   reconnects?: number;
