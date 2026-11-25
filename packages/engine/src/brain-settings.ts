@@ -50,6 +50,7 @@ import {
   ANTIGRAVITY_NEON_CLI,
   ANTIGRAVITY_NEW_MODEL,
   ANTIGRAVITY_PAID_MODEL,
+  accountOnlyBrain,
   antigravityBaseModel,
   claudeCodeModel,
   cliVersionAtLeast,
@@ -1121,6 +1122,9 @@ async function setPersonalSignIn(
   current: Awaited<ReturnType<typeof personalBrain>>,
   audit: (to: unknown) => Promise<unknown>,
 ): Promise<AgentBrainView> {
+  if (accountOnlyBrain(brain)) {
+    throw new ValidationError("Choose an account of this brain", "account.invalid", { brain });
+  }
   const { db } = deps;
   // The computers they paired, the one it already uses first: the first where this plan is available.
   const theirs = await db
@@ -1623,11 +1627,23 @@ async function nextBrainAccount(
   options: { move: boolean; admin: boolean },
 ): Promise<{ id: string | null; lent?: boolean; from?: { accountId: string; agentId: string } }> {
   const kept = changed ? null : agent.brainAccountId;
-  if (input === undefined) return { id: kept };
+  if (input === undefined) {
+    if (kept === null && accountOnlyBrain(brain)) {
+      throw new ValidationError("Choose an account of this brain on the agent's computer", "account.invalid", {
+        brain,
+      });
+    }
+    return { id: kept };
+  }
   if (input !== null && typeof input !== "string") {
     throw new ValidationError("Choose an account on the agent's computer", "account.invalid");
   }
   const wanted = input || null;
+  if (wanted === null && accountOnlyBrain(brain)) {
+    throw new ValidationError("Choose an account of this brain on the agent's computer", "account.invalid", {
+      brain,
+    });
+  }
   if (wanted === kept) return { id: kept };
   const owner = agent.ownerUserId;
   const chooses = options.admin || owner === userId;

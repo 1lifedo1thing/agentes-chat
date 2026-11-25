@@ -813,6 +813,87 @@ describe("a plan thinks only for its owner's agents, one account each", () => {
     expect(await row()).toMatchObject({ brain: "model", brainAccountId: null });
   });
 
+  test("account-only brains (antigravity, grok) reject account: null or missing account on switch", async () => {
+    const { fx, deps, machineId, row } = await world();
+    await fx.db
+      .update(schema.machines)
+      .set({
+        os: "linux",
+        protocol: ANTIGRAVITY_MAC_PROTOCOL,
+        executors: {
+          claude: { version: "2.1.0" },
+          antigravity: { version: "1.5.13" },
+          grok: { version: "1.0.89" },
+          detectedAt: "2026-11-20",
+        },
+      })
+      .where(eq(schema.machines.id, machineId));
+    const GEMINI = "0193eeee-0000-7000-8000-000000000099";
+    await fx.db.insert(schema.machineAccounts).values({
+      id: GEMINI,
+      orgId: fx.org.id,
+      machineId,
+      kind: "antigravity",
+      label: "Gemini",
+      status: "active",
+      shared: true,
+      createdBy: fx.owner.id,
+    });
+    // Explicit account: null is rejected even for the computer's pairer.
+    const explicitNull = await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, {
+      brain: "antigravity",
+      account: null,
+    }).catch((e) => e);
+    expect(explicitNull).toBeInstanceOf(ValidationError);
+    expect(explicitNull.code).toBe("account.invalid");
+    // Switching onto antigravity/grok without passing an account is also rejected.
+    const omitted = await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, {
+      brain: "antigravity",
+    }).catch((e) => e);
+    expect(omitted).toBeInstanceOf(ValidationError);
+    expect(omitted.code).toBe("account.invalid");
+    const grokNull = await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, {
+      brain: "grok",
+      account: null,
+    }).catch((e) => e);
+    expect(grokNull).toBeInstanceOf(ValidationError);
+    expect(grokNull.code).toBe("account.invalid");
+    // With a connected account, saving succeeds; clearing back to null afterward is rejected.
+    const saved = await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, {
+      brain: "antigravity",
+      account: GEMINI,
+    });
+    expect(saved).toMatchObject({ brain: "antigravity", account: GEMINI });
+    expect(await row()).toMatchObject({ brain: "antigravity", brainAccountId: GEMINI });
+    const cleared = await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, { account: null }).catch((e) => e);
+    expect(cleared).toBeInstanceOf(ValidationError);
+    expect(cleared.code).toBe("account.invalid");
+    // Even if an agent row already has brain='antigravity' and brainAccountId=null, saving only model/effort without
+    // an account must still be rejected instead of keeping brainAccountId=null.
+    await fx.db
+      .update(schema.agents)
+      .set({ brain: "antigravity", brainAccountId: null })
+      .where(eq(schema.agents.id, fx.agent.id));
+    const modelOnly = await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, {
+      brain: "antigravity",
+      model: "gemini-4-neon-high",
+    }).catch((e) => e);
+    expect(modelOnly).toBeInstanceOf(ValidationError);
+    expect(modelOnly.code).toBe("account.invalid");
+  });
+
+  test("an account-only brain's account goes: its agent goes to the API, even on its owner's own computer", async () => {
+    const { fx, account, row } = await world();
+    await account(ANAS, fx.owner.id);
+    await fx.db.update(schema.machineAccounts).set({ kind: "grok" }).where(eq(schema.machineAccounts.id, ANAS));
+    await fx.db
+      .update(schema.agents)
+      .set({ brain: "grok", brainAccountId: ANAS })
+      .where(eq(schema.agents.id, fx.agent.id));
+    expect(await releaseAgents(fx.db, fx.org.id, [ANAS])).toEqual([fx.agent.id]);
+    expect(await row()).toMatchObject({ brain: "model", brainAccountId: null });
+  });
+
   test("a new owner who doesn't own the plan sends the agent to the API (audited); one who does answers alone", async () => {
     const { fx, bia, account, row, audits } = await world();
     await account(ANAS, fx.owner.id);
