@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 80;
+export const MACHINE_PROTOCOL_VERSION = 81;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -2531,7 +2531,7 @@ export const AGY_COPY_PROTOCOL = 76;
 export const TASK_ROOM_PROTOCOL = 78;
 
 /**
- * Protocol 80 (ADR 0237): a person's computer may lend its internet connection to its workspace's own computer.
+ * Protocol 81 (ADR 0237): a person's computer may lend its internet connection to its workspace's own computer.
  * `egress.dial` asks it to open one TCP connection to `host`:`port` (`EGRESS_SHARE`'s ports only, a name it resolves
  * itself or a public address, never one on its own network) and to carry its bytes on a data socket it dials for
  * `streamId`; it answers once that socket is ready. A data socket's `stream.hello` may carry `egress`: the workspace's
@@ -2539,7 +2539,7 @@ export const TASK_ROOM_PROTOCOL = 78;
  * carries it, or closes the socket (`STREAM_CLOSE.unreachable`: none is lent now; `refused`: that destination isn't
  * carried). The server asks no older runner, and `welcome.egressRelay` goes to the workspace's computer alone.
  */
-export const EGRESS_SHARE_PROTOCOL = 80;
+export const EGRESS_SHARE_PROTOCOL = 81;
 /** What a lent connection carries, at most. */
 export const EGRESS_SHARE = {
   /** The web only: anything else leaves the workspace's computer its usual way. */
