@@ -232,13 +232,21 @@ describe("Chip", () => {
     expect(chip?.textContent).toBe("Issue: ACME-177");
   });
 
-  test("22 high with 12px words; an icon's side pads 6, its ink 2 into its box, so the ink reads 8 on both sides", async () => {
+  test("22 high with 12px words, 8 on both sides, an icon's too, the words' capitals where the icon centres", async () => {
+    const { container } = render(<Chip icon="check">Done</Chip>);
+    const chip = container.querySelector(".ac-chip");
+    expect([...(chip?.children ?? [])].map((c) => c.getAttribute("class"))).toEqual(["ac-icon", "ac-chip__text"]);
     const css = await Bun.file(new URL("../src/styles/components.css", import.meta.url).pathname).text();
     const rule = (selector: string) => css.split(`\n${selector} {`)[1]?.split("}")[0] ?? "";
     expect(rule(".ac-chip")).toContain("height: 22px;");
     expect(rule(".ac-chip")).toContain("padding: 0 var(--space-2);");
     expect(rule(".ac-chip")).toContain("font-size: 12px;");
-    expect(rule(".ac-chip:has(> .ac-icon:first-child)")).toContain("padding-inline-start: 6px;");
+    // No side of its own for an icon.
+    expect(css).not.toMatch(/\.ac-chip:has\(> \.ac-icon[^{]*\{[^}]*padding/);
+    // Trimmed to the capitals and padded back to the line, only where text-box is known: elsewhere nothing changes.
+    expect(css).toMatch(
+      /@supports \(text-box: trim-both cap alphabetic\) \{\s*\.ac-chip__text \{\s*text-box: trim-both cap alphabetic;\s*padding-block: calc\(\(1lh - 1cap\) \/ 2\);/,
+    );
   });
 });
 

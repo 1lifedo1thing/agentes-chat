@@ -2124,10 +2124,6 @@ html:not([data-pointer]) .ac-eventpill__action:focus-visible {
   height: 14px;
   margin: 0;
 }
-/* An icon's ink starts about 2px into its box: on its side the chip pads 6, so the ink reads 8 on both sides. */
-.ac-chip:has(> .ac-icon:first-child) {
-  padding-inline-start: 6px;
-}
 .ac-chip > :not(.ac-chip__text) {
   flex: none;
 }
@@ -2135,6 +2131,16 @@ html:not([data-pointer]) .ac-eventpill__action:focus-visible {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* The words centre their capitals where the icon centres, not their line, whose baseline each platform rounds to a
+   whole pixel its own way: their box is trimmed to the capitals, then padded back to the line, so the chip keeps its
+   size and the clip keeps the descenders. Source Sans 3's cap height stands 0.045em above its H, so its capitals sit
+   0.27px under a 12px chip's middle. Without text-box, nothing changes. */
+@supports (text-box: trim-both cap alphabetic) {
+  .ac-chip__text {
+    text-box: trim-both cap alphabetic;
+    padding-block: calc((1lh - 1cap) / 2);
+  }
 }
 /* Words with no `.ac-chip__text` have nothing to shrink into: the chip keeps their width, or they'd eat its padding. */
 .ac-chip:not(:has(> .ac-chip__text)) {
