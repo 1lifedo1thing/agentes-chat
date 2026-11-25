@@ -8,11 +8,14 @@
 //! WebView2's browser process and everything under it (renderers, GPU, utilities), their private bytes; every web view
 //! of the app shares them. Linux: WebKitGTK's web processes under the app, their anonymous resident memory; each web
 //! view of the app has its own (the popover's and Preferences' too).
+//!
+//! The bench (bench.rs) measures the whole app instead (`tree`): its own process, and every process working for it
+//! with their memory counted the same way and their CPU time.
 
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use tauri::AppHandle;
@@ -28,6 +31,11 @@ static OPENING_TOLD: AtomicBool = AtomicBool::new(false);
 
 pub fn started() {
     STARTED.get_or_init(Instant::now);
+}
+
+/// How long ago the process started (the top of `run`).
+pub fn since_start() -> Option<Duration> {
+    STARTED.get().map(Instant::elapsed)
 }
 
 /// The main window opens now, as the app starts.
@@ -105,15 +113,15 @@ struct Proc {
     bytes: Option<u64>,
 }
 
-/// The memory (`bytes_of`, asked of those alone) of each process `picked` finds under `root`, at any depth, with
-/// everything under it; None when there is none, or none could be read.
+/// What `value_of` says (memory, CPU time; asked of those alone) of each process `picked` finds under `root`, at any
+/// depth, with everything under it, summed; None when there is none, or none could be read.
 // ponytail: each step scans the whole list (a few hundred processes); a map of children if it ever runs hot.
 #[cfg_attr(target_os = "macos", allow(dead_code))]
-fn tree_bytes(
+fn tree_sum(
     procs: &[Proc],
     root: u32,
     picked: impl Fn(&str) -> bool,
-    bytes_of: impl Fn(&Proc) -> Option<u64>,
+    value_of: impl Fn(&Proc) -> Option<u64>,
 ) -> Option<u64> {
     let mut total: Option<u64> = None;
     // A parent's id that came back on a new process can't loop the walk, nor count a process twice.
@@ -126,14 +134,67 @@ fn tree_bytes(
             }
             let counted = inside || picked(&child.name);
             if counted {
-                if let Some(bytes) = bytes_of(child) {
-                    total = Some(total.unwrap_or(0).saturating_add(bytes));
+                if let Some(value) = value_of(child) {
+                    total = Some(total.unwrap_or(0).saturating_add(value));
                 }
             }
             stack.push((child.pid, counted));
         }
     }
     total
+}
+
+/// Some of the app's processes, measured now: their memory (counted as `webview_bytes` counts it on each system) and
+/// the CPU time each used since it started.
+#[derive(Serialize, Clone, Copy, Debug, Default, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Usage {
+    pub bytes: Option<u64>,
+    pub cpu_ms: Option<u64>,
+    pub processes: u64,
+}
+
+/// The app's own process, and the processes working for it: on Windows and Linux every process under it (WebView2's,
+/// WebKitGTK's), on macOS WebKit's processes the system counts against it (its web content, GPU and network
+/// processes: XPC services, never its children).
+#[derive(Serialize, Clone, Copy, Debug, Default, PartialEq)]
+pub struct Tree {
+    pub app: Usage,
+    pub webview: Usage,
+}
+
+/// The whole app, measured now (the bench's samples). Off the main thread: it reads every process's numbers.
+pub fn tree() -> Tree {
+    system::tree()
+}
+
+/// Every process under `root`, at any depth: their memory (`bytes_of`), CPU time (`cpu_ms_of`) and how many there are.
+#[cfg_attr(target_os = "macos", allow(dead_code))]
+fn under(
+    procs: &[Proc],
+    root: u32,
+    bytes_of: impl Fn(&Proc) -> Option<u64>,
+    cpu_ms_of: impl Fn(&Proc) -> Option<u64>,
+) -> Usage {
+    let any = |_: &str| true;
+    Usage {
+        bytes: tree_sum(procs, root, any, bytes_of),
+        cpu_ms: tree_sum(procs, root, any, cpu_ms_of),
+        processes: tree_sum(procs, root, any, |_| Some(1)).unwrap_or(0),
+    }
+}
+
+/// A Linux process's CPU time, user and system, from its `/proc/<pid>/stat` with the kernel's clock ticks per second.
+/// Its name, in parentheses, may hold spaces and parentheses itself: the fields are counted after the last `)`.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+fn stat_cpu_ms(text: &str, ticks_per_second: u64) -> Option<u64> {
+    if ticks_per_second == 0 {
+        return None;
+    }
+    let mut fields = text.get(text.rfind(')')? + 1..)?.split_whitespace().skip(11);
+    let user: u64 = fields.next()?.parse().ok()?;
+    let system: u64 = fields.next()?.parse().ok()?;
+    Some((user + system) * 1000 / ticks_per_second)
 }
 
 /// WebKitGTK's web process as Linux names it: a process's name is cut to 15 characters (`WebKitWebProcess`).
@@ -221,19 +282,83 @@ mod system {
         })
         .ok()?;
         let pid = rx.recv_timeout(WAIT).ok().filter(|&pid| pid > 0)?;
+        rusage(pid).map(|info| info.ri_phys_footprint).filter(|&bytes| bytes > 0)
+    }
+
+    fn rusage(pid: libc::pid_t) -> Option<libc::rusage_info_v2> {
         // SAFETY: plain numbers; all zeros is a valid value of it.
         let mut info: libc::rusage_info_v2 = unsafe { std::mem::zeroed() };
         // SAFETY: a pid, the flavor that matches the buffer, and the buffer itself, written by the call alone.
         let err = unsafe {
             libc::proc_pid_rusage(pid, libc::RUSAGE_INFO_V2, (&mut info as *mut libc::rusage_info_v2).cast())
         };
-        (err == 0 && info.ri_phys_footprint > 0).then_some(info.ri_phys_footprint)
+        (err == 0).then_some(info)
+    }
+
+    #[repr(C)]
+    struct Timebase {
+        numer: u32,
+        denom: u32,
+    }
+
+    extern "C" {
+        fn mach_timebase_info(info: *mut Timebase) -> libc::c_int;
+    }
+
+    /// A process's footprint and CPU time. Its CPU time comes in the machine's own ticks (on Apple silicon not
+    /// nanoseconds: 125/3 of one each).
+    fn usage(pids: &[libc::pid_t]) -> super::Usage {
+        let mut tick = Timebase { numer: 1, denom: 1 };
+        // SAFETY: the struct the call fills.
+        if unsafe { mach_timebase_info(&mut tick) } != 0 || tick.denom == 0 {
+            tick = Timebase { numer: 1, denom: 1 };
+        }
+        let mut usage = super::Usage::default();
+        for info in pids.iter().filter_map(|&pid| rusage(pid)) {
+            let ticks = u128::from(info.ri_user_time) + u128::from(info.ri_system_time);
+            let ms = u64::try_from(ticks * u128::from(tick.numer) / u128::from(tick.denom) / 1_000_000).unwrap_or(u64::MAX);
+            usage.bytes = Some(usage.bytes.unwrap_or(0).saturating_add(info.ri_phys_footprint));
+            usage.cpu_ms = Some(usage.cpu_ms.unwrap_or(0).saturating_add(ms));
+            usage.processes += 1;
+        }
+        usage
+    }
+
+    /// The processes the system counts against `app` (as Activity Monitor groups them), the app aside: WebKit's,
+    /// which launchd starts for it. The call that says it isn't public, so it is looked up as the app runs: without
+    /// it, none.
+    fn working_for(app: libc::pid_t) -> Vec<libc::pid_t> {
+        type Responsible = unsafe extern "C" fn(libc::pid_t) -> libc::pid_t;
+        // SAFETY: a NUL-terminated name, looked up among the images the process already loaded.
+        let found = unsafe { libc::dlsym(libc::RTLD_DEFAULT, c"responsibility_get_pid_responsible_for_pid".as_ptr()) };
+        if found.is_null() {
+            return Vec::new();
+        }
+        // SAFETY: libSystem's function of that name takes a pid and returns one.
+        let responsible: Responsible = unsafe { std::mem::transmute::<*mut libc::c_void, Responsible>(found) };
+        // SAFETY: no buffer: the count alone.
+        let count = unsafe { libc::proc_listallpids(std::ptr::null_mut(), 0) };
+        let Ok(count) = usize::try_from(count) else { return Vec::new() };
+        // Room for processes started between the two calls.
+        let mut pids: Vec<libc::pid_t> = vec![0; count + 64];
+        let bytes = libc::c_int::try_from(std::mem::size_of_val(pids.as_slice())).unwrap_or(0);
+        // SAFETY: a buffer of that many bytes, written by the call alone.
+        let listed = unsafe { libc::proc_listallpids(pids.as_mut_ptr().cast(), bytes) };
+        pids.truncate(usize::try_from(listed).unwrap_or(0));
+        // SAFETY: a plain pid; one that ended meanwhile is answered with no process.
+        pids.retain(|&pid| pid > 0 && pid != app && unsafe { responsible(pid) } == app);
+        pids
+    }
+
+    pub fn tree() -> super::Tree {
+        let app = std::process::id() as libc::pid_t;
+        super::Tree { app: usage(&[app]), webview: usage(&working_for(app)) }
     }
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 mod system {
-    use super::{meminfo_total, status_of, tree_bytes, WEBKIT_WEB_PROCESS};
+    use super::{meminfo_total, stat_cpu_ms, status_of, tree_sum, under, Proc, WEBKIT_WEB_PROCESS};
     use tauri::AppHandle;
 
     pub fn os_version() -> Option<String> {
@@ -246,8 +371,8 @@ mod system {
         meminfo_total(&std::fs::read_to_string("/proc/meminfo").ok()?)
     }
 
-    pub fn webview_bytes(_app: &AppHandle) -> Option<u64> {
-        let procs: Vec<_> = std::fs::read_dir("/proc")
+    fn processes() -> Option<Vec<Proc>> {
+        let procs = std::fs::read_dir("/proc")
             .ok()?
             .flatten()
             .filter_map(|entry| {
@@ -255,13 +380,30 @@ mod system {
                 status_of(pid, &std::fs::read_to_string(entry.path().join("status")).ok()?)
             })
             .collect();
-        tree_bytes(&procs, std::process::id(), |name| name.starts_with(WEBKIT_WEB_PROCESS), |p| p.bytes)
+        Some(procs)
+    }
+
+    pub fn webview_bytes(_app: &AppHandle) -> Option<u64> {
+        tree_sum(&processes()?, std::process::id(), |name| name.starts_with(WEBKIT_WEB_PROCESS), |p| p.bytes)
+    }
+
+    pub fn tree() -> super::Tree {
+        let me = std::process::id();
+        let procs = processes().unwrap_or_default();
+        // SAFETY: a plain query of a constant.
+        let hz = u64::try_from(unsafe { libc::sysconf(libc::_SC_CLK_TCK) }).unwrap_or(0);
+        let cpu_ms = |pid: u32| stat_cpu_ms(&std::fs::read_to_string(format!("/proc/{pid}/stat")).ok()?, hz);
+        let bytes = procs.iter().find(|p| p.pid == me).and_then(|p| p.bytes);
+        super::Tree {
+            app: super::Usage { bytes, cpu_ms: cpu_ms(me), processes: 1 },
+            webview: under(&procs, me, |p| p.bytes, |p| cpu_ms(p.pid)),
+        }
     }
 }
 
 #[cfg(target_os = "windows")]
 mod system {
-    use super::{tree_bytes, Proc};
+    use super::{tree_sum, under, Proc};
     use std::ffi::c_void;
     use tauri::AppHandle;
 
@@ -323,6 +465,20 @@ mod system {
         csd_version: [u16; 128],
     }
 
+    /// A time in 100-nanosecond units, in two halves.
+    #[repr(C)]
+    #[derive(Default)]
+    struct FileTime {
+        low: u32,
+        high: u32,
+    }
+
+    impl FileTime {
+        fn ticks(&self) -> u64 {
+            (u64::from(self.high) << 32) | u64::from(self.low)
+        }
+    }
+
     #[link(name = "kernel32")]
     extern "system" {
         fn CreateToolhelp32Snapshot(flags: u32, process_id: u32) -> *mut c_void;
@@ -330,6 +486,13 @@ mod system {
         fn Process32NextW(snapshot: *mut c_void, entry: *mut ProcessEntry32W) -> i32;
         fn OpenProcess(access: u32, inherit: i32, process_id: u32) -> *mut c_void;
         fn K32GetProcessMemoryInfo(process: *mut c_void, counters: *mut ProcessMemoryCountersEx, cb: u32) -> i32;
+        fn GetProcessTimes(
+            process: *mut c_void,
+            creation: *mut FileTime,
+            exit: *mut FileTime,
+            kernel: *mut FileTime,
+            user: *mut FileTime,
+        ) -> i32;
         fn GlobalMemoryStatusEx(status: *mut MemoryStatusEx) -> i32;
         fn CloseHandle(handle: *mut c_void) -> i32;
     }
@@ -379,7 +542,38 @@ mod system {
         })
     }
 
+    /// A process's CPU time, kernel and user, when it lets the app ask.
+    fn cpu_ms(process_id: u32) -> Option<u64> {
+        // SAFETY: a process opened for its times alone, read into the structs given, closed once.
+        unsafe {
+            let process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, process_id);
+            if process.is_null() {
+                return None;
+            }
+            let mut times: [FileTime; 4] = Default::default();
+            let [created, ended, kernel, user] = &mut times;
+            let ok = GetProcessTimes(process, created, ended, kernel, user) != 0;
+            CloseHandle(process);
+            ok.then(|| (kernel.ticks() + user.ticks()) / 10_000)
+        }
+    }
+
+    pub fn tree() -> super::Tree {
+        let me = std::process::id();
+        let procs = processes().unwrap_or_default();
+        super::Tree {
+            app: super::Usage { bytes: private_bytes(me), cpu_ms: cpu_ms(me), processes: 1 },
+            webview: under(&procs, me, |p| private_bytes(p.pid), |p| cpu_ms(p.pid)),
+        }
+    }
+
     pub fn webview_bytes(_app: &AppHandle) -> Option<u64> {
+        // Only the processes under the app are asked their memory, never another app's WebView2.
+        let webview2 = |name: &str| name.eq_ignore_ascii_case(WEBVIEW2);
+        tree_sum(&processes()?, std::process::id(), webview2, |p| private_bytes(p.pid))
+    }
+
+    fn processes() -> Option<Vec<Proc>> {
         let mut procs = Vec::new();
         // SAFETY: a snapshot of the processes, walked with an entry of the size it requires, closed once.
         unsafe {
@@ -398,8 +592,7 @@ mod system {
             }
             CloseHandle(snapshot);
         }
-        // Only the processes under the app are asked their memory, never another app's WebView2.
-        tree_bytes(&procs, std::process::id(), |name| name.eq_ignore_ascii_case(WEBVIEW2), |p| private_bytes(p.pid))
+        Some(procs)
     }
 }
 
@@ -434,12 +627,12 @@ mod tests {
             asked.borrow_mut().push(p.pid);
             p.bytes
         };
-        assert_eq!(tree_bytes(&procs, app, webview2, bytes_of), Some((60 + 210 + 90 + 5) << 20));
+        assert_eq!(tree_sum(&procs, app, webview2, bytes_of), Some((60 + 210 + 90 + 5) << 20));
         // Only the app's own web view's processes are asked: never the app's other children, nor another app's.
         asked.borrow_mut().sort_unstable();
         assert_eq!(*asked.borrow(), [200, 201, 202, 203]);
-        assert_eq!(tree_bytes(&procs, 300, webview2, |p| p.bytes), None, "none under it");
-        assert_eq!(tree_bytes(&procs, 999, webview2, |p| p.bytes), None, "an app that isn't there");
+        assert_eq!(tree_sum(&procs, 300, webview2, |p| p.bytes), None, "none under it");
+        assert_eq!(tree_sum(&procs, 999, webview2, |p| p.bytes), None, "an app that isn't there");
     }
 
     #[test]
@@ -454,10 +647,48 @@ mod tests {
             process(21, 20, "x", 1),
         ];
         let webkit = |name: &str| name.starts_with(WEBKIT_WEB_PROCESS);
-        assert_eq!(tree_bytes(&procs, 1, webkit, |p| p.bytes), Some(150 << 20));
-        assert_eq!(tree_bytes(&procs, 21, webkit, |p| p.bytes), Some(7 << 20));
+        assert_eq!(tree_sum(&procs, 1, webkit, |p| p.bytes), Some(150 << 20));
+        assert_eq!(tree_sum(&procs, 21, webkit, |p| p.bytes), Some(7 << 20));
         let unreadable = [Proc { pid: 12, ppid: 1, name: "WebKitWebProces".into(), bytes: None }];
-        assert_eq!(tree_bytes(&unreadable, 1, webkit, |p| p.bytes), None);
+        assert_eq!(tree_sum(&unreadable, 1, webkit, |p| p.bytes), None);
+    }
+
+    #[test]
+    fn the_whole_app_is_everything_under_it_whatever_its_name() {
+        let app = 100;
+        let procs = [
+            process(app, 1, "agentes-chat", 80),
+            process(10, app, "bwrap", 1),
+            process(11, 10, "WebKitWebProces", 150),
+            process(12, app, "WebKitNetworkPr", 20),
+            Proc { pid: 13, ppid: app, name: "WebKitWebProces".into(), bytes: None },
+            process(400, 1, "WebKitWebProces", 900),
+        ];
+        let cpu_ms = |p: &Proc| Some(u64::from(p.pid));
+        let usage = under(&procs, app, |p| p.bytes, cpu_ms);
+        assert_eq!(usage, Usage { bytes: Some((1 + 150 + 20) << 20), cpu_ms: Some(10 + 11 + 12 + 13), processes: 4 });
+        assert_eq!(under(&procs, 999, |p| p.bytes, cpu_ms), Usage::default(), "an app that isn't there");
+    }
+
+    #[test]
+    fn this_process_measures_itself() {
+        let busy: u64 = (0..2_000_000u64).map(std::hint::black_box).sum();
+        assert!(busy > 0);
+        let app = tree().app;
+        assert_eq!(app.processes, 1);
+        assert!(app.bytes.is_some_and(|b| b > 1 << 20), "its own memory: {app:?}");
+        assert!(app.cpu_ms.is_some(), "its own CPU time: {app:?}");
+    }
+
+    #[test]
+    fn a_linux_processs_cpu_time_from_its_stat_file() {
+        // Its name may hold spaces and parentheses: utime 1500 and stime 500 ticks, at 100 a second.
+        let stat = "4242 (Web (Content) x) S 4100 4242 4100 0 -1 4194560 1200 0 3 0 1500 500 0 0 20 0 9 0 812 0 0";
+        assert_eq!(stat_cpu_ms(stat, 100), Some(20_000));
+        assert_eq!(stat_cpu_ms(stat, 250), Some(8_000));
+        assert_eq!(stat_cpu_ms(stat, 0), None);
+        assert_eq!(stat_cpu_ms("4242 (cut) S 1 2 3", 100), None);
+        assert_eq!(stat_cpu_ms("no name here", 100), None);
     }
 
     #[test]

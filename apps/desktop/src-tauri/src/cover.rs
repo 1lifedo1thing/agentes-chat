@@ -138,6 +138,7 @@ pub fn hide(app: &AppHandle) {
             }
             shown.covering = false;
         }
+        crate::bench::cover_gone();
         let Some(cover) = cover else { return };
         let _ = cover.hide();
         // Hiding a web view lays the window out anew, the buttons back at the title bar's top.
@@ -192,6 +193,7 @@ pub fn page_ready(app: AppHandle, webview: tauri::Webview, site: Option<bool>) -
     }
     if site == Some(true) {
         crate::vitals::painted();
+        crate::bench::painted(&app, &webview);
     }
     hide(&app);
     Ok(())
