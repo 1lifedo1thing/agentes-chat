@@ -343,7 +343,10 @@
       "codeSessions.gitTab.label",
       "codeSessions.gitTab.commits",
       "codeTerminal.label",
-      "codeSessions.tabs.terminalN"
+      "codeSessions.tabs.terminalN",
+      "shell.skills",
+      "skills.page.colSkill",
+      "skills.page.inRepo"
     ],
     "es": [
       "aiHub.modes.roles",
@@ -1665,7 +1668,11 @@
       "codeSessions.gitTab.commits",
       "cliTools.progress.subagent",
       "codeTerminal.label",
-      "codeSessions.tabs.terminalN"
+      "codeSessions.tabs.terminalN",
+      "shell.skills",
+      "skills.page.colSkill",
+      "skills.one.name",
+      "skills.one.inChannel"
     ],
     "it": [
       "agentPage.facts.budget",
@@ -2069,7 +2076,10 @@
       "codeSessions.gitTab.label",
       "codeSessions.files.count",
       "cliTools.files",
-      "connectors.store.account"
+      "connectors.store.account",
+      "skills.page.colSkill",
+      "skills.one.inChannel",
+      "skills.page.inRepo"
     ],
     "nl": [
       "agentPage.facts.budget",
@@ -2753,7 +2763,11 @@
       "codeTerminal.label",
       "codeSessions.tabs.terminalN",
       "connectors.store.agents",
-      "connectors.store.account"
+      "connectors.store.account",
+      "shell.skills",
+      "skills.page.colSkill",
+      "skills.one.inChannel",
+      "skills.page.inRepo"
     ],
     "ja": [
       "live.sheet.args.k",
@@ -3615,7 +3629,8 @@
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
       "codeTerminal.label",
-      "codeSessions.tabs.terminalN"
+      "codeSessions.tabs.terminalN",
+      "skills.page.colSkill"
     ],
     "tr": [
       "live.canvas.inspector.model",

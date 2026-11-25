@@ -304,7 +304,7 @@ export function SkillsPage({
   ];
 
   return (
-    <div className="page page--wide sk-page">
+    <div className="page page--full sk-page">
       <PageHeader
         title={t("skills.title")}
         meta={

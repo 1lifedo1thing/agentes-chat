@@ -303,7 +303,7 @@ export interface SkillView {
   } | null;
   /** "Agentes melhoram as skills sozinhos" set for this skill; null: the workspace's setting. */
   agentsImprove: boolean | null;
-  /** Its name for people, written when installed or made (`describeSkill`); null until then. */
+  /** A name a person gave it (renaming it, or the draft of one taught in words); null: its own `name`. */
   title: string | null;
   /** When to use it, one line for people; null until written. */
   summary: string | null;

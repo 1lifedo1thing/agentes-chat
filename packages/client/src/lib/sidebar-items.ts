@@ -30,8 +30,7 @@ export const SIDEBAR_DEFAULTS: Record<SidebarItem, SidebarPlace> = {
   routines: "more",
   calendar: "more",
   team: "always",
-  // What the team knows (its skills): a page of its own, in sight.
-  skills: "always",
+  skills: "more",
   dashboards: "more",
   taskManager: "more",
   // Code sessions (ADR 0215): in More, and only where it has anything (`offersCode`).

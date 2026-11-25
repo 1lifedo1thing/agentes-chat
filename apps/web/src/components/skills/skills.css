@@ -313,9 +313,10 @@ html:not([data-pointer]) .sk-row__link:focus-visible::after {
 .sk-one {
   gap: 20px;
 }
+/* Top-aligned: the icon and the actions sit on the title's first line, whatever the line under it wraps to. */
 .sk-one__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
 }
 .sk-one__titles {
@@ -329,17 +330,33 @@ html:not([data-pointer]) .sk-row__link:focus-visible::after {
   color: var(--ink);
   text-wrap: balance;
 }
-.sk-one__titles p {
+/* When to use it, two lines at most; "See more" under it opens the rest. */
+.sk-one__line {
   margin: 2px 0 0;
   font-size: 16px;
   line-height: 23px;
   color: var(--ink-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
+.sk-one__more {
+  margin-top: 4px;
+}
+.sk-one__about {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+/* Centred on the title's 34px first line. */
 .sk-one__acts {
   display: flex;
   align-items: center;
   gap: 8px;
   flex: none;
+  margin-top: calc((34px - var(--control-h-md)) / 2);
 }
 .sk-strip {
   margin: 0;

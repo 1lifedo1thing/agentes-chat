@@ -124,7 +124,7 @@ const Skill = z
     }),
     title: z.string().nullable().openapi({
       description:
-        "Its name for people, written by the workspace's summary model when it is installed or made, in the language of who installed it. Null until written: show `name`.",
+        "A name a person gave it (renaming it, or the draft of one taught in words). Null: show its own `name`.",
     }),
     summary: z
       .string()

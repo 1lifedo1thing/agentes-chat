@@ -34,7 +34,7 @@ import {
   MenuSeparator,
 } from "@agenteschat/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { AgentSwitches } from "@/components/AgentSwitches";
@@ -50,6 +50,46 @@ import "./skills.css";
 
 /** How many files its "Also uses" names before "and N more". */
 const FILES_NAMED = 4;
+
+/** When to use it, two lines at most; "See more" opens all it says of that, in its own words (its description). */
+function SkillAbout({ s, title }: { s: SkillDetail; title: string }) {
+  const { t } = useTranslation();
+  const line = skillLine(s);
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [cut, setCut] = useState(false);
+  const [open, setOpen] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    // Measured again when the line changes (a new version's).
+    if (!el || !line) return;
+    const check = () => setCut(el.scrollHeight > el.clientHeight + 1);
+    check();
+    if (typeof ResizeObserver === "undefined") return;
+    const watch = new ResizeObserver(check);
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, [line]);
+  if (!line) return null;
+  const plain = (text: string) => text.replace(/\s+/g, " ").replace(/\.$/, "").trim();
+  const more = cut || plain(s.description) !== plain(line);
+  return (
+    <>
+      <p ref={ref} className="sk-one__line">
+        {line}
+      </p>
+      {more && (
+        <Button variant="link" className="sk-one__more" onClick={() => setOpen(true)}>
+          {t("skills.one.readMore")}
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen} title={title} closeLabel={t("common.close")} width={560}>
+        <DialogBody>
+          <p className="sk-one__about">{s.description}</p>
+        </DialogBody>
+      </Dialog>
+    </>
+  );
+}
 
 /**
  * A skill's page: what it teaches (its steps, the files it uses), who knows it and how often they used it this week,
@@ -85,7 +125,7 @@ export function SkillPage({ id }: { id: string }) {
   );
   if (!s)
     return (
-      <div className="page page--wide sk-one">
+      <div className="page page--full sk-one">
         {back}
         {skill.isError ? (
           <EmptyState size="page" title={t("skills.one.goneTitle")}>
@@ -270,13 +310,13 @@ export function SkillPage({ id }: { id: string }) {
             : t("skills.one.madeHere");
 
   return (
-    <div className="page page--wide sk-one">
+    <div className="page page--full sk-one">
       {back}
       <header className="sk-one__head">
         <SkillMark skill={s} size="xl" />
         <div className="sk-one__titles">
           <h1>{title}</h1>
-          <p>{skillLine(s)}</p>
+          <SkillAbout s={s} title={title} />
         </div>
         <div className="sk-one__acts">
           {(manages || can(org, "manage_agents")) && (
@@ -292,7 +332,7 @@ export function SkillPage({ id }: { id: string }) {
                 <MenuItem icon="edit" onSelect={() => setEditing(true)}>
                   {t("skills.one.editText")}
                 </MenuItem>
-                <MenuItem icon="page" onSelect={() => setNaming(s.title ?? "")}>
+                <MenuItem icon="page" onSelect={() => setNaming(title)}>
                   {t("skills.one.rename")}
                 </MenuItem>
                 {fromLink && (
@@ -304,7 +344,6 @@ export function SkillPage({ id }: { id: string }) {
                       icon="clock"
                       checked={s.autoUpdate ?? false}
                       onCheckedChange={(on) => action.mutate({ type: "update", id: s.id, patch: { autoUpdate: on } })}
-                      description={t("skills.autoUpdateHelp")}
                     >
                       {t("skills.autoUpdate")}
                     </MenuCheckboxItem>
@@ -619,7 +658,7 @@ export function SkillPage({ id }: { id: string }) {
             }}
           >
             <DialogBody>
-              <Field label={t("skills.one.name")} id="sk-rename" example={t("skills.one.nameHelp")}>
+              <Field label={t("skills.one.name")} id="sk-rename" example={t("skills.one.nameHelp", { name: s.name })}>
                 <Input value={naming} onChange={(e) => setNaming(e.target.value)} maxLength={60} />
               </Field>
             </DialogBody>
