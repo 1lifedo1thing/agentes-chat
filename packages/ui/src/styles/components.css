@@ -2135,11 +2135,14 @@ html:not([data-pointer]) .ac-eventpill__action:focus-visible {
 /* The words centre their capitals where the icon centres, not their line, whose baseline each platform rounds to a
    whole pixel its own way: their box is trimmed to the capitals, then padded back to the line, so the chip keeps its
    size and the clip keeps the descenders. Source Sans 3's cap height stands 0.045em above its H, so its capitals sit
-   0.27px under a 12px chip's middle. Without text-box, nothing changes. */
+   0.27px under a 12px chip's middle. Without text-box, nothing changes. Every engine had lh before text-box: the
+   inner condition only keeps lh behind its own @supports, as everywhere in the kit. */
 @supports (text-box: trim-both cap alphabetic) {
-  .ac-chip__text {
-    text-box: trim-both cap alphabetic;
-    padding-block: calc((1lh - 1cap) / 2);
+  @supports (top: 1lh) {
+    .ac-chip__text {
+      text-box: trim-both cap alphabetic;
+      padding-block: calc((1lh - 1cap) / 2);
+    }
   }
 }
 /* Words with no `.ac-chip__text` have nothing to shrink into: the chip keeps their width, or they'd eat its padding. */
@@ -13118,6 +13121,15 @@ html:not([data-pointer]) .ac-foldrow__head:focus-visible {
 @supports (top: 1lh) {
   .ac-foldrow__head .ac-chip > .ac-icon {
     translate: 0 calc(0.5lh - var(--cap-mid) - 50%);
+  }
+}
+/* Its words trimmed to their capitals and padded back to the line (`.ac-chip__text`): the first line's capitals sit
+   at its middle, with no --cap-mid to make up. */
+@supports (text-box: trim-both cap alphabetic) {
+  @supports (top: 1lh) {
+    .ac-foldrow__head .ac-chip > .ac-icon {
+      translate: 0 calc(0.5lh - 50%);
+    }
   }
 }
 .ac-foldrow__head .ac-chip__text {

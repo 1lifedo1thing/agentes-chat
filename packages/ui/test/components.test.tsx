@@ -245,7 +245,7 @@ describe("Chip", () => {
     expect(css).not.toMatch(/\.ac-chip:has\(> \.ac-icon[^{]*\{[^}]*padding/);
     // Trimmed to the capitals and padded back to the line, only where text-box is known: elsewhere nothing changes.
     expect(css).toMatch(
-      /@supports \(text-box: trim-both cap alphabetic\) \{\s*\.ac-chip__text \{\s*text-box: trim-both cap alphabetic;\s*padding-block: calc\(\(1lh - 1cap\) \/ 2\);/,
+      /@supports \(text-box: trim-both cap alphabetic\) \{\s*@supports \(top: 1lh\) \{\s*\.ac-chip__text \{\s*text-box: trim-both cap alphabetic;\s*padding-block: calc\(\(1lh - 1cap\) \/ 2\);/,
     );
   });
 });
