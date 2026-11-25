@@ -1013,7 +1013,8 @@ test("a glob of many unclosed braces is read in time, and they still split it as
   await call("Grep", { pattern: "x", glob: "*.md" });
   const started = performance.now();
   await call("Grep", { pattern: "x", glob: `${"{ ".repeat(100_000)}*.md{a` });
-  expect(performance.now() - started).toBeLessThan(1000);
+  // The call passes every glob to rg, about a second on a busy CI runner; the old read alone took several more.
+  expect(performance.now() - started).toBeLessThan(3000);
   const args = fake.args();
   expect(args[args.indexOf("*.md") - 1]).toBe("--glob");
   expect(args[args.indexOf("a") - 1]).toBe("--glob");

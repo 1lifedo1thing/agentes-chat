@@ -22492,6 +22492,92 @@
     "settingsText": "Invia i dettagli tecnici al team di agentes.chat."
   },
   "live": {
+    "type": {
+      "font": "Carattere",
+      "search": "Cerca carattere",
+      "noResults": "Nessun carattere con questo nome",
+      "list": "Caratteri",
+      "groups": {
+        "slides": "In questa presentazione",
+        "canvas": "In questa lavagna",
+        "document": "In questo documento",
+        "company": "Della tua azienda",
+        "sans": "Senza grazie",
+        "serif": "Con grazie",
+        "display": "Per i titoli",
+        "mono": "Monospaziati",
+        "handwriting": "Calligrafiche"
+      },
+      "headings": "Titoli",
+      "body": "Testo",
+      "fromDrive": "Dal Drive",
+      "ownFont": "Carattere del file",
+      "fileFonts": {
+        "slides": "Caratteri della presentazione",
+        "document": "Caratteri del documento"
+      },
+      "fileFontsNote": "Valgono per tutto il file. Un testo con un carattere suo lo mantiene.",
+      "headingFont": "Carattere dei titoli",
+      "bodyFont": "Carattere del testo",
+      "bring": "Porta un carattere dal Drive…",
+      "bringButton": "Porta dal Drive",
+      "bringTitle": "Porta un carattere dal Drive",
+      "bringSearch": "Cerca caratteri nel Drive",
+      "bringEmpty": "Nessun carattere nel Drive. Carica prima un file .ttf, .otf o .woff nel Drive.",
+      "brought": "{{name}} ora è nel file",
+      "notFont": "Questo file non è un carattere. Scegli un .ttf, .otf o .woff.",
+      "done": "Fatto",
+      "text": "Stile del testo",
+      "glyph": "Aa",
+      "weight": "Peso",
+      "weights": {
+        "w300": "Sottile",
+        "w400": "Normale",
+        "w500": "Medio",
+        "w600": "Semigrassetto",
+        "w700": "Grassetto",
+        "w800": "Extragrassetto"
+      },
+      "tracking": "Spaziatura tra le lettere",
+      "trackings": {
+        "tight": "Più stretta",
+        "normal": "Normale",
+        "open": "Ampia",
+        "wide": "Molto ampia"
+      },
+      "lineHeight": "Altezza della riga",
+      "caps": "Tutto maiuscolo",
+      "highlight": "Evidenziatore",
+      "highlights": {
+        "none": "Nessuno",
+        "yellow": "Giallo",
+        "green": "Verde",
+        "blue": "Blu",
+        "pink": "Rosa",
+        "orange": "Arancione"
+      },
+      "effects": "Effetti",
+      "shadow": "Ombra",
+      "shadows": {
+        "none": "Nessuna",
+        "soft": "Morbida",
+        "strong": "Forte"
+      },
+      "border": "Bordo",
+      "dashes": {
+        "solid": "Continuo",
+        "dashed": "Tratteggiato",
+        "dotted": "Punteggiato"
+      },
+      "gradient": "Sfumatura",
+      "gradients": {
+        "none": "Nessuna",
+        "ocean": "Oceano",
+        "graphite": "Grafite",
+        "sunset": "Tramonto",
+        "violet": "Viola"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Diapositive",

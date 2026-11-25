@@ -21056,6 +21056,92 @@
     "settingsText": "技術的な詳細を agentes.chat チームに送信します。"
   },
   "live": {
+    "type": {
+      "font": "フォント",
+      "search": "フォントを検索",
+      "noResults": "その名前のフォントはありません",
+      "list": "フォント",
+      "groups": {
+        "slides": "このプレゼンテーション",
+        "canvas": "このキャンバス",
+        "document": "このドキュメント",
+        "company": "会社のフォント",
+        "sans": "サンセリフ",
+        "serif": "セリフ",
+        "display": "見出し用",
+        "mono": "等幅",
+        "handwriting": "手書き"
+      },
+      "headings": "見出し",
+      "body": "本文",
+      "fromDrive": "Driveから",
+      "ownFont": "ファイルのフォント",
+      "fileFonts": {
+        "slides": "プレゼンテーションのフォント",
+        "document": "ドキュメントのフォント"
+      },
+      "fileFontsNote": "ファイル全体に適用されます。独自のフォントを持つテキストはそのままです。",
+      "headingFont": "見出しのフォント",
+      "bodyFont": "本文のフォント",
+      "bring": "Driveからフォントを取り込む…",
+      "bringButton": "Driveから取り込む",
+      "bringTitle": "Driveからフォントを取り込む",
+      "bringSearch": "Driveのフォントを検索",
+      "bringEmpty": "Driveにフォントがありません。先に .ttf、.otf、.woff のファイルをDriveに追加してください。",
+      "brought": "{{name}} をファイルに追加しました",
+      "notFont": "このファイルはフォントではありません。.ttf、.otf、.woff を選んでください。",
+      "done": "完了",
+      "text": "文字のスタイル",
+      "glyph": "Aa",
+      "weight": "太さ",
+      "weights": {
+        "w300": "細い",
+        "w400": "標準",
+        "w500": "中",
+        "w600": "やや太い",
+        "w700": "太い",
+        "w800": "極太"
+      },
+      "tracking": "文字間隔",
+      "trackings": {
+        "tight": "狭く",
+        "normal": "標準",
+        "open": "広く",
+        "wide": "とても広く"
+      },
+      "lineHeight": "行の高さ",
+      "caps": "すべて大文字",
+      "highlight": "蛍光ペン",
+      "highlights": {
+        "none": "なし",
+        "yellow": "黄",
+        "green": "緑",
+        "blue": "青",
+        "pink": "ピンク",
+        "orange": "オレンジ"
+      },
+      "effects": "効果",
+      "shadow": "影",
+      "shadows": {
+        "none": "なし",
+        "soft": "やわらかい",
+        "strong": "強い"
+      },
+      "border": "枠線",
+      "dashes": {
+        "solid": "実線",
+        "dashed": "破線",
+        "dotted": "点線"
+      },
+      "gradient": "グラデーション",
+      "gradients": {
+        "none": "なし",
+        "ocean": "オーシャン",
+        "graphite": "グラファイト",
+        "sunset": "夕焼け",
+        "violet": "バイオレット"
+      }
+    },
     "slides": {
       "rail": {
         "label": "スライド",
