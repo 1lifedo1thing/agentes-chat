@@ -12101,6 +12101,7 @@
       "private": "비공개 대화"
     },
     "waiting": "대기 중 · 곧 시작",
+    "waitingAfter": "대기 중 · {{name}} 다음",
     "nth": {
       "one": "{{n}}번째",
       "two": "{{n}}번째",

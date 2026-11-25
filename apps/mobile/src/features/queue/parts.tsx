@@ -5,6 +5,7 @@ import {
   fanOutOf,
   fanOutText,
   fanShows,
+  queueWaitText,
   waitingFor,
 } from "@agenteschat/client/lib/computer-queue";
 import { memo } from "react";
@@ -55,7 +56,7 @@ export const QueueWaitRow = memo(function QueueWaitRow({
         <View style={styles.say}>
           <LineIcon name="wait" size={13} color={c.muted} variant="footnote" />
           <Text variant="footnote" tone="muted" style={styles.grow}>
-            {t("queue.waiting")}
+            {queueWaitText(t, queue, w, name)}
           </Text>
         </View>
         <View style={styles.acts}>

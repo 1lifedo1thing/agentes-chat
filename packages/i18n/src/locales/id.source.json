@@ -30729,6 +30729,9 @@
   "queue.waiting": {
     "value": "In line · starts soon"
   },
+  "queue.waitingAfter": {
+    "value": "In line, after {{name}}"
+  },
   "queue.nth.one": {
     "value": "{{n}}st"
   },

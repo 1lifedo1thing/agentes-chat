@@ -13147,6 +13147,7 @@ export const ptBR = {
       private: "uma conversa privada",
     },
     waiting: "Na fila · começa em seguida",
+    waitingAfter: "Na fila, depois de {{name}}",
     nth: {
       one: "{{n}}º",
       two: "{{n}}º",

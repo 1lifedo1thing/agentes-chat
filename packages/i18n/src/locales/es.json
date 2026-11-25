@@ -13007,6 +13007,7 @@
       "private": "una conversación privada"
     },
     "waiting": "En la cola · empieza en breve",
+    "waitingAfter": "En la cola, después de {{name}}",
     "nth": {
       "one": "{{n}}.º",
       "two": "{{n}}.º",

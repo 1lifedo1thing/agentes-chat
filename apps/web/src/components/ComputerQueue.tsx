@@ -19,6 +19,7 @@ import {
   queueStartText,
   queueStatusText,
   queueView,
+  queueWaitText,
   queueWhereText,
   waitingFor,
 } from "@agenteschat/client/lib/computer-queue";
@@ -386,7 +387,7 @@ function QueueWaitTurn({ wait: { agentId, runId }, channelId }: { wait: Conversa
     >
       <p className="cq-turn__say ac-iconline" aria-live="polite">
         <Icon name="waiting" size={14} />
-        <span>{t("queue.waiting")}</span>
+        <span>{queueWaitText(t, queue, w, (id) => dir.agentById.get(id)?.name)}</span>
       </p>
       <span className="cq-turn__acts">
         {first && <Chip className="cq-first">{t("queue.youFirst")}</Chip>}

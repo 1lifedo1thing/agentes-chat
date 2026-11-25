@@ -12613,6 +12613,7 @@
       "private": "eine private Unterhaltung"
     },
     "waiting": "In der Warteschlange · startet gleich",
+    "waitingAfter": "In der Warteschlange, nach {{name}}",
     "nth": {
       "one": "{{n}}.",
       "two": "{{n}}.",

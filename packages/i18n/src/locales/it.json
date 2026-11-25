@@ -13108,6 +13108,7 @@
       "private": "una conversazione privata"
     },
     "waiting": "In coda · inizia a breve",
+    "waitingAfter": "In coda, dopo {{name}}",
     "nth": {
       "one": "{{n}}º",
       "two": "{{n}}º",
