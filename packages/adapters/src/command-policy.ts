@@ -1227,17 +1227,20 @@ const WRAPPER_VALUE = new Set(["-n", "-u", "-C", "-S", "-P", "-w", "-t"]);
 const baseName = (word: string) =>
   (word.split(/[\\/]/).pop() ?? word).toLowerCase().replace(/\.(exe|com|cmd|bat)$/, "");
 
-/** The words with their wrappers (and the wrappers' options and env assignments) left out. */
+/**
+ * The words with their wrappers (and the wrappers' options and env assignments) left out. Read by an index, sliced
+ * once: a slice per wrapper made a long run of them (`nice nice …`) quadratic.
+ */
 function unwrapped(words: string[]): string[] {
-  let argv = words.filter(Boolean);
-  while (argv.length > 1 && WRAPPERS.has(baseName(argv[0] as string))) {
-    argv = argv.slice(1);
-    while (argv.length > 1 && /^-|^[A-Za-z_][A-Za-z0-9_]*=/.test(argv[0] as string)) {
-      const opt = argv[0] as string;
-      argv = argv.slice(WRAPPER_VALUE.has(opt) && argv.length > 2 ? 2 : 1);
+  const argv = words.filter(Boolean);
+  let i = 0;
+  while (argv.length - i > 1 && WRAPPERS.has(baseName(argv[i] as string))) {
+    i++;
+    while (argv.length - i > 1 && /^-|^[A-Za-z_][A-Za-z0-9_]*=/.test(argv[i] as string)) {
+      i += WRAPPER_VALUE.has(argv[i] as string) && argv.length - i > 2 ? 2 : 1;
     }
   }
-  return argv;
+  return argv.slice(i);
 }
 
 /**
@@ -2306,11 +2309,12 @@ const WINDOWS_SHELLS = /^(cmd|powershell|pwsh)$/;
 const windowsText = (program: string, text: string) =>
   text.replaceAll("\\", "/").replace(program === "cmd" ? /[\^']/g : /`/g, "");
 /**
- * Programs that run the rest of their words as a command, after options of their own (`taskset -c 0 cmd`, cmd's
- * `start /b cmd` and `call cmd`, Git Bash's `start cmd` and `winpty cmd`).
+ * Programs that run the rest of their words as a command, after options of their own (`taskset -c 0 cmd`, `flock
+ * file cmd`, `busybox cmd`, cmd's `start /b cmd` and `call cmd`, Git Bash's `start cmd` and `winpty cmd`). The
+ * wrappers `looseArgv` drops are here too, for an option whose value it can't tell (`nice --adjustment 5 cmd`).
  */
 const LAUNCHERS =
-  /^(setsid|nice|ionice|stdbuf|taskset|chrt|unbuffer|caffeinate|systemd-run|xvfb-run|dbus-run-session|parallel|screen|runuser|cgexec|numactl|prlimit|strace|ltrace|setpriv|chpst|start|call|winpty)$/;
+  /^(setsid|nice|nohup|env|time|timeout|xargs|ionice|stdbuf|taskset|chrt|unbuffer|caffeinate|systemd-run|xvfb-run|dbus-run-session|parallel|screen|tmux|runuser|cgexec|numactl|prlimit|strace|ltrace|setpriv|chpst|flock|watch|script|eval|busybox|start|call|winpty)$/;
 /** What runs the text piped into it as commands (`echo '…' | bash`, `… | crontab -`, `… | powershell -Command -`). */
 const FED_COMMANDS = /^(sh|bash|zsh|dash|ksh|fish|at|batch|crontab|cmd|powershell|pwsh)$/;
 const SHELL_KEYWORDS = new Set(["if", "then", "else", "elif", "do", "while", "until", "!", "exec", "time"]);
@@ -2336,6 +2340,37 @@ function looseArgv(words: string[]): string[] {
 }
 
 /**
+ * The commands a command runs after words of its own: a launcher's, where any of its first words but an option may
+ * be where that command starts (`taskset -c 0 bash -c …`), and `find -exec`'s.
+ */
+function launched(words: readonly string[], argv: readonly string[]): Loose[] {
+  const first = words.findIndex((w) => !ASSIGNMENT.test(w));
+  const own = first < 0 ? [] : words.slice(first);
+  const from = [own, argv].find((w) => LAUNCHERS.test(baseName(w[0] ?? ""))) ?? [];
+  const starts: string[][] = [];
+  for (let k = 1; k < from.length && k < 8; k++) if (!(from[k] as string).startsWith("-")) starts.push(from.slice(k));
+  const exec = baseName(argv[0] ?? "") === "find" ? argv.findIndex((a) => /^-(exec|execdir|ok|okdir)$/.test(a)) : -1;
+  if (exec >= 0) starts.push(argv.slice(exec + 1));
+  return starts.map((raw) => ({ raw, argv: looseArgv(raw), writes: [], reads: [] }));
+}
+
+/**
+ * The program that reads a command's quoted script, piped text or heredoc: the shell, interpreter or cron a launcher
+ * runs (`stdbuf -oL bash -c '…'`), else the command itself.
+ */
+const readerOf = (argv: readonly string[], runs: readonly Loose[]) =>
+  [...runs.map((r) => r.argv), argv]
+    .map((a) => baseName(a[0] ?? ""))
+    .find((p) => FED_COMMANDS.test(p) || RUNS_ITS_WORDS.test(p)) ?? baseName(argv[0] ?? "");
+
+/** `readerOf` a command's words as written (`stdbuf -oL bash`, before a heredoc or after a pipe). */
+const readerOfText = (text: string) => {
+  const words = text.split(/\s+/).filter(Boolean);
+  const argv = looseArgv(words);
+  return readerOf(argv, launched(words, argv));
+};
+
+/**
  * A shell text's lines with each heredoc's body taken out, and those bodies with the program that runs them (the
  * one it feeds, or the one that is piped on): a body fed to `cat` or `tee` is a file's text, not commands.
  */
@@ -2350,19 +2385,13 @@ function heredocs(text: string): { shell: string; bodies: Array<{ runner: string
     for (const m of line.matchAll(HEREDOC)) {
       let end = i + 1;
       while (end < lines.length && (lines[end] as string).replace(/^\t+/, "").trimEnd() !== m[2]) end++;
-      const owner = baseName(
-        looseArgv(
-          (
-            line
-              .slice(0, m.index)
-              .split(/[;&|(]/)
-              .pop() ?? ""
-          )
-            .split(/\s+/)
-            .filter(Boolean),
-        )[0] ?? "",
+      const owner = readerOfText(
+        line
+          .slice(0, m.index)
+          .split(/[;&|(]/)
+          .pop() ?? "",
       );
-      const next = baseName(/\|\s*(\S+)/.exec(line.slice((m.index ?? 0) + m[0].length))?.[1] ?? "");
+      const next = readerOfText(/\|([^;&|]*)/.exec(line.slice((m.index ?? 0) + m[0].length))?.[1] ?? "");
       const runs = (p: string) => SHELL_NAMES.test(p) || WINDOWS_SHELLS.test(p) || CODE_RUNNERS.test(p);
       bodies.push({ runner: runs(next) ? next : owner, body: lines.slice(i + 1, end).join("\n") });
       i = end;
@@ -2419,34 +2448,21 @@ function looseScan(text: string, code: boolean, depth: number, out: Loose[]): vo
     if (words.length || writes.length || reads.length) out.push({ raw: words, argv, writes, reads });
     const head = baseName(argv[0] ?? "");
     const rawHead = baseName(words.find((w) => !ASSIGNMENT.test(w)) ?? "");
+    const runs = launched(words, argv);
+    out.push(...runs);
+    for (const a of [argv, ...runs.map((r) => r.argv)]) windowsRun(a);
+    const reader = readerOf(argv, runs);
     // Text piped from `echo` or `printf` into a shell, a code runner or cron: commands too. Only cron's lines open
     // with a schedule (`@reboot`, or five fields) to leave out.
     for (const f of fed) {
-      if (head === "crontab") looseScan(f.replace(/^\s*(@\w+\s+|(\S+\s+){5})/gm, ""), false, depth + 1, out);
-      else if (WINDOWS_SHELLS.test(head)) windows(head, f);
-      else if (FED_COMMANDS.test(head)) looseScan(f, false, depth + 1, out);
-      else if (CODE_RUNNERS.test(head)) looseScan(f, true, depth + 1, out);
+      if (reader === "crontab") looseScan(f.replace(/^\s*(@\w+\s+|(\S+\s+){5})/gm, ""), false, depth + 1, out);
+      else if (WINDOWS_SHELLS.test(reader)) windows(reader, f);
+      else if (FED_COMMANDS.test(reader)) looseScan(f, false, depth + 1, out);
+      else if (CODE_RUNNERS.test(reader)) looseScan(f, true, depth + 1, out);
     }
     fed = sep === "|" && /^(echo|printf)$/.test(head) ? [...quoted, argv.slice(1).join(" ")] : [];
-    if (LAUNCHERS.test(head)) {
-      for (let k = 1; k < argv.length && k < 8; k++) {
-        if ((argv[k] as string).startsWith("-")) continue;
-        const launched = looseArgv(argv.slice(k));
-        out.push({ raw: argv.slice(k), argv: launched, writes: [], reads: [] });
-        windowsRun(launched);
-      }
-    }
-    if (head === "find") {
-      const at = argv.findIndex((a) => /^-(exec|execdir|ok|okdir)$/.test(a));
-      if (at >= 0) {
-        const found = looseArgv(argv.slice(at + 1));
-        out.push({ raw: argv.slice(at + 1), argv: found, writes: [], reads: [] });
-        windowsRun(found);
-      }
-    }
-    windowsRun(argv);
-    if (code || RUNS_ITS_WORDS.test(head) || RUNS_ITS_WORDS.test(rawHead)) {
-      for (const q of quoted) looseScan(q, !code && CODE_RUNNERS.test(head), depth + 1, out);
+    if (code || RUNS_ITS_WORDS.test(reader) || RUNS_ITS_WORDS.test(rawHead)) {
+      for (const q of quoted) looseScan(q, !code && CODE_RUNNERS.test(reader), depth + 1, out);
     }
     words = [];
     quoted = [];
