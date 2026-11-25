@@ -401,6 +401,7 @@ export const RARE_TOOLS: ReadonlySet<string> = new Set([
   "set_reply_style",
   "commit_co_author",
   "add_agent_to_channel",
+  "set_channel_lead",
   "update_thread",
   "cancel_follow_up",
   "offer_install_skill",
@@ -464,7 +465,7 @@ export const isStableTool = (tool: Pick<ToolDefinition, "name" | "scope" | "conn
 /** How a group is named for the model and the judge ("Browser", "GitHub", a connector's label). */
 const GROUP_LABELS: Record<string, string> = {
   [RARE_GROUP]:
-    "More of the conversation (reading a channel or a message by its link, stickers, your status, reply style, threads, adding agents to channels, the agents' directory, your usage, instruction changes, your own settings, the agents' line on commits, feedback on this app)",
+    "More of the conversation (reading a channel or a message by its link, stickers, your status, reply style, threads, adding agents to channels, the agent responsible for a channel, the agents' directory, your usage, instruction changes, your own settings, the agents' line on commits, feedback on this app)",
   drive: "Files (Drive)",
   [DASHBOARD_GROUP]: "Dashboards and widgets (numbers and charts kept up to date, boards to share)",
   [LIVE_FILES_GROUP]: "Live spreadsheets, slides, canvases and documents, and pictures in them",

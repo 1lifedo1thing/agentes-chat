@@ -142,6 +142,12 @@ export function actionTextValues(
     }
     case "channel.agent_added":
       return { agentName: str(p.agentName), channel: str(p.channel) || a.target.title || "" };
+    case "channel.lead_changed": {
+      // Made itself responsible, another agent, or the channel left with none.
+      const channel = str(p.channel) || a.target.title || "";
+      if (!str(p.agentName)) return { channel, context: "none" };
+      return p.self === true ? { channel, context: "self" } : { agentName: str(p.agentName), channel };
+    }
     case "channel.created":
       return { name: str(p.name) || a.target.title || "" };
     case "wiki.page_created":

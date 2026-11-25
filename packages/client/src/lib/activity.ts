@@ -127,6 +127,7 @@ export type ActivityKind =
   | "workingOnWorkspace"
   | "updatingThread"
   | "addingAgent"
+  | "settingChannelLead"
   | "readingConversation"
   | "usingTool";
 
@@ -319,6 +320,7 @@ const BUILTIN: Record<string, ActivityKind> = {
   workspace_action: "workingOnWorkspace",
   update_thread: "updatingThread",
   add_agent_to_channel: "addingAgent",
+  set_channel_lead: "settingChannelLead",
 };
 
 /** A computer brain's own tools (`agent.step`: Claude Code's, Codex's, OpenCode's, Grok Build's), lower-cased. */
