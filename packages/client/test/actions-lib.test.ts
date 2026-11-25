@@ -431,7 +431,7 @@ describe("receipts in rows, one line each", () => {
     );
   });
 
-  test("two of a kind blend for every kind but a workspace change and a renamed conversation, with their real targets", () => {
+  test("two of a kind blend for every kind but a workspace change, a renamed conversation and a channel's lead", () => {
     // Each kind's target as the server writes it: a merge's is its repository, the same for every pull request there.
     const targetOf = (kind: AgentAction["kind"], n: number): AgentAction["target"] => {
       const [group] = kind.split(".");
@@ -469,6 +469,7 @@ describe("receipts in rows, one line each", () => {
       );
     const blended = AGENT_ACTION_KINDS.filter((kind) => receiptRows(two(kind), pt)[0]?.refs);
     expect(AGENT_ACTION_KINDS.filter((kind) => !blended.includes(kind))).toEqual([
+      "channel.lead_changed",
       "thread.renamed",
       "workspace.changed",
     ]);
