@@ -2343,6 +2343,10 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "건너뛰기",
+    "inMenu_other": "메뉴에 새 항목 {{count}}개"
+  },
   "openOnPhone": {
     "qr": "agentes 앱에 로그인하는 QR 코드",
     "making": "코드를 만드는 중…",
@@ -18067,6 +18071,9 @@
       "handOff": "{{from}} → {{to}} 요청",
       "waitResult": "{{name}}이(가) 기다리던 결과가 도착했어요",
       "other": "{{name}}에게 온 알림",
+      "joined_other": "{{who}} 님이 채널에 들어왔습니다",
+      "joinedBy_other": "{{who}} 님이 채널에 들어왔습니다 · {{by}} 님이 추가함",
+      "left": "{{who}} 님이 채널을 나갔습니다",
       "wakeSkipped": "{{name}}의 멘션이 {{agents}}에게 전달되지 않았어요",
       "wakeSkippedAnon": "{{name}}의 멘션이 다른 에이전트에게 닿지 않았어요",
       "wakeSkippedAudience": "{{agents}}은(는) 일부 사람만 부를 수 있는데, {{name}}의 이 작업은 그중 누구에게서도 오지 않았어요. {{agents}}을(를) 부를 수 있는 사람이 요청을 전달할 수 있어요.",

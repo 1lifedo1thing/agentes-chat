@@ -2595,6 +2595,13 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "Пропустить",
+    "inMenu_one": "{{count}} новый в меню",
+    "inMenu_few": "{{count}} новых в меню",
+    "inMenu_many": "{{count}} новых в меню",
+    "inMenu_other": "{{count}} новых в меню"
+  },
   "openOnPhone": {
     "qr": "QR-код для входа в приложение agentes",
     "making": "Создаём код…",
@@ -19818,6 +19825,15 @@
       "handOff": "Запрос от {{from}} к {{to}}",
       "waitResult": "Пришло то, чего ждал {{name}}",
       "other": "Уведомление для {{name}}",
+      "joined_one": "{{who}} присоединился к каналу",
+      "joined_few": "{{who}} присоединились к каналу",
+      "joined_many": "{{who}} присоединились к каналу",
+      "joined_other": "{{who}} присоединились к каналу",
+      "joinedBy_one": "{{who}} присоединился к каналу · добавил(а) {{by}}",
+      "joinedBy_few": "{{who}} присоединились к каналу · добавил(а) {{by}}",
+      "joinedBy_many": "{{who}} присоединились к каналу · добавил(а) {{by}}",
+      "joinedBy_other": "{{who}} присоединились к каналу · добавил(а) {{by}}",
+      "left": "{{who}} покинул(а) канал",
       "wakeSkipped": "Упоминание от {{name}} не дошло до {{agents}}",
       "wakeSkippedAnon": "Упоминание от {{name}} не дошло до другого агента",
       "wakeSkippedAudience": "Вызывать {{agents}} могут только некоторые люди, а эта работа {{name}} пришла не от них. Тот, кто может вызвать {{agents}}, может передать запрос.",

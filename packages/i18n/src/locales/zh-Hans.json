@@ -2343,6 +2343,10 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "跳过",
+    "inMenu_other": "菜单中有 {{count}} 个新项目"
+  },
   "openOnPhone": {
     "qr": "用于登录 agentes 应用的二维码",
     "making": "正在生成二维码…",
@@ -18149,6 +18153,9 @@
       "handOff": "{{from}} 向 {{to}} 提出了请求",
       "waitResult": "{{name}} 等待的结果到了",
       "other": "给 {{name}} 的通知",
+      "joined_other": "{{who}} 加入了频道",
+      "joinedBy_other": "{{who}} 加入了频道 · 由 {{by}} 添加",
+      "left": "{{who}} 离开了频道",
       "wakeSkipped": "{{name}} 的提及没有传达给 {{agents}}",
       "wakeSkippedAnon": "{{name}} 的提及没有叫到其他智能体",
       "wakeSkippedAudience": "只有部分人可以呼叫 {{agents}}，而 {{name}} 的这项工作并非来自其中任何人。可以呼叫 {{agents}} 的人可以把请求转交过去。",

@@ -5434,6 +5434,45 @@ html:not([data-pointer]) .ac-switch:focus-visible {
     pointer-events: none;
   }
 }
+/*
+ * A row that arrives after its list first painted (`data-arriving`: the sidebar's new channels and agents) opens its
+ * room first, so what's under it slides down instead of jumping, then fades in. `--arrive-delay` staggers a team's
+ * rows. Where height can't grow to `auto` (WebKit, the desktop app) it only fades. Reduced motion: a 200ms fade.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-arriving] {
+    transition: opacity var(--dur-base) var(--out) calc(var(--arrive-delay, 0ms) + var(--dur-fast));
+  }
+  @starting-style {
+    [data-arriving] {
+      opacity: 0;
+    }
+  }
+  @supports (interpolate-size: allow-keywords) {
+    [data-arriving] {
+      interpolate-size: allow-keywords;
+      transition:
+        height var(--dur-fast) var(--move) var(--arrive-delay, 0ms),
+        opacity var(--dur-base) var(--out) calc(var(--arrive-delay, 0ms) + var(--dur-fast));
+    }
+    @starting-style {
+      [data-arriving] {
+        height: 0;
+        opacity: 0;
+      }
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-arriving] {
+    transition: opacity 200ms ease-out;
+  }
+  @starting-style {
+    [data-arriving] {
+      opacity: 0;
+    }
+  }
+}
 /* `MorphRoom`: its inner box holds its parts' margins (what is measured is what it takes); empty, it takes no room once
    its room has closed (`data-closing` while it glides shut). */
 .ac-morph__in {

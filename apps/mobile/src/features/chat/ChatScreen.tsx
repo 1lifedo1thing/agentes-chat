@@ -21,6 +21,7 @@ import { OpenHandoffProvider } from "../browser/open";
 import { MissionCardView } from "../missions/cards";
 import { isOpenMission } from "../missions/logic";
 import { RightHandIntro } from "../right-hand/Intro";
+import { TeamFlight } from "../right-hand/TeamFlight";
 import { FirstUse } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId, useMyHandle, useOrgId, useWhen } from "../shared/hooks";
 import { FocusLive } from "../shared/parts";
@@ -925,6 +926,7 @@ function Chat({
               />
             )}
           </DockGestureArea>
+          <TeamFlight barHeight={headerHeight} />
         </View>
       </AskStoreProvider>
     </CodeConversation.Provider>

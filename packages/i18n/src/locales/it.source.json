@@ -6032,6 +6032,15 @@
   "appsDownload.googlePlay": {
     "value": "Google Play"
   },
+  "lodiCursor.skip": {
+    "value": "Skip"
+  },
+  "lodiCursor.inMenu": {
+    "value": {
+      "one": "{{count}} new in the menu",
+      "other": "{{count}} new in the menu"
+    }
+  },
   "openOnPhone.qr": {
     "value": "QR code to sign in to the agentes app"
   },
@@ -45911,6 +45920,21 @@
   },
   "chat.notice.other": {
     "value": "Notice for {{name}}"
+  },
+  "chat.notice.joined": {
+    "value": {
+      "one": "{{who}} joined the channel",
+      "other": "{{who}} joined the channel"
+    }
+  },
+  "chat.notice.joinedBy": {
+    "value": {
+      "one": "{{who}} joined the channel · added by {{by}}",
+      "other": "{{who}} joined the channel · added by {{by}}"
+    }
+  },
+  "chat.notice.left": {
+    "value": "{{who}} left the channel"
   },
   "chat.notice.wakeSkipped": {
     "value": "{{name}}'s mention didn't reach {{agents}}"

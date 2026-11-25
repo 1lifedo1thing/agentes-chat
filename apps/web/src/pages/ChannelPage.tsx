@@ -6023,7 +6023,6 @@ function AddToChannelOffer({ channelId, agentId, onDone }: { channelId: string; 
   const { org } = useOrg();
   const dir = useDirectory(org.id);
   const add = useAddChannelMember(org.id);
-  const toast = useToast();
   const name = dir.agentById.get(agentId)?.name ?? t("channel.unknownAgent");
   const admin = can(org, "manage_channels");
   return (
@@ -6037,12 +6036,8 @@ function AddToChannelOffer({ channelId, agentId, onDone }: { channelId: string; 
           onClick={() =>
             add.mutate(
               { channelId, member: { agentId } },
-              {
-                onSuccess: () => {
-                  toast.show(t("mentions.added", { name }));
-                  onDone();
-                },
-              },
+              // No toast: the conversation's own line says who joined, for everyone.
+              { onSuccess: onDone },
             )
           }
         >

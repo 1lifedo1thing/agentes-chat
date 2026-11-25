@@ -2426,6 +2426,11 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "Geç",
+    "inMenu_one": "Menüde {{count}} yeni",
+    "inMenu_other": "Menüde {{count}} yeni"
+  },
   "openOnPhone": {
     "qr": "agentes uygulamasına giriş yapmak için QR kodu",
     "making": "Kod oluşturuluyor…",
@@ -18625,6 +18630,11 @@
       "handOff": "{{from}} → {{to}} isteği",
       "waitResult": "{{name}} ajanının beklediği şey geldi",
       "other": "{{name}} için bildirim",
+      "joined_one": "{{who}} kanala katıldı",
+      "joined_other": "{{who}} kanala katıldı",
+      "joinedBy_one": "{{who}} kanala katıldı · {{by}} ekledi",
+      "joinedBy_other": "{{who}} kanala katıldı · {{by}} ekledi",
+      "left": "{{who}} kanaldan ayrıldı",
       "wakeSkipped": "{{name}} ajanının bahsetmesi {{agents}} ajanına ulaşmadı",
       "wakeSkippedAnon": "{{name}} adlı ajanın bahsetmesi başka bir ajana ulaşmadı",
       "wakeSkippedAudience": "{{agents}} ajanını yalnızca bazı kişiler çağırabilir ve {{name}} adlı ajanın bu işi onlardan birinden gelmedi. {{agents}} ajanını çağırabilen biri isteği iletebilir.",

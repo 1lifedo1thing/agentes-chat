@@ -2343,6 +2343,10 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "Lewati",
+    "inMenu_other": "{{count}} baru di menu"
+  },
   "openOnPhone": {
     "qr": "Kode QR untuk masuk ke aplikasi agentes",
     "making": "Membuat kode…",
@@ -18134,6 +18138,9 @@
       "handOff": "{{from}} meminta sesuatu kepada {{to}}",
       "waitResult": "Yang ditunggu {{name}} sudah masuk",
       "other": "Pemberitahuan untuk {{name}}",
+      "joined_other": "{{who}} bergabung ke kanal",
+      "joinedBy_other": "{{who}} bergabung ke kanal · ditambahkan oleh {{by}}",
+      "left": "{{who}} keluar dari kanal",
       "wakeSkipped": "Sebutan dari {{name}} tidak sampai ke {{agents}}",
       "wakeSkippedAnon": "Sebutan dari {{name}} tidak sampai ke agen lain",
       "wakeSkippedAudience": "Hanya sebagian orang yang boleh memanggil {{agents}}, dan pekerjaan {{name}} ini tidak datang dari salah satu dari mereka. Orang yang boleh memanggil {{agents}} bisa meneruskan permintaannya.",

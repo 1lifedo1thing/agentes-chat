@@ -2482,6 +2482,12 @@ export const ptBR = {
     testFlight: "TestFlight",
     googlePlay: "Google Play",
   },
+  /** Lodi's cursor building the sidebar after a team is made: Pular on the receipt and the count on the closed menu. */
+  lodiCursor: {
+    skip: "Pular",
+    inMenu_one: "{{count}} novo no menu",
+    inMenu_other: "{{count}} novos no menu",
+  },
   openOnPhone: {
     qr: "QR code para entrar no app agentes",
     making: "Gerando o código…",
@@ -19222,6 +19228,13 @@ export const ptBR = {
       handOff: "{{from}} fez um pedido para {{to}}",
       waitResult: "Chegou o resultado que {{name}} esperava",
       other: "Aviso para {{name}}",
+      /** Who joined the channel (`who`: their names as one list), and who added them. */
+      joined_one: "{{who}} entrou no canal",
+      joined_other: "{{who}} entraram no canal",
+      joinedBy_one: "{{who}} entrou no canal · {{by}} adicionou",
+      joinedBy_other: "{{who}} entraram no canal · {{by}} adicionou",
+      /** Who left the channel, or was taken out of it. */
+      left: "{{who}} saiu do canal",
       wakeSkipped: "A menção de {{name}} não chamou {{agents}}",
       wakeSkippedAnon: "A menção de {{name}} não chamou outro agente",
       wakeSkippedAudience:
