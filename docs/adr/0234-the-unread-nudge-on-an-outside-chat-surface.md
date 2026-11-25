@@ -5,7 +5,7 @@
 - Extends: ADR 0187 (outside chat surfaces; "what a surface may send first" was left for later), ADR 0046
   (notifications)
 - Code: db `packages/db/src/schema/surfaces.ts` (`surface_links.nudge_on`, `nudge_after_hours`, `quiet_from`,
-  `quiet_to`, `nudged_at`; `surface_deliveries.kind` gains `nudge`), migration 0347; engine
+  `quiet_to`, `nudged_at`; `surface_deliveries.kind` gains `nudge`), migration 0353; engine
   `packages/engine/src/surfaces/nudge.ts` (`queueSurfaceNudges`, `unreadFor`, `setNudge`, `inQuietHours`) and
   `deliveries.ts` (`listSurfaceDeliveries`'s `nudges`); the sweep `surfaceNudges` in `apps/server/src/workers.ts`;
   bridge `GET /api/surface/v1/deliveries?nudges=true` (contract `apps/server/test/surface-openapi.json`); app route
