@@ -11230,6 +11230,45 @@ html:not([data-pointer]) .ac-run-bars__bar:focus-visible {
   margin-block: -1px;
 }
 
+/* ---------- InlineName: a name renamed where it stands ---------- */
+/* The font, size and line of what it replaces, so nothing moves; no box, only the ring. Its 4px of side padding are
+   pulled back out, so the text stays on the name's own edge. */
+.ac-inlinename {
+  display: block;
+  box-sizing: content-box;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  outline: none;
+  box-shadow: inset 0 -1px 0 var(--line2);
+}
+@supports (top: 1lh) {
+  .ac-inlinename {
+    height: 1lh;
+  }
+}
+.ac-inlinename:focus {
+  box-shadow: var(--field-ring);
+}
+.ac-inlinename--fit {
+  width: auto;
+}
+.ac-inlinename[aria-busy] {
+  opacity: 0.6;
+}
+.ac-inlinename::placeholder {
+  color: var(--faint);
+}
+
 /* ---------- Choice rows (OptionList.tsx): full width, one left edge, neutral selection ---------- */
 .ac-optlist {
   display: flex;

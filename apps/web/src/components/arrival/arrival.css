@@ -628,7 +628,7 @@
 .arrival-have__row {
   position: relative;
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) auto;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
   column-gap: 12px;
   align-items: start;
   padding: 12px 14px;
@@ -703,22 +703,34 @@ html:not([data-pointer]) button.arrival-have__row:focus-visible {
 html:not([data-pointer]) button.arrival-have__row[data-state="checked"]:focus-visible {
   box-shadow: var(--have-chosen), var(--field-ring);
 }
-.arrival-have__row > .ac-brand,
-.arrival-have__mark {
-  width: 20px;
-  height: 20px;
-}
-/* A key's glyph drawn 16px inside the marks' 20px box: its icon is sized 20 (`ConnectHave`), the padding takes 2. */
-.arrival-have__mark {
-  padding: 2px;
-  box-sizing: border-box;
-  color: var(--ink);
-}
 .arrival-have__text {
   display: flex;
   flex-direction: column;
   gap: 1px;
   min-width: 0;
+}
+/* Beside its maker's tile only the name's line (centred on it, with how full the plan is); the lines under it take
+   the row's whole width, so the tile never owns a column beside three lines. */
+.arrival-have__row:has(> .ac-brand) {
+  align-items: center;
+  row-gap: 2px;
+}
+.arrival-have__row:has(> .ac-brand) > .arrival-have__text {
+  display: contents;
+}
+.arrival-have__row:has(> .ac-brand) > .ac-brand,
+.arrival-have__row:has(> .ac-brand) .arrival-have__head {
+  grid-row: 1;
+}
+.arrival-have__row:has(> .ac-brand) .arrival-have__head {
+  grid-column: 2;
+}
+.arrival-have__row:has(> .ac-brand) :is(.arrival-have__line, .arrival-have__why) {
+  grid-column: 1 / -1;
+}
+.arrival-have__row:has(> .ac-brand) > .arrival-have__room {
+  grid-row: 1;
+  grid-column: 3;
 }
 /* What tells one account from the next (its name, its email, whose it is) wraps whole, never cut. */
 .arrival-have__title,
@@ -735,12 +747,14 @@ html:not([data-pointer]) button.arrival-have__row[data-state="checked"]:focus-vi
   font-size: 13px;
   line-height: 18px;
 }
-/* The title and, after it, the pencil that names the account (ADR 0059 §4): one line. */
+/* The title and, after it, the pencil that names the account (ADR 0059 §4): one line, in the title's size. */
 .arrival-have__head {
   display: flex;
   align-items: center;
   gap: 4px;
   min-width: 0;
+  font-size: 15px;
+  line-height: 20px;
 }
 /* "Unnamed account": quieter than a name or an email, until its owner names it. */
 .arrival-have__title[data-unnamed] {
@@ -768,19 +782,9 @@ html:not([data-pointer]) .arrival-have__edit:focus-visible {
   outline: none;
   box-shadow: var(--field-ring);
 }
-/* The row while its name changes: the field and Save where the title stood. */
+/* The row while its name changes: the name itself is the field (the kit's InlineName), nothing else moves. */
 .arrival-have__row[data-renaming] {
   cursor: default;
-}
-.arrival-have__rename {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-.arrival-have__rename > :first-child {
-  flex: 1;
-  min-width: 0;
 }
 /* The state is the words; the colour only follows them. */
 .arrival-have__line[data-plan="almost"] {
