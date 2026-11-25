@@ -38,7 +38,7 @@ describe("swiping a message to answer it", () => {
     expect(swipe).toContain("{marked ? <ReplyMark x={x} armed={armed} /> : null}");
     const chat = chatScreenSource();
     expect(chat).toContain("<SwipeReply enabled={canReply && !m.local} onReply={reply}>");
-    expect(chat).toMatch(/\{NATIVE_MENU \? \(\s*<MessageMenuFor/);
+    expect(chat).toMatch(/\{NATIVE_MENU \? \(?\s*<MessageMenuFor/);
     expect(chat).not.toContain("NATIVE_MENU && !m.local");
     // Its menu then holds what works before the server has it: no reactions, no empty palette.
     const menu = src("features/chat/MessageMenu.tsx");
@@ -46,7 +46,13 @@ describe("swiping a message to answer it", () => {
     expect(menu).toContain("{reactions.length > 0 ? (");
     // Built once a finger lands on the row (or with a screen reader on), never for every row a scroll mounts.
     expect(menu).toContain("onArm={armed ? undefined : arm}");
-    expect(menu).toContain("{groups === null ? <Link.MenuAction hidden onPress={noop} /> : null}");
+    expect(menu).toContain(
+      '{groups === null ? <NativeLinkPreviewAction identifier="building" title="" hidden onSelected={noop} /> : null}',
+    );
+    // A plain box around the row, never expo-router's Link: its native view takes `display: contents`, and in there the
+    // row's frames went stale as its words changed size (a long message's bubble drew empty space under its words).
+    expect(menu).toContain("<NativeLinkPreview previewActivationPath={undefined}>");
+    expect(menu).not.toMatch(/<Link[\s.>]/);
   });
 });
 
@@ -157,7 +163,9 @@ describe("older pages", () => {
   });
 
   test("going to a message reads the page around it at any distance; a failed read says so, a 404 says it's gone", () => {
-    expect(chat).toContain(".messages(orgId, channelId, { around: seek, limit: SEEK_PAGE })");
+    expect(chat).toContain(
+      ".messages(orgId, channelId, { around: seek, limit: SEEK_PAGE, onCards: cardsInto(qc, orgId) })",
+    );
     expect(chat).toContain("const gone = error === undefined || (error instanceof ApiError && error.status === 404);");
     expect(chat).toContain('toast({ title: gone ? t("channel.jumpMissing") : t("common.loadFailed"), icon: "x" });');
     // Away from the latest page: newer pages as the person scrolls down, never pinned to that end.
@@ -357,7 +365,8 @@ describe("a voice message's row", () => {
     expect(row).toContain("const starting = useSyncExternalStore(subscribePlayback, startingId) === clipId;");
     expect(row).toContain('<ActivityIndicator size="small" color={c.bg} />');
     const toggle = between(row, "const toggle = () => {", "const seek =");
-    expect(toggle.indexOf("voiceAudioGone(")).toBeGreaterThan(toggle.indexOf("const failed = () => {"));
+    expect(toggle.indexOf("isGone?.()")).toBeGreaterThan(toggle.indexOf("const failed = () => {"));
+    expect(row).toContain("isGone={() => voiceAudioGone(url, authedFetch as typeof fetch)}");
     expect(toggle).toContain("onError: failed,");
     expect(toggle).toContain("}).catch(failed);");
     // Where it stands is the playback module's: a row drawn again mid-play shows it.

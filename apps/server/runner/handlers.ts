@@ -7,7 +7,9 @@ import {
   type AgentScope,
   browserSetupOf,
   type FileEntry,
+  inRange,
   isStreamId,
+  isTerminalKeep,
   isTerminalSize,
   MAX_INLINE_FILE_BYTES,
   type MachineErrorCode,
@@ -19,6 +21,7 @@ import {
   type RunnerPause,
   type RunnerTools,
   STEER_LIMITS,
+  TASK_LIMIT_BOUNDS,
 } from "@agenteschat/adapters/machine-protocol";
 import { redactSecrets } from "@agenteschat/adapters/secret-box";
 import { realFoldersFor } from "./access";
@@ -248,6 +251,8 @@ export const OP_ROUTES: Readonly<Record<MachineOp, "machine" | "agent">> = {
   "phone.pair.cancel": "machine",
   // The computer's own pause lives in its config, root's.
   "pause.set": "machine",
+  // So is its task limit; root tells each worker (`stateChanged`).
+  "limits.set": "machine",
   "phone.look": "machine",
   // The Mac's own pick of iPhones on its Wi-Fi, kept beside its phones' locks.
   "phone.wifi": "machine",
@@ -336,6 +341,8 @@ export interface HandlerContext {
   paused?: () => boolean;
   /** `REMOTE_PAUSE_PROTOCOL`: pause (`until` null: until resumed) or resume as asked from the apps; absent: refused. */
   setPause?: (paused: boolean, until: string | null, by: string) => RunnerPause;
+  /** `TASK_LIMIT_PROTOCOL`: the background tasks it runs at once, stored in its config; answers the limit kept. */
+  setTaskLimit?: (patch: { maxTasks?: number; pushHarder?: boolean }) => MachineReplies["limits.set"];
   /** System mode: this process is root and answers only the `machine` ops of `OP_ROUTES` itself. */
   systemMode?: () => boolean;
   /** System mode: runs an `agent` op in its agent's worker; without it those ops are refused. */
@@ -684,6 +691,23 @@ async function routeRequest(ctx: HandlerContext, req: MachineRequest, scope: Req
     const until = req.paused && typeof req.until === "string" ? req.until : null;
     return { paused: ctx.setPause(req.paused === true, until, by) } satisfies MachineReplies["pause.set"];
   }
+  if (req.op === "limits.set") {
+    if (!ctx.setTaskLimit)
+      throw new RunnerError("unsupported", "This runner's task limit can't be changed from the apps.");
+    if (req.maxTasks !== undefined && !inRange(req.maxTasks, TASK_LIMIT_BOUNDS)) {
+      throw new RunnerError("bad_request", `maxTasks must be a whole number from ${TASK_LIMIT_BOUNDS.join(" to ")}`);
+    }
+    if (req.pushHarder !== undefined && typeof req.pushHarder !== "boolean") {
+      throw new RunnerError("bad_request", "pushHarder must be true or false");
+    }
+    if (req.maxTasks === undefined && req.pushHarder === undefined) {
+      throw new RunnerError("bad_request", "Nothing to change: send maxTasks or pushHarder");
+    }
+    return ctx.setTaskLimit({
+      ...(req.maxTasks !== undefined ? { maxTasks: req.maxTasks } : {}),
+      ...(req.pushHarder !== undefined ? { pushHarder: req.pushHarder } : {}),
+    });
+  }
   // Protocol 49: an agent's (or a profile's) live view socket, this process's in every mode (ADR 0040 §7.1).
   if (req.op === "browser.view.open") return openBrowserView(ctx, req);
   // Protocol 34: a browser profile's session, never an agent's worker or folder (ADR 0110).
@@ -863,6 +887,7 @@ async function routeRequest(ctx: HandlerContext, req: MachineRequest, scope: Req
         {
           folder: ctx.workspaceReal,
           gitDir: ctx.gitDir,
+          ...(ctx.server ? { server: ctx.server } : {}),
           agent: req.agent,
           signal: scope.signal,
           ...(req.stream === true ? { output: scope.output } : {}),
@@ -999,6 +1024,9 @@ function handleDesktopUse(
   }
 }
 
+/** The longest folder a terminal is asked to start in (`TERMINAL_CWD_PROTOCOL`): a worktree's is a few dozen. */
+const TERMINAL_CWD_MAX = 1024;
+
 /**
  * Protocol 18: one viewer of the agent's desktop or one terminal as the agent
  * (ADR 0058 §11), each behind its machine switch; answered once its data
@@ -1043,7 +1071,12 @@ async function handleStream(
     if (!ctx.terminals) throw new RunnerError("terminal_unavailable", "This runner opens no terminals");
     if (!isTerminalSize(req.cols, req.rows))
       throw new RunnerError("bad_request", "The terminal's size is out of bounds");
-    await ctx.terminals.open(agent, { cols: req.cols, rows: req.rows }, dial);
+    // A code session's terminal (ADR 0215): a folder inside the agent's own, checked where the shell starts.
+    if (req.cwd !== undefined && (typeof req.cwd !== "string" || req.cwd.length > TERMINAL_CWD_MAX))
+      throw new RunnerError("bad_request", "The terminal's folder must be a path inside the agent's folder");
+    if (req.keep !== undefined && !isTerminalKeep(req.keep))
+      throw new RunnerError("bad_request", "The terminal's name isn't one");
+    await ctx.terminals.open(agent, { cols: req.cols, rows: req.rows }, dial, req.cwd, req.keep);
   } else {
     throw new RunnerError("bad_request", "A stream shows a desktop, a terminal or a phone");
   }

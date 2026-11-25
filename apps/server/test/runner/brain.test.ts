@@ -30,7 +30,7 @@ import {
   STEER_PROTOCOL,
   type WireBrainEvent,
 } from "@agenteschat/adapters/machine-protocol";
-import { accountSettingsEnv } from "../../runner/accounts";
+import { ACCOUNT_TRANSCRIPT_DAYS, accountSettingsEnv } from "../../runner/accounts";
 import {
   BRAIN_BUILTIN_TOOLS,
   BrainManager,
@@ -39,6 +39,7 @@ import {
   brainKey,
   brainProfileLaunch,
   ClaudeStreamParser,
+  CODE_SESSION_TOOLS,
   carryClaudeSession,
   claudeBrainArgs,
   claudeCapabilities,
@@ -215,7 +216,7 @@ test("parser: partial deltas, our tool calls with results, usage, and the final 
         },
       }),
     ).events,
-  ).toEqual([{ type: "tool_started", id: "t2", name: "Bash" }]);
+  ).toEqual([{ type: "tool_started", id: "t2", name: "Bash", input: { command: "ls" } }]);
   const results = p.push(
     line({
       type: "user",
@@ -256,6 +257,81 @@ test("parser: partial deltas, our tool calls with results, usage, and the final 
   ]);
   expect(end.final).toEqual({ type: "done", text: "Hello", session: { id: SESSION(1) } });
   expect(p.session).toBe(SESSION(1));
+});
+
+test("parser: usage.model uses the model that answered this turn, not a stale key from resumed modelUsage or a subagent", () => {
+  const p = new ClaudeStreamParser();
+  p.beginTurn();
+  // Main turn streams and answers with opus, while resumed modelUsage still lists fable first.
+  p.push(
+    line({
+      type: "stream_event",
+      session_id: SESSION(1),
+      parent_tool_use_id: null,
+      event: { type: "message_start", message: { id: "msg_1", model: "claude-opus-5-5" } },
+    }),
+  );
+  p.push(
+    line({
+      type: "assistant",
+      parent_tool_use_id: null,
+      message: { id: "msg_1", model: "claude-opus-5-5", content: [{ type: "text", text: "Hi" }] },
+    }),
+  );
+  // Synthetic error frame must not overwrite the real answering model.
+  p.push(
+    line({
+      type: "assistant",
+      parent_tool_use_id: null,
+      error: "rate_limit",
+      message: { id: "msg_err", model: "<synthetic>", content: [{ type: "text", text: "limit" }] },
+    }),
+  );
+  // A subagent on haiku speaks last, streamed and whole: still not the turn's model.
+  p.push(
+    line({
+      type: "stream_event",
+      parent_tool_use_id: "toolu_sub",
+      event: { type: "message_start", message: { id: "msg_sub", model: "claude-haiku-5-5" } },
+    }),
+  );
+  p.push(
+    line({
+      type: "assistant",
+      parent_tool_use_id: "toolu_sub",
+      message: { id: "msg_sub", model: "claude-haiku-5-5", content: [{ type: "text", text: "sub" }] },
+    }),
+  );
+  const end = p.push(
+    line({
+      type: "result",
+      subtype: "success",
+      is_error: false,
+      result: "Hi",
+      session_id: SESSION(1),
+      usage: { input_tokens: 10, output_tokens: 5 },
+      modelUsage: {
+        "claude-fable-5-2": { inputTokens: 100, outputTokens: 20 },
+        "claude-opus-5-5": { inputTokens: 10, outputTokens: 5 },
+      },
+    }),
+  );
+  expect(end.events).toEqual([{ type: "usage", input: 10, output: 5, source: "plan", model: "claude-opus-5-5" }]);
+
+  // Next turn resets turnModel so an earlier turn's model never leaks when only modelUsage is present.
+  p.beginTurn();
+  const next = p.push(
+    line({
+      type: "result",
+      subtype: "success",
+      is_error: false,
+      result: "Ok",
+      session_id: SESSION(1),
+      usage: { input_tokens: 4, output_tokens: 2 },
+      modelUsage: { "claude-sonnet-5-5": { inputTokens: 4, outputTokens: 2 } },
+    }),
+  );
+  expect(next.events).toEqual([{ type: "usage", input: 4, output: 2, source: "plan", model: "claude-sonnet-5-5" }]);
 });
 
 test("parser: a turn's usage says how many API calls it made, the most uncached and whole input one read, and the last's", () => {
@@ -330,7 +406,7 @@ test("parser: a streamed message said again in a later assistant event (with its
       { type: "tool_use", id: "t1", name: "Bash", input: { command: "ls" } },
     ]),
     // Its own call is told as it starts (the step line), ours through the bridge never.
-  ).toEqual([{ type: "tool_started", id: "t1", name: "Bash" }]);
+  ).toEqual([{ type: "tool_started", id: "t1", name: "Bash", input: { command: "ls" } }]);
   // The next API message, never streamed (no partials for it): its text comes whole.
   expect(
     p.push(
@@ -624,6 +700,18 @@ test("profiles (ADR 0053 §3): plan has our tools only, no settings files, no ed
   expect(asks).toContain("--permission-prompt-tool");
   expect(brainProfileLaunch("work", false, true, true).permissionMode).toBe("default");
   expect(brainProfileLaunch("work", false, true).permissionMode).toBe("acceptEdits");
+  // A code session's turn (ADR 0215): Claude Code's subagents and skills too, still no settings of the checkout.
+  const code = claudeBrainArgs({
+    ...base,
+    ...brainProfileLaunch("work", false, false, false, true),
+    pluginDirs: ["/b/repo"],
+  });
+  expect(at(code, "--tools")).toBe([...BRAIN_BUILTIN_TOOLS, ...CODE_SESSION_TOOLS].join(","));
+  expect(at(code, "--setting-sources")).toBe("");
+  expect(at(code, "--plugin-dir")).toBe("/b/repo");
+  // Nowhere else: a chat turn or a shared sign-in never get them.
+  expect(brainProfileLaunch("chat", false, false, false, true).builtinTools).toEqual([]);
+  expect(brainProfileLaunch("work", false, true, false, true).builtinTools).not.toContain("Agent");
 });
 
 test("protocol 41: a chat turn (the team's right hand on a plan) gets our MCP tools and nothing else", () => {
@@ -690,7 +778,9 @@ function setup(over: Partial<BrainManagerOptions> = {}) {
         .trim()
         .split("\n")
         .filter(Boolean)
-        .map((l) => JSON.parse(l) as { pid: number; args: string[]; system: string | null });
+        .map(
+          (l) => JSON.parse(l) as { pid: number; args: string[]; system: string | null; autoMemoryOff: string | null },
+        );
     } catch {
       return [];
     }
@@ -1314,6 +1404,8 @@ test.if(posix)(
       permissions: { allow: string[]; ask: string[]; deny: string[] };
     };
     // Inline code reaches the prompt tool, where the server decides it (a mission's card, elsewhere ordinary work).
+    // The computer's own sign-in keeps its owner's transcript retention.
+    expect((wsettings as { cleanupPeriodDays?: number }).cleanupPeriodDays).toBeUndefined();
     expect(wsettings.permissions.deny).not.toContain("Bash(python3 -c*)");
     expect(wsettings.permissions.ask).toContain("Bash(python3 -c*)");
     expect(wsettings.permissions.deny).toContain("Bash(gh auth token*)");
@@ -1351,6 +1443,8 @@ test.if(posix)(
     await turn(1, "do");
     const args = spawns()[0]?.args ?? [];
     expect(args[args.indexOf("--setting-sources") + 1]).toBe("");
+    // Claude Code's auto memory too: it lived in the sign-in's folder, which the agent's own tools can't list.
+    expect(spawns()[0]?.autoMemoryOff).toBe("1");
     expect(args.join(" ")).not.toContain("collect.example.net");
     const system = readFileSync(args[args.indexOf("--append-system-prompt-file") + 1] as string, "utf8");
     expect(system.startsWith("You are dev.")).toBe(true);
@@ -1362,6 +1456,7 @@ test.if(posix)(
     await own.turn(1, "do", { personalMcp: true });
     const oargs = own.spawns()[0]?.args ?? [];
     expect(oargs).not.toContain("--setting-sources");
+    expect(own.spawns()[0]?.autoMemoryOff).toBeNull();
     expect(readFileSync(oargs[oargs.indexOf("--append-system-prompt-file") + 1] as string, "utf8")).toBe(
       "You are dev.",
     );
@@ -1978,6 +2073,7 @@ test.if(posix)(
         oauthFd: string | null;
         authToken: string | null;
         settingsEnv: Record<string, string> | null;
+        cleanupDays: number | null;
       };
       const runs = () => spawns() as unknown as Run[];
       const grant = { grant: { kind: "token" as const, token: TOKEN } };
@@ -1994,6 +2090,7 @@ test.if(posix)(
       expect(JSON.stringify(first?.settingsEnv)).not.toContain("oat01");
       expect(first?.settingsEnv?.ANTHROPIC_BASE_URL).toBe("https://api.anthropic.com");
       expect(first?.settingsEnv?.CLAUDE_CODE_USE_BEDROCK).toBe("");
+      expect(first?.cleanupDays).toBe(ACCOUNT_TRANSCRIPT_DAYS);
       // What the CLI printed with it comes back redacted.
       const sent = JSON.stringify([r.final, ...r.events]);
       expect(sent).not.toContain(TOKEN);
@@ -2707,6 +2804,8 @@ test.if(posix)("delegated: argv, files and environment are root's, with no agent
   expect(statSync(dir).mode & 0o777).toBe(0o750);
   const settings = JSON.parse(readFileSync(typed(spawn, "--settings") as string, "utf8"));
   expect(settings.disableAllHooks).toBe(true);
+  // The sign-in every agent on the computer shares keeps two weeks of their transcripts.
+  expect(settings.cleanupPeriodDays).toBe(ACCOUNT_TRANSCRIPT_DAYS);
   expect(settings.permissions).toBeUndefined();
   expect(settings.env).toEqual(accountSettingsEnv(undefined, "opus"));
   for (const flag of ["--settings", "--mcp-config", "--append-system-prompt-file"]) {
@@ -3183,6 +3282,77 @@ test.if(posix)(
     // Awake past the idle time: it closes at the next look.
     awake = 1_000;
     await waitFor(() => m.size === 0 && proc?.exited === true, 4000);
+  },
+);
+
+test.if(posix)(
+  "a turn that starts a process says why: a new session, another launch, idle past its limit, a session from before",
+  async () => {
+    const { m, turn } = setup({ idleMs: 60, clock: { read: () => Date.now() } });
+    const cold = (f: WireBrainEvent) => (f.type === "done" ? f.timings : undefined);
+    expect(cold((await turn(1, "hi")).final)).toMatchObject({ warm: false, cold: "new_session" });
+    expect(cold((await turn(2, "again")).final)).toEqual(expect.not.objectContaining({ cold: expect.anything() }));
+    // Opus falls back to sonnet, which only a start sets.
+    expect(cold((await turn(3, "opus", { model: "opus" })).final)).toMatchObject({ warm: false, cold: "settings" });
+    await waitFor(() => m.size === 0, 4000);
+    expect(cold((await turn(4, "later", { model: "opus" })).final)).toMatchObject({ warm: false, cold: "idle" });
+    const before = { session: { id: SESSION(5), resume: true } };
+    expect(cold((await turn(5, "old", before)).final)).toMatchObject({ warm: false, cold: "restart" });
+  },
+);
+
+test.if(posix)(
+  "a new conversation takes the agent's ready process, whose session answers for the server's from then on",
+  async () => {
+    const { m, home, ws, spawns, turn } = setup({ maxProcesses: 3, readyRoom: () => true });
+    await turn(1, "hi", { system: "S1" });
+    // After the turn, a process on a session of its own, with the agent's text, for its next new conversation.
+    await waitFor(() => spawns().length === 2, 4000);
+    const ready = spawns()[1];
+    const readyId = ready?.args.at(-1) ?? "";
+    expect(ready?.system).toBe("S1");
+    expect(ready?.args.at(-2)).toBe("--session-id");
+    expect(readyId).not.toBe(SESSION(1));
+    const b = await turn(2, "there", { system: "S1", session: { id: SESSION(2), resume: false } });
+    expect(b.final).toMatchObject({ type: "done", text: "echo 1: there", session: { id: readyId } });
+    expect(b.final).toMatchObject({ timings: { warm: true } });
+    // The next one is ready for the conversation after; this one goes on on the same process.
+    await waitFor(() => spawns().length === 3, 4000);
+    const c = await turn(3, "more", { system: "S1", session: { id: SESSION(2), resume: true } });
+    expect(c.final).toMatchObject({ type: "done", text: "echo 2: more", timings: { warm: true } });
+    expect(spawns()).toHaveLength(3);
+    // Another text: the ready process isn't taken (its text would be the session's for good).
+    const d = await turn(4, "new", { system: "S2", session: { id: SESSION(4), resume: false } });
+    expect(d.final).toMatchObject({ type: "done", text: "echo 1: new", timings: { warm: false, cold: "new_session" } });
+    expect(spawns()[3]?.args.slice(-2)).toEqual(["--session-id", SESSION(4)]);
+    // A runner started again resumes the adopted conversation by the session Claude Code knows it by.
+    // Three processes open (the agent's cap): no ready one now.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(spawns()).toHaveLength(4);
+    m.close();
+    const again = new BrainManager({
+      root: path.join(home, "brains"),
+      claudeCommand: [process.execPath, FAKE],
+      claudeHome: path.join(home, "no-claude-home"),
+      mcp: { socketPath: path.join(home, "mcp.sock"), command: ["node", "runner.mjs"] },
+      deltaMs: 5,
+    });
+    managers.push(again);
+    const folder = await agentWorkspace(ws, AGENT);
+    const e = await again.turn(
+      {
+        runId: RUN(5),
+        kind: "claude_code",
+        session: { id: SESSION(2), resume: true },
+        cwd: "",
+        system: "S1",
+        prompt: "back",
+        mcp: { token: `agr_${"t".repeat(24)}5` },
+      },
+      { agent: AGENT, folder, emit: () => {} },
+    );
+    expect(e).toMatchObject({ type: "done", timings: { warm: false, cold: "restart" } });
+    expect(spawns().at(-1)?.args.slice(-2)).toEqual(["--resume", readyId]);
   },
 );
 
