@@ -3784,6 +3784,13 @@ html:not([data-pointer]) .channel-ref:focus-visible {
 .folded-body .md--message > * + * {
   margin-top: 0.6em;
 }
+/* Words as written: their spaces and breaks kept, a space a line ends on wrapping with it (break-spaces) rather than
+   standing past the fold's edge. */
+.folded-body__plain {
+  margin: 0;
+  white-space: break-spaces;
+  overflow-wrap: anywhere;
+}
 .folded-body__text[data-folded] {
   max-height: 9em;
   overflow: hidden;
@@ -5628,6 +5635,24 @@ html:not([data-pointer]) .cflow__more summary:focus-visible {
 .cflow__lead > .cflow__text {
   flex: 1 1 260px;
 }
+/* A server by address's own instructions under its tools: the setting, then the text as agents read it, as written, in
+   a well, folded as a long text on a page is (FoldedBody), "Ver mais" inside the well. Muted while agents don't get
+   it. */
+.cflow-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.cflow-notes .folded-body {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--sunken);
+  transition: color var(--dur-base) var(--out);
+}
+.cflow-notes[data-off] .folded-body {
+  color: var(--muted);
+}
 .cflow-tools {
   list-style: none;
   margin: 0;
@@ -6596,15 +6621,17 @@ html:not([data-pointer]) .tr-ok:focus-visible {
   color: var(--ink);
   font-weight: 600;
 }
+/* The unread pill stands whole inside the sidebar, 4 in from its edge: flush with the edge it was cut in half by the
+   window, and the phone's drawer drew its frame through it. */
 .sidebar__item[data-kind="channel"][data-unread="true"]::before {
   content: "";
   position: absolute;
-  left: -12px;
+  left: -8px;
   top: 50%;
   width: 4px;
   height: 8px;
   margin-top: -4px;
-  border-radius: 0 4px 4px 0;
+  border-radius: 2px;
   background: var(--ink);
   pointer-events: none;
 }
@@ -13011,6 +13038,10 @@ html[data-menu-overlay] .shell {
 .sidebar__section-head:hover {
   background: var(--plate-soft);
 }
+/* A closed part's or sector's unread count ends on the rows' counts' edge (8 in from the row, the head's 2 plus 6). */
+.sidebar__section-head > .sidebar__unread {
+  margin-inline-end: calc(var(--space-2) - 2px);
+}
 /* A category's header is laid out as a row: its chevron centred in the icons' place, its name in the names' column. */
 .sidebar__section-toggle {
   flex: 1;
@@ -13543,13 +13574,16 @@ html:not([data-pointer]) .channel-perms__target:focus-visible {
 .sidebar__section--group[data-open="false"] .sidebar__section-body > [data-live="true"] {
   display: flex;
 }
-/* A group stands apart from the agents above it; its mark in gray, as quiet as its name. */
+/* A group stands apart from the agents above it. Its mark keeps the setor's own color, so setores tell apart. */
 .sidebar:not([data-rail="true"]) .sidebar__section--group {
   margin-top: 8px;
 }
-.sidebar__section--group .sidebar__section-toggle > .ac-rolemark {
-  filter: grayscale(1);
-  opacity: 0.6;
+/* A setor's channels follow its agents under a hairline (ADR 0240), from the faces' column to the row's end. */
+.sidebar__sector-line {
+  flex: none;
+  margin: 4px 8px;
+  border: 0;
+  border-top: 1px solid var(--line);
 }
 .sidebar__section-count {
   min-width: 24px;
@@ -13612,7 +13646,7 @@ html:not([data-pointer]) .channel-perms__target:focus-visible {
   line-height: 17px;
   color: var(--faint);
 }
-.sidebar[data-rail="true"] :is(.sidebar__see-all, .sidebar__pins-end, .sidebar__section-count) {
+.sidebar[data-rail="true"] :is(.sidebar__see-all, .sidebar__pins-end, .sidebar__sector-line, .sidebar__section-count) {
   display: none;
 }
 /* More: the other tools in a panel beside the sidebar, each with a line on what it is for. */
@@ -14857,10 +14891,20 @@ html:not([data-pointer]) .ac-typing__see:focus-visible {
 .settings-row--acts {
   row-gap: var(--space-2);
 }
+/* Several controls in that group (a button beside its switch) keep a gap between them. */
+.settings-row--acts > .settings-row__end {
+  gap: var(--space-2);
+}
 .settings-row__lead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
+  gap: 2px var(--space-3);
+}
+/* Its status goes under the name, as a line's does; on a phone, under the icon too, from the row's edge. */
+.settings-row__lead > .settings-row__status {
+  flex-basis: 100%;
+  padding-left: calc(28px + var(--space-3));
 }
 /* Configurações › Aprovações (ADR 0139): a row whose box is the choice, centred on its label, on the label's first line
    when a line says under it why it is off. */
@@ -15098,6 +15142,12 @@ html:not([data-pointer]) .app-icons__agent:focus-visible {
   .settings-row--lead:not(.settings-row--open, :has(> .settings-row__end))
     > .settings-row__text:has(> .settings-row__status) {
     display: contents;
+  }
+  .settings-row__lead:has(> .settings-row__status) {
+    row-gap: var(--space-2);
+  }
+  .settings-row__lead > .settings-row__status {
+    padding-left: 0;
   }
   .settings-row--lead:has(> .settings-row__end > .ac-switch)
     > .settings-row__text:has(> .settings-row__status)

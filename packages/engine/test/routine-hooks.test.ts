@@ -14,6 +14,7 @@ import {
   getRoutineView,
   HOOK_CALL_TRIES,
   HOOK_LIMIT_PER_ROUTINE,
+  HOOK_RETRY_AFTER_MS,
   type HookAnswer,
   listOrgRoutines,
   managedWebhookRoutine,
@@ -520,6 +521,14 @@ describe("routine webhooks: every call delivered, grouped calls in parallel", ()
         .from(schema.outbox)
         .where(eq(schema.outbox.dedupeKey, `routine.run:${routineRunId}`))
     ).some((j) => j.status === "pending");
+  /** When the run's job is due (ms), or null with none. */
+  const jobDue = async (routineRunId: string) => {
+    const [job] = await f.db
+      .select()
+      .from(schema.outbox)
+      .where(eq(schema.outbox.dedupeKey, `routine.run:${routineRunId}`));
+    return job ? job.nextAttemptAt.getTime() : null;
+  };
   const ledger = () => ({ db: f.db, pubsub: f.pubsub });
   const endAgentRun = async (routineRunId: string, end: Parameters<typeof closeRoutineRun>[2]) =>
     closeRoutineRun(ledger(), await agentRunRow(f, (await routineRunRow(f, routineRunId)).agentRunId), end);
@@ -563,6 +572,8 @@ describe("routine webhooks: every call delivered, grouped calls in parallel", ()
     expect(callsIn(back?.event ?? null)).toEqual([{ lead: 1, tries: 1 }]);
     expect(await hasJob(back?.id ?? "")).toBe(true);
     expect(await hasJob(later)).toBe(false);
+    // Its next run waits a minute first, its line held: whatever failed it for a moment fails every run meanwhile.
+    expect(await jobDue(back?.id ?? "")).toBeGreaterThan(Date.now() + (HOOK_RETRY_AFTER_MS[0] ?? 0) - 5_000);
     // Its log line follows it, and its next run is told to check what was already done.
     expect((await callsOf(routine.id)).map((c) => c.routineRunId)).toEqual([back?.id ?? "", later]);
     expect(webhookEventText(back?.event ?? {})).toContain("an earlier run that had this call ended before finishing");
@@ -574,6 +585,8 @@ describe("routine webhooks: every call delivered, grouped calls in parallel", ()
       const next = (await ordered(routine.id)).find((r) => r.status === "queued" && r.id !== later);
       if (tries + 1 < HOOK_CALL_TRIES) {
         expect(callsIn(next?.event ?? null)).toEqual([{ lead: 1, tries: tries + 1 }]);
+        // Then five minutes.
+        expect(await jobDue(next?.id ?? "")).toBeGreaterThan(Date.now() + (HOOK_RETRY_AFTER_MS[1] ?? 0) - 5_000);
         current = next?.id ?? "";
       } else expect(next).toBeUndefined();
     }

@@ -9,7 +9,7 @@ import { useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { SheetTitle } from "../shared/PromptForm";
 import { ActionList, Tile } from "../shared/parts";
 import { useSheet } from "../shared/SheetHost";
-import { categoryHrefs, movesChannel } from "./logic";
+import { movesChannel, sectorHref } from "./logic";
 
 const NO_CHANNELS: never[] = [];
 
@@ -24,8 +24,8 @@ export interface RowAction {
 
 /**
  * The long press of a conversation on the home (its row, or its face on the pinned strip), as a short sheet: "Fixar no
- * topo" or "Tirar do topo" (a channel, an agent's or a person's DM) and a channel's "Mover para…" (only where
- * `movesChannel`, ADR 0080). The same actions fill iOS's own menu under the conversation's preview.
+ * topo" or "Tirar do topo" (a channel, an agent's or a person's DM) and a channel's "Mudar de setor" (only where
+ * `movesChannel`, ADR 0240). The same actions fill iOS's own menu under the conversation's preview.
  */
 export function useRowMenus() {
   const { t } = useTranslation();
@@ -68,8 +68,8 @@ export function useRowMenus() {
               key: "move" as const,
               icon: "list" as const,
               symbol: "folder" as const,
-              label: t("channelCategories.move"),
-              run: () => router.push(categoryHrefs.pick(channel.id)),
+              label: t("sidebarAgents.changeGroup"),
+              run: () => router.push(sectorHref(channel.id)),
             },
           ]
         : []),

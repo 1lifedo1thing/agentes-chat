@@ -73,6 +73,7 @@ import { SidePanel } from "@/components/SidePanel";
 import { TaskConversationButton, TaskConversationPanel, TaskConversationSummary } from "@/components/TaskConversation";
 import { IssueWhoSeesDialog, WhoSeesButton } from "@/components/WhoSees";
 import { useWikiLinkRenderer } from "@/components/WikiLinks";
+import { useOpenConversation } from "@/hooks/useOpenConversation";
 import { usePersonalView } from "@/hooks/usePersonalView";
 import { useTextLimit } from "@/hooks/useTextLimit";
 import {
@@ -780,23 +781,8 @@ function WorkBox({ issue: i }: { issue: Issue }) {
 
 /** Where a handed work's card waits for an answer: the person's DM with the agent that handed it, else its channel. */
 function useOpenAsk(work: WorkView) {
-  const { org } = useOrg();
-  const dms = useDms(org.id);
-  const navigate = useNavigate();
-  const dm = dms.data?.find((d) => d.channelId === work.channelId && d.with.type === "agent");
-  const m = work.question?.messageId ?? undefined;
-  return () =>
-    dm
-      ? void navigate({
-          to: "/org/$orgId/dm/agent/$agentId",
-          params: { orgId: org.id, agentId: dm.with.id },
-          search: m ? { m } : {},
-        })
-      : void navigate({
-          to: "/org/$orgId/c/$channelId",
-          params: { orgId: org.id, channelId: work.channelId },
-          search: m ? { m } : {},
-        });
+  const open = useOpenConversation();
+  return () => open({ channelId: work.channelId, messageId: work.question?.messageId });
 }
 
 /** A handed work waiting on the reader: its question, and one way to answer it where its card is. */

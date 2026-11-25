@@ -54,6 +54,7 @@ import {
   planLineFix,
   planMark,
   planOfAccount,
+  planOffSystem,
   planOfKind,
   planPickText,
   plansNotYoursOf,
@@ -1139,5 +1140,31 @@ describe("the right hand's stand-in line (ADR 0137 §7, amended 2026-11-15)", ()
     const view = { computers: [laptop] as AiComputer[], accounts: [login("a1"), login("a2"), login("a3")] };
     expect(rightHandUnusable(view).map((u) => [u.id, u.ids])).toEqual([["a1", ["a1", "a2", "a3"]]]);
     expect(rightHandUnusable(view, "a2")).toEqual([]);
+  });
+});
+
+describe("a plan that doesn't run on the computer's system says so before it is picked", () => {
+  const off = { ...option("codex"), kind: "antigravity", available: false, reason: "system" } as never;
+  const windows = brain({ computer: { machineId: "m1", name: "Desktop", online: true, os: "windows" } });
+
+  test("the gate carries the system, and the picker names it", () => {
+    const g = gate({ choice: "gemini", brain: { ...windows, options: [option("claude_code"), off] } });
+    expect(g).toEqual({ state: "unsupported", reason: "system", os: "windows" });
+    expect(planOffSystem(enT, g)).toBe("Windows");
+    expect(enT("connectAi.offSystem", { system: planOffSystem(enT, g) })).toBe("Doesn't run on Windows yet");
+    // Every other reason says nothing there: its panel says why.
+    expect(planOffSystem(enT, gate())).toBeNull();
+    expect(planOffSystem(enT, { state: "unsupported", reason: "not_installed" })).toBeNull();
+  });
+
+  test("with no agent yet, the computer they'd sign in on says it too", () => {
+    const pc: AiComputer = {
+      ...MAC,
+      os: "windows",
+      brains: { claude_code: true, codex: true, antigravity: false },
+      off: { antigravity: "system" },
+    };
+    const { gate: g } = planGateWithoutAgent({ choice: "gemini", edition: "selfhost", setup: null, computers: [pc] });
+    expect(planOffSystem(enT, g)).toBe("Windows");
   });
 });

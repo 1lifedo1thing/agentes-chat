@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 80;
+export const MACHINE_PROTOCOL_VERSION = 84;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -466,6 +466,12 @@ export const CODEX_FOLDER_PROTOCOL = 32;
  * open again in the new mode.
  */
 export const DESKTOP_SWITCH_PROTOCOL = 30;
+/**
+ * From this protocol on: a runner that starts a desktop for a `stream.open` says so first (`stream.starting`), and the
+ * server then waits `STREAM_LIMITS.startTimeoutMs` for that stream instead of `openTimeoutMs`. An older runner can't
+ * say it, so each of its opens that may start the desktop gets the longer wait.
+ */
+export const DESKTOP_STARTING_PROTOCOL = 83;
 
 /**
  * From this protocol on (ADR 0114): the Cursor brain. `brain.turn` takes `kind: "cursor"` (Cursor's CLI, `agent -p`,
@@ -650,6 +656,12 @@ export const CODEX_WINDOWS_PROTOCOL = 60;
  * background, after start). An older runner says neither, and runs Codex on Windows only inside MXC.
  */
 export const CODEX_UNELEVATED_PROTOCOL = 80;
+/**
+ * Grok Build turns on Windows (ADR 0142 §10). Grok's own sandbox doesn't run there, so a `work` turn's own tools keep
+ * to Grok's permission rules: edits in the turn's folder, read-only commands, everything else through our tools. A
+ * Windows runner before it refuses every Grok turn, so the server reads it as too old for Grok there.
+ */
+export const GROK_WINDOWS_PROTOCOL = 82;
 /** What holds Codex's commands on a Windows computer (`executors.codex.sandbox`): `none`, nothing it could start. */
 export const CODEX_SANDBOXES = ["mxc", "unelevated", "none"] as const;
 export type CodexSandbox = (typeof CODEX_SANDBOXES)[number];
@@ -1627,6 +1639,11 @@ export type RunnerDesktopUseInfo = RunnerTerminalInfo;
 export const STREAM_LIMITS = {
   /** The server waits this long for the runner's data socket after `stream.open`. */
   openTimeoutMs: 20_000,
+  /**
+   * The same for an open that starts the agent's desktop first (`DESKTOP_STARTING_PROTOCOL`): its steps may take
+   * 10 s each, and it may wait for another start of that agent's (its browser) to end.
+   */
+  startTimeoutMs: 90_000,
   /** A data socket's `stream.hello` must come this soon. */
   helloTimeoutMs: 10_000,
   /** Both sides ping this often: an idle desktop sends nothing, and proxies drop idle sockets. */
@@ -1733,6 +1750,8 @@ export interface StreamHello {
   type: "stream.hello";
   token: string;
   streamId: string;
+  /** `EGRESS_SHARE_PROTOCOL`: the workspace's computer asks for a connection there through a lent one. */
+  egress?: { host: string; port: number };
 }
 
 /**
@@ -1838,6 +1857,32 @@ export function parseAgentPointer(f: Record<string, unknown>): AgentPointer | nu
   if (width < 1 || height < 1 || width > 16_384 || height > 16_384) return null;
   const within = (n: number, max: number) => Math.round(Math.min(Math.max(n, 0), max));
   return { x: within(x, width), y: within(y, height), width: Math.round(width), height: Math.round(height), act };
+}
+
+/** Where a desktop start's time went (ms), as its runner's log line says it: the look runs beside its screen. */
+export const DESKTOP_START_STEPS = ["room", "prepared", "screen", "look", "session"] as const;
+export type DesktopStartStep = (typeof DESKTOP_START_STEPS)[number];
+
+/** A desktop start (`desktop.started`): its whole time, and each step's once it started, or why it failed. */
+export interface DesktopStart {
+  ms: number;
+  steps?: Record<DesktopStartStep, number>;
+  /** The error code it failed with. */
+  error?: string;
+}
+
+export function parseDesktopStart(f: Record<string, unknown>): DesktopStart | null {
+  const time = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.round(v) : undefined);
+  const ms = time(f.ms);
+  if (ms === undefined) return null;
+  const given = isObject(f.steps) ? f.steps : null;
+  const steps = given ? Object.fromEntries(DESKTOP_START_STEPS.map((k) => [k, time(given[k])])) : null;
+  const whole = steps !== null && Object.values(steps).every((v) => v !== undefined);
+  return {
+    ms,
+    ...(whole ? { steps: steps as Record<DesktopStartStep, number> } : {}),
+    ...(isString(f.error) && /^[a-z0-9_]{1,64}$/.test(f.error) ? { error: f.error } : {}),
+  };
 }
 
 /** What a frame shows. */
@@ -2463,6 +2508,12 @@ export interface BrainTurnRequest {
    */
   personWaiting?: boolean;
   /**
+   * The IANA zone the turn's "Now" is in (the person's, else the workspace's, a routine's own): the CLI runs with it as
+   * its `TZ`, so its own clock, and the date its system prompt states, match the person's day. The computer's own
+   * zone stays as its egress sets it. No protocol step: a runner that doesn't read it keeps the computer's zone.
+   */
+  timeZone?: string;
+  /**
    * `each` (ADR 0112): an answer the turn finished before it went on (a message handed to it mid-turn was read after
    * it, work moved to the background, a background task's notice) goes out at once as an `answer` event, and `done`
    * holds only what came after it. No protocol step: a runner that doesn't read it joins them into `done`, as before.
@@ -2530,6 +2581,45 @@ export const AGY_COPY_PROTOCOL = 76;
  */
 export const TASK_ROOM_PROTOCOL = 78;
 
+/**
+ * Protocol 81 (ADR 0237): a person's computer may lend its internet connection to its workspace's own computer.
+ * `egress.dial` asks it to open one TCP connection to `host`:`port` (`EGRESS_SHARE`'s ports only, a name it resolves
+ * itself or a public address, never one on its own network) and to carry its bytes on a data socket it dials for
+ * `streamId`; it answers once that socket is ready. A data socket's `stream.hello` may carry `egress`: the workspace's
+ * computer asks the server for such a connection, and the server answers `stream.ready` once a lent connection
+ * carries it, or closes the socket (`STREAM_CLOSE.unreachable`: none is lent now; `refused`: that destination isn't
+ * carried). The server asks no older runner, and `welcome.egressRelay` goes to the workspace's computer alone.
+ */
+export const EGRESS_SHARE_PROTOCOL = 81;
+/** What a lent connection carries, at most. */
+export const EGRESS_SHARE = {
+  /** The web only: anything else leaves the workspace's computer its usual way. */
+  ports: [80, 443] as readonly number[],
+  /** Bytes both ways a day (UTC) the lending computer carries before it refuses new connections until the next. */
+  dailyBytes: 5 * 1024 ** 3,
+  /** Connections open at once through one lending computer. */
+  open: 256,
+  /** How long the lending computer waits to reach the destination. */
+  connectMs: 10_000,
+} as const;
+/** A host `egress.dial` takes: a DNS name or an IP literal, short and plain. */
+export const isEgressHost = (v: unknown): v is string =>
+  typeof v === "string" &&
+  v.length > 0 &&
+  v.length <= 253 &&
+  (/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.?$/.test(v) ||
+    /^[0-9A-Fa-f:.]+$/.test(v));
+/** A target `stream.hello` or `egress.dial` names: a host as `isEgressHost` and one of `EGRESS_SHARE.ports`. */
+export const isEgressTarget = (v: unknown): v is { host: string; port: number } =>
+  isObject(v) && isEgressHost(v.host) && typeof v.port === "number" && EGRESS_SHARE.ports.includes(v.port);
+
+/**
+ * Protocol 84 (ADR 0143): Gemini signs in and thinks on Windows, one account a computer (the CLI keeps its sign-in in
+ * the Windows user's one Credential Manager), with the runner's own `agy.exe` where the person's is older or missing.
+ * An older Windows runner refuses every Gemini sign-in and turn.
+ */
+export const ANTIGRAVITY_WINDOWS_PROTOCOL = 84;
+
 /** About how many more background tasks fit on the computer now, and what decides it. */
 export interface TaskRoomReport {
   more: number;
@@ -2564,7 +2654,11 @@ export type BrainWarmRequest = Pick<
   | "effort"
   | "contextTokens"
   | "codeSession"
->;
+  | "timeZone"
+> & {
+  /** The run it warms for: the server signs its commits as the turn's (`agent.author`); the runner ignores it. */
+  runId?: string;
+};
 
 /** `open`: the session has a CLI now; `started`: this request started it. */
 export interface BrainWarmReply {
@@ -3097,6 +3191,8 @@ export type MachineRequest = (
   | { op: "phone.repair"; serial: string }
   /** `PROBLEM_REPORT_PROTOCOL`: facts and the scrubbed log tail for a problem report. */
   | { op: "report.collect" }
+  /** `EGRESS_SHARE_PROTOCOL`: one connection to `host`:`port`, its bytes on the data socket `streamId`. */
+  | { op: "egress.dial"; streamId: string; host: string; port: number }
 ) & {
   agent?: AgentScope;
   /** Protocol 34: a `browser.*` op in this browser profile's session instead of the agent's (ADR 0110). */
@@ -3181,6 +3277,7 @@ export const MACHINE_OPS: readonly MachineOp[] = [
   "xcode.open",
   "phone.repair",
   "report.collect",
+  "egress.dial",
 ];
 
 /** What each op answers with `ok: true`. */
@@ -3356,6 +3453,7 @@ export interface MachineReplies {
   "xcode.open": { opened: boolean };
   "phone.repair": { repairing: boolean };
   "report.collect": RunnerReportParts;
+  "egress.dial": { connected: true };
 }
 
 /** An element numbered on a `browser.capture` image: its ref and box (CSS pixels). */
@@ -3452,6 +3550,11 @@ export type ServerFrame =
       heartbeatMs: number;
       /** Only the workspace’s managed computer observes its agents’ public route. */
       observeEgress?: boolean;
+      /**
+       * `EGRESS_SHARE_PROTOCOL`, the workspace's managed computer alone: it offers its network guard a local SOCKS5
+       * socket whose connections go out through a computer a person lent (ADR 0237).
+       */
+      egressRelay?: boolean;
       /**
        * The server runs each `mcp.call` once per `callId` and answers a copy with the first answer: a call cut by
        * a reconnect may be sent again. Absent (older servers): sent again it would run twice.
@@ -3589,7 +3692,14 @@ export type RunnerFrame =
   /** `KEEP_RUNNING_PROTOCOL`: a hold ended on the computer by itself (the next `hello` says so again). */
   | { type: "keep.ended"; holdId: string; reason: HoldEnd }
   /** `ROOM_FREED_PROTOCOL`: room again after a `no_slot`. */
-  | { type: "room.freed" };
+  | { type: "room.freed" }
+  /** `DESKTOP_STARTING_PROTOCOL`: this `stream.open` starts the agent's desktop first, so it takes longer. */
+  | { type: "stream.starting"; streamId: string }
+  /**
+   * A desktop start ended here (for a viewer, the agent's own use or its browser): how long it took in all and in
+   * each step (ms), or the error code it failed with. The operator's events feed keeps it. An older server drops it.
+   */
+  | ({ type: "desktop.started"; agentId: string } & DesktopStart);
 
 /** A tool as `mcp.tools` lists it (what MCP `tools/list` returns). */
 export interface McpToolInfo {
@@ -4160,6 +4270,14 @@ export function parseRunnerFrame(raw: string): RunnerFrame | null {
     }
     case "room.freed":
       return { type: "room.freed" };
+    case "stream.starting":
+      return isStreamId(f.streamId) ? { type: "stream.starting", streamId: f.streamId } : null;
+    case "desktop.started": {
+      const start = parseDesktopStart(f);
+      return isString(f.agentId) && start
+        ? { type: "desktop.started", agentId: f.agentId.slice(0, 64), ...start }
+        : null;
+    }
     case "keep.ended": {
       const reason = HOLD_ENDS.find((r) => r === f.reason);
       return isUuid(f.holdId) && reason ? { type: "keep.ended", holdId: f.holdId, reason } : null;
@@ -4942,10 +5060,13 @@ export const isStreamId = (v: unknown): v is string => typeof v === "string" && 
 
 /** A data socket's `stream.hello` (server side); null when it isn't one. The token is checked by the caller. */
 export function parseStreamHello(raw: string): StreamHello | null {
-  const f = smallJson(raw, 512);
+  // Room for the longest token and an `egress` host (253), never for padding.
+  const f = smallJson(raw, 640);
   if (!isObject(f) || f.type !== "stream.hello" || !isStreamId(f.streamId)) return null;
   if (!isString(f.token) || !f.token.startsWith(MACHINE_TOKEN_PREFIX) || f.token.length > 200) return null;
-  return { type: "stream.hello", token: f.token, streamId: f.streamId };
+  if (f.egress !== undefined && !isEgressTarget(f.egress)) return null;
+  const egress = f.egress === undefined ? {} : { egress: { host: f.egress.host, port: f.egress.port } };
+  return { type: "stream.hello", token: f.token, streamId: f.streamId, ...egress };
 }
 
 /** A terminal's size within `STREAM_LIMITS` (whole columns and rows). */

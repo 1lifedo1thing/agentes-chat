@@ -369,6 +369,17 @@ export interface SurfaceLink {
   expiresAt: string | null;
   /** A PIN confirms actions asked from the surface (ADR 0226). */
   pinSet: boolean;
+  /** The unread nudge on the surface (ADR 0234), the person's own. */
+  nudge: SurfaceNudge;
+}
+
+/** When the surface reminds the person of what waits unread: on, after how many hours, never in the quiet hours. */
+export interface SurfaceNudge {
+  on: boolean;
+  afterHours: number;
+  /** Whole hours of the day in the person's time zone; equal: no quiet hours. */
+  quietFrom: number;
+  quietTo: number;
 }
 
 /** `GET /me/surface-links`: `allowed`, never `AuthConfig.surface`, decides whether the apps offer linking. */
@@ -1505,9 +1516,9 @@ export interface Channel {
   createdAt: string;
   /** Who created it: may change it and its members, like admins. */
   createdByUserId?: string | null;
-  /** Its sidebar category (ADR 0080); null or absent: on top, with none. */
-  categoryId?: string | null;
-  /** Order inside its category, from 0. */
+  /** Its sector (ADR 0240); null or absent: under Canais, in none. */
+  groupId?: string | null;
+  /** Order inside its sector (or among the channels in none), from 0. */
   position?: number;
   /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). Regular channels only. */
   replyInThreads?: boolean;
@@ -1609,14 +1620,6 @@ export interface ChannelCard {
   people: number;
   /** Agents in it. */
   agents: number;
-}
-
-/** A named group of channels in the sidebar, the same for everyone in the organization (ADR 0080). */
-export interface ChannelCategory {
-  id: string;
-  name: string;
-  /** Order in the sidebar, from 0. */
-  position: number;
 }
 
 /** A channel's latest top-level message, for the conversation list. */
@@ -2421,6 +2424,13 @@ export interface Approval {
   /** Approved ahead and not run yet, and you may withdraw it (`approvals.cancel`). */
   canCancel?: boolean;
   /**
+   * Other runs' requests the agent was told already waited in this conversation when it asked: once approved it runs
+   * after they settle (ADR 0182). Absent from older servers: then it waits for none.
+   */
+  afterIds?: string[];
+  /** Approved and waiting for `afterIds`, and you may run it now (`approvals.runNow`, "Rodar este agora"). */
+  canRunNow?: boolean;
+  /**
    * Asked with `request_approval` (ADR 0126): who decides, in words ("Diretoria"), and whose request it was, who
    * decides it only as an approver by role (`requesterDecides`). Null or absent: any other approval.
    */
@@ -3065,6 +3075,8 @@ export interface AgentWork {
   count: number;
   /** With `later`: when it comes back to that conversation (ISO). */
   at?: string;
+  /** Its conversation is one you don't read (someone else's DM, a private channel): nowhere to open. */
+  private?: true;
 }
 
 /**
@@ -3346,6 +3358,13 @@ export interface CustomServer {
   tools: CustomTool[];
   /** What routines can wait on from it (ADR 0130). Older servers leave it out. */
   events?: RoutineConnectorTrigger["event"][];
+  /**
+   * What the server says on how to use its tools (MCP's `instructions`), as agents read it: `cut` when it said more
+   * than `maxChars`. Null when it says nothing, and for who doesn't manage connectors. Older servers leave it out.
+   */
+  instructions?: { text: string; cut: boolean; maxChars: number } | null;
+  /** Agents granted its tools get `instructions` after their own. Older servers leave it out (on). */
+  useInstructions?: boolean;
   /** Last time an admin saved the classification; null = never (nothing exposed). */
   reviewedAt: string | null;
   createdAt: string;
@@ -3643,6 +3662,7 @@ export const WORKSPACE_ACTION_IDS = [
   "continue_work",
   "update_workspace",
   "set_action_check",
+  "set_computer_help",
   "invite_people",
   "remove_ai_key",
 ] as const;
@@ -5286,6 +5306,11 @@ export interface Machine {
   egress?: { ip: string; country?: string; at: string } | null;
   networkTransition?: { state: "draining" | "restart_required"; deadline: string; agents: string[] } | null;
   /**
+   * ADR 0237, the workspace's own computer: the person's computer whose internet its agents' web traffic uses now, and
+   * who connected it. Null or absent: its usual way out.
+   */
+  egressVia?: { machineId: string; name: string; userName: string | null } | null;
+  /**
    * The workspace's own computer, online, has its agents waiting for their way out: none of the proxies its network
    * requires works now, so their connections are refused for a while. Absent from an older server: they don't wait.
    */
@@ -6560,7 +6585,8 @@ export interface AgentBrain {
   /** As stored; null = the brain's default. */
   model: string | null;
   effectiveModel: string | null;
-  computer: { machineId: string; name: string; online: boolean } | null;
+  /** `os`: its system, where a plan doesn't run there (absent: an older server). */
+  computer: { machineId: string; name: string; online: boolean; os?: string } | null;
   options: BrainOption[];
   /** Every computer the caller may give the agent, with what each offers ("Vai para o Mac mini"). */
   machines: BrainMachine[];
@@ -6772,6 +6798,8 @@ export interface AiComputer {
   machineId: string;
   name: string;
   online: boolean;
+  /** Its system, where a plan doesn't run there (absent: an older server). */
+  os?: string;
   /** The viewer connected it. */
   mine: boolean;
   /** The viewer adds accounts there (they connected it, or nobody did), on a runner that knows accounts. */
@@ -7342,6 +7370,11 @@ export type NotificationKind =
    */
   | "device.folder_request"
   /**
+   * ADR 0237: a computer paired before agents could use a person's internet lends its own now (its owner, else who
+   * configures the workspace), once: `source.machineId`, its name in `source.label`. Inbox only, "Turn off" on the row.
+   */
+  | "device.internet_shared"
+  /**
    * "Pedir a um admin" (`POST …/admin-asks`): the asker as actor, what in `latest.reason` (`channel_agent` with
    * `source.channelId` and `agentId`, waiting until added; `create_agents`; `webhook` with the service in `latest.title`).
    */
@@ -7383,6 +7416,13 @@ export type NotificationKind =
   | "computer_disk_full"
   /** ADR 0133: a computer has no Google Chrome for its agents' browsers (who connected it). `source.machineId`. */
   | "computer_no_chrome"
+  /**
+   * ADR 0241: a computer the agents work on has been away 10 minutes (who configures the workspace). Once per outage;
+   * `source.machineId` and its name in `source.label`, `latest.since`, `latest.runs`, `latest.calls`.
+   */
+  | "computer_down"
+  /** ADR 0241: that computer is back (who heard it was down), with the same fields. Opens the computer. */
+  | "computer_back"
   /** ADR 0059 §8: someone else took control of the person's agent's desktop. Once a day per agent; `source.agentId`. */
   | "desktop_taken"
   /**
@@ -7632,6 +7672,9 @@ export interface NotificationLatest {
   /** `computer_disk_full`: the share of the disk in use (0 to 1) and the GB left. */
   diskUse?: number;
   diskFreeGb?: number;
+  /** `computer_down`, `computer_back`: when the outage began (ISO), the webhook calls that waited (`runs`: the runs). */
+  since?: string;
+  calls?: number;
   /** `app_created`: how many of each kind (`agent`, `routine`, `skill`, `memory`, `channel`). */
   created?: Record<string, number>;
   /** `run_failed`: every run the row stands for, failed for one cause close together (`latest.reason`). */
@@ -7646,6 +7689,7 @@ export interface NotificationLatest {
   limitUsd?: number;
   raiseToUsd?: number;
   limitFrom?: string;
+  /** `usage_limit`: this month's requests; `computer_down`, `computer_back`: the runs that waited for the computer. */
   runs?: number;
   /** `usage_limit`: the share of the requests made with the agent named in `title`. */
   share?: number;
@@ -8927,8 +8971,15 @@ export interface ComputerDevice {
   /**
    * "Help when the team's computer is full or away": fresh turns of its owner's agents (anyone's, on one marked the
    * workspace's) may think here while their own computer is full or away. An older server also sent a retired `others`.
+   * `first`: "Use this computer for my agents' work", its owner's agents' asks, routines and long work start here first
+   * (absent: an older server).
    */
-  spill: { own: boolean };
+  spill: { own: boolean; first?: boolean };
+  /**
+   * ADR 0237: whether its owner lends its internet to the workspace's own computer, and whether that computer goes out
+   * through it now. Null (or absent from an older server): nothing to lend to.
+   */
+  shareInternet?: { on: boolean; inUse: boolean } | null;
   systemMode: boolean;
   audience: DeviceAudience;
   status: DeviceStatus;
@@ -9068,7 +9119,9 @@ export interface ComputerDeviceInput {
   belongsToWorkspace?: boolean;
   maxTasks?: number;
   pushHarder?: boolean;
-  spill?: { own?: boolean };
+  /** ADR 0237: lend its internet to the workspace's own computer (its owner); on again picks it first. */
+  shareInternet?: boolean;
+  spill?: { own?: boolean; first?: boolean };
 }
 
 export interface PhoneDeviceInput {

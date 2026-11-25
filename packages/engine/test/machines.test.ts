@@ -1043,6 +1043,18 @@ describe("hub", () => {
     expect(after).toMatchObject({ online: false, connectedReplica: null });
     expect(statuses).toContainEqual({ type: "machine.status", machineId: paired.machineId, online: false });
     await expect(hub.call(paired.machineId, { op: "list", path: "", depth: 1 })).rejects.toThrow(MachineOfflineError);
+
+    // A host computer whose display name is still its uncustomized hostname updates `name` on `hello`.
+    await f.db
+      .update(schema.machines)
+      .set({ kind: "host", name: "vps-old", hostname: "vps-old" })
+      .where(eq(schema.machines.id, paired.machineId));
+    const hostRunner = fakeRunner(hub);
+    await hostRunner.hello(paired.token, { hostname: "vps-new", exec: true });
+    expect(hostRunner.sent[0]).toMatchObject({ type: "welcome", name: "vps-new" });
+    const [migrated] = await f.db.select().from(schema.machines);
+    expect(migrated).toMatchObject({ kind: "host", name: "vps-new", hostname: "vps-new" });
+    await hostRunner.disconnect();
   });
 
   test("requests, live output, cancel, errors; a second runner replaces the first; delete closes it", async () => {
@@ -2496,4 +2508,23 @@ test("personal computer IPs are neither stored nor broadcast to workspace reader
     .set({ egress: { ip: "8.8.8.8", at: new Date().toISOString() } })
     .where(eq(schema.machines.id, paired.machineId));
   for (const actor of [f.owner, guest]) expect((await listMachines(f.db, actor.id, f.org.id))[0]?.egress).toBeNull();
+});
+
+test("a warm start carries the agent its turn will: the same co-author line, so the turn takes its process", async () => {
+  f = await setup({ machines: true });
+  const hub = f.machineHub as MachineHub;
+  const paired = await pair();
+  const runner = fakeRunner(hub, { dead: true });
+  await runner.hello(paired.token);
+  const agent = { id: f.agent.id, handle: "dev", name: "Dev" };
+  const runId = crypto.randomUUID();
+  void hub.call(paired.machineId, { ...brainTurn(runId), agent }).catch(() => {});
+  const { session, cwd, kind } = brainTurn(runId);
+  void hub.call(paired.machineId, { op: "brain.warm", runId, kind, session, cwd, agent }).catch(() => {});
+  await until(() => runner.sent.filter((s) => s.type === "request").length === 2);
+  const [turn, warm] = ["brain.turn", "brain.warm"].map(
+    (op) => (runner.sent.find((s) => s.type === "request" && s.op === op) as Request | undefined)?.agent,
+  );
+  expect(turn).toMatchObject({ coAuthors: [expect.stringContaining("Co-authored-by: Dev")] });
+  expect(warm).toEqual(turn);
 });

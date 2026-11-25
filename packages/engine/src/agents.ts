@@ -24,6 +24,7 @@ import {
 import { isIdHandle } from "@agenteschat/ui/names";
 import { type AgentAppearance, type AppearanceInput, setAgentAppearance } from "./appearance";
 import { dropAgentRules } from "./approval-rules";
+import { releaseUnasked } from "./approvals";
 import {
   ACCESS_COLUMNS,
   type AgentAccessFields,
@@ -749,6 +750,10 @@ export async function updateAgent(
       target: { type: "agent", id: agentId },
       details: { name: agent.name, changed, ...shown },
     });
+  }
+  // Set to never ask: what it still waits on would not ask now, so its runs call it again (`releaseUnasked`).
+  if (approvalsLevel !== undefined && agent.approvalsLevel === "never") {
+    await releaseUnasked({ db, pubsub: options.pubsub }, actorId, orgId, { agentIds: [agentId] });
   }
   if (input.monthlyBudgetNanoUsd !== undefined) {
     await resyncBudgetCounter(db, orgId, agentId);

@@ -13,6 +13,7 @@ import {
   grantScopes,
   type MachineStatus,
   postPersonMessage,
+  publishTyping,
 } from "../src";
 import { type Fixture, setup } from "./fixtures";
 import { pairMachine } from "./machine-fixtures";
@@ -260,7 +261,7 @@ async function onComputer(brain: "claude_code" | "codex", protocol: number) {
   });
 }
 
-test("the quiet window's checkouts sync is the turn's own, its start picked again from what came in meanwhile", async () => {
+test("the typing hold's checkouts sync is the turn's own, its start picked again from what came in meanwhile", async () => {
   f = await setup({ quietMs: 300 });
   const status = await onComputer("claude_code", MACHINE_PROTOCOL_VERSION);
   const codes: (CodeSetup | null | undefined)[] = [];
@@ -299,6 +300,8 @@ test("the quiet window's checkouts sync is the turn's own, its start picked agai
   await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
     body: "@dev o deploy quebrou",
   });
+  // Still typing: the line it adds while the checkouts sync is read with the first turn.
+  await publishTyping(f.pubsub, { channelId: f.general.id, threadId: null, userId: f.owner.id });
   await drainOutbox(f.db, handlers);
   expect(syncs).toBe(1);
   expect(codes).toHaveLength(1);

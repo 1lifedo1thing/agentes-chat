@@ -2219,7 +2219,7 @@
       },
       "computers": {
         "title": "Computadoras",
-        "help": "Se sumó una computadora nueva o la del espacio de trabajo está lista"
+        "help": "Se sumó una computadora, está lista o dejó de responder"
       },
       "reactions": {
         "title": "Reacciones",
@@ -2283,8 +2283,8 @@
       "title": "Barra lateral",
       "newChannel": "Nuevo canal",
       "newChannelPersonal": "Nueva conversación en grupo",
-      "addToChannels": "Nuevo canal o categoría",
-      "addToChannelsPersonal": "Nueva conversación en grupo o categoría",
+      "addToChannels": "Nuevo canal",
+      "addToChannelsPersonal": "Nueva conversación en grupo",
       "newMessage": "Nuevo mensaje",
       "addMembers": "Agregar personas o agentes",
       "channelSettings": "Configuración del canal",
@@ -2451,7 +2451,9 @@
     "delete": "Eliminar departamento",
     "deleteTitle": "¿Eliminar el departamento {{name}}?",
     "deleteText": "Sus agentes vuelven a Agentes.",
+    "deleteChannels": "Sus canales vuelven a Canales.",
     "dropHere": "Arrastra agentes aquí",
+    "dropHereAll": "Arrastra agentes o canales aquí",
     "moved": "{{name}} pasó a {{group}}",
     "movedOut": "{{name}} salió de {{group}}",
     "undo": "Deshacer"
@@ -2557,6 +2559,17 @@
       "unlinkText": "{{assistant}} deja de responderte allí. Puedes vincularlo de nuevo cuando quieras.",
       "unlinked": "{{surface}} desvinculado"
     },
+    "nudge": {
+      "title": "Recordatorio de no leídos",
+      "hint": "Cuando algo queda sin leer en la app, {{assistant}} te lo recuerda en {{surface}}, como máximo una vez al día. No si tu teléfono recibe notificaciones.",
+      "after": "Recordar después de",
+      "hours": "{{hours}} h",
+      "quiet": "Horas de silencio",
+      "quietHint": "Ningún recordatorio entre estas horas, en tu zona horaria.",
+      "quietFrom": "Desde",
+      "quietTo": "Hasta",
+      "quietRange": "De {{from}} a {{to}}"
+    },
     "undo": {
       "title": "¿Desvincular la app de chat?",
       "lead": "Tu cuenta se acaba de vincular a una app de chat. Si no fuiste tú, desvincúlala aquí.",
@@ -2609,6 +2622,7 @@
       "set": "Elegir PIN",
       "change": "Cambiar PIN",
       "title": "Tu PIN de {{surface}}",
+      "row": "Tu PIN",
       "text": "Seis dígitos que escribes para aprobar las acciones que pides desde {{surface}}. Nunca se envía en el chat.",
       "save": "Guardar PIN"
     }
@@ -3347,6 +3361,9 @@
       "set_notifications_off": "Desactivar tus notificaciones de <b>{{category}}</b>",
       "set_my_timezone": "Poner tu zona horaria en <b>{{timezone}}</b>",
       "set_my_timezone_workspace": "Volver a seguir la zona horaria del espacio de trabajo",
+      "set_computer_help": "Dejar que <b>{{computer}}</b> ayude cuando la computadora de tus agentes esté llena o fuera",
+      "set_computer_help_first": "Usar <b>{{computer}}</b> para el trabajo de tus agentes",
+      "set_computer_help_off": "Dejar de usar <b>{{computer}}</b> para tus agentes",
       "set_invitation_roles": "Cambiar los roles que da la invitación de <b>{{email}}</b>: {{change}}",
       "update_channel": "Cambiar el canal <b>#{{channel}}</b>",
       "archive_channel": "Archivar <b>#{{channel}}</b>",
@@ -3732,6 +3749,11 @@
       "plan": "Con un plan",
       "key": "Con clave de API"
     },
+    "offSystem": "Aún no funciona en {{system}}",
+    "offSystemGroup": "Aún no funcionan en {{system}}",
+    "offSystemSome_one": "{{names}} aún no funciona en {{system}}",
+    "offSystemSome_many": "{{names}} aún no funcionan en {{system}}",
+    "offSystemSome_other": "{{names}} aún no funcionan en {{system}}",
     "pick": {
       "plan": "Plan",
       "placeholder": "Elige un plan",
@@ -3760,7 +3782,8 @@
       "gemini": {
         "title": "Tu plan de Gemini",
         "tiers": "Google AI Pro, Google AI Ultra o Gemini Enterprise",
-        "warning": "Google dice que usar un plan personal de Gemini dentro de otras apps puede hacer que suspendan la cuenta. Para evitar ese riesgo, usa una clave de API de Gemini o Gemini Enterprise."
+        "warning": "Google dice que usar un plan personal de Gemini dentro de otras apps puede hacer que suspendan la cuenta. Para evitar ese riesgo, usa una clave de API de Gemini o Gemini Enterprise.",
+        "windowsOne": "En Windows, una computadora usa una sola cuenta de Gemini a la vez."
       },
       "zen": {
         "title": "OpenCode",
@@ -4237,6 +4260,9 @@
       "changed_set_notifications_off": "Desactivé tus notificaciones de <b>{{category}}</b>",
       "changed_set_my_timezone": "Puse tu zona horaria en <b>{{timezone}}</b>",
       "changed_set_my_timezone_workspace": "Tu zona horaria vuelve a seguir la del espacio de trabajo",
+      "changed_set_computer_help": "<b>{{computer}}</b> ahora ayuda cuando la computadora de tus agentes está llena o fuera",
+      "changed_set_computer_help_first": "El trabajo de tus agentes ahora empieza en <b>{{computer}}</b>",
+      "changed_set_computer_help_off": "<b>{{computer}}</b> ya no ayuda a tus agentes",
       "changed_set_invitation_roles": "Cambié los roles que da la invitación de <b>{{email}}</b>: {{change}}",
       "changed_update_channel": "Cambié el canal <b>#{{channel}}</b>",
       "changed_archive_channel": "Archivé <b>#{{channel}}</b>",
@@ -4385,54 +4411,8 @@
     "create": "Crear #{{name}}"
   },
   "channelCategories": {
-    "newCategory": "Nueva categoría",
-    "newCategoryHelp": "Va al final de la lista. Puedes arrastrarla después.",
-    "newCategoryDesc": "Agrupa canales bajo un nombre en la barra lateral de todos.",
-    "name": "Nombre",
-    "namePlaceholder": "ej.: Producto",
-    "nameEmpty": "Ponle un nombre a la categoría.",
-    "nameTaken": "Ya existe una categoría {{name}}.",
-    "channels": "Canales que van en ella",
-    "channelsSearch": "Buscar canales",
-    "channelsEmpty": "Ningún canal coincide con “{{q}}”.",
-    "inCategory": "Ahora en {{name}}",
-    "noCategory": "Sin categoría",
-    "noCategoryDesc": "Arriba, sin encabezado",
-    "create": "Crear categoría",
-    "createWith_one": "Crear con {{count}} canal",
-    "createWith_many": "Crear con {{count}} canales",
-    "createWith_other": "Crear con {{count}} canales",
-    "created": "{{name}} creada.",
-    "rename": "Cambiar nombre",
-    "renameTitle": "Cambiar nombre de la categoría",
-    "save": "Guardar",
-    "delete": "Eliminar categoría",
-    "deleteDesc": "Sus canales van arriba",
-    "deleted_one": "{{name}} eliminada. {{count}} canal pasó arriba.",
-    "deleted_many": "{{name}} eliminada. {{count}} canales pasaron arriba.",
-    "deleted_other": "{{name}} eliminada. {{count}} canales pasaron arriba.",
-    "deletedEmpty": "{{name}} eliminada.",
     "undo": "Deshacer",
-    "collapseAll": "Cerrar todas",
-    "expandAll": "Abrir todas",
-    "newChannelHere": "Nuevo canal aquí",
-    "newChannelIn": "Nuevo canal en {{name}}",
-    "options": "Opciones de {{name}}",
-    "category": "Categoría",
     "categoryHelp": "Dónde aparece el canal en la barra lateral de todos.",
-    "newCategoryOption": "Nueva categoría…",
-    "move": "Mover a…",
-    "moveTitle": "Mover #{{channel}}",
-    "moveDesc": "Cambia dónde está el canal en la barra lateral de todos. Quién participa sigue igual.",
-    "moveSearch": "Buscar categorías",
-    "moveEmpty": "Ninguna categoría coincide con “{{q}}”.",
-    "moveTo": "Mover a {{name}}",
-    "moveSame": "Mover",
-    "moveNow": "Ahora",
-    "moveEmptyCategory": "Todavía sin canales",
-    "moveCreate": "Crear “{{name}}”",
-    "moved": "#{{channel}} ahora está en {{name}}.",
-    "newWithChannel": "Nueva categoría con este canal",
     "editChannel": "Editar canal"
   },
   "channelMembers": {
@@ -4602,7 +4582,9 @@
       "noAi": "Sin IA conectada"
     },
     "bySelf": "Escrito por {{name}} · se borra cuando termine",
-    "byAuto": "Lo que está haciendo ahora"
+    "byAuto": "Lo que está haciendo ahora",
+    "byPrivate": "En una conversación privada · solo quienes están en ella ven los detalles",
+    "openWork": "Abrir la conversación"
   },
   "agentWork": {
     "working": "trabajando",
@@ -4611,6 +4593,7 @@
     "queued": "en la fila",
     "here": "aquí",
     "routine": "en una rutina",
+    "private": "en una conversación privada",
     "yourApproval": "tu aprobación",
     "yourAnswer": "tu respuesta",
     "later": "seguimiento {{when}}",
@@ -5235,8 +5218,18 @@
     "expiredChip": "Vencida · {{when}}",
     "canceledChip": "Cancelada · {{when}}",
     "line": {
-      "after": "se ejecuta después de “{{title}}”",
       "notRun": "no se ejecutó: la solicitud anterior no fue aprobada"
+    },
+    "held": {
+      "waiting": "Esperando <link/>",
+      "runNow": "Ejecutar esta ahora"
+    },
+    "byAgent": {
+      "head_one": "{{count}} pedido de {{name}}",
+      "head_many": "{{count}} pedidos de {{name}}",
+      "head_other": "{{count}} pedidos de {{name}}",
+      "approve": "Aprobar todos",
+      "refuse": "Rechazar todos"
     },
     "waitingFor": "Esperando a {{name}}",
     "waitingAdmin": "Esperando a un admin",
@@ -5874,7 +5867,6 @@
       "queued": "En cola",
       "notRun": "No se ejecutó"
     },
-    "queuedLine": "Aprobada. Se ejecuta después de “{{title}}”, solicitada antes.",
     "notRunRefused": "“{{title}}”, solicitada antes, fue rechazada después de aprobar esta. Por eso esta no se ejecutó.",
     "notRunExpired": "“{{title}}”, solicitada antes, venció sin decisión después de aprobar esta. Por eso esta no se ejecutó.",
     "notRunEarlier": "Una solicitud anterior fue rechazada o venció después de aprobar esta. Por eso esta no se ejecutó.",
@@ -12899,7 +12891,6 @@
       "home_only": "{{program}} está instalado solo para root en {{computer}}, donde los agentes no llegan.",
       "not_reported": "{{computer}} todavía está comprobando qué programas tiene. Esto cambia solo cuando termine.",
       "system": "{{program}} todavía no funciona en el sistema de {{computer}}.",
-      "systemAntigravity": "Los planes de Gemini todavía no funcionan en {{computer}}: en Windows, Antigravity CLI guarda el inicio de sesión de Google en el Administrador de credenciales, que agentes.chat todavía no puede separar por cuenta. Usa una clave de API de Gemini en su lugar.",
       "windows_sandbox": "El Windows de {{computer}} no puede aislar los comandos de {{program}}. Elige Claude o una clave de API en su lugar, o actualiza esa computadora a Windows 11 24H2 o posterior, con sus últimas actualizaciones.",
       "no_computerCloud": "Listo en cuanto {{computer}} lo esté."
     },
@@ -12979,7 +12970,13 @@
     "rule": "Un trabajo nuevo empieza cuando la computadora tiene memoria libre. Las personas van primero. Los agentes mencionados juntos empiezan de uno en uno.",
     "spill": {
       "title": "Tus computadoras",
-      "text": "Cuando esta computadora esté llena o fuera, tus agentes pueden empezar en una de las tuyas. Las misiones, las sesiones de código y los agentes con repositorios se quedan aquí.",
+      "text": "Cuando esta computadora esté llena o fuera, tus agentes pueden empezar en una de las tuyas. Una que usas para su trabajo recibe primero sus pedidos, rutinas y trabajos largos. Las misiones, las sesiones de código y los agentes con repositorios se quedan aquí.",
+      "use": {
+        "label": "Cómo ayuda {{name}}",
+        "off": "No ayuda",
+        "help": "Cuando esta esté llena o fuera",
+        "first": "Para el trabajo de mis agentes"
+      },
       "plan": "tu plan {{plan}}"
     },
     "youFirst": "Tú vas primero",
@@ -13021,6 +13018,7 @@
       "private": "una conversación privada"
     },
     "waiting": "En la cola · empieza en breve",
+    "waitingAfter": "En la cola, después de {{name}}",
     "nth": {
       "one": "{{n}}.º",
       "two": "{{n}}.º",
@@ -15466,7 +15464,15 @@
     "see": "Ver",
     "seeAsks": "Ver lo que pide aprobación",
     "agentTitle": "Lo que puede usar {{name}}",
-    "agentSub": "Por conector y tema. Por defecto, las acciones sensibles piden aprobación."
+    "agentSub": "Por conector y tema. Por defecto, las acciones sensibles piden aprobación.",
+    "instructions": {
+      "title": "Instrucciones del servidor",
+      "hint": "Los agentes que usan estas herramientas reciben este texto después de sus propias instrucciones.",
+      "chars": "{{used}} de {{max}} caracteres",
+      "cut": "Cortado en {{max}} caracteres",
+      "off": "Los agentes no reciben este texto.",
+      "none": "El servidor no envía instrucciones."
+    }
   },
   "connectFlow": {
     "steps": "Pasos",
@@ -15514,6 +15520,7 @@
     "serverSaid": "El servidor respondió: {{detail}}",
     "ownClient": {
       "title": "Usar tu propia app OAuth",
+      "addressFirst": "Primero escribe la dirección https del servidor.",
       "notApproved": "{{name}} solo deja entrar apps que aprobó, y agentes.chat todavía no es una de ellas. Puedes conectarlo con tu propia app allí.",
       "askAdmin": "Un admin puede conectarlo con la app propia del workspace.",
       "help": "Crea una app en el proveedor, registra en ella este URI de redirección y pega su ID de cliente. Desde entonces, cada inicio de sesión allí desde el workspace usa tu app.",
@@ -16403,6 +16410,7 @@
       "headersWithSignIn": "Este servidor pide iniciar sesión, y un inicio de sesión todavía no puede llevar encabezados. Quita los encabezados para iniciar sesión, o conéctalo con una clave de API.",
       "headersUnreadable": "No se pudieron leer los encabezados guardados. Escríbelos de nuevo o quítalos.",
       "noOAuth": "El servidor MCP no inicia sesión con OAuth, así que no acepta una app tuya. Conéctalo con una clave de API.",
+      "oauthDiscovery": "El servidor MCP inicia sesión con OAuth, pero no se pudieron leer sus datos de inicio de sesión en {{host}}. Vuelve a intentarlo en unos minutos.",
       "ownClientInUse": "Todavía hay cuentas que inician sesión con la app guardada antes. Desconéctalas primero y luego cámbiala.",
       "ownClientId": "Revisa el ID de cliente: una sola palabra, tal como lo muestra el proveedor."
     },
@@ -16630,6 +16638,8 @@
       "notLinkMaker": "Solo quien creó el enlace puede dejar entrar a esta computadora.",
       "widenForbidden": "Los admins solo pueden restringir quién usa el dispositivo propio de alguien.",
       "spillOwnerOnly": "Solo quien conectó esta computadora puede activar su ayuda. Tú puedes desactivarla.",
+      "shareOwnerOnly": "Solo quien conectó esta computadora puede dejar que los agentes usen su internet. Tú puedes desactivarlo.",
+      "shareConnectedOnly": "Solo una computadora que alguien conectó puede compartir su internet con los agentes.",
       "tasksOwnerOnly": "Solo quien conectó esta computadora puede cambiar cuántas tareas ejecuta a la vez.",
       "tasksCloud": "La Cloud dimensiona por sí misma el espacio de este ordenador para tareas.",
       "notHome": "Los agentes viven en la computadora del workspace y usan esta cuando la nombran."
@@ -16649,6 +16659,7 @@
       "askSelf": "Es tu ordenador: actívalo con el botón.",
       "adminAskSelf": "Puedes hacerlo aquí tú mismo.",
       "accountMethodUnsupported": "Esta computadora todavía no puede conectar Claude de esta forma. Actualiza el programa de agentes.chat en ella o usa una clave de API.",
+      "windowsOneGemini": "En Windows, una computadora usa una sola cuenta de Gemini a la vez. Quita la otra cuenta de Gemini de esta computadora para iniciar sesión con esta.",
       "brainUnavailable": "Esta IA todavía no está configurada en {{computer}}. Configúrala allí o elige otra.",
       "offline": "{{name}} está desconectada ahora. Intenta de nuevo cuando vuelva.",
       "paused": "{{name}} está en pausa: nada nuevo empieza en ella hasta que se reanude.",
@@ -16783,7 +16794,10 @@
       "restart": "Las sesiones de la computadora se están reiniciando para aplicar la red. El trabajo nuevo espera hasta que terminen.",
       "line": "IP de salida {{ip}}",
       "hint": "La dirección que ven los sitios web cuando los agentes navegan. Se actualiza cuando cambia la red de la computadora.",
-      "waiting": "Reconectando la conexión a internet de los agentes. Sus conexiones esperan hasta que vuelva."
+      "waiting": "Reconectando la conexión a internet de los agentes. Sus conexiones esperan hasta que vuelva.",
+      "via": "Los agentes usan el internet de {{name}}",
+      "viaBy": "Los agentes usan el internet de {{name}} ({{person}})",
+      "viaHint": "Los sitios ven la ubicación de esa computadora. Quien la conectó puede desactivarlo en su página."
     },
     "moving": {
       "short": "Cambiando de servidor",
@@ -16935,6 +16949,20 @@
       "diskFullNotice": "El disco de {{name}} está casi lleno"
     },
     "chromeMissingNotice": "{{name}} necesita Google Chrome para el navegador de los agentes. Descárgalo en google.com/chrome",
+    "outage": {
+      "down": "{{name}} no responde",
+      "back": "{{name}} volvió",
+      "since": "Desde las {{time}}",
+      "backAfter": "Volvió después de {{away}}",
+      "waiting": "En espera: {{what}}",
+      "waited": "Esperaron: {{what}}",
+      "runs_one": "{{count}} pedido a agentes",
+      "runs_many": "{{count}} pedidos a agentes",
+      "runs_other": "{{count}} pedidos a agentes",
+      "calls_one": "{{count}} llamada de webhook",
+      "calls_many": "{{count}} llamadas de webhook",
+      "calls_other": "{{count}} llamadas de webhook"
+    },
     "access": {
       "folders": "Carpetas permitidas",
       "ownFolder": "Carpeta de cada agente",
@@ -17068,8 +17096,16 @@
     "spillOwnHint": "Cuando la computadora de tus agentes esté llena o fuera, sus respuestas, pedidos y rutinas pueden pensar aquí con tu inicio de sesión.",
     "spillTeamHint": "Cuando la computadora de un agente esté llena o fuera, sus respuestas, pedidos y rutinas pueden pensar aquí con el inicio de sesión de su dueño en esta computadora.",
     "spillWorkspaceOff": "Un admin desactivó esto para el workspace.",
+    "spillFirst": "Usar esta computadora para el trabajo de mis agentes",
+    "spillFirstHint": "Los pedidos, las rutinas y los trabajos largos de tus agentes empiezan aquí siempre que esté libre, con la IA que conectaste aquí. Las respuestas a personas solo empiezan aquí cuando la computadora del equipo está llena o fuera.",
     "helpWorkspace": "Las computadoras ayudan cuando la del equipo está llena o fuera",
     "helpWorkspaceHint": "Cada computadora ayuda solo si su dueño lo permite. Desactivado: ninguna ayuda, elija lo que elija su dueño.",
+    "shareInternet": "Los agentes usan el internet de esta computadora",
+    "shareInternetHint": "Los sitios que abren los agentes pasan por la conexión de esta computadora, así que ven tu ubicación. Solo sitios web, hasta 5 GB al día, y nunca nada de tu propia red. Mientras esta computadora esté sin conexión, los agentes usan su conexión de siempre.",
+    "shareInternetInUse": "En uso ahora",
+    "shareInternetOther": "Los agentes usan {{name}} ahora",
+    "shareInternetPick": "Usar esta",
+    "shareInternetJoin": "Los agentes también abrirán sitios por el internet de esta computadora, así que los sitios verán tu ubicación. Puedes desactivarlo en su página.",
     "connectedBy": "Conectado por {{name}}",
     "downloadFor": "Descargar para {{system}}",
     "downloadApp": "Descargar la app",
@@ -17604,6 +17640,10 @@
       "toolRequest": "<b>{{who}}</b> te pide activar {{tool}} en tu <b>{{deviceName}}</b>",
       "cliRequest": "<b>{{who}}</b> te pide instalar {{tool}} en tu <b>{{deviceName}}</b>",
       "folderRequest": "<b>{{who}}</b> te pide la carpeta {{path}} en tu <b>{{deviceName}}</b>",
+      "internetShared": "Los agentes ahora abren sitios web a través del internet de <b>{{deviceName}}</b>",
+      "internetSharedLine": "Solo los agentes de este workspace, solo sitios web, hasta 5 GB al día, nunca nada de su propia red. Mientras esté sin conexión, usan su conexión de siempre.",
+      "internetOff": "Desactivar",
+      "internetOffDone": "Los agentes ya no usan el internet de {{deviceName}}.",
       "once": "Permitir una vez",
       "always": "Siempre",
       "no": "No",
@@ -19057,7 +19097,8 @@
     "spilled": {
       "full": "Pensó en {{to}}: {{from}} estaba llena.",
       "away": "Pensó en {{to}}: {{from}} estaba fuera.",
-      "itsComputer": "su computadora"
+      "itsComputer": "su computadora",
+      "chosen": "Pensó en {{to}}, que su dueño usa para el trabajo de sus agentes."
     },
     "modelStandIn": {
       "text": "{{plan}} rechazó {{from}} con esta clave. Respondí con {{to}}, que funciona con ella.",
@@ -20830,6 +20871,14 @@
       "busy": "Hay demasiadas personas mirando ahora.",
       "ended": "La pantalla se cerró.",
       "retrying": "Intentando de nuevo…"
+    },
+    "open": {
+      "gaveUp": "No se pudo abrir la pantalla de {{name}}.",
+      "slow": "Está tardando más de lo normal.",
+      "late": "{{computer}} tardó demasiado en responder.",
+      "dropped": "Se cayó la conexión.",
+      "offline": "{{computer}} no responde.",
+      "refused": "{{computer}} no pudo abrir la pantalla."
     },
     "retry": "Intentar de nuevo",
     "takeover": "Tomar el control",

@@ -84,6 +84,11 @@ const BODY_CHARS = 16_000;
 const MODEL_CHARS = 24_000;
 /** Runs a call may be in that end without finishing it (failed, stalled, lost) before it is let go. */
 export const HOOK_CALL_TRIES = 3;
+/**
+ * How long calls that went back wait before their next run, by the tries they used: a computer, a sign-in or our own
+ * server failing for a few minutes fails every run started meanwhile, so the tries spread past it.
+ */
+export const HOOK_RETRY_AFTER_MS = [60_000, 5 * 60_000];
 /** "Group calls by": the longest path, and the longest group key kept from a call. */
 const GROUP_BY_CHARS = 200;
 
@@ -704,11 +709,14 @@ export async function releaseHookCalls(
         .map((c) => ({ ...c, tries: (c.tries ?? 0) + 1 }))
         .filter((c) => c.tries < HOOK_CALL_TRIES);
   if (back.length === 0) return 0;
+  const tries = Math.max(...back.map((c) => c.tries ?? 0));
+  const wait = held ? 0 : (HOOK_RETRY_AFTER_MS[Math.min(tries, HOOK_RETRY_AFTER_MS.length) - 1] ?? 0);
   const moved = await requeueEventRun(deps, routine, {
     event: { ...event, ...mergeWebhookCalls(NO_CALLS, { calls: back }) } as RoutineEventPayload,
     at: run.at,
     createdAt: run.createdAt,
     held,
+    ...(wait > 0 ? { retryAt: new Date(Date.now() + wait) } : {}),
   });
   const ids = back.flatMap((c) => (c.id ? [c.id] : []));
   if (moved && ids.length > 0) {

@@ -103,13 +103,15 @@ const lockRoutine = (tx: Executor, routineId: string) =>
   tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`routine-event:${routineId}`}, 0))`);
 
 /** The job that runs a routine run (one per row). */
-export const enqueueRoutineJob = (tx: Executor, row: { id: string; orgId: string }) =>
+export const enqueueRoutineJob = (tx: Executor, row: { id: string; orgId: string; retryAt?: string | null }) =>
   enqueue(tx, {
     orgId: row.orgId,
     kind: "routine.run",
     payload: { routineRunId: row.id },
     dedupeKey: `routine.run:${row.id}`,
     maxAttempts: 3,
+    // Calls that went back after a failed run wait a little (`HOOK_RETRY_AFTER_MS`), their line held meanwhile.
+    ...(row.retryAt ? { runAt: new Date(row.retryAt) } : {}),
   });
 
 /**
@@ -168,7 +170,12 @@ async function startWaiting(tx: Executor, routineId: string): Promise<string[]> 
   const busy = await inFlightLines(tx, routineId);
   if (busy.length >= cap) return [];
   const gathered = await tx
-    .select({ id: routineRuns.id, orgId: routineRuns.orgId, line: lineSql })
+    .select({
+      id: routineRuns.id,
+      orgId: routineRuns.orgId,
+      line: lineSql,
+      retryAt: sql<string | null>`${routineRuns.event}->>'retryAt'`,
+    })
     .from(routineRuns)
     .where(
       and(
@@ -186,7 +193,7 @@ async function startWaiting(tx: Executor, routineId: string): Promise<string[]> 
     busy.push(g.line);
     await tx
       .update(routineRuns)
-      .set({ event: sql`${routineRuns.event} - 'gathered'` })
+      .set({ event: sql`${routineRuns.event} - 'gathered' - 'retryAt'` })
       .where(eq(routineRuns.id, g.id));
     await enqueueRoutineJob(tx, g);
     started.push(g.id);
@@ -320,14 +327,15 @@ export async function queueEventRun(
 export async function requeueEventRun(
   deps: { db: Database },
   routine: Pick<RoutineRow, "id" | "orgId">,
-  input: { event: RoutineEventPayload; at: Date; createdAt: Date; held: boolean },
+  input: { event: RoutineEventPayload; at: Date; createdAt: Date; held: boolean; retryAt?: Date },
 ): Promise<string | null> {
   return deps.db.transaction(async (tx) => {
     await lockRoutine(tx, routine.id);
+    const state = withState(input.event, [], input.held ? { held: true } : { gathered: true });
     const row = await insertRun(tx, routine, {
       at: input.at,
       trigger: "event",
-      event: withState(input.event, [], input.held ? { held: true } : { gathered: true }),
+      event: input.retryAt ? { ...state, retryAt: input.retryAt.toISOString() } : state,
       dedupeKey: null,
       createdAt: input.createdAt,
     });

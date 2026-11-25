@@ -459,7 +459,7 @@ export interface ChannelPick {
 }
 
 /**
- * Canais' groups: what the picked cargos bring first ("Do cargo Suporte"), then the rest in the sidebar's categories
+ * Canais' groups: what the picked cargos bring first ("Do cargo Suporte"), then the rest in the sidebar's sectors
  * and order, #general on top, ticked and fixed. On offer, as the server takes them: the public channels, the private
  * ones the viewer is in, and those limited to a picked cargo. A search keeps the ones it names, and a group left
  * without any goes.
@@ -469,9 +469,9 @@ export function channelPicks(
   args: {
     channels: readonly Pick<
       Channel,
-      "id" | "name" | "visibility" | "isMember" | "audienceRoleIds" | "categoryId" | "position"
+      "id" | "name" | "visibility" | "isMember" | "audienceRoleIds" | "groupId" | "position"
     >[];
-    categories: readonly { id: string; name: string }[];
+    sectors: readonly { id: string; name: string }[];
     roles: readonly OrgRole[];
     draft: Pick<InviteDraft, "roleIds" | "added" | "removed">;
     query?: string;
@@ -503,7 +503,7 @@ export function channelPicks(
   const rest = offered.filter((c) => !own.includes(c.id));
   return [
     ...(mine.length ? [{ title: fromCargosTitle(t, roles, draft.roleIds), picks: mine.map(pick) }] : []),
-    ...channelGroups(rest, args.categories).map((g) => ({ title: g.name, picks: g.channels.map(pick) })),
+    ...channelGroups(rest, args.sectors).map((g) => ({ title: g.name, picks: g.channels.map(pick) })),
   ];
 }
 

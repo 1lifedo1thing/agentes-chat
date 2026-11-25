@@ -427,7 +427,11 @@ describe("a personal workspace's sidebar", () => {
     await go(state, `dm/agent/${ADA_ID}`);
     expect(blocks()).toEqual(["tools", "agents", "channels"]);
     expect(channelRows()).toEqual([]);
-    await click(within(nav()).getByRole("button", { name: "Nova conversa em grupo" }));
+    // The header's + carries the same name; it opens a menu, the row the dialog.
+    const row = within(nav())
+      .getAllByRole("button", { name: "Nova conversa em grupo" })
+      .find((b) => b.classList.contains("sidebar__new-channel"));
+    await click(row as Element);
     expect(screen().getByRole("dialog", { name: "Nova conversa em grupo" })).toBeTruthy();
   });
 

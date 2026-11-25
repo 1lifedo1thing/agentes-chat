@@ -8,6 +8,7 @@
 // call (none with "BRIDGE_ONLY"), a `use_tool` call to our bridge (to another server's with "OTHER_SERVER"), more
 // text and the result with usage. Not signed in: an error result. "LIMIT": a usage-limit result. "ENV": the shell
 // call prints the env. A `--resume` of a session it never made: "Session not found" on stderr, exit 1.
+// `--prompt-file <path>` instead of `-p` reads the prompt from that file (logged as `prompt`).
 import { appendFileSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -19,6 +20,7 @@ const flag = (name) => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : undefined;
 };
+const promptFile = args[0] === "--prompt-file" ? args[1] : undefined;
 if (env.FAKE_GROK_LOG) {
   appendFileSync(
     env.FAKE_GROK_LOG,
@@ -31,6 +33,7 @@ if (env.FAKE_GROK_LOG) {
       xaiKey: env.XAI_API_KEY ?? null,
       claudeMcps: env.GROK_CLAUDE_MCPS_ENABLED ?? null,
       updates: env.GROK_DISABLE_AUTOUPDATER ?? null,
+      ...(promptFile ? { prompt: readFileSync(promptFile, "utf8") } : {}),
     })}\n`,
   );
 }
@@ -63,8 +66,8 @@ if (args[0] === "login") {
   process.exit(0);
 }
 
-if (args[0] === "-p") {
-  const prompt = args[1] ?? "";
+if (args[0] === "-p" || promptFile) {
+  const prompt = promptFile ? readFileSync(promptFile, "utf8") : (args[1] ?? "");
   const resume = flag("--resume");
   const known = path.join(home, "fake-sessions.json");
   const sessions = existsSync(known) ? JSON.parse(readFileSync(known, "utf8")) : [];

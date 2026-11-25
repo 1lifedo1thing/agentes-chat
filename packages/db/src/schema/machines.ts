@@ -262,8 +262,27 @@ export const machines = pgTable(
      * sign-in of the agent's owner. Only whoever connected it turns it on.
      */
     spillOwn: boolean().notNull().default(true),
+    /**
+     * "Use this computer for my agents' work" (ADR 0233 addendum): its owner's agents' fresh turns that aren't a
+     * person's reply (asks, routines, long work at its start) start here whenever it is free, before the line of
+     * their own computer. Only whoever connected it turns it on.
+     */
+    spillFirst: boolean().notNull().default(false),
     /** Retired by ADR 0233 (one switch, `spill_own`): nothing reads it. */
     spillOthers: boolean().notNull().default(false),
+    /**
+     * ADR 0237, a person's computer (`connected`): its owner lets the workspace's own computer's web traffic go out
+     * through this computer's internet. On for every computer: the owners of those paired before the choice was shown
+     * heard it once in the inbox (`device.internet_shared`, migration 0351).
+     */
+    egressShare: boolean().notNull().default(true),
+    /** When it was last turned on or picked: the newest online one carries the traffic. Null: since it was paired. */
+    egressShareAt: timestamp({ withTimezone: true }),
+    /**
+     * The workspace's own computer (`managed`): the lent computer that carried its last connection, and when (written
+     * at most once a minute per server process). The apps say whose internet it uses while that is recent.
+     */
+    egressVia: jsonb().$type<{ machineId: string; at: string }>(),
     /** Last known; trust it only with a recent `last_seen_at` (a replica may have died). */
     online: boolean().notNull().default(false),
     /** The server process holding its socket. */

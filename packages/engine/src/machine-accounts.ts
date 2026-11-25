@@ -7,6 +7,7 @@ import {
   type AccountLoginState,
   ANTIGRAVITY_MAC_PROTOCOL,
   ANTIGRAVITY_PROTOCOL,
+  ANTIGRAVITY_WINDOWS_PROTOCOL,
   type AuthMethod,
   accountCodeAad,
   CLAUDE_AUTH_PROTOCOL,
@@ -15,6 +16,7 @@ import {
   CURSOR_PROTOCOL,
   claudeLoginMethodsOf,
   GROK_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
   isAccountId,
   isAccountKind,
   isAccountLoginFailure,
@@ -57,6 +59,7 @@ import {
   sql,
 } from "@agenteschat/db";
 import {
+  ACCOUNT_ONLY_BRAINS,
   GEMINI_ENTERPRISE_PROVIDER,
   isPlanId,
   loginPerAgent,
@@ -525,7 +528,7 @@ async function accountViewOf(db: Database, orgId: string, row: MachineAccountRow
 
 /**
  * Agents that used these accounts lose them: back to the computer's own
- * sign-in when that is their owner's, else to the API (a plan thinks only for
+ * sign-in when that is their owner's and can think for them, else to the API (a plan thinks only for
  * its owner's agents, ADR 0059 §3). Their cache goes with `forgetAgents`.
  */
 export async function releaseAgents(
@@ -544,8 +547,13 @@ export async function releaseAgents(
       .delete(rightHandBrains)
       .where(and(eq(rightHandBrains.orgId, orgId), inArray(rightHandBrains.brainAccountId, accountIds)));
   }
-  const ownSignIn = sql`exists (select 1 from ${machines} m where m.id = "agents"."machine_id"
-    and m.paired_by_user_id = "agents"."owner_user_id")`;
+  // Gemini and Grok never think with the computer's own sign-in (`accountOnlyBrain`): without an account, the API.
+  const ownSignIn = sql`(exists (select 1 from ${machines} m where m.id = "agents"."machine_id"
+    and m.paired_by_user_id = "agents"."owner_user_id")
+    and "agents"."brain" not in (${sql.join(
+      ACCOUNT_ONLY_BRAINS.map((k) => sql`${k}`),
+      sql`, `,
+    )}))`;
   const lent = sql`"agents"."brain_account_lent_by" is not null`;
   const rows = await db
     .update(agents)
@@ -838,8 +846,15 @@ async function settleAccount(
     const released = await releaseAgents(db, orgId, [row.id], now);
     return { row: gone ?? row, duplicate, released, changed: !signingIn };
   }
-  // The runner says it when it knows it; one that just started doesn't yet (the last stays).
-  const usage = info.usage ? { usage: accountReading(row.provider, row.usage, info.usage) } : {};
+  // The runner says it when it knows it; one that just started doesn't yet (the last stays). A reading belongs to the
+  // plan and key it was read on: another plan or key with no reading of its own starts with none, so long work never
+  // pauses on, nor a card quotes, a percentage the plan in force doesn't have.
+  const replaced = Boolean(row.usage) && !info.usage && (plan !== row.plan || keyHint !== row.keyHint);
+  const usage = info.usage
+    ? { usage: accountReading(row.provider, row.usage, info.usage) }
+    : replaced
+      ? { usage: null }
+      : {};
   if (signingIn) {
     // A login of an account its owner already has here (one per agent) takes that account's name and permissions.
     const sibling = await sameAccount(db, row, identity);
@@ -892,7 +907,9 @@ async function settleAccount(
     .returning();
   const released = await unshare(db, orgId, row, shared, now);
   const moved = usageMoved(row.usage, usage.usage);
-  if (moved && usage.usage) await wakeOnRoom(db, orgId, machine.id, kindOf(row), row.id, usage.usage, now.getTime());
+  // No reading is room: what paused on the old plan's reading goes on.
+  const room = usage.usage ?? (replaced ? { windows: [], source: "turn" as const, at: now.toISOString() } : null);
+  if (moved && room) await wakeOnRoom(db, orgId, machine.id, kindOf(row), row.id, room, now.getTime());
   return { row: fresh ?? row, released, changed: !same || moved };
 }
 
@@ -1549,7 +1566,7 @@ export async function beginAccountLogin(
   }
   const plan = planOf(provider);
   const { machine } = await memberMachine(deps.db, userId, orgId, machineId);
-  // A CLI its runner won't run on this system (Grok Build or Cursor on Windows) would sign in and fail every turn.
+  // A CLI its runner won't run on this system (Cursor on Windows) would sign in and fail every turn.
   if (!brainRunsOn(kind, machine.os)) {
     throw new ConflictError(`${BRAIN_NAMES[kind]} doesn't run on ${machine.name}'s system yet.`, "account.system", {
       program: BRAIN_NAMES[kind],
@@ -1576,15 +1593,42 @@ export async function beginAccountLogin(
       : kind === "antigravity"
         ? machine.os === "darwin"
           ? ANTIGRAVITY_MAC_PROTOCOL
-          : ANTIGRAVITY_PROTOCOL
+          : machine.os === "windows"
+            ? ANTIGRAVITY_WINDOWS_PROTOCOL
+            : ANTIGRAVITY_PROTOCOL
         : kind === "grok"
-          ? GROK_PROTOCOL
+          ? machine.os === "windows"
+            ? GROK_WINDOWS_PROTOCOL
+            : GROK_PROTOCOL
           : kind === "opencode"
             ? OPENCODE_PROTOCOL
             : plan
               ? PLAN_KEYS_PROTOCOL
               : ACCOUNTS_PROTOCOL,
   );
+  // On Windows the Antigravity CLI keeps its sign-in in the user's one Credential Manager (ADR 0143): a second
+  // account would take the first one's place.
+  if (kind === "antigravity" && machine.os === "windows" && accountId === undefined) {
+    const [other] = await deps.db
+      .select({ id: machineAccounts.id })
+      .from(machineAccounts)
+      .where(
+        and(
+          eq(machineAccounts.orgId, orgId),
+          eq(machineAccounts.machineId, machine.id),
+          eq(machineAccounts.kind, "antigravity"),
+          inArray(machineAccounts.status, LISTED_ACCOUNT_STATUSES),
+        ),
+      )
+      .limit(1);
+    if (other) {
+      throw new ConflictError(
+        "On Windows a computer uses one Gemini account at a time. Remove the other Gemini account from this computer first.",
+        "account.windows_one_gemini",
+        { name: machine.name },
+      );
+    }
+  }
   // Once for every agent of its owner there, where the runner can (protocol 29; ChatGPT's 38, Gemini's 58).
   const shared = protocol >= sharedSignInProtocol(kind) && sharedSignIn(kind, provider);
   const again = accountId !== undefined;
