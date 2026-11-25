@@ -2,6 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import {
   copyFileSync,
+  existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -11,6 +12,7 @@ import {
   utimesSync,
   writeFileSync,
 } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { INLINE_CODE_DENY_RULES, PUSH_ASK_RULES } from "@agenteschat/adapters/command-policy";
 import {
@@ -1697,6 +1699,19 @@ test.if(posix)(
     expect(logged()[2]?.compactWindow).toBeNull();
   },
 );
+
+test.if(posix)("each CLI process has a temp folder of its own, gone with the process", async () => {
+  const { spawns, turn } = setup();
+  const logged = () => spawns() as unknown as { tmpdir: string | null }[];
+  await turn(1, "first", { timeZone: "America/Sao_Paulo" });
+  await turn(2, "second", { timeZone: "Asia/Tokyo" });
+  const [first, second] = logged().map((l) => l.tmpdir ?? "");
+  expect(path.dirname(first ?? "")).toBe(os.tmpdir());
+  expect(path.basename(first ?? "")).toStartWith("agentes-run-");
+  expect(second).not.toBe(first);
+  expect(existsSync(second ?? "")).toBe(true);
+  await waitFor(() => !existsSync(first ?? ""), 4000);
+});
 
 test.if(posix)(
   "the turn's zone is the CLI's TZ, so its date is the person's; a turn in another zone restarts it, resumed",
