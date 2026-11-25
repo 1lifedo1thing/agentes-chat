@@ -883,6 +883,8 @@ export interface ApiClient {
     update(orgId: string, agentId: string, input: Partial<AgentInput>): Promise<Agent>;
     /** Confirms a step of a new agent's setup checklist (ADR 0155 §2): its owner or whoever manages agents. */
     confirmSetup(orgId: string, agentId: string, step: SetupStep): Promise<Agent>;
+    /** Closes its setup checklist on its page (its ×), whatever is left; its chat keeps its own. */
+    closeSetup(orgId: string, agentId: string): Promise<Agent>;
     /** The mailboxes saving `audience` would take from it (others gave them), taking nothing: ask before widening. */
     mailLoss(orgId: string, agentId: string, audience: AgentAudience): Promise<ForeignMailbox[]>;
     archive(orgId: string, agentId: string): Promise<void>;

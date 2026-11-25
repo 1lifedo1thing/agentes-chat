@@ -1098,6 +1098,8 @@ export interface AgentSetupChecklist {
   starter?: string;
   /** The apps it was made to use (catalog connector ids) at their levels (ADR 0164): its checklist suggests them. */
   apps?: Record<string, "read" | "write">;
+  /** Closed on its page (its ×): the page shows it no more, whatever is left; its chat keeps its own. */
+  closed?: true;
 }
 
 /** A costly step unrequested work needs a person's go for (ADR 0131 §3). */
@@ -6630,6 +6632,11 @@ export interface AgentBrain {
   autonomy?: CommandApproval;
   /** The workspace's live API keys, id and provider only: what its owner may move it onto (absent: an older server). */
   keys?: { id: string; provider: string }[];
+  /**
+   * On the API: the workspace's key its calls take now (its own, else its provider's), the one the picker shows chosen
+   * even when it isn't the default; null with none or on a plan (absent: an older server).
+   */
+  keyId?: string | null;
 }
 
 /** The team's right hand's AIs: the viewer's own, or the workspace's (admins). */
