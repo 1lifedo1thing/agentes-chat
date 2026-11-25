@@ -16050,6 +16050,7 @@
       "tooLarge": "Diese Datei hat ihre Größengrenze erreicht. Entferne zuerst etwas daraus.",
       "assetTooLarge": "Das Bild ist größer als {{max}} MB, die Grenze pro Bild.",
       "assetType": "In diese Datei kommen nur Bilder: PNG, JPEG, WebP oder GIF.",
+      "fontInvalid": "Diese Schriftart kann nicht verwendet werden: Die Datei ist keine Schrift, die die App lesen kann. Versuche es mit einer .ttf-, .otf- oder .woff-Datei.",
       "liveOnly": "Diese Datei wird direkt dort geändert, wo sie ist, und kann daher nicht als Ganzes ersetzt werden."
     },
     "office": {

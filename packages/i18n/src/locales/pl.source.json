@@ -39355,6 +39355,9 @@
   "errors.live.assetType": {
     "value": "Only pictures go in this file: PNG, JPEG, WebP or GIF."
   },
+  "errors.live.fontInvalid": {
+    "value": "This font can't be used: the file isn't a font the app can read. Try a .ttf, .otf or .woff file."
+  },
   "errors.live.liveOnly": {
     "value": "This file is changed right where it is, so it can't be replaced as a whole."
   },

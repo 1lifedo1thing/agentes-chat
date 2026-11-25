@@ -148,6 +148,17 @@ export * from "./file-pulls";
 export * from "./file-reader";
 export * from "./follow-through";
 export * from "./follows";
+export {
+  catalogFilePath,
+  catalogStaticFiles,
+  catalogWebFaces,
+  fontsVersion,
+  hasFontFiles,
+  setFontsDir,
+  TextMeasurer,
+  type WebFace,
+} from "./fonts/library";
+export { FONT_MAX_BYTES, FontError, fontMediaType, readFont, sniffFont } from "./fonts/sfnt";
 export { percentile } from "./format";
 export * from "./gateway";
 export * from "./gif-key";

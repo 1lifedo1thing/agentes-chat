@@ -16118,6 +16118,7 @@
       "tooLarge": "Dit bestand heeft de maximale grootte bereikt. Haal er eerst iets uit.",
       "assetTooLarge": "De afbeelding is groter dan {{max}} MB, de limiet per afbeelding.",
       "assetType": "In dit bestand passen alleen afbeeldingen: PNG, JPEG, WebP of GIF.",
+      "fontInvalid": "Dit lettertype kan niet worden gebruikt: het bestand is geen lettertype dat de app kan lezen. Probeer een .ttf-, .otf- of .woff-bestand.",
       "liveOnly": "Dit bestand wordt ter plekke gewijzigd en kan dus niet in zijn geheel worden vervangen."
     },
     "office": {

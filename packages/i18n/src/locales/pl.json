@@ -17145,6 +17145,7 @@
       "tooLarge": "Ten plik osiągnął limit rozmiaru. Najpierw coś z niego usuń.",
       "assetTooLarge": "Obraz ma ponad {{max}} MB, a to limit na jeden obraz.",
       "assetType": "Do tego pliku można dodać tylko obrazy: PNG, JPEG, WebP lub GIF.",
+      "fontInvalid": "Nie można użyć tej czcionki: plik nie jest czcionką, którą aplikacja potrafi odczytać. Spróbuj pliku .ttf, .otf lub .woff.",
       "liveOnly": "Ten plik zmienia się na miejscu, więc nie można go zastąpić w całości."
     },
     "office": {

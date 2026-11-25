@@ -15534,6 +15534,7 @@
       "tooLarge": "这个文件已达到大小上限。请先从中删掉一些内容。",
       "assetTooLarge": "图片超过了 {{max}} MB，这是每张图片的上限。",
       "assetType": "这个文件只能放图片：PNG、JPEG、WebP 或 GIF。",
+      "fontInvalid": "无法使用这个字体：应用无法读取这个文件。请试试 .ttf、.otf 或 .woff 文件。",
       "liveOnly": "这个文件只能在原处修改，不能整个替换。"
     },
     "office": {
