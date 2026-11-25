@@ -7820,6 +7820,38 @@
       "label": "Vault 연락처 편집",
       "description": "Vault에 연락처를 저장하고 업데이트하며, 저장된 로그인의 사용자 이름이나 설명을 바꾸고, 직접 만드는 계정의 비밀번호를 만들고, 자신이 저장한 것을 삭제해요."
     },
+    "gitlab_git_read": {
+      "label": "저장소 클론(git)",
+      "description": "에이전트의 컴퓨터에서 git으로 저장소를 클론하고 업데이트해요. 프록시를 거치므로 GitLab 토큰은 컴퓨터에 들어가지 않아요."
+    },
+    "gitlab_git_write": {
+      "label": "브랜치 푸시(git push)",
+      "description": "agentes/{agent}/… 브랜치에 커밋을 푸시해요. 기본 브랜치에는 절대 푸시하지 않고, 강제 푸시와 태그도 없어요. 브랜치 삭제와 다른 사람의 브랜치에 푸시할 때는 먼저 승인을 요청해요."
+    },
+    "gitlab_pr_write": {
+      "label": "풀 리퀘스트 열기",
+      "description": "풀 리퀘스트를 열고 코멘트를 남겨요."
+    },
+    "bitbucket_git_read": {
+      "label": "저장소 클론(git)",
+      "description": "에이전트의 컴퓨터에서 git으로 저장소를 클론하고 업데이트해요. 프록시를 거치므로 Bitbucket 토큰은 컴퓨터에 들어가지 않아요."
+    },
+    "bitbucket_git_write": {
+      "label": "브랜치 푸시(git push)",
+      "description": "agentes/{agent}/… 브랜치에 커밋을 푸시해요. 기본 브랜치에는 절대 푸시하지 않고, 강제 푸시와 태그도 없어요. 브랜치 삭제와 다른 사람의 브랜치에 푸시할 때는 먼저 승인을 요청해요."
+    },
+    "bitbucket_pr_write": {
+      "label": "풀 리퀘스트 열기",
+      "description": "풀 리퀘스트를 열고 코멘트를 남겨요."
+    },
+    "git_git_read": {
+      "label": "저장소 클론(git)",
+      "description": "에이전트의 컴퓨터에서 git으로 저장소를 클론하고 업데이트해요. 프록시를 거치므로 Git 토큰은 컴퓨터에 들어가지 않아요."
+    },
+    "git_git_write": {
+      "label": "브랜치 푸시(git push)",
+      "description": "agentes/{agent}/… 브랜치에 커밋을 푸시해요. 기본 브랜치에는 절대 푸시하지 않고, 강제 푸시와 태그도 없어요. 브랜치 삭제와 다른 사람의 브랜치에 푸시할 때는 먼저 승인을 요청해요."
+    },
     "github_git_read": {
       "label": "저장소 클론(git)",
       "description": "에이전트의 컴퓨터에서 git으로 저장소를 클론하고 업데이트해요. 프록시를 거치므로 GitHub 토큰은 컴퓨터에 들어가지 않아요."
@@ -13619,6 +13651,7 @@
     },
     "label": {
       "git_clone": "저장소 클론",
+      "list_repositories": "저장소 목록 보기",
       "create_repository": "저장소 생성",
       "delete_repository": "저장소 삭제",
       "fork_repository": "저장소 포크",
@@ -18080,6 +18113,7 @@
         "runningCommandAny": "명령을 실행했어요",
         "usingScreen": "화면을 사용했어요",
         "cloningRepo": "저장소를 클론했어요",
+        "listingRepos": "저장소 목록을 확인했습니다",
         "openingPullRequest": "pull request를 열었어요",
         "handingOff": "보고서를 전달했어요",
         "recordingFindings": "발견한 내용을 기록했어요",
@@ -18201,6 +18235,7 @@
       "runningCommandAny": "명령을 실행하는 중",
       "usingScreen": "화면을 사용하는 중",
       "cloningRepo": "저장소를 클론하는 중",
+      "listingRepos": "저장소 목록 확인 중",
       "openingPullRequest": "pull request를 여는 중",
       "handingOff": "보고서를 전달하는 중",
       "recordingFindings": "발견한 내용을 기록하는 중",

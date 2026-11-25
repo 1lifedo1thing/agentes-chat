@@ -8612,6 +8612,44 @@ export const ptBR = {
       description:
         "Salvar e atualizar contatos no Cofre, mudar o usuário de um login salvo ou uma descrição, criar senhas para contas que ele abre, e apagar o que ele salvou.",
     },
+    gitlab_git_read: {
+      label: "Clonar repositórios (git)",
+      description:
+        "Clonar e atualizar repositórios no computador do agente com git, pelo nosso proxy. O token do GitLab nunca entra na máquina.",
+    },
+    gitlab_git_write: {
+      label: "Enviar branches (git push)",
+      description:
+        "Enviar commits para branches agentes/{agent}/…: nunca para o branch padrão, sem force push, sem tags. Apagar branches e enviar para o branch de outra pessoa pedem aprovação antes.",
+    },
+    gitlab_pr_write: {
+      label: "Abrir merge requests",
+      description: "Abrir merge requests a partir de um branch enviado. O merge continua com as pessoas.",
+    },
+    bitbucket_git_read: {
+      label: "Clonar repositórios (git)",
+      description:
+        "Clonar e atualizar repositórios no computador do agente com git, pelo nosso proxy. O token do Bitbucket nunca entra na máquina.",
+    },
+    bitbucket_git_write: {
+      label: "Enviar branches (git push)",
+      description:
+        "Enviar commits para branches agentes/{agent}/…: nunca para o branch padrão, sem force push, sem tags. Apagar branches e enviar para o branch de outra pessoa pedem aprovação antes.",
+    },
+    bitbucket_pr_write: {
+      label: "Abrir pull requests",
+      description: "Abrir pull requests a partir de um branch enviado. O merge continua com as pessoas.",
+    },
+    git_git_read: {
+      label: "Clonar repositórios (git)",
+      description:
+        "Clonar e atualizar repositórios no computador do agente com git, pelo nosso proxy. O token do servidor nunca entra na máquina.",
+    },
+    git_git_write: {
+      label: "Enviar branches (git push)",
+      description:
+        "Enviar commits para branches agentes/{agent}/…: nunca para o branch padrão, sem force push, sem tags. Enviar para o branch de outra pessoa pede aprovação antes.",
+    },
     github_git_read: {
       label: "Clonar repositórios (git)",
       description:
@@ -14552,6 +14590,7 @@ export const ptBR = {
     },
     label: {
       git_clone: "Clonar repositório",
+      list_repositories: "Listar repositórios",
       create_repository: "Criar repositório",
       delete_repository: "Apagar repositório",
       fork_repository: "Fazer fork de um repositório",
@@ -19186,6 +19225,7 @@ export const ptBR = {
         runningCommandAny: "Rodou um comando",
         usingScreen: "Usou a tela",
         cloningRepo: "Clonou um repositório",
+        listingRepos: "Listou os repositórios",
         openingPullRequest: "Abriu um pull request",
         handingOff: "Entregou um relatório",
         recordingFindings: "Anotou o que encontrou",
@@ -19307,6 +19347,7 @@ export const ptBR = {
       runningCommandAny: "rodando um comando",
       usingScreen: "usando a tela",
       cloningRepo: "clonando um repositório",
+      listingRepos: "listando os repositórios",
       openingPullRequest: "abrindo um pull request",
       handingOff: "entregando um relatório",
       recordingFindings: "anotando o que encontrou",

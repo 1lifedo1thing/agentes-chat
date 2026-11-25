@@ -86,7 +86,7 @@ credential on the agent's computer serves them all.
 
 Each connected host gives agents the same git tools on its own connection and scopes (`gitlab:git.read`,
 `gitlab:git.write`, `gitlab:pr.write`). GitHub's keep their names (`git_clone`, `open_pull_request`, `delete_branches`,
-`request_branch_push`); another host's carry it first (`gitlab_git_clone`, `server_git_clone` for a git server by
+`request_branch_push`); another host's carry it first (`gitlab_git_clone`, `gitserver_git_clone` for a git server by
 address), so two hosts' tools never share a name and an approval, a rule or a denial stays with the host it was given
 on.
 

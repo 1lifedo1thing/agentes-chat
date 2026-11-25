@@ -6227,6 +6227,21 @@
   "surface.page.back": {
     "value": "Go back to {{surface}}. Your assistant goes on there."
   },
+  "surface.page.setFirst": {
+    "value": "Set your PIN first"
+  },
+  "surface.page.setFirstLead": {
+    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page."
+  },
+  "surface.page.setFirstLeadEmail": {
+    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page."
+  },
+  "surface.page.openApp": {
+    "value": "Choose it in the app"
+  },
+  "surface.page.emailMe": {
+    "value": "Email me a link"
+  },
   "surface.pinReset.title": {
     "value": "Choose your PIN"
   },
@@ -6256,6 +6271,21 @@
   },
   "surface.forwardedTip": {
     "value": "{{person}} forwarded this from {{surface}}. The words are someone else's."
+  },
+  "surface.pin.set": {
+    "value": "Set PIN"
+  },
+  "surface.pin.change": {
+    "value": "Change PIN"
+  },
+  "surface.pin.title": {
+    "value": "Your {{surface}} PIN"
+  },
+  "surface.pin.text": {
+    "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
+  },
+  "surface.pin.save": {
+    "value": "Save PIN"
   },
   "team.title": {
     "value": "Team"
@@ -19715,6 +19745,54 @@
   },
   "scopes.vault_write.description": {
     "value": "Save and update contact details in the Vault, change a saved login's username or a description, make passwords for accounts it creates, and delete what it saved."
+  },
+  "scopes.gitlab_git_read.label": {
+    "value": "Clone repositories (git)"
+  },
+  "scopes.gitlab_git_read.description": {
+    "value": "Clone and update repositories on the agent's computer with git, through our proxy. The GitLab token never enters the machine."
+  },
+  "scopes.gitlab_git_write.label": {
+    "value": "Push branches (git push)"
+  },
+  "scopes.gitlab_git_write.description": {
+    "value": "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Deleting branches and pushing to someone else's branch ask for approval first."
+  },
+  "scopes.gitlab_pr_write.label": {
+    "value": "Open merge requests"
+  },
+  "scopes.gitlab_pr_write.description": {
+    "value": "Open merge requests from a pushed branch. Merging stays with people."
+  },
+  "scopes.bitbucket_git_read.label": {
+    "value": "Clone repositories (git)"
+  },
+  "scopes.bitbucket_git_read.description": {
+    "value": "Clone and update repositories on the agent's computer with git, through our proxy. The Bitbucket token never enters the machine."
+  },
+  "scopes.bitbucket_git_write.label": {
+    "value": "Push branches (git push)"
+  },
+  "scopes.bitbucket_git_write.description": {
+    "value": "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Deleting branches and pushing to someone else's branch ask for approval first."
+  },
+  "scopes.bitbucket_pr_write.label": {
+    "value": "Open pull requests"
+  },
+  "scopes.bitbucket_pr_write.description": {
+    "value": "Open pull requests from a pushed branch. Merging stays with people."
+  },
+  "scopes.git_git_read.label": {
+    "value": "Clone repositories (git)"
+  },
+  "scopes.git_git_read.description": {
+    "value": "Clone and update repositories on the agent's computer with git, through our proxy. The server's token never enters the machine."
+  },
+  "scopes.git_git_write.label": {
+    "value": "Push branches (git push)"
+  },
+  "scopes.git_git_write.description": {
+    "value": "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Pushing to someone else's branch asks for approval first."
   },
   "scopes.github_git_read.label": {
     "value": "Clone repositories (git)"
@@ -34441,6 +34519,9 @@
   "toolNames.label.git_clone": {
     "value": "Clone repository"
   },
+  "toolNames.label.list_repositories": {
+    "value": "List repositories"
+  },
   "toolNames.label.create_repository": {
     "value": "Create repository"
   },
@@ -38586,6 +38667,12 @@
   },
   "errors.surface.pinResetGone": {
     "value": "This link was already used or ran out. Ask for a new one with “Forgot your PIN?”."
+  },
+  "errors.surface.pinUnset": {
+    "value": "Set your PIN first. Choose it in the app, signed in."
+  },
+  "errors.surface.emailUnverified": {
+    "value": "Your email address isn't verified yet. Choose your PIN in the app instead."
   },
   "errors.wallpaper.notYours": {
     "value": "That photo isn't yours."
@@ -46001,6 +46088,9 @@
   "chat.work.step.cloningRepo": {
     "value": "Cloned a repository"
   },
+  "chat.work.step.listingRepos": {
+    "value": "Listed the repositories"
+  },
   "chat.work.step.openingPullRequest": {
     "value": "Opened a pull request"
   },
@@ -46354,6 +46444,9 @@
   },
   "chat.activity.cloningRepo": {
     "value": "cloning a repository"
+  },
+  "chat.activity.listingRepos": {
+    "value": "listing the repositories"
   },
   "chat.activity.openingPullRequest": {
     "value": "opening a pull request"
@@ -56502,41 +56595,5 @@
   },
   "live.sheet.fn.YEARFRAC": {
     "value": "The share of a year between two dates"
-  },
-  "surface.page.setFirst": {
-    "value": "Set your PIN first"
-  },
-  "surface.page.setFirstLead": {
-    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page."
-  },
-  "surface.page.setFirstLeadEmail": {
-    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page."
-  },
-  "surface.page.openApp": {
-    "value": "Choose it in the app"
-  },
-  "surface.page.emailMe": {
-    "value": "Email me a link"
-  },
-  "surface.pin.set": {
-    "value": "Set PIN"
-  },
-  "surface.pin.change": {
-    "value": "Change PIN"
-  },
-  "surface.pin.title": {
-    "value": "Your {{surface}} PIN"
-  },
-  "surface.pin.text": {
-    "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
-  },
-  "surface.pin.save": {
-    "value": "Save PIN"
-  },
-  "errors.surface.pinUnset": {
-    "value": "Set your PIN first. Choose it in the app, signed in."
-  },
-  "errors.surface.emailUnverified": {
-    "value": "Your email address isn't verified yet. Choose your PIN in the app instead."
   }
 }

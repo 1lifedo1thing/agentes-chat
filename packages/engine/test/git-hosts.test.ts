@@ -136,7 +136,7 @@ describe("how a repository is named", () => {
   test("the git tools are told by their exact name and scope, per host", () => {
     expect(gitToolName("github", "git_clone")).toBe("git_clone");
     expect(gitToolName("gitlab", "request_branch_push")).toBe("gitlab_request_branch_push");
-    expect(gitToolName("git", "git_clone")).toBe("server_git_clone");
+    expect(gitToolName("git", "git_clone")).toBe("gitserver_git_clone");
     expect(gitVerbOf({ name: "git_clone", scope: "github:git.read" })).toBe("git_clone");
     expect(gitVerbOf({ name: "gitlab_open_pull_request", scope: "gitlab:pr.write" })).toBe("open_pull_request");
     // A connected app's tool of the same name isn't ours.

@@ -532,8 +532,8 @@ export const CONNECTOR_CATALOG: Record<string, ConnectorDefinition> = {
       ),
     },
     tools: {
-      server_git_clone: { scope: "git.read", ours: true },
-      server_request_branch_push: { scope: "git.write", ours: true },
+      gitserver_git_clone: { scope: "git.read", ours: true },
+      gitserver_request_branch_push: { scope: "git.write", ours: true },
     },
   },
   telegram: {

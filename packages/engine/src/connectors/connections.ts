@@ -491,7 +491,7 @@ async function gitAccount(
 async function gitServerUrl(deps: ConnectorDeps, def: ConnectorDefinition, given: string | undefined) {
   const typed = given?.trim();
   if (!def.address || !typed) {
-    if (def.address === "required") throw new ValidationError("serverUrl is required", "connector.address_required");
+    if (def.address === "required") throw new ValidationError("serverUrl is required");
     return checkServerUrl(def.serverUrl);
   }
   // A typed address is checked as every other one (`assertPublicHttpsUrl`): never a private network's, unless allowed.

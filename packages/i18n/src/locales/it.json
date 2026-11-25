@@ -8427,6 +8427,38 @@
       "label": "Modificare i contatti del Vault",
       "description": "Salvare e aggiornare i contatti nel Vault, cambiare il nome utente di un login salvato o una descrizione, creare password per gli account che apre, ed eliminare ciò che ha salvato."
     },
+    "gitlab_git_read": {
+      "label": "Clonare repository (git)",
+      "description": "Clonare e aggiornare repository sul computer dell'agente con git, tramite il nostro proxy. Il token di GitLab non entra mai nella macchina."
+    },
+    "gitlab_git_write": {
+      "label": "Fare push di branch (git push)",
+      "description": "Fare push di commit sui branch agentes/{agent}/…: mai sul branch predefinito, niente force push, niente tag. Eliminare branch e fare push sul branch di qualcun altro chiedono prima l'approvazione."
+    },
+    "gitlab_pr_write": {
+      "label": "Aprire merge request",
+      "description": "Aprire merge request e commentarle."
+    },
+    "bitbucket_git_read": {
+      "label": "Clonare repository (git)",
+      "description": "Clonare e aggiornare repository sul computer dell'agente con git, tramite il nostro proxy. Il token di Bitbucket non entra mai nella macchina."
+    },
+    "bitbucket_git_write": {
+      "label": "Fare push di branch (git push)",
+      "description": "Fare push di commit sui branch agentes/{agent}/…: mai sul branch predefinito, niente force push, niente tag. Eliminare branch e fare push sul branch di qualcun altro chiedono prima l'approvazione."
+    },
+    "bitbucket_pr_write": {
+      "label": "Aprire pull request",
+      "description": "Aprire pull request e commentarle."
+    },
+    "git_git_read": {
+      "label": "Clonare repository (git)",
+      "description": "Clonare e aggiornare repository sul computer dell'agente con git, tramite il nostro proxy. Il token di Git non entra mai nella macchina."
+    },
+    "git_git_write": {
+      "label": "Fare push di branch (git push)",
+      "description": "Fare push di commit sui branch agentes/{agent}/…: mai sul branch predefinito, niente force push, niente tag. Eliminare branch e fare push sul branch di qualcun altro chiedono prima l'approvazione."
+    },
     "github_git_read": {
       "label": "Clonare repository (git)",
       "description": "Clonare e aggiornare repository sul computer dell'agente con git, tramite il nostro proxy. Il token di GitHub non entra mai nella macchina."
@@ -14699,6 +14731,7 @@
     },
     "label": {
       "git_clone": "Clona repository",
+      "list_repositories": "Elenca i repository",
       "create_repository": "Crea repository",
       "delete_repository": "Elimina repository",
       "fork_repository": "Fai il fork di un repository",
@@ -19321,6 +19354,7 @@
         "runningCommandAny": "Ha eseguito un comando",
         "usingScreen": "Ha usato lo schermo",
         "cloningRepo": "Ha clonato un repository",
+        "listingRepos": "Ha elencato i repository",
         "openingPullRequest": "Ha aperto una pull request",
         "handingOff": "Ha consegnato un report",
         "recordingFindings": "Ha annotato i risultati",
@@ -19442,6 +19476,7 @@
       "runningCommandAny": "eseguendo un comando",
       "usingScreen": "usando lo schermo",
       "cloningRepo": "clonando un repository",
+      "listingRepos": "elenca i repository",
       "openingPullRequest": "aprendo una pull request",
       "handingOff": "consegnando un report",
       "recordingFindings": "annotando i risultati",

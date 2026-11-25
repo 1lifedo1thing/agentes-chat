@@ -36,8 +36,21 @@ const DEPTH: Record<GitHostId, { min: number; max: number }> = {
  * (they would climb out of the checkouts' folder), a trailing slash dropped, and a trailing `.git` where the host
  * adds it by itself.
  */
+/** A text without the slashes around it (no expression: what people type may be long). */
+function unslashed(text: string) {
+  let from = 0;
+  let to = text.length;
+  while (from < to && text[from] === "/") from++;
+  while (to > from && text[to - 1] === "/") to--;
+  return text.slice(from, to);
+}
+
+/** Nothing a person types as a repository is longer than this. */
+const NAME_CHARS = 2000;
+
 export function repoPathOn(host: GitHostId, input: string): string | null {
-  const trimmed = input.trim().replace(/^\/+|\/+$/g, "");
+  if (input.length > NAME_CHARS) return null;
+  const trimmed = unslashed(input.trim());
   // A server by address serves exactly the path it was given, `.git` and all.
   const path = host === "git" ? trimmed : trimmed.replace(/\.git$/i, "");
   const parts = path.split("/");
@@ -56,6 +69,12 @@ export const isHostedRepo = (name: string) => name.includes("/") || name.include
 /** The stored name of a repository: `owner/name` on GitHub, `host:path` anywhere else. */
 export const repoRefName = (ref: RepoRef) => (ref.host === "github" ? ref.path : `${ref.host}:${ref.path}`);
 
+/** A project's path in an address, without GitLab's pages of it (`group/project/-/merge_requests/3`). */
+function beforePages(path: string) {
+  const at = path.indexOf("/-/");
+  return at < 0 ? path : path.slice(0, at);
+}
+
 /** The sites whose addresses name a repository by themselves (a server by address is told by its connection). */
 const SITES: Record<string, GitHostId> = {
   "github.com": "github",
@@ -68,6 +87,7 @@ const SITES: Record<string, GitHostId> = {
  * github.com, gitlab.com or bitbucket.org (https or `git@host:`). Null when it names none.
  */
 export function parseRepoRef(input: string): RepoRef | null {
+  if (input.length > NAME_CHARS) return null;
   const s = input.trim();
   const prefixed = /^([a-z]+):(?!\/\/)(.+)$/.exec(s);
   if (prefixed && isGitHostId(prefixed[1])) {
@@ -79,7 +99,7 @@ export function parseRepoRef(input: string): RepoRef | null {
     const host = SITES[(address[1] as string).toLowerCase()];
     if (!host) return null;
     // GitLab's pages of a project go on after `/-/` (`group/project/-/merge_requests/3`).
-    const path = repoPathOn(host, (address[2] as string).replace(/\/-\/.*$/, ""));
+    const path = repoPathOn(host, beforePages(address[2] as string));
     return path ? { host, path } : null;
   }
   const path = repoPathOn("github", s);
@@ -97,9 +117,9 @@ export function repoRefAt(host: GitHostId, serverUrl: string, input: string): Re
     return null;
   }
   if (given.host.toLowerCase() !== base.host.toLowerCase()) return null;
-  const under = base.pathname.replace(/\/+$/, "");
+  const under = base.pathname === "/" ? "" : `/${unslashed(base.pathname)}`;
   if (under && !given.pathname.startsWith(`${under}/`)) return null;
-  const path = repoPathOn(host, given.pathname.slice(under.length).replace(/\/-\/.*$/, ""));
+  const path = repoPathOn(host, beforePages(given.pathname.slice(under.length)));
   return path ? { host, path } : null;
 }
 
@@ -108,7 +128,10 @@ export function repoRefAt(host: GitHostId, serverUrl: string, input: string): Re
  * `gitlab:group/*`). Returned as it is stored, or null when it is neither.
  */
 export function repoEntry(input: string): string | null {
-  const s = input.trim().replace(/\/+$/, "");
+  if (input.length > NAME_CHARS) return null;
+  const typed = input.trim();
+  // Trailing slashes only: `x` keeps what it starts with.
+  const s = unslashed(`x${typed}`).slice(1);
   if (!s.endsWith("/*")) {
     const ref = parseRepoRef(s);
     return ref ? repoRefName(ref) : null;
@@ -164,11 +187,11 @@ export type GitVerb = keyof typeof GIT_TOOL_SCOPES;
 
 /**
  * A git tool's name on a host: GitHub's are the plain ones (`git_clone`), as they always were; another host's carry
- * it first (`gitlab_git_clone`, `server_git_clone` for a git server by address), so two hosts' tools never share a
+ * it first (`gitlab_git_clone`, `gitserver_git_clone` for a git server by address), so two hosts' tools never share a
  * name and an approval or a denial stays with the host it was given on.
  */
 export const gitToolName = (host: GitHostId, verb: GitVerb) =>
-  host === "github" ? verb : `${host === "git" ? "server" : host}_${verb}`;
+  host === "github" ? verb : `${host === "git" ? "gitserver" : host}_${verb}`;
 
 /**
  * Which git tool of ours a tool is, by its exact name and scope (`gitlab_git_clone` + `gitlab:git.read`), or null:

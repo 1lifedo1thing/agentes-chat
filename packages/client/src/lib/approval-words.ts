@@ -24,7 +24,7 @@ const BRANCH_PUSH = "request_branch_push";
  * host's carry it first (`gitlab_delete_branches`; engine `git/hosts/refs.ts` `gitToolName`).
  */
 const plainGitTool = (tool: string) =>
-  tool.replace(/^(?:gitlab|bitbucket|server)_(?=delete_branches$|request_branch_push$)/, "");
+  tool.replace(/^(?:gitlab|bitbucket|gitserver)_(?=delete_branches$|request_branch_push$)/, "");
 
 /** The app's own tools whose approval title it says in the person's language (`approval.titles.*`). */
 const OWN_TITLES = new Set([

@@ -8360,6 +8360,38 @@
       "label": "Editar contactos del Vault",
       "description": "Guardar y actualizar datos de contacto en el Vault, cambiar el usuario de un inicio de sesión guardado o una descripción, crear contraseñas para las cuentas que abre, y eliminar lo que guardó."
     },
+    "gitlab_git_read": {
+      "label": "Clonar repositorios (git)",
+      "description": "Clonar y actualizar repositorios en la computadora del agente con git, a través de nuestro proxy. El token de GitLab nunca entra en la máquina."
+    },
+    "gitlab_git_write": {
+      "label": "Hacer push de ramas (git push)",
+      "description": "Hacer push de commits a ramas agentes/{agent}/…: nunca a la rama principal, sin force push, sin tags. Borrar ramas y hacer push a la rama de otra persona piden aprobación antes."
+    },
+    "gitlab_pr_write": {
+      "label": "Abrir merge requests",
+      "description": "Abrir merge requests y comentarlos."
+    },
+    "bitbucket_git_read": {
+      "label": "Clonar repositorios (git)",
+      "description": "Clonar y actualizar repositorios en la computadora del agente con git, a través de nuestro proxy. El token de Bitbucket nunca entra en la máquina."
+    },
+    "bitbucket_git_write": {
+      "label": "Hacer push de ramas (git push)",
+      "description": "Hacer push de commits a ramas agentes/{agent}/…: nunca a la rama principal, sin force push, sin tags. Borrar ramas y hacer push a la rama de otra persona piden aprobación antes."
+    },
+    "bitbucket_pr_write": {
+      "label": "Abrir pull requests",
+      "description": "Abrir pull requests y comentarlos."
+    },
+    "git_git_read": {
+      "label": "Clonar repositorios (git)",
+      "description": "Clonar y actualizar repositorios en la computadora del agente con git, a través de nuestro proxy. El token de Git nunca entra en la máquina."
+    },
+    "git_git_write": {
+      "label": "Hacer push de ramas (git push)",
+      "description": "Hacer push de commits a ramas agentes/{agent}/…: nunca a la rama principal, sin force push, sin tags. Borrar ramas y hacer push a la rama de otra persona piden aprobación antes."
+    },
     "github_git_read": {
       "label": "Clonar repositorios (git)",
       "description": "Clonar y actualizar repositorios en la computadora del agente con git, a través de nuestro proxy. El token de GitHub nunca entra en la máquina."
@@ -14602,6 +14634,7 @@
     },
     "label": {
       "git_clone": "Clonar repositorio",
+      "list_repositories": "Listar repositorios",
       "create_repository": "Crear repositorio",
       "delete_repository": "Borrar repositorio",
       "fork_repository": "Hacer fork de un repositorio",
@@ -19219,6 +19252,7 @@
         "runningCommandAny": "Ejecutó un comando",
         "usingScreen": "Usó la pantalla",
         "cloningRepo": "Clonó un repositorio",
+        "listingRepos": "Listó los repositorios",
         "openingPullRequest": "Abrió un pull request",
         "handingOff": "Entregó un informe",
         "recordingFindings": "Anotó los hallazgos",
@@ -19340,6 +19374,7 @@
       "runningCommandAny": "ejecutando un comando",
       "usingScreen": "usando la pantalla",
       "cloningRepo": "clonando un repositorio",
+      "listingRepos": "listando los repositorios",
       "openingPullRequest": "abriendo un pull request",
       "handingOff": "entregando un informe",
       "recordingFindings": "anotando los hallazgos",
