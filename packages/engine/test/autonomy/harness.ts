@@ -78,6 +78,11 @@ export interface JudgeTable {
   stuck?: number;
   /** `note_reply`: whether a note's reply matters to its sender (default 0.9). */
   noteReply?: number;
+  /**
+   * `handed_back_next`: whether an agent in an agents' DM has a step left with what came back before its answer goes
+   * up (default 0: the parts roll up with its reply).
+   */
+  handedBack?: number;
   /** `ask_check`: what an `ask_user` question asks for (default: something only a person can give); "fail" errors. */
   ask?: (state: Record<string, unknown>) => "findable" | "secret" | "person" | "none" | "fail";
   /** `alert_triage` (ADR 0131 §5): whether an unrequested item is work now or noise for the digest (default work). */
@@ -208,6 +213,8 @@ export async function world(options: WorldOptions) {
       case "note_reply":
       case "note_reply_matters":
         return table.noteReply ?? 0.9;
+      case "handed_back_next":
+        return table.handedBack ?? 0;
       case "hand_off_next":
         return table.handOffNext ?? 0;
       case "channel_lead_next":

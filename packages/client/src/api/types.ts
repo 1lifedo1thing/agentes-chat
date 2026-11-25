@@ -25,14 +25,17 @@ export interface Health {
  * milliseconds but the heap (bytes) and the counts.
  */
 export interface ClientVitalsReport {
-  platform: "ios" | "android" | "web";
-  /** From the app's start to the launch splash leaving. */
+  /** The desktop app reports as its system (`macos`, `windows`, `linux`): each one's web view is its own. */
+  platform: "ios" | "android" | "web" | "macos" | "windows" | "linux";
+  /** From the app's start to its first screen: the launch splash leaving, a page's first paint. */
   coldStartMs?: number;
   /** From the app's start to its first list drawn with rows. */
   firstRowsMs?: number;
   jsLagP95Ms?: number;
   jsLagMaxMs?: number;
   heapBytes?: number;
+  /** The desktop app's: the memory of the processes behind its main window's web view. */
+  webviewBytes?: number;
   /** Reads (GETs) in the 10 s after the app came back to the front. */
   getsPerReturn?: number;
   reconnects?: number;
@@ -364,6 +367,8 @@ export interface SurfaceLink {
   confirmedAt: string | null;
   /** Pending only: when it stops counting. */
   expiresAt: string | null;
+  /** A PIN confirms actions asked from the surface (ADR 0226). */
+  pinSet: boolean;
 }
 
 /** `GET /me/surface-links`: `allowed`, never `AuthConfig.surface`, decides whether the apps offer linking. */
@@ -382,6 +387,36 @@ export interface SurfaceLinkCode {
   /** Opens the surface with the code typed. */
   openUrl: string;
   expiresAt: string;
+}
+
+/** A page the outside chat surface linked to (ADR 0226): one action to confirm with the person's PIN. */
+export interface SurfacePage {
+  kind: "confirm" | "screen" | "control";
+  /** When the page stops opening. */
+  expiresAt: string;
+  surface: string;
+  /** The approval's workspace: its notification settings choose the PIN in the app. */
+  orgId: string;
+  /**
+   * `set` false: approving waits until the PIN is chosen somewhere trusted. `canChoose`: none set and this browser is
+   * signed in as the person, so approving here chooses it. `lockedUntil`: wrong ones lock approving until then.
+   * `resetByEmail`: the server can email a link to choose it (none yet, or forgotten).
+   */
+  pin: { set: boolean; lockedUntil: string | null; canChoose: boolean; resetByEmail: boolean };
+  approval: {
+    id: string;
+    tool: string;
+    params: Record<string, unknown>;
+    title: string;
+    detail: string;
+    why: string | null;
+    kind: string;
+    titleParams: Record<string, string | number | boolean>;
+    status: string;
+    canDecide: boolean;
+    /** Who decides it, in words, when it isn't the person. */
+    approverLabel: string | null;
+  } | null;
 }
 
 export interface User {
@@ -2472,6 +2507,8 @@ export interface ConnectorDef {
   soon?: boolean;
   /** A connector of ours that needs a developer app this self-hosted server hasn't registered (ADR 0170). */
   needsApp?: boolean;
+  /** A git host at an address of one's own: the connect form asks for it (`required`) or offers it. */
+  address?: "optional" | "required";
   /** Connects through Composio (ADR 0107): its page signs in. Unavailable on a server without Composio. */
   via?: "composio";
   /** Where it connects, by the way this server picked (a `remote_mcp` entry's address). */
@@ -2557,7 +2594,7 @@ export interface GitHubAppInfo {
 
 /** A repository the organization's GitHub reaches. */
 export interface GitHubRepository {
-  /** `owner/name`. */
+  /** `owner/name`; on another git host, with the host first (`gitlab:group/project`). */
   fullName: string;
   owner: string;
   name: string;
@@ -2568,8 +2605,22 @@ export interface GitHubRepository {
 /** The repositories the organization's GitHub reaches (its connection and the app's installations), by account. */
 export interface GitHubRepositories {
   connected: boolean;
-  accounts: { login: string; type: string; repositories: GitHubRepository[] }[];
+  accounts: GitHostAccount[];
+  /** What the organization's other git hosts reach (GitLab, Bitbucket), by group or workspace. */
+  elsewhere?: GitHostAccount[];
   truncated: boolean;
+}
+
+/** An account, group or workspace of a git host and its repositories. */
+export interface GitHostAccount {
+  /** `github`, `gitlab`, `bitbucket`; absent from an older server: GitHub. */
+  host?: string;
+  hostLabel?: string;
+  /** What its repositories' names start with, before the last slash (`acme`, `gitlab:acme/web`). */
+  prefix?: string;
+  login: string;
+  type: string;
+  repositories: GitHubRepository[];
 }
 
 /** The organizations the GitHub connection reaches now (`null`: GitHub didn't answer) and GitHub's page to grant more. */
@@ -3178,8 +3229,8 @@ export interface RunAccountSwitch {
   from: RunAccount;
   /** The last one it moved to. */
   to: RunAccount;
-  /** Its plan's limit, the pause line (99%) of long work, or the paid extra usage `from` would go into. */
-  cause: "limit" | "line" | "extra";
+  /** Its plan's limit, the pause line (99%) of long work, the paid extra usage `from` would go into, or `from` busy with all the runs it takes at once. */
+  cause: "limit" | "line" | "extra" | "busy";
 }
 
 export interface RunStep {
@@ -5297,6 +5348,12 @@ export interface Machine {
    * `CLI_GIT_MISSING`; null or absent for people who don't manage it.
    */
   cliErrors?: Partial<Record<string, string>> | null;
+  /**
+   * Windows: what holds Codex's commands there: `mxc`, `unelevated` (Codex's own sandbox where MXC is missing: writes
+   * held to the agent's folders, the internet only partly blocked) or `none` (nothing could). Null or absent elsewhere,
+   * until its runner knows, or from an older server.
+   */
+  codexSandbox?: "mxc" | "unelevated" | "none" | null;
   /** ADR 0036 §8 (protocol 10): what the machine allows, as last reported. Absent until the machine reports it. */
   access?: MachineAccess | null;
   /** ADR 0040 (protocol 12): whether the agent browser can run there; null or absent when its runner doesn't say. */
@@ -6435,7 +6492,9 @@ export type BrainUnavailable =
   /** Its runner doesn't run this CLI on the computer's system (Cursor on Windows, for one). */
   | "system"
   /** It is there and can't start: the computer's row has its error (`Machine.cliErrors`). */
-  | "cant_start";
+  | "cant_start"
+  /** Codex on a Windows computer where no sandbox could hold its commands. */
+  | "windows_sandbox";
 
 export interface BrainModelOption {
   /** What is stored (`fable`, `opus`, `sonnet`, `haiku`, a Codex model). */
@@ -6457,6 +6516,11 @@ export interface BrainOption {
   reason?: BrainUnavailable;
   models: BrainModelOption[];
   defaultModel: string | null;
+  /**
+   * `partial`: Codex on a Windows computer without MXC, in Codex's own sandbox: its commands write only in the agent's
+   * folders, but the internet is kept from them only in part. Absent from an older server.
+   */
+  sandbox?: "partial";
   /**
    * Antigravity: the newest Gemini isn't among its models, and why: the computer's agentes.chat is too old to bring a
    * CLI that runs it (`app_old`), its CLI predates it where the computer's setup installs it (`cli_old`), or no

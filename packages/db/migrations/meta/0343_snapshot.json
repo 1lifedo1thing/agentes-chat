@@ -1,6 +1,6 @@
 {
-  "id": "d912bc77-b62d-49b7-b76c-647fd113a025",
-  "prevId": "29d398d0-8fc6-4c74-929b-a86f5a72a65f",
+  "id": "f0d125c2-6939-444e-9adc-e92403d4465f",
+  "prevId": "e337802a-e251-4d63-864b-4ae7e63829a0",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -13228,12 +13228,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "moving_at": {
-          "name": "moving_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "wanted_at": {
           "name": "wanted_at",
           "type": "timestamp with time zone",
@@ -24421,6 +24415,32 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "pin_hash": {
+          "name": "pin_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pin_failures": {
+          "name": "pin_failures",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "pin_locked_until": {
+          "name": "pin_locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pin_lockouts": {
+          "name": "pin_lockouts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         }
       },
       "indexes": {
@@ -24519,6 +24539,171 @@
         "surface_links_status": {
           "name": "surface_links_status",
           "value": "\"surface_links\".\"status\" in ('pending', 'active')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.surface_page_links": {
+      "name": "surface_page_links",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "link_id": {
+          "name": "link_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "browser_hash": {
+          "name": "browser_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "opened_at": {
+          "name": "opened_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "surface_page_links_token_hash_index": {
+          "name": "surface_page_links_token_hash_index",
+          "columns": [
+            {
+              "expression": "token_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "surface_page_links_link_id_index": {
+          "name": "surface_page_links_link_id_index",
+          "columns": [
+            {
+              "expression": "link_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "surface_page_links_created_at_index": {
+          "name": "surface_page_links_created_at_index",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "surface_page_links_org_id_organizations_id_fk": {
+          "name": "surface_page_links_org_id_organizations_id_fk",
+          "tableFrom": "surface_page_links",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "surface_page_links_link_id_surface_links_id_fk": {
+          "name": "surface_page_links_link_id_surface_links_id_fk",
+          "tableFrom": "surface_page_links",
+          "tableTo": "surface_links",
+          "columnsFrom": [
+            "link_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "surface_page_links_user_id_users_id_fk": {
+          "name": "surface_page_links_user_id_users_id_fk",
+          "tableFrom": "surface_page_links",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "surface_page_links_kind": {
+          "name": "surface_page_links_kind",
+          "value": "\"surface_page_links\".\"kind\" in ('confirm', 'screen', 'control')"
         }
       },
       "isRLSEnabled": false
@@ -24879,6 +25064,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "client_vitals": {
+          "name": "client_vitals",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},

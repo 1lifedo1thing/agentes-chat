@@ -157,6 +157,7 @@ import {
 import { type CodeSessionContext, codeSessionContext, loseCodeWorktree } from "./code-sessions";
 import { type CodeSuggestion, codeSuggestionApplies, SUGGEST_CODE_SESSION_TOOL } from "./code-suggestions";
 import {
+  fullSignIns,
   kickRoomQueue,
   publishQueueChanged,
   type RoomWaitCause,
@@ -866,7 +867,10 @@ export interface Transcript {
    * plan sign-in whose slot it holds while it works (`signInSlotOf`).
    */
   roomAsk?: { machineId: string; at: number; signIn?: string };
-  /** In its computer's line because this plan sign-in has all the runs it takes at once (`SignInSlot`). */
+  /**
+   * The plan sign-in it waits in its computer's line to think with (`SignInSlot`): only runs on that same sign-in hold
+   * it back. Kept whatever held it but the computer's memory, which holds back the whole line.
+   */
   signInWait?: { key: string };
   /** Its agent's computer was full: it thinks on another computer of the workspace, in a session of its own there. */
   spill?: SpillRecord;
@@ -3955,7 +3959,7 @@ async function executeRunInner(
    * What `nextAccountPlan` found; null where no move is looked for.
    */
   const moveToNextAccount = async (
-    cause: "limit" | "line" | "extra",
+    cause: AccountSwitch["cause"],
     room?: (usage: PlanUsage | null, accountId: string) => boolean,
   ): Promise<NextAccount | null> => {
     const t = transcript as Transcript;
@@ -5329,11 +5333,19 @@ async function executeRunInner(
           await kickRoomQueue(db, roomMachine).catch(() => {});
           later(() => addRunStep(db, run, "context", { spill: transcript.spill }));
         }
+        // Its sign-in thinks for all it takes at once: a fresh run goes on with another shared sign-in of the same
+        // kind that has a free slot, before it waits. Only one under the pause line: never into someone's paid extra
+        // usage, nor onto a plan near its limit, to save a short wait.
+        if (behind?.cause === "sign_in" && run.turns === 0 && !transcript.spill) {
+          const full = await fullSignIns(db, run.orgId, deps.signInConcurrency ?? SIGN_IN_CONCURRENCY);
+          const next = await moveToNextAccount("busy", (usage, id) => !full.has(id) && underTheLine(usage));
+          if (next?.plan) behind = await roomGate(db, run, askOn, place, slotOf(plan));
+        }
         const slot = slotOf(plan);
         if (behind) {
           // Not working on the computer: no slot of a sign-in is its (`kickSignInLine` reads it as it leaves).
           delete transcript.roomAsk;
-          if (behind.cause === "sign_in" && slot) transcript.signInWait = { key: slot.key };
+          if (slot) transcript.signInWait = { key: slot.key };
           else delete transcript.signInWait;
           const handled = await brainUnavailable({
             code: "busy",
@@ -6514,7 +6526,7 @@ async function executeRunInner(
         plain &&
         plan.kind === "model" &&
         granted.some((g) => g.name === "upload_file") &&
-        !granted.some((g) => g.name === "git_clone")
+        !granted.some((g) => /(^|_)git_clone$/.test(g.name))
           ? localPathsCited(fresh, request, () =>
               computerWork(t.messages, new Set(listed.filter((x) => x.scope === SANDBOX_SCOPE).map((x) => x.name))),
             )
