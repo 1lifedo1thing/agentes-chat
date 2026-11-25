@@ -12,7 +12,9 @@ import {
   NEW_AGENT_DEFAULTS,
   proposeChange,
   proposeFromItem,
+  redoAgentAction,
   splitLearned,
+  undoAgentAction,
   updateAgent,
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
@@ -168,6 +170,61 @@ describe("an agent created or saved with a section", () => {
     });
     expect(edited.instructions).toBe("Seja breve.");
     expect((await lessonsOf(f.agent.id)).map((i) => i.content)).toEqual(["Ser cordial."]);
+  });
+});
+
+describe("Undo and Redo of an instructions change", () => {
+  const withSection = "Seja breve.\n\n## Learned\n- Citar a fonte.";
+  // [what the change replaced, what it wrote, the text the agent has now]: the section in the text Undo puts back,
+  // then in the text Redo puts back (its write already moved the section, so the agent has the text without it).
+  test.each([
+    [withSection, "Seja formal.", "Seja formal."],
+    ["Seja formal.", withSection, "Seja breve."],
+  ])("put a section back into memory again, never twice, and find what they left (%#)", async (from, to, now) => {
+    f = await setup();
+    await f.db.update(agents).set({ instructions: now }).where(eq(agents.id, f.agent.id));
+    if (to === withSection)
+      await f.db.insert(contextItems).values({
+        orgId: f.org.id,
+        agentId: f.agent.id,
+        kind: "lesson",
+        scopeType: "agent",
+        scopeId: f.agent.id,
+        content: "Citar a fonte.",
+      });
+    const [receipt] = await f.db
+      .insert(schema.agentActions)
+      .values({
+        orgId: f.org.id,
+        agentId: f.agent.id,
+        channelId: f.general.id,
+        requestedByUserId: f.owner.id,
+        kind: "agent.settings_changed",
+        targetType: "agent",
+        targetId: f.agent.id,
+        params: { agentName: "Dev", fields: ["instructions"] },
+        before: { lines: [{ field: "instructions", from, to }] },
+        undoableUntil: new Date(Date.now() + 60_000),
+      })
+      .returning();
+    const deps = { db: f.db, pubsub: f.pubsub };
+    const state = async () => ({
+      instructions: (await f.db.select().from(agents).where(eq(agents.id, f.agent.id)))[0]?.instructions,
+      lessons: (
+        await f.db
+          .select()
+          .from(contextItems)
+          .where(and(eq(contextItems.agentId, f.agent.id), eq(contextItems.status, "active")))
+      ).map((i) => i.content),
+    });
+    const held = (text: string) => splitLearned(text).instructions;
+
+    await undoAgentAction(deps, f.owner.id, f.org.id, receipt?.id ?? "");
+    expect(await state()).toEqual({ instructions: held(from), lessons: ["Citar a fonte."] });
+    await redoAgentAction(deps, f.owner.id, f.org.id, receipt?.id ?? "");
+    expect(await state()).toEqual({ instructions: held(to), lessons: ["Citar a fonte."] });
+    await undoAgentAction(deps, f.owner.id, f.org.id, receipt?.id ?? "");
+    expect(await state()).toEqual({ instructions: held(from), lessons: ["Citar a fonte."] });
   });
 });
 
