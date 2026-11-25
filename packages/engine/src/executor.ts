@@ -6926,8 +6926,10 @@ async function warmAtClaim(
       ...(plan.effort ? { effort: plan.effort } : {}),
       ...(agent.contextTokens ? { contextTokens: agent.contextTokens } : {}),
     });
-  const first = planFor(await guess);
-  const again = needsAutoChoice(agent, base) && chosen;
+  const auto = needsAutoChoice(agent, base);
+  // A pinned model needs no guess: its warm doesn't wait for the conversation's previous run to be read.
+  const first = auto ? planFor(await guess) : base;
+  const again = auto && chosen;
   await Promise.all([
     warm(first),
     again

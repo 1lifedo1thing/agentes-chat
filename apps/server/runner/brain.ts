@@ -2694,6 +2694,8 @@ export class BrainManager {
       // start another process for this launch, so it starts now instead.
       if (open && !open.proc.exited && open.warmed && !open.busy && open.sig !== sig) {
         this.drop(open, "settings");
+        // Its guess was written as the session's text: a resumed start would read it back as kept, unchecked.
+        if (open.guessed !== undefined) rmSync(open.keptSystem, { force: true });
       } else if (open && !open.proc.exited) {
         if (!open.busy) {
           open.lastUsed = Date.now();
