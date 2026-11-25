@@ -113,7 +113,14 @@ export interface ComputerDevice {
    * "Help when the team's computer is full or away" (`machines.spill_own`, ADR 0233): fresh turns of its owner's
    * agents (anyone's, on one marked the workspace's) may think here while their own computer is full or away.
    */
-  spill: { own: boolean };
+  spill: {
+    own: boolean;
+    /**
+     * "Use this computer for my agents' work" (`machines.spill_first`): its owner's agents' asks, routines and long
+     * work start here first whenever it is free, a person's reply on their own computer as before.
+     */
+    first: boolean;
+  };
   /** Each agent works as its own OS user there (a server install). */
   systemMode: boolean;
   audience: DeviceAudience;
@@ -450,7 +457,7 @@ export async function listDevices(
       memoryGb: m.size?.memoryGb ?? null,
       ownerUserId: m.pairedByUserId,
       belongsToWorkspace: m.belongsToWorkspace,
-      spill: { own: m.spillOwn },
+      spill: { own: m.spillOwn, first: m.spillFirst },
       systemMode: m.executors?.mode === "system",
       audience: rule.audience,
       status: computerStatus(m, busy.get(m.id) ?? 0, now),
@@ -564,7 +571,7 @@ export interface ComputerDeviceInput {
   name?: string;
   audience?: DeviceAudience;
   belongsToWorkspace?: boolean;
-  spill?: { own?: boolean };
+  spill?: { own?: boolean; first?: boolean };
   /** Background tasks at once (`TASK_LIMIT_BOUNDS`): the computer applies it, so it must be online. */
   maxTasks?: number;
   /** `TASK_ROOM_PROTOCOL`: tasks may fill memory down to 0.5 GB free, whatever the processor. Online, its owner's. */
@@ -608,10 +615,15 @@ export async function updateComputerDevice(
   }
   if (input.belongsToWorkspace !== undefined) set.belongsToWorkspace = input.belongsToWorkspace;
   const help = input.spill?.own;
-  if (help !== undefined) {
-    if (help && !owner) throw new ForbiddenError("Only the device's owner can turn this on", "device.spill_owner_only");
-    set.spillOwn = help;
+  const first = input.spill?.first;
+  if ((help || first) && !owner) {
+    throw new ForbiddenError("Only the device's owner can turn this on", "device.spill_owner_only");
   }
+  // Used first for its owner's agents is a kind of help: on turns help on, help off turns it off.
+  if (help !== undefined) set.spillOwn = help;
+  if (help === false) set.spillFirst = false;
+  if (first !== undefined) set.spillFirst = first;
+  if (first) set.spillOwn = true;
   if (input.maxTasks !== undefined || input.pushHarder !== undefined) {
     if (!owner && machine.pairedByUserId !== null) {
       throw new ForbiddenError(

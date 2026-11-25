@@ -245,17 +245,17 @@ describe("a computer's line", () => {
     await settle(6);
     const dialog = screen().getByRole("dialog", { name: "Fila de Studio" });
     expect(dialog.textContent).toContain("Seus computadores");
-    const own = within(dialog).getByRole("switch", {
-      name: "Ajudar quando o computador da equipe estiver cheio ou fora: MacBook da Ana",
-    });
-    expect(own.getAttribute("aria-checked")).toBe("true");
+    const own = within(dialog).getByRole("combobox", { name: "Como MacBook da Ana ajuda" });
+    expect(own.textContent).toContain("Quando este estiver cheio ou fora");
     expect(dialog.querySelector(".cq-spill__name small")?.textContent).toContain("seu plano Claude Max");
     // Studio itself, and computers someone else connected, are never offered here.
-    expect(within(dialog).queryAllByRole("switch")).toHaveLength(1);
+    expect(within(dialog).queryAllByRole("combobox")).toHaveLength(1);
     await click(own);
     await settle(4);
+    await click(screen().getByRole("option", { name: "Para os trabalhos dos meus agentes" }));
+    await settle(4);
     const call = state.calls.find((c) => c.method === "devices.updateComputer");
-    expect(call?.args.at(-1)).toEqual({ spill: { own: false } });
+    expect(call?.args.at(-1)).toEqual({ spill: { own: true, first: true } });
   });
 
   test("with the workspace's switch off, the line offers no computer: none would help", async () => {

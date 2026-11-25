@@ -19,6 +19,7 @@ import {
   postPersonMessage,
   resolveBrain,
   setDevicesHelp,
+  updateComputerDevice,
 } from "../src";
 import { SPILL_AFTER_MS } from "../src/spill";
 import { addMember, type Fixture, setup } from "./fixtures";
@@ -362,4 +363,44 @@ test("turning its help on starts installing the CLIs its owner's agents think wi
   // Someone else's computer: nothing.
   const rui = await addMember(f.db, f.org.id, "member", "rui");
   expect(await installHelpClis({ db: f.db, hub }, rui.id, f.org.id, laptop)).toEqual([]);
+});
+
+test("a computer its owner uses for their agents' work takes their routine at once, while a person's reply stays home", async () => {
+  f = await setup();
+  const home = await pair(f.owner.id, "Team computer");
+  await f.db
+    .update(schema.agents)
+    .set({ machineId: home, brain: "claude_code" })
+    .where(eq(schema.agents.id, f.agent.id));
+  await f.db.update(schema.providerCredentials).set({ revokedAt: new Date() });
+  const pc = await pair(f.owner.id, "Ana's PC");
+  await updateComputerDevice({ db: f.db }, f.owner.id, f.org.id, pc, { spill: { first: true } });
+
+  // Home has room: the routine still starts on the computer its owner chose, and says why.
+  const { handlers, seen } = handlersSeeing();
+  const fired = await fire(f, (await channelRoutine(f)).id, new Date());
+  await drainOutbox(f.db, handlers);
+  const id = fired.agentRunId ?? "";
+  expect((await runOf(id))?.status).toBe("done");
+  expect(seen.map((t) => t.session?.machineId)).toEqual([pc]);
+  expect((await runOf(id))?.transcript).toMatchObject({ spill: { from: home, to: pc, cause: "chosen" } });
+
+  // A person's reply starts on the agent's own computer while it has room.
+  const reply = await ask();
+  expect(reply.run?.status).toBe("done");
+  expect(reply.seen.map((t) => t.session?.machineId)).toEqual([home]);
+});
+
+test("used for its owner's agents' work turns its help on, and help off turns both off; only its owner chooses it", async () => {
+  f = await setup();
+  const pc = await pair(f.owner.id, "Ana's PC");
+  await f.db.update(schema.machines).set({ spillOwn: false }).where(eq(schema.machines.id, pc));
+  const on = await updateComputerDevice({ db: f.db }, f.owner.id, f.org.id, pc, { spill: { first: true } });
+  expect(on.spill).toEqual({ own: true, first: true });
+  const off = await updateComputerDevice({ db: f.db }, f.owner.id, f.org.id, pc, { spill: { own: false } });
+  expect(off.spill).toEqual({ own: false, first: false });
+  const admin = await addMember(f.db, f.org.id, "admin", "rui");
+  await expect(
+    updateComputerDevice({ db: f.db }, admin.id, f.org.id, pc, { spill: { first: true } }),
+  ).rejects.toMatchObject({ code: "device.spill_owner_only" });
 });

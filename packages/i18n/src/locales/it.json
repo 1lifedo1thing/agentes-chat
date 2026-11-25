@@ -3344,6 +3344,9 @@
       "set_notifications_off": "Disattiva le tue notifiche per <b>{{category}}</b>",
       "set_my_timezone": "Imposta il tuo fuso orario su <b>{{timezone}}</b>",
       "set_my_timezone_workspace": "Segui di nuovo il fuso orario dello spazio di lavoro",
+      "set_computer_help": "Lascia che <b>{{computer}}</b> aiuti quando il computer dei tuoi agenti è pieno o assente",
+      "set_computer_help_first": "Usa <b>{{computer}}</b> per il lavoro dei tuoi agenti",
+      "set_computer_help_off": "Smetti di usare <b>{{computer}}</b> per i tuoi agenti",
       "set_invitation_roles": "Cambia i ruoli che dà l'invito di <b>{{email}}</b>: {{change}}",
       "update_channel": "Modifica il canale <b>#{{channel}}</b>",
       "archive_channel": "Archivia <b>#{{channel}}</b>",
@@ -4243,6 +4246,9 @@
       "changed_set_notifications_off": "Ho disattivato le tue notifiche per <b>{{category}}</b>",
       "changed_set_my_timezone": "Ho impostato il tuo fuso orario su <b>{{timezone}}</b>",
       "changed_set_my_timezone_workspace": "Il tuo fuso orario segue di nuovo quello dello spazio di lavoro",
+      "changed_set_computer_help": "<b>{{computer}}</b> ora aiuta quando il computer dei tuoi agenti è pieno o assente",
+      "changed_set_computer_help_first": "Il lavoro dei tuoi agenti ora inizia su <b>{{computer}}</b>",
+      "changed_set_computer_help_off": "<b>{{computer}}</b> non aiuta più i tuoi agenti",
       "changed_set_invitation_roles": "Ho cambiato i ruoli che dà l'invito di <b>{{email}}</b>: {{change}}",
       "changed_update_channel": "Ho modificato il canale <b>#{{channel}}</b>",
       "changed_archive_channel": "Ho archiviato <b>#{{channel}}</b>",
@@ -13027,7 +13033,13 @@
     "rule": "Un nuovo lavoro inizia quando il computer ha memoria libera. Le persone vanno prima. Gli agenti menzionati insieme iniziano uno alla volta.",
     "spill": {
       "title": "I tuoi computer",
-      "text": "Quando questo computer è pieno o assente, i tuoi agenti possono iniziare su uno dei tuoi. Le missioni, le sessioni di codice e gli agenti con repository restano qui.",
+      "text": "Quando questo computer è pieno o assente, i tuoi agenti possono iniziare su uno dei tuoi. Uno che usi per il loro lavoro riceve per primo le loro richieste, routine e lavori lunghi. Le missioni, le sessioni di codice e gli agenti con repository restano qui.",
+      "use": {
+        "label": "Come aiuta {{name}}",
+        "off": "Non aiuta",
+        "help": "Quando questo è pieno o assente",
+        "first": "Per il lavoro dei miei agenti"
+      },
       "plan": "il tuo piano {{plan}}"
     },
     "youFirst": "Tu passi per primo",
@@ -17068,6 +17080,8 @@
     "spillOwnHint": "Quando il computer dei tuoi agenti è pieno o assente, le loro risposte, richieste e routine possono pensare qui con il tuo accesso.",
     "spillTeamHint": "Quando il computer di un agente è pieno o assente, le sue risposte, richieste e routine possono pensare qui con l'accesso del suo proprietario su questo computer.",
     "spillWorkspaceOff": "Un admin l'ha disattivato per il workspace.",
+    "spillFirst": "Usa questo computer per il lavoro dei miei agenti",
+    "spillFirstHint": "Le richieste, le routine e i lavori lunghi dei tuoi agenti iniziano qui ogni volta che è libero, con l'IA che hai collegato qui. Le risposte alle persone iniziano qui solo quando il computer del team è pieno.",
     "helpWorkspace": "I computer aiutano quando quello del team è pieno o assente",
     "helpWorkspaceHint": "Ogni computer aiuta solo se il suo proprietario lo permette. Disattivato: nessuno aiuta, qualunque cosa abbia scelto il proprietario.",
     "connectedBy": "Collegato da {{name}}",
@@ -19051,7 +19065,8 @@
     "spilled": {
       "full": "Ha pensato su {{to}}: {{from}} era pieno.",
       "away": "Ha pensato su {{to}}: {{from}} era assente.",
-      "itsComputer": "il suo computer"
+      "itsComputer": "il suo computer",
+      "chosen": "Ha pensato su {{to}}, che il suo proprietario usa per il lavoro dei suoi agenti."
     },
     "modelStandIn": {
       "text": "{{plan}} ha rifiutato {{from}} con questa chiave. Ho risposto con {{to}}, che funziona con essa.",

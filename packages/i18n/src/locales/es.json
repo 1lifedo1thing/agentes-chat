@@ -3344,6 +3344,9 @@
       "set_notifications_off": "Desactivar tus notificaciones de <b>{{category}}</b>",
       "set_my_timezone": "Poner tu zona horaria en <b>{{timezone}}</b>",
       "set_my_timezone_workspace": "Volver a seguir la zona horaria del espacio de trabajo",
+      "set_computer_help": "Dejar que <b>{{computer}}</b> ayude cuando la computadora de tus agentes esté llena o fuera",
+      "set_computer_help_first": "Usar <b>{{computer}}</b> para el trabajo de tus agentes",
+      "set_computer_help_off": "Dejar de usar <b>{{computer}}</b> para tus agentes",
       "set_invitation_roles": "Cambiar los roles que da la invitación de <b>{{email}}</b>: {{change}}",
       "update_channel": "Cambiar el canal <b>#{{channel}}</b>",
       "archive_channel": "Archivar <b>#{{channel}}</b>",
@@ -4231,6 +4234,9 @@
       "changed_set_notifications_off": "Desactivé tus notificaciones de <b>{{category}}</b>",
       "changed_set_my_timezone": "Puse tu zona horaria en <b>{{timezone}}</b>",
       "changed_set_my_timezone_workspace": "Tu zona horaria vuelve a seguir la del espacio de trabajo",
+      "changed_set_computer_help": "<b>{{computer}}</b> ahora ayuda cuando la computadora de tus agentes está llena o fuera",
+      "changed_set_computer_help_first": "El trabajo de tus agentes ahora empieza en <b>{{computer}}</b>",
+      "changed_set_computer_help_off": "<b>{{computer}}</b> ya no ayuda a tus agentes",
       "changed_set_invitation_roles": "Cambié los roles que da la invitación de <b>{{email}}</b>: {{change}}",
       "changed_update_channel": "Cambié el canal <b>#{{channel}}</b>",
       "changed_archive_channel": "Archivé <b>#{{channel}}</b>",
@@ -12926,7 +12932,13 @@
     "rule": "Un trabajo nuevo empieza cuando la computadora tiene memoria libre. Las personas van primero. Los agentes mencionados juntos empiezan de uno en uno.",
     "spill": {
       "title": "Tus computadoras",
-      "text": "Cuando esta computadora esté llena o fuera, tus agentes pueden empezar en una de las tuyas. Las misiones, las sesiones de código y los agentes con repositorios se quedan aquí.",
+      "text": "Cuando esta computadora esté llena o fuera, tus agentes pueden empezar en una de las tuyas. Una que usas para su trabajo recibe primero sus pedidos, rutinas y trabajos largos. Las misiones, las sesiones de código y los agentes con repositorios se quedan aquí.",
+      "use": {
+        "label": "Cómo ayuda {{name}}",
+        "off": "No ayuda",
+        "help": "Cuando esta esté llena o fuera",
+        "first": "Para el trabajo de mis agentes"
+      },
       "plan": "tu plan {{plan}}"
     },
     "youFirst": "Tú vas primero",
@@ -16971,6 +16983,8 @@
     "spillOwnHint": "Cuando la computadora de tus agentes esté llena o fuera, sus respuestas, pedidos y rutinas pueden pensar aquí con tu inicio de sesión.",
     "spillTeamHint": "Cuando la computadora de un agente esté llena o fuera, sus respuestas, pedidos y rutinas pueden pensar aquí con el inicio de sesión de su dueño en esta computadora.",
     "spillWorkspaceOff": "Un admin desactivó esto para el workspace.",
+    "spillFirst": "Usar esta computadora para el trabajo de mis agentes",
+    "spillFirstHint": "Los pedidos, las rutinas y los trabajos largos de tus agentes empiezan aquí siempre que esté libre, con la IA que conectaste aquí. Las respuestas a personas solo empiezan aquí cuando la computadora del equipo está llena.",
     "helpWorkspace": "Las computadoras ayudan cuando la del equipo está llena o fuera",
     "helpWorkspaceHint": "Cada computadora ayuda solo si su dueño lo permite. Desactivado: ninguna ayuda, elija lo que elija su dueño.",
     "connectedBy": "Conectado por {{name}}",
@@ -18960,7 +18974,8 @@
     "spilled": {
       "full": "Pensó en {{to}}: {{from}} estaba llena.",
       "away": "Pensó en {{to}}: {{from}} estaba fuera.",
-      "itsComputer": "su computadora"
+      "itsComputer": "su computadora",
+      "chosen": "Pensó en {{to}}, que su dueño usa para el trabajo de sus agentes."
     },
     "modelStandIn": {
       "text": "{{plan}} rechazó {{from}} con esta clave. Respondí con {{to}}, que funciona con ella.",

@@ -22,7 +22,7 @@ import {
   queueWhereText,
   waitingFor,
 } from "@agenteschat/client/lib/computer-queue";
-import { spillDeviceText } from "@agenteschat/client/lib/devices";
+import { SPILL_USES, spillDeviceText, spillOfUse, spillUseOf } from "@agenteschat/client/lib/devices";
 import { devicePlanName } from "@agenteschat/client/lib/no-ai";
 import { badgeCount } from "@agenteschat/client/lib/unread";
 import {
@@ -34,7 +34,7 @@ import {
   DialogFooter,
   Icon,
   Message as MessageRow,
-  Switch,
+  Select,
   useNow,
 } from "@agenteschat/ui";
 import { useNavigate } from "@tanstack/react-router";
@@ -304,8 +304,9 @@ function QueueLists({
 }
 
 /**
- * "Your computers": the viewer's other computers, each with its switch to help while this one is full or away
- * (`spill.own`). Nothing when they have none, or while an admin turned devices' help off for the workspace.
+ * "Your computers": the viewer's other computers, each with how it helps (`spillUseOf`): not at all, while this one is
+ * full or away (`spill.own`), or first for their agents' work (`spill.first`). Nothing when they have none, or while
+ * an admin turned devices' help off for the workspace.
  */
 function SpillHere({ machineId }: { machineId: string }) {
   const { t } = useTranslation();
@@ -330,10 +331,14 @@ function SpillHere({ machineId }: { machineId: string }) {
               <b>{d.name}</b>
               <small>{spillDeviceText(t, d, devicePlanName(t, accounts, d.id))}</small>
             </span>
-            <Switch
-              aria-label={`${t("devices.spillOwn")}: ${d.name}`}
-              checked={d.spill.own}
-              onCheckedChange={(own) => update.mutate({ id: d.id, spill: { own } })}
+            <Select
+              size="sm"
+              align="end"
+              className="cq-spill__use"
+              aria-label={t("queue.spill.use.label", { name: d.name })}
+              value={spillUseOf(d)}
+              onValueChange={(use) => update.mutate({ id: d.id, spill: spillOfUse(use) })}
+              options={SPILL_USES.map((use) => ({ value: use, label: t(`queue.spill.use.${use}`) }))}
             />
           </li>
         ))}

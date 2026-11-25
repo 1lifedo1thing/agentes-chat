@@ -3355,6 +3355,9 @@ export const ptBR = {
       set_notifications_off: "Desligar suas notificações de <b>{{category}}</b>",
       set_my_timezone: "Mudar seu fuso horário para <b>{{timezone}}</b>",
       set_my_timezone_workspace: "Voltar a seguir o fuso horário do workspace",
+      set_computer_help: "Deixar <b>{{computer}}</b> ajudar quando o computador dos seus agentes estiver cheio ou fora",
+      set_computer_help_first: "Usar <b>{{computer}}</b> para os trabalhos dos seus agentes",
+      set_computer_help_off: "Parar de usar <b>{{computer}}</b> para os seus agentes",
       set_invitation_roles: "Mudar os cargos do convite de <b>{{email}}</b>: {{change}}",
       update_channel: "Mudar o canal <b>#{{channel}}</b>",
       archive_channel: "Arquivar <b>#{{channel}}</b>",
@@ -4325,6 +4328,10 @@ export const ptBR = {
       changed_set_notifications_off: "Desliguei suas notificações de <b>{{category}}</b>",
       changed_set_my_timezone: "Mudei seu fuso horário para <b>{{timezone}}</b>",
       changed_set_my_timezone_workspace: "Seu fuso horário voltou a seguir o do workspace",
+      changed_set_computer_help:
+        "<b>{{computer}}</b> agora ajuda quando o computador dos seus agentes estiver cheio ou fora",
+      changed_set_computer_help_first: "Os trabalhos dos seus agentes agora começam em <b>{{computer}}</b>",
+      changed_set_computer_help_off: "<b>{{computer}}</b> não ajuda mais os seus agentes",
       changed_set_invitation_roles: "Mudei os cargos do convite de <b>{{email}}</b>: {{change}}",
       changed_update_channel: "Mudei o canal <b>#{{channel}}</b>",
       changed_archive_channel: "Arquivei <b>#{{channel}}</b>",
@@ -13049,7 +13056,14 @@ export const ptBR = {
     /** The viewer's own computers that may take their replies while this one is full (`machines.spill_own`). */
     spill: {
       title: "Seus computadores",
-      text: "Quando este computador estiver cheio ou fora, seus agentes podem começar num computador seu. Missões, sessões de código e agentes com repositórios continuam aqui.",
+      text: "Quando este computador estiver cheio ou fora, seus agentes podem começar num computador seu. Um que você usa para os trabalhos deles recebe primeiro os pedidos, as rotinas e os trabalhos longos. Missões, sessões de código e agentes com repositórios continuam aqui.",
+      /** How each of the viewer's computers helps (`spill.own`, `spill.first`). */
+      use: {
+        label: "Como {{name}} ajuda",
+        off: "Não ajuda",
+        help: "Quando este estiver cheio ou fora",
+        first: "Para os trabalhos dos meus agentes",
+      },
       /** The viewer's own sign-in there, "Claude Max". */
       plan: "seu plano {{plan}}",
     },
@@ -16861,6 +16875,10 @@ export const ptBR = {
     spillTeamHint:
       "Quando o computador de um agente estiver cheio ou fora, as respostas, os pedidos e as rotinas dele podem pensar aqui com o login do dono dele neste computador.",
     spillWorkspaceOff: "Um admin desativou isso para o workspace.",
+    /** `machines.spill_first`: its owner's agents' work starts here first. */
+    spillFirst: "Usar este computador para os trabalhos dos meus agentes",
+    spillFirstHint:
+      "Os pedidos, as rotinas e os trabalhos longos dos seus agentes começam aqui sempre que ele estiver livre, com a IA que você conectou nele. Respostas para pessoas só começam aqui quando o computador da equipe estiver cheio.",
     helpWorkspace: "Computadores ajudam quando o da equipe estiver cheio ou fora",
     helpWorkspaceHint:
       "Cada computador só ajuda se o dono permitir. Com isto desativado, nenhum ajuda, seja qual for a escolha do dono.",
@@ -18871,6 +18889,8 @@ export const ptBR = {
       full: "Pensou em {{to}}: {{from}} estava cheio.",
       away: "Pensou em {{to}}: {{from}} estava fora.",
       itsComputer: "o computador dele",
+      /** Its owner uses that computer for their agents' work (`spill.first`). */
+      chosen: "Pensou em {{to}}, que o dono usa para os trabalhos dos agentes dele.",
     },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {

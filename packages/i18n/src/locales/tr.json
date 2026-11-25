@@ -3219,6 +3219,9 @@
       "set_notifications_off": "<b>{{category}}</b> bildirimlerini kapat",
       "set_my_timezone": "Saat dilimini <b>{{timezone}}</b> yap",
       "set_my_timezone_workspace": "Yeniden çalışma alanının saat dilimini izle",
+      "set_computer_help": "Ajanlarının bilgisayarı dolu ya da kapalıyken <b>{{computer}}</b> yardım etsin",
+      "set_computer_help_first": "<b>{{computer}}</b> bilgisayarını ajanlarının işi için kullan",
+      "set_computer_help_off": "<b>{{computer}}</b> bilgisayarını ajanların için kullanmayı bırak",
       "set_invitation_roles": "<b>{{email}}</b> davetinin verdiği rolleri değiştir: {{change}}",
       "update_channel": "<b>#{{channel}}</b> kanalını değiştir",
       "archive_channel": "<b>#{{channel}}</b> kanalını arşivle",
@@ -4072,6 +4075,9 @@
       "changed_set_notifications_off": "<b>{{category}}</b> bildirimlerini kapattım",
       "changed_set_my_timezone": "Saat dilimini <b>{{timezone}}</b> yaptım",
       "changed_set_my_timezone_workspace": "Saat dilimin yeniden çalışma alanınınkini izliyor",
+      "changed_set_computer_help": "<b>{{computer}}</b> artık ajanlarının bilgisayarı dolu ya da kapalıyken yardım ediyor",
+      "changed_set_computer_help_first": "Ajanlarının işi artık <b>{{computer}}</b> üzerinde başlıyor",
+      "changed_set_computer_help_off": "<b>{{computer}}</b> artık ajanlarına yardım etmiyor",
       "changed_set_invitation_roles": "<b>{{email}}</b> davetinin verdiği rolleri değiştirdim: {{change}}",
       "changed_update_channel": "<b>#{{channel}}</b> kanalını değiştirdim",
       "changed_archive_channel": "<b>#{{channel}}</b> kanalını arşivledim",
@@ -12470,7 +12476,13 @@
     "rule": "Yeni iş, bilgisayarda boş bellek olduğunda başlar. Önce insanlar. Birlikte anılan ajanlar tek tek başlar.",
     "spill": {
       "title": "Bilgisayarlarınız",
-      "text": "Bu bilgisayar dolu ya da uzaktayken ajanların senin bilgisayarlarından birinde başlayabilir. Görevler, kod oturumları ve depoları olan ajanlar burada kalır.",
+      "text": "Bu bilgisayar dolu ya da uzaktayken ajanların senin bilgisayarlarından birinde başlayabilir. Onların işi için kullandığın bilgisayar isteklerini, rutinlerini ve uzun işlerini önce alır. Görevler, kod oturumları ve depoları olan ajanlar burada kalır.",
+      "use": {
+        "label": "{{name}} nasıl yardım eder",
+        "off": "Yardım etmez",
+        "help": "Bu dolu ya da kapalıyken",
+        "first": "Ajanlarımın işi için"
+      },
       "plan": "{{plan}} planın"
     },
     "youFirst": "Önce sen",
@@ -16433,6 +16445,8 @@
     "spillOwnHint": "Ajanlarının bilgisayarı dolu ya da uzaktayken yanıtları, istekleri ve rutinleri burada senin oturumunla düşünebilir.",
     "spillTeamHint": "Bir ajanın bilgisayarı dolu ya da uzaktayken yanıtları, istekleri ve rutinleri burada sahibinin bu bilgisayardaki oturumuyla düşünebilir.",
     "spillWorkspaceOff": "Bir yönetici bunu çalışma alanı için kapattı.",
+    "spillFirst": "Bu bilgisayarı ajanlarımın işi için kullan",
+    "spillFirstHint": "Ajanlarının istekleri, rutinleri ve uzun işleri, bu bilgisayar boş oldukça burada, buraya bağladığın yapay zekâyla başlar. Kişilere yanıtlar burada yalnızca ekibin bilgisayarı doluyken başlar.",
     "helpWorkspace": "Ekibin bilgisayarı dolu ya da uzaktayken bilgisayarlar yardım eder",
     "helpWorkspaceHint": "Her bilgisayar yalnızca sahibi izin verirse yardım eder. Kapalı: sahibi ne seçerse seçsin hiçbiri yardım etmez.",
     "connectedBy": "Bağlayan: {{name}}",
@@ -18382,7 +18396,8 @@
     "spilled": {
       "full": "{{to}} üzerinde düşündü: {{from}} doluydu.",
       "away": "{{to}} üzerinde düşündü: {{from}} uzaktaydı.",
-      "itsComputer": "kendi bilgisayarı"
+      "itsComputer": "kendi bilgisayarı",
+      "chosen": "{{to}} üzerinde düşündü, sahibinin ajanlarının işi için kullandığı bilgisayar."
     },
     "modelStandIn": {
       "text": "{{plan}} bu anahtarla {{from}} modelini reddetti. Onunla çalışan {{to}} ile yanıt verdim.",

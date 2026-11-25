@@ -409,6 +409,7 @@ import { enabledSkills } from "./skills";
 import {
   type AccountMove,
   type AccountSwitch,
+  chosenComputerFree,
   movedAccountPlan,
   type NextAccount,
   nextAccountPlan,
@@ -4057,7 +4058,7 @@ async function executeRunInner(
       await runAuthority(db, { ...run, transcript: transcript as unknown as Record<string, unknown> }),
     );
     const session = { id: Bun.randomUUIDv7() };
-    const found = await spillTarget(deps, agent, plan, personId, session);
+    const found = await spillTarget(deps, agent, plan, personId, session, cause === "chosen");
     if (!found) return false;
     delete transcript.spillLookedAt;
     await db.update(agentRuns).set({ brainSessionId: session.id }).where(eq(agentRuns.id, run.id));
@@ -5350,8 +5351,18 @@ async function executeRunInner(
         // The right hand is how people find out what the line is doing: it never waits behind it. Its turn is
         // locked down, so the runner lets it in on a lower floor (`admit`).
         const slotOf = (p: BrainPlan) => signInSlotOf(p, deps.signInConcurrency ?? SIGN_IN_CONCURRENCY);
-        let behind = isRightHand(agent) ? null : await roomGate(db, run, roomMachine, place, slotOf(plan));
+        // Its owner chose a computer of theirs for their agents' work (`spill_first`): anything but a person's reply
+        // starts there while it is free, before lining up here.
         let askOn = roomMachine;
+        if (
+          !personWaiting &&
+          agent.ownerUserId &&
+          !transcript.spill &&
+          (await chosenComputerFree(db, run.orgId, agent.ownerUserId, roomMachine).catch(() => false)) &&
+          (await spillOver("chosen"))
+        )
+          askOn = plan.session?.machineId ?? roomMachine;
+        let behind = isRightHand(agent) ? null : await roomGate(db, run, askOn, place, slotOf(plan));
         // Behind others, or refused for room before: a person's reply looks for another computer at once, any other
         // fresh turn once it waited `SPILL_AFTER_MS`, then once per `SPILL_AFTER_MS` (`spillOver`).
         const waited = Date.now() - (transcript.roomWaitSince ?? Date.now());

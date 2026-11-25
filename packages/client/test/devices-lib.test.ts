@@ -35,8 +35,11 @@ import {
   phoneScreenCover,
   phoneScreenUrl,
   reasonText,
+  SPILL_USES,
   screenGesture,
   spilledText,
+  spillOfUse,
+  spillUseOf,
   statusDetail,
   statusPill,
   statusSentence,
@@ -118,6 +121,21 @@ describe("devices as extra capacity", () => {
       "Thought on Bruno's MacBook: its computer was away.",
     );
     expect(spilledText(t, { speedFallback: true }, org)).toBeNull();
+    // Its owner uses that computer for their agents' work: nothing was wrong with the agent's own.
+    expect(spilledText(t, { spilled: { to: "Bruno's PC", from: "Studio Mac", cause: "chosen" } }, org)).toBe(
+      "Thought on Bruno's PC, which its owner uses for their agents' work.",
+    );
+  });
+
+  test("how a computer helps its owner's agents: never, when theirs is full or away, or first for their work", () => {
+    expect(spillUseOf({ spill: { own: false } })).toBe("off");
+    expect(spillUseOf({ spill: { own: true } })).toBe("help");
+    expect(spillUseOf({ spill: { own: true, first: true } })).toBe("first");
+    expect(SPILL_USES.map(spillOfUse)).toEqual([
+      { own: false, first: false },
+      { own: true, first: false },
+      { own: true, first: true },
+    ]);
   });
 
   test("the computers that help an agent: online, its owner's own or the workspace's, while the workspace lets them", () => {

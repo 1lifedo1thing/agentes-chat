@@ -3487,6 +3487,9 @@ export const en = {
       set_notifications_off: "Turn off your notifications for <b>{{category}}</b>",
       set_my_timezone: "Set your time zone to <b>{{timezone}}</b>",
       set_my_timezone_workspace: "Follow the workspace's time zone again",
+      set_computer_help: "Let <b>{{computer}}</b> help when your agents' computer is full or away",
+      set_computer_help_first: "Use <b>{{computer}}</b> for your agents' work",
+      set_computer_help_off: "Stop using <b>{{computer}}</b> for your agents",
       set_invitation_roles: "Change the roles the invitation of <b>{{email}}</b> gives: {{change}}",
       update_channel: "Change the channel <b>#{{channel}}</b>",
       archive_channel: "Archive <b>#{{channel}}</b>",
@@ -4460,6 +4463,9 @@ export const en = {
       changed_set_notifications_off: "Turned off your notifications for <b>{{category}}</b>",
       changed_set_my_timezone: "Set your time zone to <b>{{timezone}}</b>",
       changed_set_my_timezone_workspace: "Your time zone follows the workspace's again",
+      changed_set_computer_help: "<b>{{computer}}</b> now helps when your agents' computer is full or away",
+      changed_set_computer_help_first: "Your agents' work now starts on <b>{{computer}}</b>",
+      changed_set_computer_help_off: "<b>{{computer}}</b> no longer helps your agents",
       changed_set_invitation_roles: "Changed the roles the invitation of <b>{{email}}</b> gives: {{change}}",
       changed_update_channel: "Changed the channel <b>#{{channel}}</b>",
       changed_archive_channel: "Archived <b>#{{channel}}</b>",
@@ -13037,7 +13043,14 @@ export const en = {
     /** The viewer's own computers that may take their replies while this one is full (`machines.spill_own`). */
     spill: {
       title: "Your computers",
-      text: "When this computer is full or away, your agents can start on one of yours. Missions, code sessions and agents with repositories stay here.",
+      text: "When this computer is full or away, your agents can start on one of yours. One you use for their work takes their asks, routines and long work first. Missions, code sessions and agents with repositories stay here.",
+      /** How each of the viewer's computers helps (`spill.own`, `spill.first`). */
+      use: {
+        label: "How {{name}} helps",
+        off: "Doesn't help",
+        help: "When this one is full or away",
+        first: "For my agents' work",
+      },
       /** The viewer's own sign-in there, "Claude Max". */
       plan: "your {{plan}} plan",
     },
@@ -16930,6 +16943,10 @@ export const en = {
       "When an agent's computer is full or away, its replies, asks and routines can think here with its owner's sign-in on this computer.",
     /** Under the switch while an admin turned devices' help off for the whole workspace. */
     spillWorkspaceOff: "An admin turned this off for the workspace.",
+    /** `machines.spill_first`: its owner's agents' work starts here first. */
+    spillFirst: "Use this computer for my agents' work",
+    spillFirstHint:
+      "Your agents' asks, routines and long work start here whenever it is free, with the AI you connected here. Replies to people start here only when the team's computer is full.",
     /** Settings › Devices, admins: the workspace's switch over every computer's own (`devicesHelp`). */
     helpWorkspace: "Computers help when the team's is full or away",
     helpWorkspaceHint: "Each computer helps only if its owner allows it. Off: none helps, whatever its owner chose.",
@@ -19040,6 +19057,8 @@ export const en = {
       full: "Thought on {{to}}: {{from}} was full.",
       away: "Thought on {{to}}: {{from}} was away.",
       itsComputer: "its computer",
+      /** Its owner uses that computer for their agents' work (`spill.first`). */
+      chosen: "Thought on {{to}}, which its owner uses for their agents' work.",
     },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
