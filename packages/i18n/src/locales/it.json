@@ -16463,6 +16463,7 @@
       "headersWithSignIn": "Questo server chiede un accesso, e un accesso non può ancora portare intestazioni. Rimuovi le intestazioni per accedere, oppure collegalo con una chiave API.",
       "headersUnreadable": "Non è stato possibile leggere le intestazioni salvate. Scrivile di nuovo oppure rimuovile.",
       "noOAuth": "Il server MCP non accede con OAuth, quindi non accetta una tua app. Collegalo con una chiave API.",
+      "oauthDiscovery": "Il server MCP accede con OAuth, ma non è stato possibile leggere i suoi dati di accesso su {{host}}. Riprova tra qualche minuto.",
       "ownClientInUse": "Ci sono ancora account che accedono con l'app salvata prima. Scollegali prima, poi cambiala.",
       "ownClientId": "Controlla l'ID client: una sola parola, come lo mostra il provider."
     },

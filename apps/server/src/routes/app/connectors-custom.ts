@@ -442,7 +442,7 @@ export function customConnectorRoutes(deps: AppDeps) {
     })
     .openapi("OwnOAuthClient");
   const ownClientDoc =
-    "A workspace's own OAuth client (ADR 0016 addendum 2026-11-21), for an MCP server that takes only clients it approved (`needs_key` with `not_approved`): one per authorization server, used by every sign-in there and never replaced by a registration of ours. Who manages connectors only. The server is asked (without credentials) which authorization server it uses; one that doesn't sign in with OAuth is a 400 `connector.no_oauth`.";
+    "A workspace's own OAuth client (ADR 0016 addendum 2026-11-21), for an MCP server that takes only clients it approved (`needs_key` with `not_approved`): one per authorization server, used by every sign-in there and never replaced by a registration of ours. Who manages connectors only. The server is asked (without credentials) which authorization server it uses; one that doesn't sign in with OAuth is a 400 `connector.no_oauth`, one whose OAuth details can't be read a 400 `connector.oauth_discovery`.";
 
   app.openapi(
     createRoute({

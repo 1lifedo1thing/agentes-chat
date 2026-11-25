@@ -15968,6 +15968,7 @@
       "headersWithSignIn": "Deze server vraagt om in te loggen, en een login kan nog geen headers meesturen. Verwijder de headers om in te loggen, of koppel met een API-sleutel.",
       "headersUnreadable": "De opgeslagen headers konden niet worden gelezen. Vul ze opnieuw in of verwijder ze.",
       "noOAuth": "De MCP-server meldt niet aan met OAuth en neemt dus geen eigen app aan. Verbind hem met een API-sleutel.",
+      "oauthDiscovery": "De MCP-server meldt aan met OAuth, maar de aanmeldgegevens op {{host}} konden niet worden gelezen. Probeer het over een paar minuten opnieuw.",
       "ownClientInUse": "Er melden nog accounts aan met de eerder opgeslagen app. Verbreek die eerst en wijzig hem dan.",
       "ownClientId": "Controleer de client-ID: één woord, zoals de aanbieder hem toont."
     },

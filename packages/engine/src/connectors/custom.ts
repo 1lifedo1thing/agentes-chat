@@ -47,6 +47,7 @@ import {
 import type { McpCallResult, McpConnect, McpSession, McpTool } from "./mcp";
 import {
   authServerMetadata,
+  discoveryFailed,
   ensureOAuthClient,
   type McpOAuthDeps,
   oauthScope,
@@ -949,7 +950,7 @@ export async function connectCustomServer(
  * Starts an MCP-native OAuth authorization: authorization server metadata,
  * a registered client (DCR), state + PKCE S256 + `resource`. `needs_key` when
  * the server can't do it, with `not_approved` when it only registers clients
- * it approved.
+ * it approved; `connector.oauth_discovery` when its metadata can't be read.
  */
 export async function beginMcpOAuth(
   deps: McpOAuthDeps,
@@ -970,7 +971,7 @@ export async function beginMcpOAuth(
   },
 ): Promise<Exclude<CustomConnectStart, { status: "connected" }>> {
   const meta = await authServerMetadata(deps, input.issuer);
-  if (!meta) return { status: "needs_key" };
+  if (!meta) throw discoveryFailed(input.issuer);
   const redirectUri = oauthRedirectUri(deps.publicUrl);
   // Worked out again each time: a client still in use keeps the scope it was registered with, maybe without
   // offline_access.

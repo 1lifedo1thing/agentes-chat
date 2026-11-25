@@ -16311,6 +16311,8 @@ export const en = {
       /** Reconnecting an account whose saved headers, kept encrypted, could no longer be opened. */
       headersUnreadable: "The saved headers couldn't be read. Type them again, or remove them.",
       noOAuth: "The MCP server doesn't sign in with OAuth, so it takes no app of yours. Connect it with an API key.",
+      oauthDiscovery:
+        "The MCP server signs in with OAuth, but its sign-in details at {{host}} couldn't be read. Try again in a few minutes.",
       ownClientInUse: "Accounts still sign in with the app saved before. Disconnect them first, then change it.",
       ownClientId: "Check the client ID: one word, as the provider shows it.",
     },

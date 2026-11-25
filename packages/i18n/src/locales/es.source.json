@@ -39001,6 +39001,9 @@
   "errors.connector.noOAuth": {
     "value": "The MCP server doesn't sign in with OAuth, so it takes no app of yours. Connect it with an API key."
   },
+  "errors.connector.oauthDiscovery": {
+    "value": "The MCP server signs in with OAuth, but its sign-in details at {{host}} couldn't be read. Try again in a few minutes."
+  },
   "errors.connector.ownClientInUse": {
     "value": "Accounts still sign in with the app saved before. Disconnect them first, then change it."
   },
