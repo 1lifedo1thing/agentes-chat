@@ -93,6 +93,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { ConnectorIcon } from "@/components/ConnectorIcon";
+import { offerTaken, RoutineOfferRow, useRoutineOffer, useStartRoutine } from "@/components/ConnectRoutine";
 import { FlowTitle } from "@/components/FlowTitle";
 import { LoadingList, useStepText } from "@/components/Loading";
 import { CommandBlock } from "@/components/machine-bits";
@@ -1113,19 +1114,27 @@ function GithubOrgs() {
 /**
  * The end of connecting: who can use it and how many actions ask, in a sentence, with "Pronto". A server whose tools
  * no one gave a level yet says so instead, and "Continuar" saves the levels we suggest: agents get none before that.
- * Tools that couldn't be read are said too, as their step under "Ajustar" says them.
+ * Tools that couldn't be read are said too, as their step under Adjust says them. An app that brings a routine
+ * (ADR 0242) shows it on under that, and Done makes it.
  */
 function DoneStep({ item, onAdjust, onClose }: { item: ConnectedItem; onAdjust: () => void; onClose: () => void }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const { save } = useCustomServerAction(org.id);
   const waiting = item.pending > 0 ? item.server : null;
+  const agents = useAgents(org.id);
+  // Every agent uses a catalog app once it is connected; a server still waiting for its tools brings nothing yet.
+  const offer = useRoutineOffer(waiting ? null : item.def?.id, agents.data);
+  const startRoutine = useStartRoutine();
   return (
     <ConnectedDone
       text={item.ownerUserId ? t("connectors.personal.done") : connectedSummary(t, item)}
       busy={save.isPending}
       onAdjust={onAdjust}
-      onClose={onClose}
+      onClose={() => {
+        if (offerTaken(offer)) startRoutine(offer);
+        onClose();
+      }}
       primary={
         waiting && (
           <Button
@@ -1149,6 +1158,7 @@ function DoneStep({ item, onAdjust, onClose }: { item: ConnectedItem; onAdjust: 
       }
     >
       {item.toolsError && <Alert>{t("toolReview.unreadable", { reason: item.toolsError })}</Alert>}
+      <RoutineOfferRow offer={offer} />
     </ConnectedDone>
   );
 }

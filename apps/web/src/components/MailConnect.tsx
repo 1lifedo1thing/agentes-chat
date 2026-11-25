@@ -9,6 +9,7 @@ import {
 } from "@agenteschat/client";
 import { LEVELS, type Level } from "@agenteschat/client/lib/access-levels";
 import { canTalk, managesAgent } from "@agenteschat/client/lib/audience";
+import { connectRoutineAgents } from "@agenteschat/client/lib/connect-routines";
 import { errorText, knownErrorText } from "@agenteschat/client/lib/errors";
 import { relativeTime } from "@agenteschat/client/lib/format";
 import {
@@ -57,6 +58,7 @@ import { useApi } from "@/api/context";
 import { AddressList } from "@/components/AddressList";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { ConnectedRow } from "@/components/ConnectedRow";
+import { offerTaken, RoutineOfferRow, useRoutineOffer, useStartRoutine } from "@/components/ConnectRoutine";
 import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { FlowTitle } from "@/components/FlowTitle";
 import { LoadingList, useStepText } from "@/components/Loading";
@@ -760,6 +762,10 @@ function WhoStep({
   const levelOf = (agentId: string) => who[agentId] ?? current(agentId);
   const levelLabel = (l: Level) => t(`access.level.${l}`);
   const granted = list.filter((a) => levelOf(a.id) !== "none");
+  // The mailbox's routine (ADR 0242): one of the agents that may read it runs it; none yet, the line says so.
+  const offer = useRoutineOffer("mailbox", granted);
+  const offersRoutine = connectRoutineAgents(list).length > 0;
+  const startRoutine = useStartRoutine();
 
   const grant = useMutation({
     mutationFn: async () => {
@@ -769,6 +775,7 @@ function WhoStep({
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: keys.mail(org.id) });
       toast.show(t("connectFlow.saved", { count: granted.length, name: account.address }));
+      if (offerTaken(offer)) startRoutine(offer, account.address);
       // The rules are only for who connected the mailbox to set (anyone else's are ignored).
       if (granted.length > 0 && account.ownerUserId === me.user.id) onRules(granted.map((a) => a.id));
       else onClose();
@@ -833,6 +840,7 @@ function WhoStep({
             {t("connectFlow.asksCount", { count: MAIL_ACTIONS.approval.length })}
           </p>
           <p className="small muted cflow__text">{t("mail.whoLead")}</p>
+          {offersRoutine && <RoutineOfferRow offer={offer} waitsForAccess />}
           <OwnerOnlyNote account={account} />
           {grant.isError && <Alert>{errorText(t, grant.error)}</Alert>}
         </DialogBody>

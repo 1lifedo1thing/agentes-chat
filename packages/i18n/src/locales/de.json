@@ -8993,6 +8993,11 @@
         "text": "Wenn eine E-Mail kommt, bereitet der Agent die Antwort vor.",
         "prompt": "Lies die eingegangene E-Mail und sag, worum es geht und wie dringend sie ist. Schreib einen Antwortvorschlag, ohne ihn zu senden."
       },
+      "inbox": {
+        "name": "E-Mails, die eine Antwort brauchen",
+        "text": "Werktags um 9 und 14 Uhr, was eine Antwort braucht, mit Entwurf.",
+        "prompt": "Sieh dir die E-Mails an, die seit dem letzten Mal angekommen sind. Liste die auf, die eine Antwort brauchen, die dringendste zuerst, und schreib für jede einen Antwortentwurf, ohne ihn zu senden."
+      },
       "tickets": {
         "name": "Unbeantwortete Tickets",
         "text": "Werktags um 9 und 14 Uhr, wer noch wartet.",
@@ -9077,6 +9082,11 @@
         "name": "Neue PRs prüfen",
         "text": "Wenn ein PR geöffnet wird, liest der Agent ihn und kommentiert.",
         "prompt": "Lies den Diff des neuen PRs, weise auf Risiken hin und sag, was von Hand getestet werden sollte."
+      },
+      "openPrs": {
+        "name": "PRs, die auf ein Review warten",
+        "text": "Werktags um 10 Uhr, die offenen PRs, die noch niemand geprüft hat.",
+        "prompt": "Sieh dir die offenen PRs an, die noch auf ein Review warten. Sag zu jedem, was er ändert, wie lange er schon wartet und was man zuerst ansehen sollte."
       },
       "week": {
         "name": "Wochenrückblick",
@@ -15125,6 +15135,26 @@
       "asks_other": "{{count}} Aktionen fragen im Chat nach Freigabe.",
       "adjust": "Anpassen",
       "ok": "Fertig"
+    },
+    "routine": {
+      "inbox": "{{name}} liest deine E-Mails und schickt dir per Direktnachricht, was eine Antwort braucht, schon mit Entwurf.",
+      "dayPlan": "{{name}} schaut in deinen Kalender und schickt dir per Direktnachricht die Termine des Tages und was vorzubereiten ist.",
+      "failed": "{{name}} prüft Ablehnungen, Erstattungen und Streitfälle und schreibt dir per Direktnachricht.",
+      "leads": "{{name}} sieht, wer ins CRM gekommen ist, und sagt dir per Direktnachricht, mit wem du anfangen solltest.",
+      "tickets": "{{name}} findet Tickets, die auf eine Antwort warten, und schickt sie dir per Direktnachricht, mit einem Antwortvorschlag.",
+      "late": "{{name}} findet überfällige Aufgaben und sagt dir per Direktnachricht, wer sich um jede kümmert.",
+      "openPrs": "{{name}} schaut sich die PRs an, die auf ein Review warten, und sagt dir per Direktnachricht, was zuerst dran ist.",
+      "errors": "{{name}} prüft die neuen Fehler und sagt dir per Direktnachricht, was Aufmerksamkeit braucht.",
+      "noAgent": "Gib oben einem Agenten Zugriff, dann kümmert er sich darum.",
+      "who": "Wer es macht",
+      "when": "Wann",
+      "on": "Routine {{name}} erstellen",
+      "created": "Routine erstellt: {{name}}",
+      "createdDetail": "{{agent}} hat angefangen: Die erste Zusammenfassung kommt in deine Direktnachricht.",
+      "undo": "Rückgängig",
+      "undone": "Routine rückgängig gemacht",
+      "notCreated": "Die Routine konnte nicht erstellt werden. Du kannst sie unter Routinen erstellen.",
+      "mailboxOnly": "Nur das Postfach {{address}}."
     },
     "git": {
       "token": "Zugriffstoken",
