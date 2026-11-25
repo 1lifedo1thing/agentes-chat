@@ -19,8 +19,10 @@ import { appLocale, localeInfo } from "@agenteschat/i18n/locale";
 import { deepMerge } from "@agenteschat/i18n/tree";
 import { nanoUsdToUsd } from "@agenteschat/providers";
 import { z } from "zod";
+import type { AccountAudienceMode } from "./ai-accounts/serves";
 import { notifiedIds } from "./approvals";
-import { isComputerBrain, planName } from "./brains/types";
+import { agentOwnerIds } from "./audience";
+import { type BrainKind, isComputerBrain, planName } from "./brains/types";
 import { confidentialRoots } from "./confidential";
 import { invitationMailProof } from "./crypto";
 import { inertSender, inertText } from "./email/inert";
@@ -210,6 +212,13 @@ export type EmailTemplate =
   /** The surface unlinked the account because the sender's identity there changed. `url`: the server, for the pictures. */
   | ({ kind: "surface_unlinked"; locale: EmailLocale; surface: string; display: string; url: string } & Beside)
   /**
+   * "Email me a link" or "Forgot your PIN?" on a page the surface linked to (ADR 0226): `url` is the page that chooses
+   * the PIN, once, for an hour.
+   */
+  | ({ kind: "surface_pin_reset"; locale: EmailLocale; surface: string; url: string } & Beside)
+  /** Three wrong PINs locked approving from the surface; `step` 0, 1, 2: for 15 minutes, an hour, a day. `url`: settings. */
+  | ({ kind: "surface_pin_locked"; locale: EmailLocale; surface: string; step: 0 | 1 | 2; url: string } & Beside)
+  /**
    * Double opt-in for the landing page's waiting list, in the language they
    * joined in. `email` is the address being confirmed (absent in jobs queued
    * before it existed).
@@ -278,6 +287,23 @@ export type EmailTemplate =
       plan: string;
       was: PlanAudience;
       now: PlanAudience;
+      url: string;
+      personal?: true;
+    }
+  /**
+   * Someone other than the reader let more people use the reader's AI account ("Usar em agentes", `right: "use"`) or be
+   * answered on it ("Atender todos", `right: "reply"`). `plan`: its maker's name ("Claude"). `url`: IA e uso.
+   */
+  | {
+      kind: "account_opened";
+      locale: EmailLocale;
+      orgName: string;
+      byName: string;
+      account: string;
+      plan: string;
+      right: "use" | "reply";
+      was: AccountAudienceNames;
+      now: AccountAudienceNames;
       url: string;
       personal?: true;
     }
@@ -396,6 +422,12 @@ export interface PlanAudience {
   names: string[];
 }
 
+/** An account's permission as its owner reads it: names of the people or roles it names. */
+export interface AccountAudienceNames {
+  mode: AccountAudienceMode;
+  names: string[];
+}
+
 export function emailArtAt(publicUrl: string): EmailArt {
   const home = withoutTrailingSlashes(publicUrl);
   return { home, base: `${home}/email/`, files: null };
@@ -417,7 +449,8 @@ export async function emailArtFor(
   resolve: ResolveHost = resolveHostDns,
 ): Promise<EmailArt & { attached?: "attach" | "blocked" | "unreachable" }> {
   const art = emailArtAt(publicUrl);
-  const host = mode === "auto" ? await publicHostAddress(new URL(publicUrl).hostname, resolve) : null;
+  const host =
+    mode === "auto" ? await publicHostAddress(new URL(publicUrl).hostname, resolve, { internet: true }) : null;
   if (host?.ok) return art;
   const files = webDir ? await readPictures(join(webDir, "email")) : null;
   return files ? { ...art, base: null, files, attached: host?.reason ?? "attach" } : art;
@@ -957,6 +990,32 @@ function docOf(t: EmailTemplate, sender: string | null): EmailDoc {
         { crew: surfaceCrew(t.assistant), phone: { alt: c.picture, on: false } },
       );
     }
+    case "surface_pin_reset": {
+      const c = w.surface.pinReset;
+      return doc(
+        c.subject(t.surface),
+        c.preheader,
+        c.headline(t.surface),
+        [{ p: c.body(t.surface) }, { button: c.button, url: t.url }, { small: c.small }, fallback(t.url)],
+        c.why(t.surface),
+        { crew: surfaceCrew(t.assistant), phone: { alt: w.surface.linked.picture, on: true } },
+      );
+    }
+    case "surface_pin_locked": {
+      const c = w.surface.pinLocked;
+      return doc(
+        c.subject(t.surface),
+        c.preheader,
+        c.headline(t.surface),
+        [
+          { p: c.body(t.surface, c.lockedFor[t.step]) },
+          { button: c.button, url: t.url },
+          { small: c.small(t.surface) },
+        ],
+        w.surface.pinReset.why(t.surface),
+        { crew: surfaceCrew(t.assistant), phone: { alt: w.surface.linked.picture, on: true } },
+      );
+    }
     case "autonomy_report": {
       const c = w.autonomy;
       const num = (v: number, digits = 0) => v.toLocaleString(lang, { maximumFractionDigits: digits });
@@ -1055,6 +1114,40 @@ function docOf(t: EmailTemplate, sender: string | null): EmailDoc {
             facts: [
               [c.agent, inertText(t.agentName)],
               [c.by, inertText(t.byName) || w.someone],
+              [c.was, who(t.was)],
+              [c.now, who(t.now)],
+            ],
+          },
+          { small: c.note },
+          { button: c.button, url: t.url },
+        ],
+        c.why(inertText(t.orgName)),
+      );
+    }
+    case "account_opened": {
+      const c = inMode(w.accountOpened, t.personal);
+      const who = (a: AccountAudienceNames): Text =>
+        a.mode === "everyone"
+          ? c.everyone
+          : a.mode === "admins"
+            ? c.admins
+            : (a.mode === "people" || a.mode === "roles") && a.names.length > 0
+              ? new Intl.ListFormat(lang, { type: "conjunction" }).format(a.names.map((n) => inertText(n)))
+              : t.right === "reply"
+                ? c.agentOwner
+                : c.onlyYou;
+      const by = inertText(t.byName) || w.someone;
+      return doc(
+        c.subject(t.plan),
+        c.preheader(t.plan),
+        c.headline,
+        [
+          { p: c.body(by, inertText(t.account), t.plan) },
+          {
+            facts: [
+              [c.account, inertText(t.account)],
+              [c.by, by],
+              [c.setting, t.right === "use" ? c.use : c.reply],
               [c.was, who(t.was)],
               [c.now, who(t.now)],
             ],
@@ -1347,14 +1440,18 @@ export async function queueBudgetEmail(
   db: Database,
   publicUrl: string,
   e: {
-    agent: { id: string; orgId: string; name: string; ownerUserId: string | null };
+    agent: { id: string; orgId: string; name: string; ownerUserId: string | null; ownerRoleId?: string | null };
     level: "warning" | "exhausted";
     spentNanoUsd: number;
     budgetNanoUsd: number;
   },
 ) {
-  // The owner, or the org's admins when the agent has none.
-  const recipientIds = e.agent.ownerUserId ? [e.agent.ownerUserId] : await adminIds(db, e.agent.orgId);
+  // The owner (or whoever holds its owner role), or the org's admins when the agent has neither.
+  const owners = await agentOwnerIds(db, e.agent.orgId, {
+    ownerUserId: e.agent.ownerUserId,
+    ownerRoleId: e.agent.ownerRoleId ?? null,
+  });
+  const recipientIds = owners.length > 0 ? owners : await adminIds(db, e.agent.orgId);
   if (recipientIds.length === 0) return;
   const recipients = await db
     .select({ email: users.email, locale: users.locale })
@@ -1484,6 +1581,75 @@ export async function queuePlanOpenedEmail(
       was: audience(from),
       now: audience(to),
       url: `${publicUrl.replace(/\/$/, "")}/org/${orgId}/agents/${agentId}?tab=settings&sec=audience`,
+      ...(await modeStamp(db, orgId)),
+    },
+  });
+}
+
+/**
+ * Job `account.opened` (`ACCOUNT_OPENED_JOB`): the account owner's email, in their language, through `email.send`.
+ * Nothing when the account, its owner or the person who changed it is gone, or the change was undone since.
+ */
+export async function queueAccountOpenedEmail(
+  db: Database,
+  publicUrl: string,
+  orgId: string,
+  jobId: string,
+  payload: Record<string, unknown>,
+) {
+  const { accountId, actorId } = payload as { accountId: string; actorId: string };
+  const right = payload.right === "use" ? "use" : "reply";
+  const from = payload.from as { mode: AccountAudienceMode; userIds: string[]; roleIds: string[] };
+  const to = payload.to as typeof from;
+  const [account] = await db
+    .select({
+      label: schema.machineAccounts.label,
+      kind: schema.machineAccounts.kind,
+      provider: schema.machineAccounts.provider,
+      ownerId: schema.machineAccounts.createdBy,
+      mode: right === "use" ? schema.machineAccounts.useMode : schema.machineAccounts.replyMode,
+    })
+    .from(schema.machineAccounts)
+    .where(and(eq(schema.machineAccounts.orgId, orgId), eq(schema.machineAccounts.id, accountId)));
+  if (!account?.ownerId || account.mode !== to.mode) return;
+  const userIds = [...new Set([account.ownerId, actorId, ...from.userIds, ...to.userIds])];
+  const roleIds = [...new Set([...from.roleIds, ...to.roleIds])];
+  const [people, roles, [org]] = await Promise.all([
+    db
+      .select({ id: users.id, name: users.name, email: users.email, locale: users.locale })
+      .from(users)
+      .where(inArray(users.id, userIds)),
+    roleIds.length
+      ? db
+          .select({ id: schema.orgRoles.id, name: schema.orgRoles.name })
+          .from(schema.orgRoles)
+          .where(and(eq(schema.orgRoles.orgId, orgId), inArray(schema.orgRoles.id, roleIds)))
+      : Promise.resolve([]),
+    db.select({ name: organizations.name }).from(organizations).where(eq(organizations.id, orgId)),
+  ]);
+  const owner = people.find((p) => p.id === account.ownerId);
+  const actor = people.find((p) => p.id === actorId);
+  if (!owner || !actor || !org) return;
+  const name = new Map([...people, ...roles].map((x) => [x.id, x.name]));
+  const names = (a: typeof from): AccountAudienceNames => ({
+    mode: a.mode,
+    names: [...a.roleIds, ...a.userIds].flatMap((id) => name.get(id) ?? []),
+  });
+  await queueEmail(db, {
+    orgId,
+    key: `account-opened:${jobId}`,
+    to: [owner.email],
+    template: {
+      kind: "account_opened",
+      locale: emailLocale(owner.locale),
+      orgName: org.name,
+      byName: actor.name,
+      account: account.label,
+      plan: planName(account.kind as BrainKind, account.provider ?? undefined),
+      right,
+      was: names(from),
+      now: names(to),
+      url: `${publicUrl.replace(/\/$/, "")}/org/${orgId}/settings/usage`,
       ...(await modeStamp(db, orgId)),
     },
   });

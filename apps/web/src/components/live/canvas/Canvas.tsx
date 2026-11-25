@@ -1,7 +1,7 @@
 import { useApi, useLivePeers, useLiveSelector, useRetryImages } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { LOCAL } from "@agenteschat/live";
+import { groupMembersOf, LOCAL, outermostGroup } from "@agenteschat/live";
 import type { Peer, PeerUser } from "@agenteschat/live/awareness";
 import {
   type ArrowEnd,
@@ -17,6 +17,7 @@ import {
   moveShapes,
   type NewShape,
   type Point,
+  readCanvasGroups,
   rectsIntersect,
   resizeShape,
   SHAPE_TYPES,
@@ -30,7 +31,7 @@ import {
   union,
   updateShape,
 } from "@agenteschat/live/canvas";
-import { DetailsDialog, EmptyState, isApple } from "@agenteschat/ui";
+import { DetailsDialog, EmptyState, isApple, transferFiles } from "@agenteschat/ui";
 import {
   type ClipboardEvent,
   type CSSProperties,
@@ -46,12 +47,12 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { useMaybeArtifactViewer } from "@/components/artifacts/ArtifactViewer";
 import { fileSaver } from "@/components/artifacts/fileSaver";
 import { ImageZoom } from "@/components/artifacts/ImageZoom";
+import { useMaybeArtifactViewer } from "@/components/artifacts/viewer-context";
 import { useOrg } from "@/components/org-context";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { type MenuEntry, openContextMenu } from "@/lib/context-menu";
+import { copyImage as copyPicture, type MenuEntry, openContextMenu } from "@/lib/context-menu";
 import { useToast } from "@/lib/toast";
 import type { LiveEditorProps } from "../editor";
 import { useFileAgentHere } from "../talk";
@@ -194,6 +195,8 @@ type Gesture =
       alt: boolean;
       /** It was chosen before this press (a click then narrows the selection to it, or Shift takes it out). */
       wasSelected: boolean;
+      /** What the press picks: the shape, or its whole group (ADR 0220 §3). */
+      pick: string[];
     }
   | { kind: "move"; ids: string[]; startWorld: Point; applied: Point; bounds: Box | null; targets: Box[] }
   | { kind: "marquee"; startWorld: Point; base: string[] }
@@ -246,20 +249,6 @@ async function naturalSize(file: File): Promise<{ w: number; h: number }> {
     };
     img.src = url;
   });
-}
-
-/** A picture as PNG (what the clipboard takes everywhere). */
-async function asPng(blob: Blob): Promise<Blob> {
-  if (blob.type === "image/png") return blob;
-  const bitmap = await createImageBitmap(blob);
-  const canvas = document.createElement("canvas");
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
-  canvas.getContext("2d")?.drawImage(bitmap, 0, 0);
-  bitmap.close();
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((png) => (png ? resolve(png) : reject(new Error("png"))), "image/png"),
-  );
 }
 
 /** A file name from a prompt ("Uma raposa na neve" → "uma-raposa-na-neve.png"). */
@@ -993,18 +982,11 @@ function CanvasEditor({
     (shape: ShapeView) => {
       if (!shape.asset) return;
       const url = assetUrl(shape.asset);
-      try {
-        // The picture as a promise, so the browser still counts the press as what asked to copy.
-        const png = fetch(url, { credentials: "same-origin" })
-          .then((res) => res.blob())
-          .then(asPng);
-        void navigator.clipboard
-          .write([new ClipboardItem({ "image/png": png })])
-          .then(() => toast.show(t("live.canvas.imageCopied")))
-          .catch(() => toast.show(t("live.canvas.errors.copyImage"), "error"));
-      } catch {
-        toast.show(t("live.canvas.errors.copyImage"), "error");
-      }
+      copyPicture(
+        fetch(url, { credentials: "same-origin" }).then((res) => res.blob()),
+        () => toast.show(t("live.canvas.imageCopied")),
+        () => toast.show(t("live.canvas.errors.copyImage"), "error"),
+      );
     },
     [assetUrl, toast, t],
   );
@@ -1271,7 +1253,16 @@ function CanvasEditor({
     }
     const wasSelected = sel.includes(hit.id);
     const frameRoom = hit.part === "frameInside" && !wasSelected;
-    if (!wasSelected && !frameRoom) setSelected(e.shiftKey ? [...sel, hit.id] : [hit.id]);
+    // A press picks the shape's whole group (ADR 0220 §3); a double click goes inside it.
+    const pick = (() => {
+      const group = store.now().byId.get(hit.id)?.group;
+      if (!group) return [hit.id];
+      const groups = readCanvasGroups(doc);
+      if (!groups.some((g) => g.id === group)) return [hit.id];
+      const members = groupMembersOf(store.now().list, groups, outermostGroup(groups, group));
+      return members.includes(hit.id) ? [hit.id, ...members.filter((m) => m !== hit.id)] : [hit.id];
+    })();
+    if (!wasSelected && !frameRoom) setSelected(e.shiftKey ? [...sel, ...pick.filter((p) => !sel.includes(p))] : pick);
     gesture.current = {
       kind: "press",
       startScreen: screen,
@@ -1280,6 +1271,7 @@ function CanvasEditor({
       shift: e.shiftKey,
       alt: e.altKey,
       wasSelected,
+      pick,
     };
   };
 
@@ -1324,9 +1316,7 @@ function CanvasEditor({
           onPointerMove(e);
           return;
         }
-        let ids = topLevelOf(sel.includes(g.hit.id) ? sel : [g.hit.id], now.list).filter(
-          (id) => !now.byId.get(id)?.locked,
-        );
+        let ids = topLevelOf(sel.includes(g.hit.id) ? sel : g.pick, now.list).filter((id) => !now.byId.get(id)?.locked);
         if (!ids.length) {
           gesture.current = null;
           return;
@@ -1907,7 +1897,7 @@ function CanvasEditor({
     setDropping(false);
     if (readOnly || !carriesFiles(e)) return;
     e.preventDefault();
-    void placeFiles([...e.dataTransfer.files], worldOf(e));
+    void placeFiles(transferFiles(e.dataTransfer), worldOf(e));
   };
 
   // ── Menus ───────────────────────────────────────────────────────────────────────────────────────────────────────

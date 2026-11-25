@@ -426,9 +426,11 @@ describe("the model picker: the agent's AI changed in place", () => {
     effort: "medium" as const,
   };
   const api = modelChoices(MODELS, [{ id: "k0", provider: "anthropic" } as never], false);
+  // The computer reported Claude Code's own sign-in there.
+  const row = { own: { claude_code: {} } };
 
   test("tiles: the plans the computer runs with the owner's accounts and its own sign-in, then the keys", () => {
-    const tiles = modelPickerTiles(t, view, "u1", api, "auto", MODELS);
+    const tiles = modelPickerTiles(t, view, "u1", api, "auto", MODELS, row);
     expect(tiles.map((x) => [x.key, x.current])).toEqual([
       ["claude", false],
       ["opencode", true],
@@ -436,6 +438,14 @@ describe("the model picker: the agent's AI changed in place", () => {
     ]);
     // Someone else's account isn't the owner's to pick; the computer's own sign-in is. The most room first.
     expect(tiles[0]?.accounts.map((a) => a.id)).toEqual([null, "acc-claude"]);
+    // A CLI there (Gemini's, coming with its first sign-in) with no sign-in of the computer's own: no tile to pick
+    // a model that couldn't run.
+    const gemini = { kind: "antigravity" as const, available: true, models: [], defaultModel: null };
+    expect(
+      modelPickerTiles(t, { ...view, options: [claudeCode, gemini] }, "u1", api, "auto", MODELS, row).map((x) => x.key),
+    ).not.toContain("gemini");
+    // Before the computer's row is in, no own sign-in either: only accounts.
+    expect(modelPickerTiles(t, view, "u1", api, "auto", MODELS)[0]?.accounts.map((a) => a.id)).toEqual(["acc-claude"]);
     // Without a computer brain that runs, no plan tile.
     expect(
       modelPickerTiles(
@@ -450,7 +460,7 @@ describe("the model picker: the agent's AI changed in place", () => {
   });
 
   test("models: Automático first, the one it runs checked on its own tile, a refused one dimmed", () => {
-    const tiles = modelPickerTiles(t, view, "u1", api, "auto", MODELS);
+    const tiles = modelPickerTiles(t, view, "u1", api, "auto", MODELS, row);
     const goTile = tiles.find((x) => x.key === "opencode");
     if (!goTile) throw new Error("no OpenCode tile");
     const rows = modelPickerModels(t, "pt-BR", view, goTile, goTile.accounts[0], api, "auto");
@@ -464,6 +474,16 @@ describe("the model picker: the agent's AI changed in place", () => {
     const claude = modelPickerModels(t, "pt-BR", view, claudeTile, claudeTile.accounts[1], api, "auto");
     expect(claude.map((r) => r.label)).toEqual(["brain.auto.label", "Opus", "Sonnet", "Haiku"]);
     expect(claude.some((r) => r.checked)).toBe(false);
+    // Claude Fable stays checked as Fable (never downgraded to Sonnet).
+    const withFable: BrainOption = {
+      ...claudeCode,
+      models: [{ value: "fable", label: "Fable 5.2" }, ...claudeCode.models],
+    };
+    const fableView = { ...view, options: [withFable], account: "acc-claude", model: "fable", effectiveModel: "fable" };
+    const fableTile = modelPickerTiles(t, fableView, "u1", api, "auto", MODELS).find((x) => x.key === "claude");
+    if (!fableTile) throw new Error("no Fable Claude tile");
+    const fableRows = modelPickerModels(t, "pt-BR", fableView, fableTile, fableTile.accounts[0], api, "auto");
+    expect(fableRows.find((r) => r.checked)?.value).toBe("fable");
     const keys = tiles.find((x) => x.key === "api:anthropic");
     if (!keys) throw new Error("no key tile");
     expect(modelPickerModels(t, "pt-BR", view, keys, undefined, api, "auto").map((r) => r.value)).toEqual([
@@ -473,7 +493,7 @@ describe("the model picker: the agent's AI changed in place", () => {
   });
 
   test("a pick saves the model in place, switches the plan or account, or moves onto the API", () => {
-    const tiles = modelPickerTiles(t, view, "u1", api, "auto", MODELS);
+    const tiles = modelPickerTiles(t, view, "u1", api, "auto", MODELS, row);
     const [claudeTile, goTile, keys] = tiles;
     if (!claudeTile || !goTile || !keys) throw new Error("missing tiles");
     expect(modelPickerSave(view, goTile, goTile.accounts[0], "glm-5.3")).toEqual({
