@@ -4,22 +4,12 @@
     "send": "Gönder"
   },
   "categories": {
-    "title": "Kategoriler",
     "where": "#{{channel}} kanalının göründüğü yer",
     "whereHelp": "Herkes için değişir. Kanala kimlerin katıldığı aynı kalır.",
-    "create": "Oluştur",
-    "endOfList": "Herkes için listenin sonuna eklenir.",
-    "channelCount_one": "{{count}} kanal",
-    "channelCount_other": "{{count}} kanal",
-    "none": "Henüz kategori yok.",
-    "manageHint": "Sıra, adlar ve silme",
-    "deleteTitle": "{{name}} silinsin mi?",
     "order": "Listedeki yeri",
     "up": "Yukarı taşı",
     "down": "Aşağı taşı",
-    "position": "{{at}} / {{count}}.",
-    "channelPosition": "{{at}} / {{count}}.",
-    "itsChannels": "Kanallar"
+    "channelPosition": "{{at}} / {{count}}."
   },
   "blocks": {
     "send": "Gönder",

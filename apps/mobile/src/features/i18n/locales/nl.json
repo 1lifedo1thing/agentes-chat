@@ -4,22 +4,12 @@
     "send": "Versturen"
   },
   "categories": {
-    "title": "Categorieën",
     "where": "Waar #{{channel}} staat",
     "whereHelp": "Verandert voor iedereen. Wie er in het kanaal meedoet, blijft hetzelfde.",
-    "create": "Aanmaken",
-    "endOfList": "Komt voor iedereen onderaan de lijst.",
-    "channelCount_one": "{{count}} kanaal",
-    "channelCount_other": "{{count}} kanalen",
-    "none": "Nog geen categorieën.",
-    "manageHint": "Volgorde, namen en verwijderen",
-    "deleteTitle": "{{name}} verwijderen?",
     "order": "Plek in de lijst",
     "up": "Omhoog",
     "down": "Omlaag",
-    "position": "{{at}} van {{count}}.",
-    "channelPosition": "{{at}} van {{count}}.",
-    "itsChannels": "Kanalen"
+    "channelPosition": "{{at}} van {{count}}."
   },
   "blocks": {
     "send": "Versturen",

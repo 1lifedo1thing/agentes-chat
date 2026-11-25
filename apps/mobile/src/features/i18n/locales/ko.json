@@ -4,21 +4,12 @@
     "send": "보내기"
   },
   "categories": {
-    "title": "카테고리",
     "where": "#{{channel}}이(가) 표시되는 곳",
     "whereHelp": "모두에게 바뀌어요. 채널에 참여하는 사람은 그대로예요.",
-    "create": "만들기",
-    "endOfList": "모두의 목록 맨 끝으로 가요.",
-    "channelCount_other": "채널 {{count}}개",
-    "none": "아직 카테고리가 없어요.",
-    "manageHint": "순서, 이름, 삭제",
-    "deleteTitle": "{{name}}을(를) 삭제할까요?",
     "order": "목록에서의 위치",
     "up": "위로 이동",
     "down": "아래로 이동",
-    "position": "{{count}}개 중 {{at}}번째.",
-    "channelPosition": "{{count}}개 중 {{at}}번째.",
-    "itsChannels": "채널"
+    "channelPosition": "{{count}}개 중 {{at}}번째."
   },
   "blocks": {
     "send": "보내기",

@@ -4,24 +4,12 @@
     "send": "Wyślij"
   },
   "categories": {
-    "title": "Kategorie",
     "where": "Gdzie widać #{{channel}}",
     "whereHelp": "Zmienia się dla wszystkich. Skład kanału zostaje bez zmian.",
-    "create": "Utwórz",
-    "endOfList": "Trafi na koniec listy u wszystkich.",
-    "channelCount_one": "{{count}} kanał",
-    "channelCount_few": "{{count}} kanały",
-    "channelCount_many": "{{count}} kanałów",
-    "channelCount_other": "{{count}} kanału",
-    "none": "Nie ma jeszcze kategorii.",
-    "manageHint": "Kolejność, nazwy i usuwanie",
-    "deleteTitle": "Usunąć {{name}}?",
     "order": "Miejsce na liście",
     "up": "Przesuń w górę",
     "down": "Przesuń w dół",
-    "position": "{{at}} z {{count}}.",
-    "channelPosition": "{{at}} z {{count}}.",
-    "itsChannels": "Kanały"
+    "channelPosition": "{{at}} z {{count}}."
   },
   "blocks": {
     "send": "Wyślij",

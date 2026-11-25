@@ -4,21 +4,12 @@
     "send": "送信"
   },
   "categories": {
-    "title": "カテゴリ",
     "where": "#{{channel}}を表示する場所",
     "whereHelp": "全員に反映されます。チャンネルの参加者は変わりません。",
-    "create": "作成",
-    "endOfList": "全員のリストの最後に移動します。",
-    "channelCount_other": "{{count}}個のチャンネル",
-    "none": "カテゴリはまだありません。",
-    "manageHint": "並び順、名前、削除",
-    "deleteTitle": "{{name}}を削除しますか？",
     "order": "リスト内の位置",
     "up": "上へ移動",
     "down": "下へ移動",
-    "position": "{{count}}中{{at}}番目。",
-    "channelPosition": "{{count}}中{{at}}番目。",
-    "itsChannels": "チャンネル"
+    "channelPosition": "{{count}}中{{at}}番目。"
   },
   "blocks": {
     "send": "送信",

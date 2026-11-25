@@ -5,35 +5,11 @@
   "app.send": {
     "value": "Send"
   },
-  "categories.title": {
-    "value": "Categories"
-  },
   "categories.where": {
     "value": "Where #{{channel}} shows"
   },
   "categories.whereHelp": {
     "value": "Changes for everyone. Who takes part in the channel stays the same."
-  },
-  "categories.create": {
-    "value": "Create"
-  },
-  "categories.endOfList": {
-    "value": "Goes to the end of the list for everyone."
-  },
-  "categories.channelCount": {
-    "value": {
-      "one": "{{count}} channel",
-      "other": "{{count}} channels"
-    }
-  },
-  "categories.none": {
-    "value": "No categories yet."
-  },
-  "categories.manageHint": {
-    "value": "Order, names and delete"
-  },
-  "categories.deleteTitle": {
-    "value": "Delete {{name}}?"
   },
   "categories.order": {
     "value": "Place in the list"
@@ -44,14 +20,8 @@
   "categories.down": {
     "value": "Move down"
   },
-  "categories.position": {
-    "value": "{{at}} of {{count}}."
-  },
   "categories.channelPosition": {
     "value": "{{at}} of {{count}}."
-  },
-  "categories.itsChannels": {
-    "value": "Channels"
   },
   "blocks.send": {
     "value": "Send"
