@@ -3007,6 +3007,32 @@ test.if(posix)(
 );
 
 test.if(posix)(
+  "a self-check waiting for an agent's user lists the method but keeps no CLI on the store until it passed",
+  async () => {
+    const d = sharedLoginDaemon();
+    const keep = spyOn(BrainManager.prototype, "keepAccount");
+    d.daemon.start();
+    try {
+      await waitFor(() => d.checks.length === 1);
+      d.checks[0]?.(SELF_CHECK_DEFERRED);
+      await d.lists(true);
+      d.online().frame({ type: "agents", agents: [{ ...ANA, account: SHARED_LOGIN }] });
+      expect(keep).toHaveBeenLastCalledWith(null, [], ANA.id);
+
+      const recheck = (d.daemon as unknown as { recheckSharedLogin(): Promise<void> }).recheckSharedLogin();
+      await waitFor(() => d.checks.length === 2);
+      d.checks[1]?.(null);
+      await recheck;
+      expect(keep).toHaveBeenLastCalledWith(SHARED_LOGIN, undefined, ANA.id);
+    } finally {
+      keep.mockRestore();
+      await d.daemon.stop();
+    }
+  },
+  20_000,
+);
+
+test.if(posix)(
   "an agent leaving its computer keeps what its sign-ins hold; only a deleted one is cleared",
   async () => {
     const d = sharedLoginDaemon();
