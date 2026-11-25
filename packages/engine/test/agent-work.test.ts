@@ -391,7 +391,7 @@ test("work in someone else's DM says it is private to who can't read it, and whe
     orgId: f.org.id,
     channelId: dm.id,
     author: { type: "person", userId: bia.id },
-    body: "revisa a planilha de custos",
+    body: "olha o relatório de ontem",
   });
   await f.db.insert(schema.agentRuns).values({
     orgId: f.org.id,
