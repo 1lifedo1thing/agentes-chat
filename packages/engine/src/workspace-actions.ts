@@ -1004,17 +1004,21 @@ const channelTarget = (c: Pick<ChannelRow, "id" | "name">): AgentActionTarget =>
   id: c.id,
   title: c.name,
 });
-/** With its roles' audience: made public, a private channel forgets them, and Undo gives them back. */
+/**
+ * With its roles' audience (made public, a private channel forgets them, and Undo gives them back) and its responsible
+ * agent (ADR 0095).
+ */
 const channelSnapshot = (c: ChannelRow) => ({
   name: c.name,
   topic: c.topic,
   visibility: c.visibility,
   audienceRoleIds: [...c.audienceRoleIds],
+  leadAgentId: c.leadAgentId,
 });
 
 const updateChannelAction: WorkspaceAction = {
   id: "update_channel",
-  does: "Rename a channel, change its topic, or make it private (invite only) or public.",
+  does: "Rename a channel, change its topic, make it private (invite only) or public, or choose the agent responsible for it.",
   input: {
     type: "object",
     properties: {
@@ -1022,6 +1026,12 @@ const updateChannelAction: WorkspaceAction = {
       name: { type: "string", minLength: 1, maxLength: 80, description: "Lower-case letters, digits, - or _." },
       topic: { type: "string", maxLength: 500 },
       private: { type: "boolean" },
+      responsible: {
+        type: "string",
+        maxLength: 64,
+        description:
+          'The @handle of an agent in the channel to make responsible for it: it answers what people say to the room for the team and takes the next step of work that ends there. One per channel. "" for none.',
+      },
     },
     required: ["channel"],
     additionalProperties: false,
@@ -1031,10 +1041,22 @@ const updateChannelAction: WorkspaceAction = {
   async resolve(ctx, person, input) {
     const channel = await channelNamed(ctx, person, str(input.channel));
     if (typeof channel === "string") return channel;
-    if (input.name === undefined && input.topic === undefined && input.private === undefined)
-      return "Say what changes: its name, topic or whether it is private.";
-    const { channel: _, ...rest } = input;
-    return { input: { ...rest, channelId: channel.id }, words: { channel: channel.name } };
+    if (
+      input.name === undefined &&
+      input.topic === undefined &&
+      input.private === undefined &&
+      input.responsible === undefined
+    )
+      return "Say what changes: its name, topic, whether it is private or the agent responsible for it.";
+    const { channel: _, responsible, ...rest } = input;
+    let lead: { leadAgentId?: string | null } = {};
+    if (typeof responsible === "string") {
+      const handle = responsible.trim();
+      const agent = handle ? (await agentsByHandle(ctx.db, ctx.orgId, [handle])).rows[0] : null;
+      if (handle && !agent) return `No agent ${handle.startsWith("@") ? handle : `@${handle}`} here.`;
+      lead = { leadAgentId: agent?.id ?? null };
+    }
+    return { input: { ...rest, ...lead, channelId: channel.id }, words: { channel: channel.name } };
   },
   async run(deps, actorId, orgId, input) {
     const row = await channelRow(deps.db, orgId, str(input.channelId));
@@ -1049,6 +1071,9 @@ const updateChannelAction: WorkspaceAction = {
         ...(str(input.name) ? { name: str(input.name).replace(/^#/, "") } : {}),
         ...(typeof input.topic === "string" ? { topic: input.topic } : {}),
         ...(typeof input.private === "boolean" ? { visibility: input.private ? "private" : "public" } : {}),
+        ...(input.leadAgentId !== undefined
+          ? { leadAgentId: typeof input.leadAgentId === "string" ? input.leadAgentId : null }
+          : {}),
       },
       deps,
     );
@@ -1064,12 +1089,14 @@ const updateChannelAction: WorkspaceAction = {
     const access = same([from.visibility, from.audienceRoleIds], [to.visibility, to.audienceRoleIds])
       ? {}
       : { visibility: to.visibility as "public" | "private", audienceRoleIds: list(to.audienceRoleIds) };
+    // Only when it changed: saving a lead checks it is still in the channel, and an archived one is kept, not saved.
+    const lead = same(from.leadAgentId, to.leadAgentId) ? {} : { leadAgentId: str(to.leadAgentId) || null };
     await updateChannel(
       deps.db,
       actorId,
       a.orgId,
       row.id,
-      { name: str(to.name), topic: String(to.topic ?? ""), ...access },
+      { name: str(to.name), topic: String(to.topic ?? ""), ...access, ...lead },
       deps,
     );
     return undefined;

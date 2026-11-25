@@ -4342,6 +4342,9 @@
     },
     "channel": {
       "agent_added": "Dodano {{agentName}} do <b>#{{channel}}</b>",
+      "lead_changed": "{{agentName}} odpowiada teraz za <b>#{{channel}}</b>",
+      "lead_changed_self": "Odpowiadam teraz za <b>#{{channel}}</b>",
+      "lead_changed_none": "<b>#{{channel}}</b> nie ma już odpowiedzialnego agenta",
       "created": "Utworzono kanał <b>#{{name}}</b>"
     },
     "wiki": {
@@ -15800,6 +15803,7 @@
       "send_dm": "Wyślij wiadomość bezpośrednią",
       "read_conversation": "Przeczytaj rozmowę",
       "add_agent_to_channel": "Dodaj agenta do kanału",
+      "set_channel_lead": "Wybierz agenta odpowiedzialnego za kanał",
       "ask_agent": "Zapytaj innego agenta",
       "tell_agent": "Powiadom innego agenta",
       "find_agent": "Znajdź agenta",
@@ -19995,6 +19999,7 @@
         "workingOnWorkspace": "Praca w przestrzeni roboczej",
         "updatingThread": "Zaktualizowano wątek",
         "addingAgent": "Dodano agenta do kanału",
+        "settingChannelLead": "Wybrano agenta odpowiedzialnego za kanał",
         "readingConversation": "Przeczytano rozmowę",
         "usingTool": "Użyto narzędzia {{tool}}",
         "thinking": "Myślenie",
@@ -20117,6 +20122,7 @@
       "workingOnWorkspace": "praca w przestrzeni roboczej",
       "updatingThread": "aktualizowanie wątku",
       "addingAgent": "dodawanie agenta do kanału",
+      "settingChannelLead": "wybieranie agenta odpowiedzialnego za kanał",
       "readingConversation": "czytanie rozmowy",
       "usingTool": "korzystanie z narzędzia"
     },

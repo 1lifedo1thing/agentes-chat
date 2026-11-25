@@ -3889,6 +3889,9 @@
     },
     "channel": {
       "agent_added": "{{agentName}}を<b>#{{channel}}</b>に追加しました",
+      "lead_changed": "{{agentName}}を<b>#{{channel}}</b>の責任者にしました",
+      "lead_changed_self": "<b>#{{channel}}</b>の責任者になりました",
+      "lead_changed_none": "<b>#{{channel}}</b>を責任者なしにしました",
       "created": "チャンネル<b>#{{name}}</b>を作成しました"
     },
     "wiki": {
@@ -14234,6 +14237,7 @@
       "send_dm": "ダイレクトメッセージを送信",
       "read_conversation": "会話を読み取り",
       "add_agent_to_channel": "チャンネルにエージェントを追加",
+      "set_channel_lead": "チャンネルの責任者を選ぶ",
       "ask_agent": "別のエージェントに質問",
       "tell_agent": "別のエージェントに連絡",
       "find_agent": "エージェントを検索",
@@ -18185,6 +18189,7 @@
         "workingOnWorkspace": "ワークスペースで作業しました",
         "updatingThread": "スレッドを更新しました",
         "addingAgent": "エージェントをチャンネルに追加しました",
+        "settingChannelLead": "チャンネルの責任者を選びました",
         "readingConversation": "会話を読みました",
         "usingTool": "ツール{{tool}}を使いました",
         "thinking": "考えました",
@@ -18307,6 +18312,7 @@
       "workingOnWorkspace": "ワークスペースで作業中",
       "updatingThread": "スレッドを更新中",
       "addingAgent": "エージェントをチャンネルに追加中",
+      "settingChannelLead": "チャンネルの責任者を選択中",
       "readingConversation": "会話を読み中",
       "usingTool": "ツールを使用中"
     },

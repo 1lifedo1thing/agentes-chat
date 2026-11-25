@@ -4418,6 +4418,10 @@ export const en = {
     },
     channel: {
       agent_added: "Brought {{agentName}} into <b>#{{channel}}</b>",
+      /** The channel's responsible agent (ADR 0095): another agent, the agent itself, or none. */
+      lead_changed: "Made {{agentName}} responsible for <b>#{{channel}}</b>",
+      lead_changed_self: "Became responsible for <b>#{{channel}}</b>",
+      lead_changed_none: "Left <b>#{{channel}}</b> with no agent responsible",
       created: "Created the channel <b>#{{name}}</b>",
     },
     wiki: {
@@ -15209,6 +15213,7 @@ export const en = {
       send_dm: "Send direct message",
       read_conversation: "Read conversation",
       add_agent_to_channel: "Add agent to a channel",
+      set_channel_lead: "Choose the agent responsible for a channel",
       ask_agent: "Ask another agent",
       tell_agent: "Tell another agent",
       find_agent: "Find agent",
@@ -19469,6 +19474,7 @@ export const en = {
         workingOnWorkspace: "Worked on the workspace",
         updatingThread: "Updated a thread",
         addingAgent: "Added an agent to a channel",
+        settingChannelLead: "Chose the agent responsible for a channel",
         readingConversation: "Read the conversation",
         usingTool: "Used the {{tool}} tool",
         thinking: "Thought",
@@ -19592,6 +19598,7 @@ export const en = {
       workingOnWorkspace: "working on the workspace",
       updatingThread: "updating a thread",
       addingAgent: "adding an agent to a channel",
+      settingChannelLead: "choosing the agent responsible for a channel",
       readingConversation: "reading the conversation",
       usingTool: "using a tool",
     },

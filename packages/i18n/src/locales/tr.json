@@ -4033,6 +4033,9 @@
     },
     "channel": {
       "agent_added": "{{agentName}} ajanını <b>#{{channel}}</b> kanalına getirdim",
+      "lead_changed": "{{agentName}} ajanını <b>#{{channel}}</b> kanalının sorumlusu yaptım",
+      "lead_changed_self": "<b>#{{channel}}</b> kanalının sorumlusu oldum",
+      "lead_changed_none": "<b>#{{channel}}</b> kanalını sorumlu ajan olmadan bıraktım",
       "created": "<b>#{{name}}</b> kanalını oluşturdum"
     },
     "wiki": {
@@ -14711,6 +14714,7 @@
       "send_dm": "Doğrudan mesaj gönder",
       "read_conversation": "Sohbeti oku",
       "add_agent_to_channel": "Kanala ajan ekle",
+      "set_channel_lead": "Bir kanalın sorumlu ajanını seç",
       "ask_agent": "Başka bir ajana sor",
       "tell_agent": "Başka bir ajana bildir",
       "find_agent": "Ajanı bul",
@@ -18735,6 +18739,7 @@
         "workingOnWorkspace": "Çalışma alanında çalıştı",
         "updatingThread": "Bir ileti dizisini güncelledi",
         "addingAgent": "Bir kanala ajan ekledi",
+        "settingChannelLead": "Bir kanalın sorumlu ajanını seçti",
         "readingConversation": "Sohbeti okudu",
         "usingTool": "{{tool}} aracını kullandı",
         "thinking": "Düşündü",
@@ -18857,6 +18862,7 @@
       "workingOnWorkspace": "çalışma alanında çalışıyor",
       "updatingThread": "bir ileti dizisini güncelliyor",
       "addingAgent": "bir kanala ajan ekliyor",
+      "settingChannelLead": "bir kanalın sorumlu ajanını seçiyor",
       "readingConversation": "sohbeti okuyor",
       "usingTool": "bir araç kullanıyor"
     },

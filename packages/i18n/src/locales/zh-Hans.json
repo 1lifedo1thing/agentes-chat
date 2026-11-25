@@ -3889,6 +3889,9 @@
     },
     "channel": {
       "agent_added": "将 {{agentName}} 加入了 <b>#{{channel}}</b>",
+      "lead_changed": "让 {{agentName}} 负责 <b>#{{channel}}</b>",
+      "lead_changed_self": "成为了 <b>#{{channel}}</b> 的负责人",
+      "lead_changed_none": "让 <b>#{{channel}}</b> 不再有负责的智能体",
       "created": "创建了频道 <b>#{{name}}</b>"
     },
     "wiki": {
@@ -14303,6 +14306,7 @@
       "send_dm": "发送私信",
       "read_conversation": "读取对话",
       "add_agent_to_channel": "向频道添加智能体",
+      "set_channel_lead": "选择频道的负责智能体",
       "ask_agent": "询问其他智能体",
       "tell_agent": "通知其他智能体",
       "find_agent": "查找智能体",
@@ -18259,6 +18263,7 @@
         "workingOnWorkspace": "在工作区中操作了",
         "updatingThread": "更新了一个话题",
         "addingAgent": "把智能体添加到频道",
+        "settingChannelLead": "选择了频道的负责智能体",
         "readingConversation": "读了对话",
         "usingTool": "使用了 {{tool}} 工具",
         "thinking": "思考了",
@@ -18381,6 +18386,7 @@
       "workingOnWorkspace": "在工作区中操作",
       "updatingThread": "更新话题",
       "addingAgent": "把智能体添加到频道",
+      "settingChannelLead": "正在选择频道的负责智能体",
       "readingConversation": "阅读对话",
       "usingTool": "使用工具"
     },
