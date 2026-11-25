@@ -862,6 +862,7 @@ export const KEPT_JOB_KINDS = [
 export const UNREPEATABLE_JOB_KINDS = [
   "agent_run.execute",
   "message.posted",
+  "message.route_quiet",
   "notifications.message",
   "search.index",
   "threads.assess",

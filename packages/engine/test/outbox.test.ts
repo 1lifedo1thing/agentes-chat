@@ -910,12 +910,13 @@ test("done jobs leave the outbox after two weeks; their keys still refuse a seco
   const old = { status: "done" as const, createdAt: at(-15 * day), completedAt: at(-15 * day) };
   await put("email.send", "email:a", old);
   await put("message.posted", "message.posted:m1", old);
+  await put("message.route_quiet", "message.route_quiet:m1:1", old);
   await put("right_hand.said", "right_hand.said:o:hello", old);
   await put("email.send", "email:b", { ...old, status: "failed" });
   await put("email.send", "email:c", { createdAt: at(-15 * day) });
   await put("email.send", "email:d", { ...old, createdAt: at(-13 * day) });
 
-  expect(await pruneDoneJobs(db)).toEqual({ jobs: 2, keys: 0 });
+  expect(await pruneDoneJobs(db)).toEqual({ jobs: 3, keys: 0 });
   expect((await rows()).map((r) => r.dedupeKey).sort()).toEqual([
     "email:b",
     "email:c",

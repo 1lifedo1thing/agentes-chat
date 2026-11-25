@@ -14,6 +14,7 @@ import {
   insertMessage,
   insertMessageWithRuns,
   listMessages,
+  OUTBOX_WAKE_TOPIC,
   parseRouterOutput,
   postPersonMessage,
   ROUTE_QUIET_JOB,
@@ -32,7 +33,7 @@ import {
   WHY_LEAD_CALLED,
   WHY_YOU_WERE_CALLED,
 } from "../src";
-import { TYPING_GRACE_MS, typingLogFor } from "../src/burst";
+import { typingLogFor } from "../src/burst";
 import { addMember, drainWithQuietWaits, type Fixture, routeWaited, setup } from "./fixtures";
 
 let f: Fixture;
@@ -1384,10 +1385,10 @@ describe("named agents, a lone agent's follow-ups and system lines", () => {
       }
     };
     expect(await waits("ada, como vai a campanha")).toEqual([]);
-    expect(await waits("alguém viu a campanha")).toEqual([TYPING_GRACE_MS]);
-    expect(await waits("ada e dev, a campanha")).toEqual([TYPING_GRACE_MS]);
+    expect(await waits("alguém viu a campanha")).toEqual([500]);
+    expect(await waits("ada e dev, a campanha")).toEqual([500]);
     // Still typing after it: more is on its way, so the whole window.
-    expect(await waits("ada, olha isso", true)).toEqual([TYPING_GRACE_MS, ROUTER_QUIET_MS]);
+    expect(await waits("ada, olha isso", true)).toEqual([500, ROUTER_QUIET_MS]);
     // Not waited for, the person's next message already here still decides for both.
     const first = await say("ada, olha isso", 1);
     await say("o relatório de ontem");
@@ -1406,6 +1407,8 @@ describe("named agents, a lone agent's follow-ups and system lines", () => {
       ...f.jobDeps,
       router: { enabled: true, model: "claude-haiku-5-5", strategy, quietMs: 800 },
     });
+    const wakes: number[] = [];
+    f.pubsub.subscribe(OUTBOX_WAKE_TOPIC, () => void wakes.push(Date.now()));
     const asked = await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
       body: "o build quebrou",
     });
@@ -1418,6 +1421,8 @@ describe("named agents, a lone agent's follow-ups and system lines", () => {
     expect(later?.nextAttemptAt.getTime()).toBe(new Date(asked.createdAt).getTime() + 800);
     await drainWithQuietWaits(f.db, handlers);
     expect(inputs).toHaveLength(1);
+    // The workers are woken when it is due, not at their next poll.
+    expect(wakes.some((at) => at >= (later?.nextAttemptAt.getTime() ?? 0) - 5)).toBe(true);
     const [run] = await f.db.select().from(schema.agentRuns);
     expect(run?.triggerMessageId).toBe(asked.id);
     // The router's time on the run counts the wait, from its first ask.
