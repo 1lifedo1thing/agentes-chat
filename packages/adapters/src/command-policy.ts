@@ -1,5 +1,5 @@
 import path from "node:path";
-import { COMMAND_OF_MAX, commandOf, commandParts, ruleMatches } from "./machine-protocol";
+import { bashPattern, COMMAND_OF_MAX, commandOf, commandParts, partTest } from "./machine-protocol";
 import { type OutboundCode, outboundUrlProblem } from "./outbound-url";
 
 export { maskKeyShapes } from "./outbound-url";
@@ -1323,10 +1323,16 @@ export function commandWords(command: string): string[][] {
   return commandParts(command).map((part) => part.split(" ").map(bareWord));
 }
 
+/** Rules as tests of one part of a command each, built once (all of the deny list's are `Bash(...)` rules). */
+const partTests = (rules: readonly string[]) => rules.map((rule) => partTest(bashPattern(rule) ?? ""));
+const TOKEN_TESTS = partTests(TOKEN_RULES);
+const KIND_TESTS = SENSITIVE_KINDS.map((k) => ({ what: k.what, tests: partTests(k.rules) }));
+
 /**
  * Why a call is on the deny list, as the refusal tells the agent (`how`: what it can do to ask a person);
  * null when it isn't. The rules match the command as written and each part normalized
- * (`normalizedCommand`), so options in front can't slip past them.
+ * (`normalizedCommand`), so options in front can't slip past them. Each is cut into its parts once, not once for each
+ * rule: code (`approvalNeeded`) asks here for every program its lines name.
  */
 export function deniedMessage(
   toolName: string,
@@ -1334,14 +1340,13 @@ export function deniedMessage(
   how: string = ASK_IN_CHAT,
 ): string | null {
   const command = commandCall(toolName, input)?.command;
-  const tool = command === undefined ? toolName : "Bash";
-  const calls = [
-    input,
-    ...(command === undefined ? [] : commandWords(command).map((words) => ({ command: normalizedCommand(words) }))),
-  ];
-  const hit = (rules: readonly string[]) => calls.some((c) => rules.some((rule) => ruleMatches(rule, tool, c)));
-  if (hit(TOKEN_RULES)) return SECRET_MESSAGE;
-  const kind = SENSITIVE_KINDS.find((k) => hit(k.rules));
+  if (command === undefined) return null;
+  const parts = [command, ...commandWords(command).map(normalizedCommand)].flatMap((c) =>
+    commandParts(commandOf("Bash", { command: c })),
+  );
+  const hit = (tests: ReadonlyArray<(part: string) => boolean>) => parts.some((part) => tests.some((t) => t(part)));
+  if (hit(TOKEN_TESTS)) return SECRET_MESSAGE;
+  const kind = KIND_TESTS.find((k) => hit(k.tests));
   return kind ? approvalMessage(kind.what, how) : null;
 }
 
@@ -1884,45 +1889,13 @@ export async function heldPush(push: GitPush, facts: RepoFacts, own: readonly st
 const COMMAND_HEADS = new Set(MISSION_DENY_RULES.map((r) => /^Bash\(([^\s*)]+)/.exec(r)?.[1] ?? "").filter(Boolean));
 
 /**
- * Each deny rule's words between its `*`, in order (`Bash(vercel * --prod*)`: `vercel`, then `--prod`): a part a rule
- * matches starts with the first and holds the others after it, as `ruleMatches` reads `*`.
- */
-const RULE_WORDS = MISSION_DENY_RULES.map((rule) =>
-  (/^Bash\((.*)\)$/s.exec(rule)?.[1] ?? "")
-    .split("*")
-    .map((w) => w.trim())
-    .filter(Boolean),
-);
-
-/** A part of a command holding some deny rule's words (`RULE_WORDS`): one that rule may match. */
-function holdsRuleWords(part: string): boolean {
-  return RULE_WORDS.some(([first = "", ...rest]) => {
-    if (!part.startsWith(first)) return false;
-    let at = first.length;
-    for (const word of rest) {
-      at = part.indexOf(word, at);
-      if (at < 0) return false;
-      at += word.length;
-    }
-    return true;
-  });
-}
-
-/**
- * Whether the deny list may refuse a command: its parts read as `deniedMessage` reads them, each against the words
- * its rules hold (`holdsRuleWords`). Cheaper than the rules, which read each part again for every rule.
- */
-const mayBeDenied = (command: string) =>
-  [command, ...commandWords(command).map(normalizedCommand)].some((c) =>
-    commandParts(commandOf("Bash", { command: c })).some(holdsRuleWords),
-  );
-
-/**
  * The commands code in another language spells out (Python, Node), line by line: quotes, brackets and
  * commas read as spaces, from each command's first word (`subprocess.run(["gh", "pr", "merge"])` reads
  * `gh pr merge`). The first command on a line runs to the line's end, so the parts after it are read too (`… |
  * /usr/bin/gh pr merge`); a later one runs past the next command's first word, then only as far as a rule reads
- * (`COMMAND_OF_MAX`): a long line with many is read about once, not once from each.
+ * (`COMMAND_OF_MAX`): a long line with many is read about once, not once from each. That reach counts the words as
+ * written, while the rules read past git's global options and gh's `-R` (`normalizedCommand`): a later command whose
+ * options alone fill it, another command's first word among them, is cut before its subcommand.
  */
 function commandsInCode(code: string): string[] {
   return code.split("\n").flatMap((line) => {
@@ -1967,8 +1940,8 @@ export async function approvalNeeded(
     if (held?.never) return { message: held.what, never: true };
     first ??= held;
   }
-  // Code: each command it spells out once, and only one the deny list may refuse.
-  const commands = opts.code ? [...new Set(commandsInCode(text))].filter(mayBeDenied) : [text];
+  // Code: each command it spells out once.
+  const commands = opts.code ? [...new Set(commandsInCode(text))] : [text];
   for (const command of commands) {
     const denied = deniedMessage("Bash", { command }, how);
     if (denied) return { message: denied, never: false };

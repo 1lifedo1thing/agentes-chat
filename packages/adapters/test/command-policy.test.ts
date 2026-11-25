@@ -1118,6 +1118,23 @@ describe("whether a push waits for a person", () => {
     expect(performance.now() - started).toBeLessThan(1000);
   });
 
+  test("a long line of code starting a deny rule's words over and over is read in time, and an API call on it still waits", async () => {
+    const ask = (code: string) => approvalNeeded(code, ASK_AGAIN, { code: true, own, facts: () => facts() });
+    let line = "";
+    for (let i = 0; line.length < 50_000; i++) line += `gh api${i} `;
+    const started = performance.now();
+    expect(await ask(line)).toBeNull();
+    expect(await ask(`${line}gh api repos/o/r -X PUT`)).toEqual({
+      message: approvalMessage(
+        "This calls the GitHub API directly, which can merge, delete or change settings",
+        ASK_AGAIN,
+      ),
+      never: false,
+    });
+    // Each took seconds when the deny list cut every command into its parts again for each of its rules.
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
   test("through our git proxy, what it refuses whoever approves never runs here, and the refusal says where to go", async () => {
     const proxied = facts({ proxied: ["origin"] });
     const never = async (command: string, f = proxied) => approvalNeeded(command, ASK_IN_CHAT, { own, facts: () => f });
