@@ -39895,6 +39895,15 @@
   "machines.egress.waiting": {
     "value": "Reconnecting the agents’ internet. Their connections wait until it’s back."
   },
+  "machines.moving.short": {
+    "value": "Moving servers"
+  },
+  "machines.moving.line": {
+    "value": "Moving to a new server… back in a few minutes"
+  },
+  "machines.moving.named": {
+    "value": "{{computer}} is moving to a new server… back in a few minutes"
+  },
   "machines.online": {
     "value": "Online"
   },

@@ -315,6 +315,20 @@ describe("the computer dialog, Cloud: the workspace's own computer", () => {
     expect(t.sockets.screens).toHaveLength(0);
   });
 
+  test("its computer moving to another server: said so, back in a few minutes, never that it isn't answering", async () => {
+    await dialog({
+      setup: { state: "ready" },
+      machine: { name: "Acme's computer", kind: "managed", os: "other", online: false, moving: true },
+      desktop: { available: false, reason: "offline" },
+      browser: true,
+    });
+    expect(sub()).toBe("Mudando de servidor");
+    const text = box().textContent ?? "";
+    expect(text).toContain("Mudando de servidor… volta em alguns minutos");
+    expect(text).not.toContain("Sem resposta");
+    expect(text).not.toContain("Já estamos cuidando");
+  });
+
   test("back while this tab was away: the reconnect asks for the computers again, and its screen opens", async () => {
     const t = await dialog({
       setup: { state: "ready" },

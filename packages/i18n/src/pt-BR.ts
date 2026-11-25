@@ -16664,6 +16664,11 @@ export const ptBR = {
       hint: "O endereço que os sites veem quando os agentes navegam. Ele acompanha as mudanças de rede do computador.",
       waiting: "Reconectando a internet dos agentes. As conexões deles esperam até ela voltar.",
     },
+    moving: {
+      short: "Mudando de servidor",
+      line: "Mudando de servidor… volta em alguns minutos",
+      named: "{{computer}} está mudando de servidor… volta em alguns minutos",
+    },
     online: "Online",
     offline: "Offline",
     execOff: "Comandos desligados",

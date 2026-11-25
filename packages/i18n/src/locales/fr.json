@@ -16818,6 +16818,11 @@
       "hint": "L’adresse que voient les sites quand les agents naviguent. Elle change quand le réseau de l’ordinateur change.",
       "waiting": "Les agents se reconnectent à internet. Leurs connexions attendent son retour."
     },
+    "moving": {
+      "short": "Changement de serveur",
+      "line": "Passe sur un nouveau serveur… de retour dans quelques minutes",
+      "named": "{{computer}} passe sur un nouveau serveur… de retour dans quelques minutes"
+    },
     "online": "En ligne",
     "offline": "Hors ligne",
     "execOff": "Commandes désactivées",

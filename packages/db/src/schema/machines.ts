@@ -285,6 +285,11 @@ export const machines = pgTable(
      * apps show a line; null: they don't wait.
      */
     egressWaitingAt: timestamp({ withTimezone: true }),
+    /**
+     * The operator says the workspace's own computer is moving to another server (`PUT …/moving`): while it is away
+     * the apps say so instead of offline, for at most `MOVING_SHOWN_MS`. Null: not moving.
+     */
+    movingAt: timestamp({ withTimezone: true }),
     /** Last time a run or a person wanted this computer (written at most every 30 s per server process). */
     wantedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

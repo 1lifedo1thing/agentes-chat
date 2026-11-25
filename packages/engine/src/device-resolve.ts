@@ -551,6 +551,8 @@ function statusWords(s: DeviceStatus, people: Map<string, string>) {
       return `getting ready (${s.reason})`;
     case "paused":
       return `paused by its owner${s.until ? ` until ${s.until}` : ""}`;
+    case "moving":
+      return "moving to another server, back in a few minutes";
     case "offline":
       return `${s.withHost ? "offline with its computer" : "offline"} (${seenAgo(s.lastSeenAt)})`;
     case "unsupported":
