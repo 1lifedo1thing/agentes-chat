@@ -94,6 +94,7 @@ import { BrowserManager } from "./browser";
 import { ensureBrowserBindPolicy, prepareAgents } from "./browser-bind-policy";
 import { BrowserViews } from "./browser-views";
 import { CliInstaller, type CliInstallerOptions, gitBashPath } from "./cli-install";
+import { codexSandboxReport } from "./codex-windows";
 import {
   accessToStore,
   configPath,
@@ -443,6 +444,11 @@ export interface DaemonOptions {
   /** Tests: how `cli.install` installs. */
   cliInstall?: Partial<CliInstallerOptions>;
   /**
+   * Tests: this computer as a Windows one (`CODEX_UNELEVATED_PROTOCOL`): its build for `hello`, and how what holds
+   * Codex's commands there is chosen (default `windowsCodexSandbox`). Default: this computer's on Windows, else none.
+   */
+  windows?: { build: string; chooseCodexSandbox?: (version: string) => Promise<unknown> } | null;
+  /**
    * The runner brings its own Antigravity CLI where the person's is older than `AGY_PIN` (`AgyCopy`, ADR 0143): on for
    * the runner people run (`main.ts`), off in tests unless they ask.
    */
@@ -574,6 +580,8 @@ export class RunnerDaemon implements RequestObserver {
    * with, so a CLI installed since is found only through the registry.
    */
   private readonly refreshPath: (() => void) | undefined;
+  /** `hello.windowsBuild` (`CODEX_UNELEVATED_PROTOCOL`): a Windows computer's build; null elsewhere. */
+  private readonly windowsBuild: string | null;
 
   constructor(private readonly opts: DaemonOptions) {
     this.uidNetworks = new AgentNetworks({}, readNetworkPins(opts.home));
@@ -603,6 +611,16 @@ export class RunnerDaemon implements RequestObserver {
             ? { homeOnly: (bin: string) => inHomeDirs(bin) !== null }
             : { before: () => addUsualDirs() }),
       });
+    const windows =
+      opts.windows !== undefined ? opts.windows : process.platform === "win32" ? { build: os.release() } : null;
+    this.windowsBuild = windows?.build ?? null;
+    const codexSandbox =
+      windows &&
+      codexSandboxReport({
+        runnerHome: opts.home,
+        onChange: () => this.executorsChanged(),
+        ...(windows.chooseCodexSandbox ? { choose: windows.chooseCodexSandbox } : {}),
+      });
     // Grok Build's and Antigravity's models as the accounts signed in here list them: the computer's own
     // `grok models` and `agy models` are signed out.
     this.executors = () => {
@@ -611,6 +629,7 @@ export class RunnerDaemon implements RequestObserver {
       if (found.grok && grok) found.grok = { ...found.grok, models: grok };
       const agy = this.accounts?.listedModels("antigravity");
       if (found.antigravity && agy) found.antigravity = { ...found.antigravity, models: agy };
+      if (found.codex && codexSandbox) found.codex = codexSandbox(found.codex, this.access().tools.codex);
       return found;
     };
     this.executorsKnown = () => !("known" in exec) || exec.known === true;
@@ -2159,6 +2178,7 @@ export class RunnerDaemon implements RequestObserver {
       protocol: MACHINE_PROTOCOL_VERSION,
       os: machineOs(),
       arch: os.arch(),
+      ...(this.windowsBuild ? { windowsBuild: this.windowsBuild } : {}),
       hostname: os.hostname(),
       workspace: workspaceReal,
       exec: access.tools.commands,
