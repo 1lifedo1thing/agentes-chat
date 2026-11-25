@@ -20202,7 +20202,7 @@
     },
     "offer_connect_app": {
       "label": "Proposer de connecter une app ou un MCP",
-      "description": "Publie une carte dont le bouton ouvre la fenêtre pour connecter une app ou un serveur MCP par son adresse."
+      "description": "Publie une carte dont le bouton ouvre la fenêtre pour connecter une app ou un serveur MCP : ceux du catalogue par leur nom, tout autre par son adresse."
     },
     "offer_invites": {
       "label": "Proposer d'inviter des personnes",

@@ -19024,7 +19024,7 @@
     },
     "offer_connect_app": {
       "label": "提议连接应用或 MCP",
-      "description": "发布一张卡片，点击按钮即可打开按地址连接应用或 MCP 服务器的对话框。"
+      "description": "发布一张卡片，点击按钮即可打开连接应用或 MCP 服务器的对话框：目录中的按名称连接，其他的按地址连接。"
     },
     "offer_invites": {
       "label": "提议邀请成员",

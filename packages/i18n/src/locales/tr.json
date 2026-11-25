@@ -19516,7 +19516,7 @@
     },
     "offer_connect_app": {
       "label": "Uygulama veya MCP bağlamayı öner",
-      "description": "Düğmesi bir uygulamayı veya MCP sunucusunu adresiyle bağlama penceresini açan bir kart paylaşır."
+      "description": "Düğmesi bir uygulamayı veya MCP sunucusunu bağlama penceresini açan bir kart paylaşır: katalogdakileri adıyla, diğerlerini adresiyle."
     },
     "offer_invites": {
       "label": "Kişileri davet etmeyi öner",

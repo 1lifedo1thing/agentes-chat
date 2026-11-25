@@ -20116,7 +20116,7 @@
     },
     "offer_connect_app": {
       "label": "Ofrecer conectar una app o un MCP",
-      "description": "Publica una tarjeta cuyo botón abre el diálogo para conectar una app o un servidor MCP por su dirección."
+      "description": "Publica una tarjeta cuyo botón abre el diálogo para conectar una app o un servidor MCP: los del catálogo por su nombre, cualquier otro por su dirección."
     },
     "offer_invites": {
       "label": "Ofrecer invitar personas",

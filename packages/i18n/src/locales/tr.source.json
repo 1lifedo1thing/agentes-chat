@@ -48102,7 +48102,7 @@
     "value": "Offer to connect an app or MCP"
   },
   "builtinTools.offer_connect_app.description": {
-    "value": "Posts a card whose button opens the dialog to connect an app or an MCP server by its address."
+    "value": "Posts a card whose button opens the dialog to connect an app or an MCP server: from the catalog by name, any other by its address."
   },
   "builtinTools.offer_invites.label": {
     "value": "Offer to invite people"
