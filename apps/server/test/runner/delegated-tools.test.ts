@@ -1009,6 +1009,8 @@ test("a glob of many unclosed braces is read in time, and they still split it as
   // It took seconds when each `{` with no `}` after it read the glob to its end.
   const fake = fakeRg("");
   const { call } = setup({}, { rg: fake.rg });
+  // A session's first call pays its start-up: made first, so only the long glob is timed.
+  await call("Grep", { pattern: "x", glob: "*.md" });
   const started = performance.now();
   await call("Grep", { pattern: "x", glob: `${"{ ".repeat(100_000)}*.md{a` });
   expect(performance.now() - started).toBeLessThan(1000);
