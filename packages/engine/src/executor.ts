@@ -114,7 +114,7 @@ import { browsersPrompt } from "./browser/tools";
 import { BROWSER_SCOPE } from "./browser/types";
 import { tellBudgetPause } from "./budget-pause";
 import { resolveEarlierBudgetPaused } from "./budget-paused-rows";
-import { typingLogFor, waitForBurst } from "./burst";
+import { typingLogFor, waitWhileTyping } from "./burst";
 import {
   isShutdown,
   RUN_HEARTBEAT_MS,
@@ -569,20 +569,15 @@ export interface EngineDeps {
   workAutoMinMs?: number;
   workTickMs?: number;
   /**
-   * How long a run started on a person's message waits for their next one before its first model call
-   * (`waitForBurst`, `ROUTER_QUIET_MS` on a server); absent: no wait.
+   * A run started on a person's message holds its first model call while they are typing here, at most
+   * `BURST_MAX_WINDOWS` of this (`waitWhileTyping`, `ROUTER_QUIET_MS` on a server); absent: never held.
    */
   quietMs?: number;
   /**
-   * Token-trim B10: a model brain on Claude's API writes its first turn's prompt to the cache during that wait (a
+   * Token-trim B10: a model brain on Claude's API writes its first turn's prompt to the cache during that hold (a
    * `maxTokens` 0 call through the gateway). Off: no such call.
    */
   prewarm?: boolean;
-  /**
-   * Token-trim B11: the wait ends early when the person isn't typing (`user.typing` on the conversation, through
-   * `pubsub`). Off: the whole window.
-   */
-  quietByTyping?: boolean;
   /** Memory and summaries (ADR 0017). Without it the context is the recent conversation only. */
   context?: ContextDeps;
   /** Latency measurements (`trigger_to_claim_ms`, `claim_to_first_delta_ms`, `run_ms`), for logs. */
@@ -598,7 +593,7 @@ export interface EngineDeps {
   brains?: Partial<Record<BrainKind, BrainFactory>>;
   /**
    * The checkouts' sync before a computer brain's chat turn (`prepareAgentCode`, the brains' own `prepare`): started
-   * here while a run waits out the quiet window, so the turn doesn't wait for it after.
+   * here while a run holds for a person still typing, so the turn doesn't wait for it after.
    */
   prepareCode?(turn: BrainTurn, signal: AbortSignal): Promise<CodeSetup | null>;
   /** Computers' status (machine hub): a computer brain's availability is checked before its turn. */
@@ -1030,16 +1025,16 @@ const CONTEXT_TOOLS: readonly string[] = [
   "read_wiki_page",
 ];
 
-/** How long the first call waits for its pre-warm once the quiet window is over. */
+/** How long the first call waits for its pre-warm once the typing hold is over. */
 const PREWARM_WAIT_MS = 4000;
 /**
  * The claims whose stage profiles a run keeps (`agent_runs.profiles`): its first (the router's stage, its first context)
  * and its latest. Long work and a wait for room claim many times.
  */
 const RUN_PROFILES_KEPT = 10;
-/** How soon a quiet window that ends at once is told from one still running (no pre-warm then). */
+/** How soon a typing hold that ends at once is told from one still going (no pre-warm then). */
 const PREWARM_PROBE_MS = 50;
-/** A pre-warm started less than this before the window ended isn't waited for (token-trim B10). */
+/** A pre-warm started less than this before the hold ended isn't waited for (token-trim B10). */
 const PREWARM_MIN_LEAD_MS = 1000;
 
 /** How long a run whose computer dropped mid-turn waits quietly for it before saying it is unavailable. */
@@ -5191,20 +5186,13 @@ async function executeRunInner(
         { messageId: delivered.message.id, urgent: false },
       );
   };
-  /** The first computer turn's checkouts sync, started during the quiet window for that plan. */
+  /** The first computer turn's checkouts sync, started during the typing hold for that plan. */
   let earlyCode: { plan: BrainPlan; code: Promise<CodeSetup | null> } | null = null;
   const autoTick: ReturnType<typeof setInterval> | null =
     run.background || run.workId ? null : setInterval(() => void autoMove().catch(() => {}), deps.workTickMs ?? 5_000);
   try {
-    // A person who writes in a few messages gets one answer: what they add in the next seconds is read with the first.
-    // A routed run skips it: the router already waited for the burst, its trigger is the last message of it.
-    if (
-      deps.quietMs &&
-      run.turns === 0 &&
-      !run.background &&
-      run.trigger !== "router" &&
-      triggerMessage?.authorType === "person"
-    ) {
+    // A person still typing here gets one answer: the first model call waits for what they are writing.
+    if (deps.quietMs && run.turns === 0 && !run.background && triggerMessage?.authorType === "person") {
       // Meanwhile a computer brain's checkouts get synced for its first turn (used only if that turn is the same).
       if (plan.kind !== "model" && plan.session && deps.prepareCode && computerTurns === 0 && !nextPrompt) {
         const early = brainTurnOf(run, thinker, transcript, tools, triggerText, plan, { unattended });
@@ -5220,14 +5208,8 @@ async function executeRunInner(
         })().catch(() => null);
         earlyCode = { plan, code };
       }
-      const waiting = waitForBurst(
-        db,
-        triggerMessage,
-        deps.quietMs,
-        signal,
-        deps.quietByTyping ? typingLogFor(deps.pubsub) : undefined,
-      );
-      // A window already over (the context took it) gets no pre-warm: it would only delay the first call.
+      const waiting = waitWhileTyping(db, triggerMessage, deps.quietMs, typingLogFor(deps.pubsub), signal);
+      // No hold (nobody typing, or done by now) gets no pre-warm: it would only delay the first call.
       const over = await Promise.race([waiting.then(() => true), Bun.sleep(PREWARM_PROBE_MS).then(() => false)]);
       const warming =
         !over && deps.prewarm && brain instanceof ModelBrain
@@ -5572,7 +5554,7 @@ async function executeRunInner(
             found: computerTurns === 0 || !turnPlan.session?.resume,
             personId,
             personWaiting,
-            // Synced during the quiet window for this very turn; where it starts is picked again from its words now
+            // Synced during the typing hold for this very turn; where it starts is picked again from its words now
             // (what came in meanwhile may name another repository).
             ...(earlyCode?.plan === turnPlan && computerTurns === 0
               ? {
@@ -6749,6 +6731,10 @@ async function executeRunInner(
       // No words after being asked for them: the run fails saying how the model's last call ended.
       if (!text && !anythingPosted && !silent)
         return fail(result.stopReason === "max_tokens" ? "empty_reply_limit" : "empty_reply");
+      // Its first short reply, and the person is typing the rest of what they want: it waits for that, so the reply is
+      // rewritten with it (overtaken, below) rather than greeting a conversation that has moved on.
+      if (deps.quietMs && text && !anythingPosted && text.length <= OVERTAKEN_MAX_CHARS && !run.background)
+        if (triggerMessage) await waitWhileTyping(db, triggerMessage, deps.quietMs, typingLogFor(deps.pubsub), signal);
       // Someone wrote while it answered: post this answer, then read the new message(s) and go on.
       const still = { pending: await unreadNow(db, run.id, { awaitTriage }) };
       // At the cap this answer ends the run instead: what came in gets a run of its own.

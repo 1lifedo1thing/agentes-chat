@@ -440,9 +440,7 @@ export async function operatorReplyTimes(db: Database, query: ReplyTimesQuery, n
     from,
     to,
     bucket,
-    replies: rowsOf<{ at: string; brain: string; trigger: Trigger } & Measures>(
-      replyRows,
-    ).map((r) => ({
+    replies: rowsOf<{ at: string; brain: string; trigger: Trigger } & Measures>(replyRows).map((r) => ({
       at: r.at,
       brain: r.brain,
       trigger: r.trigger,

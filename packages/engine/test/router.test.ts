@@ -1094,7 +1094,9 @@ describe("what the router reads, and a person's messages in a row", () => {
     expect(requests.at(-1)).toContain("de novo");
     const read = events.filter((e) => e.type === "agent.run.read") as unknown as { messageIds: string[] }[];
     expect(read.flatMap((e) => e.messageIds)).toContain(second.id);
-    const said = (await listMessages(f.db, f.owner.id, f.org.id, f.general.id)).filter((m) => m.author.type === "agent");
+    const said = (await listMessages(f.db, f.owner.id, f.org.id, f.general.id)).filter(
+      (m) => m.author.type === "agent",
+    );
     expect(said.map((m) => m.body)).toEqual(["Rodei de novo: o build passou."]);
   });
 
