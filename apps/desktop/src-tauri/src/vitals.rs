@@ -111,6 +111,9 @@ struct Proc {
     name: String,
     #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
     bytes: Option<u64>,
+    /// When it started, on Windows (100-nanosecond units since 1601); None when it can't be asked, and on Linux,
+    /// which gives an orphan to init, so a parent's id there is never one that ended.
+    started: Option<u64>,
 }
 
 /// What `value_of` says (memory, CPU time; asked of those alone) of each process `picked` finds under `root`, at any
@@ -126,9 +129,13 @@ fn tree_sum(
     let mut total: Option<u64> = None;
     // A parent's id that came back on a new process can't loop the walk, nor count a process twice.
     let mut seen = HashSet::from([root]);
-    let mut stack = vec![(root, false)];
-    while let Some((pid, inside)) = stack.pop() {
-        for child in procs.iter().filter(|p| p.ppid == pid) {
+    // Windows keeps an orphan's parent id as it was and gives that id to new processes: one that started before the
+    // process now holding its parent's id is another's orphan, never that process's child (Process Explorer's rule).
+    let older = |child: &Proc, parent: Option<u64>| matches!((child.started, parent), (Some(c), Some(p)) if c < p);
+    let started = procs.iter().find(|p| p.pid == root).and_then(|p| p.started);
+    let mut stack = vec![(root, started, false)];
+    while let Some((pid, started, inside)) = stack.pop() {
+        for child in procs.iter().filter(|p| p.ppid == pid && !older(p, started)) {
             if !seen.insert(child.pid) {
                 continue;
             }
@@ -138,7 +145,7 @@ fn tree_sum(
                     total = Some(total.unwrap_or(0).saturating_add(value));
                 }
             }
-            stack.push((child.pid, counted));
+            stack.push((child.pid, child.started, counted));
         }
     }
     total
@@ -219,6 +226,7 @@ fn status_of(pid: u32, text: &str) -> Option<Proc> {
         ppid: field("PPid")?.parse().ok()?,
         name: field("Name")?.to_owned(),
         bytes: kb("RssAnon").or_else(|| kb("VmRSS")),
+        started: None,
     })
 }
 
@@ -543,20 +551,24 @@ mod system {
         })
     }
 
-    /// A process's CPU time, kernel and user, when it lets the app ask.
-    fn cpu_ms(process_id: u32) -> Option<u64> {
+    /// When a process started and its CPU time in ms, kernel and user, when it lets the app ask.
+    fn times(process_id: u32) -> Option<(u64, u64)> {
         // SAFETY: a process opened for its times alone, read into the structs given, closed once.
         unsafe {
             let process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, process_id);
             if process.is_null() {
                 return None;
             }
-            let mut times: [FileTime; 4] = Default::default();
-            let [created, ended, kernel, user] = &mut times;
+            let mut stamps: [FileTime; 4] = Default::default();
+            let [created, ended, kernel, user] = &mut stamps;
             let ok = GetProcessTimes(process, created, ended, kernel, user) != 0;
             CloseHandle(process);
-            ok.then(|| (kernel.ticks() + user.ticks()) / 10_000)
+            ok.then(|| (created.ticks(), (kernel.ticks() + user.ticks()) / 10_000))
         }
+    }
+
+    fn cpu_ms(process_id: u32) -> Option<u64> {
+        times(process_id).map(|(_, cpu_ms)| cpu_ms)
     }
 
     pub fn tree() -> super::Tree {
@@ -588,7 +600,8 @@ mod system {
             while more {
                 let len = entry.exe_file.iter().position(|&c| c == 0).unwrap_or(entry.exe_file.len());
                 let name = String::from_utf16_lossy(&entry.exe_file[..len]);
-                procs.push(Proc { pid: entry.process_id, ppid: entry.parent_process_id, name, bytes: None });
+                let started = times(entry.process_id).map(|(started, _)| started);
+                procs.push(Proc { pid: entry.process_id, ppid: entry.parent_process_id, name, bytes: None, started });
                 more = Process32NextW(snapshot, &mut entry) != 0;
             }
             CloseHandle(snapshot);
@@ -602,7 +615,7 @@ mod tests {
     use super::*;
 
     fn process(pid: u32, ppid: u32, name: &str, mb: u64) -> Proc {
-        Proc { pid, ppid, name: name.into(), bytes: Some(mb << 20) }
+        Proc { pid, ppid, name: name.into(), bytes: Some(mb << 20), started: None }
     }
 
     #[test]
@@ -642,7 +655,7 @@ mod tests {
             // A sandbox's launcher between the app and WebKit's process.
             process(10, 1, "bwrap", 1),
             process(11, 10, "WebKitWebProces", 150),
-            Proc { pid: 12, ppid: 1, name: "WebKitWebProces".into(), bytes: None },
+            Proc { pid: 12, ppid: 1, name: "WebKitWebProces".into(), bytes: None, started: None },
             // Two processes each naming the other its parent.
             process(20, 21, "WebKitWebProces", 7),
             process(21, 20, "x", 1),
@@ -650,7 +663,7 @@ mod tests {
         let webkit = |name: &str| name.starts_with(WEBKIT_WEB_PROCESS);
         assert_eq!(tree_sum(&procs, 1, webkit, |p| p.bytes), Some(150 << 20));
         assert_eq!(tree_sum(&procs, 21, webkit, |p| p.bytes), Some(7 << 20));
-        let unreadable = [Proc { pid: 12, ppid: 1, name: "WebKitWebProces".into(), bytes: None }];
+        let unreadable = [Proc { pid: 12, ppid: 1, name: "WebKitWebProces".into(), bytes: None, started: None }];
         assert_eq!(tree_sum(&unreadable, 1, webkit, |p| p.bytes), None);
     }
 
@@ -662,13 +675,36 @@ mod tests {
             process(10, app, "bwrap", 1),
             process(11, 10, "WebKitWebProces", 150),
             process(12, app, "WebKitNetworkPr", 20),
-            Proc { pid: 13, ppid: app, name: "WebKitWebProces".into(), bytes: None },
+            Proc { pid: 13, ppid: app, name: "WebKitWebProces".into(), bytes: None, started: None },
             process(400, 1, "WebKitWebProces", 900),
         ];
         let cpu_ms = |p: &Proc| Some(u64::from(p.pid));
         let usage = under(&procs, app, |p| p.bytes, cpu_ms);
         assert_eq!(usage, Usage { bytes: Some((1 + 150 + 20) << 20), cpu_ms: Some(10 + 11 + 12 + 13), processes: 4 });
         assert_eq!(under(&procs, 999, |p| p.bytes, cpu_ms), Usage::default(), "an app that isn't there");
+    }
+
+    #[test]
+    fn an_orphan_whose_parents_id_came_back_on_the_app_isnt_the_apps() {
+        let at = |mut p: Proc, started: u64| {
+            p.started = Some(started);
+            p
+        };
+        let app = 100;
+        let procs = [
+            at(process(app, 1, "agentes-chat", 80), 5_000),
+            at(process(10, app, "msedgewebview2.exe", 60), 5_000),
+            at(process(11, 10, "msedgewebview2.exe", 200), 6_000),
+            // Started before the app: their parent was an older process with the app's id.
+            at(process(20, app, "worker.exe", 900), 1_000),
+            at(process(21, 20, "worker.exe", 900), 1_200),
+            // Started before the web view's process now holding its parent's id.
+            at(process(30, 10, "helper.exe", 700), 4_000),
+            // One that couldn't be asked counts.
+            process(40, app, "msedgewebview2.exe", 5),
+        ];
+        let usage = under(&procs, app, |p| p.bytes, |_| Some(1));
+        assert_eq!(usage, Usage { bytes: Some((60 + 200 + 5) << 20), cpu_ms: Some(3), processes: 3 });
     }
 
     #[test]
