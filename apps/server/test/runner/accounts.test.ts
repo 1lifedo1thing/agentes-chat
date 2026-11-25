@@ -2175,3 +2175,83 @@ test.if(posix)(
   },
   15_000,
 );
+
+test.if(posix)(
+  "Cursor's models: each account's own `agent models`, its sign-in's or its key's, at most hourly, never in a lent folder",
+  async () => {
+    const home = tempDir("cursor-models-");
+    dirs.push(home);
+    const root = path.join(home, "accounts");
+    const log = path.join(home, "calls.log");
+    const cli = path.join(home, "fake-agent.mjs");
+    writeFileSync(
+      cli,
+      [
+        'import { appendFileSync } from "node:fs";',
+        "const [cmd] = process.argv.slice(2);",
+        `appendFileSync(${JSON.stringify(log)}, \`\${cmd} \${process.env.CURSOR_API_KEY ? "key" : "folder"}\\n\`);`,
+        'if (cmd === "status") { process.stdout.write("Logged in as ada@example.com\\n"); process.exit(0); }',
+        'if (cmd === "models" && process.env.CURSOR_API_KEY) { process.stdout.write("Available models\\n\\nauto - Auto\\nfast-model-2 - Fast Model 2\\n"); process.exit(0); }',
+        'if (cmd === "models") { process.stdout.write("Available models\\n\\nauto - Auto (current)\\nsmart-model-5 - Smart Model 5 (included)\\nfast-model-2 - Fast Model 2\\n"); process.exit(0); }',
+        "process.exit(1);",
+      ].join("\n"),
+    );
+    const folder = (id: string, files: Record<string, string> = {}) => {
+      const dir = path.join(root, "cursor", id);
+      mkdirSync(dir, { recursive: true, mode: 0o700 });
+      for (const [name, text] of Object.entries(files)) writeFileSync(path.join(dir, name), text);
+    };
+    const signedIn = LOGIN(110);
+    const keyed = LOGIN(111);
+    const lent = LOGIN(112);
+    folder(signedIn);
+    folder(keyed, { "cursor-key.json": JSON.stringify({ key: "crsr_fake_0000000000000000000000000000" }) });
+    folder(lent);
+    writeFileSync(path.join(root, "cursor", `${lent}.lent`), "1234");
+    let clock = Date.parse("2030-01-01T00:00:00Z");
+    const m = new AccountManager({ root, commands: { cursor: [process.execPath, cli] }, now: () => clock });
+    managers.push(m);
+    const calls = () => readFileSync(log, "utf8").trim().split("\n").sort();
+
+    await m.list();
+    // The sign-in's list first (it lists the most), then what only the key's adds; the plan's own marked. "auto" is the
+    // picker's own Automático.
+    expect(m.listedModels("cursor")).toEqual([
+      { id: "smart-model-5", label: "Smart Model 5", inPlan: true },
+      { id: "fast-model-2", label: "Fast Model 2" },
+    ]);
+    // The lent folder is never run on: its agent's user holds it.
+    expect(calls()).toEqual(["models folder", "models key", "status folder"]);
+
+    // Looked again within the hour: the status only.
+    m.invalidate();
+    await m.list();
+    expect(calls()).toEqual(["models folder", "models key", "status folder", "status folder"]);
+    clock += 3600_000;
+    m.invalidate();
+    await m.list();
+    expect(calls().filter((c) => c.startsWith("models"))).toHaveLength(4);
+
+    // Kept across a restart, as Grok's and Gemini's are.
+    const again = new AccountManager({ root, commands: { cursor: [process.execPath, cli] } });
+    managers.push(again);
+    expect(again.listedModels("cursor")?.map((x) => x.id)).toEqual(["smart-model-5", "fast-model-2"]);
+
+    // A sign-in whose first turn comes before any look: listed as its folder is lent, never after.
+    const early = LOGIN(113);
+    folder(early);
+    const lending = new AccountManager({
+      root,
+      commands: { cursor: [process.execPath, cli] },
+      lending: { chown: async () => {} },
+    });
+    managers.push(lending);
+    const listings = () => calls().filter((c) => c === "models folder").length;
+    const before = listings();
+    expect(await lending.lendTo("cursor", early, 21003)).toBe(true);
+    expect(listings()).toBe(before + 1);
+    expect(await lending.lendTo("cursor", early, 21004)).toBe(true);
+    expect(listings()).toBe(before + 1);
+  },
+  20_000,
+);
