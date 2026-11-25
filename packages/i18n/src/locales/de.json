@@ -20236,6 +20236,14 @@
       "ended": "Der Bildschirm wurde geschlossen.",
       "retrying": "Neuer Versuch…"
     },
+    "open": {
+      "gaveUp": "Der Bildschirm von {{name}} ließ sich nicht öffnen.",
+      "slow": "Das dauert länger als sonst.",
+      "late": "{{computer}} hat zu lange nicht geantwortet.",
+      "dropped": "Die Verbindung ist abgebrochen.",
+      "offline": "{{computer}} antwortet nicht.",
+      "refused": "{{computer}} konnte den Bildschirm nicht öffnen."
+    },
     "retry": "Erneut versuchen",
     "takeover": "Steuerung übernehmen",
     "takeBrowser": "Browser übernehmen",

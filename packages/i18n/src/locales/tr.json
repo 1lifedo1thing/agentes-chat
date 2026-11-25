@@ -20160,6 +20160,14 @@
       "ended": "Ekran kapandı.",
       "retrying": "Tekrar deneniyor…"
     },
+    "open": {
+      "gaveUp": "{{name}} ajanının ekranı açılamadı.",
+      "slow": "Bu her zamankinden uzun sürüyor.",
+      "late": "{{computer}} yanıt vermekte çok gecikti.",
+      "dropped": "Bağlantı koptu.",
+      "offline": "{{computer}} yanıt vermiyor.",
+      "refused": "{{computer}} ekranı açamadı."
+    },
     "retry": "Tekrar dene",
     "takeover": "Kontrolü al",
     "takeBrowser": "Tarayıcıyı devral",

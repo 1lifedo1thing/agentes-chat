@@ -21048,6 +21048,18 @@ export const en = {
       ended: "The screen closed.",
       retrying: "Trying again…",
     },
+    /**
+     * Under "Opening {{name}}'s computer…" once it took long (`slow`) or a try failed, the cause; `gaveUp` once it
+     * stopped trying by itself. Each with Try again.
+     */
+    open: {
+      gaveUp: "Couldn't open {{name}}'s screen.",
+      slow: "This is taking longer than usual.",
+      late: "{{computer}} took too long to answer.",
+      dropped: "The connection dropped.",
+      offline: "{{computer}} isn't answering.",
+      refused: "{{computer}} couldn't open the screen.",
+    },
     retry: "Try again",
     takeover: "Take control",
     /** Where this person may drive the agent's browser but not its whole computer (`controlRefusal`). */

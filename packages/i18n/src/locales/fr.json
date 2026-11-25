@@ -20925,6 +20925,14 @@
       "ended": "L'écran s'est fermé.",
       "retrying": "Nouvelle tentative…"
     },
+    "open": {
+      "gaveUp": "Impossible d'ouvrir l'écran de {{name}}.",
+      "slow": "Ça prend plus de temps que d'habitude.",
+      "late": "{{computer}} a mis trop de temps à répondre.",
+      "dropped": "La connexion a été coupée.",
+      "offline": "{{computer}} ne répond pas.",
+      "refused": "{{computer}} n'a pas pu ouvrir l'écran."
+    },
     "retry": "Réessayer",
     "takeover": "Prendre le contrôle",
     "takeBrowser": "Prendre le navigateur",

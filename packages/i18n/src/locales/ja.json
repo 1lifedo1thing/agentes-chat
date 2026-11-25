@@ -19597,6 +19597,14 @@
       "ended": "画面が閉じられました。",
       "retrying": "再試行中…"
     },
+    "open": {
+      "gaveUp": "{{name}}の画面を開けませんでした。",
+      "slow": "いつもより時間がかかっています。",
+      "late": "{{computer}}の応答に時間がかかりすぎました。",
+      "dropped": "接続が切れました。",
+      "offline": "{{computer}}が応答していません。",
+      "refused": "{{computer}}は画面を開けませんでした。"
+    },
     "retry": "もう一度試す",
     "takeover": "操作を代わる",
     "takeBrowser": "ブラウザを操作する",

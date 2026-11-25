@@ -20792,6 +20792,14 @@
       "ended": "La pantalla se cerró.",
       "retrying": "Intentando de nuevo…"
     },
+    "open": {
+      "gaveUp": "No se pudo abrir la pantalla de {{name}}.",
+      "slow": "Está tardando más de lo normal.",
+      "late": "{{computer}} tardó demasiado en responder.",
+      "dropped": "Se cayó la conexión.",
+      "offline": "{{computer}} no responde.",
+      "refused": "{{computer}} no pudo abrir la pantalla."
+    },
     "retry": "Intentar de nuevo",
     "takeover": "Tomar el control",
     "takeBrowser": "Tomar el navegador",

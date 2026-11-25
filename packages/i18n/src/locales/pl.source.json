@@ -49488,6 +49488,24 @@
   "desktop.state.retrying": {
     "value": "Trying again…"
   },
+  "desktop.open.gaveUp": {
+    "value": "Couldn't open {{name}}'s screen."
+  },
+  "desktop.open.slow": {
+    "value": "This is taking longer than usual."
+  },
+  "desktop.open.late": {
+    "value": "{{computer}} took too long to answer."
+  },
+  "desktop.open.dropped": {
+    "value": "The connection dropped."
+  },
+  "desktop.open.offline": {
+    "value": "{{computer}} isn't answering."
+  },
+  "desktop.open.refused": {
+    "value": "{{computer}} couldn't open the screen."
+  },
   "desktop.retry": {
     "value": "Try again"
   },

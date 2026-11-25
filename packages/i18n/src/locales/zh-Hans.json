@@ -19755,6 +19755,14 @@
       "ended": "屏幕已关闭。",
       "retrying": "正在重试…"
     },
+    "open": {
+      "gaveUp": "无法打开 {{name}} 的屏幕。",
+      "slow": "比平时花的时间更长。",
+      "late": "{{computer}} 响应太慢。",
+      "dropped": "连接已断开。",
+      "offline": "{{computer}} 没有响应。",
+      "refused": "{{computer}} 无法打开屏幕。"
+    },
     "retry": "重试",
     "takeover": "接管控制",
     "takeBrowser": "接管浏览器",

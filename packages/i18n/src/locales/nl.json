@@ -20393,6 +20393,14 @@
       "ended": "Het scherm is gesloten.",
       "retrying": "Opnieuw proberen…"
     },
+    "open": {
+      "gaveUp": "Het scherm van {{name}} kon niet worden geopend.",
+      "slow": "Dit duurt langer dan normaal.",
+      "late": "{{computer}} deed er te lang over om te antwoorden.",
+      "dropped": "De verbinding is verbroken.",
+      "offline": "{{computer}} reageert niet.",
+      "refused": "{{computer}} kon het scherm niet openen."
+    },
     "retry": "Opnieuw proberen",
     "takeover": "Controle overnemen",
     "takeBrowser": "Browser overnemen",

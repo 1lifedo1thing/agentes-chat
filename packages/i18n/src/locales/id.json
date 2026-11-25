@@ -19692,6 +19692,14 @@
       "ended": "Layarnya ditutup.",
       "retrying": "Mencoba lagi…"
     },
+    "open": {
+      "gaveUp": "Layar {{name}} tidak bisa dibuka.",
+      "slow": "Ini memakan waktu lebih lama dari biasanya.",
+      "late": "{{computer}} terlalu lama menjawab.",
+      "dropped": "Koneksinya terputus.",
+      "offline": "{{computer}} tidak menjawab.",
+      "refused": "{{computer}} tidak bisa membuka layarnya."
+    },
     "retry": "Coba lagi",
     "takeover": "Ambil kendali",
     "takeBrowser": "Ambil alih browser",
