@@ -818,7 +818,7 @@ export function createMachineHub(deps: MachineHubDeps) {
         // Protocol 12: whether it can run the agent browser (ADR 0040), kept with what it found; protocol 18:
         // the same for the agents' desktops and the terminal, and whether each agent is its own OS user (ADR 0058);
         // protocol 21: whether agents can use their desktops (ADR 0062); protocol 50: which Claude sign-ins for all
-        // agents it can make (an older runner says nothing: `claudeLoginMethodsOf` reads that); protocol 79: a Windows
+        // agents it can make (an older runner says nothing: `claudeLoginMethodsOf` reads that); protocol 80: a Windows
         // computer's build.
         ...(frame.executors ||
         frame.browser ||

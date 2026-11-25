@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 79;
+export const MACHINE_PROTOCOL_VERSION = 80;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -649,7 +649,7 @@ export const CODEX_WINDOWS_PROTOCOL = 60;
  * build, and `executors.codex.sandbox` what holds Codex's commands there once the runner has checked (in the
  * background, after start). An older runner says neither, and runs Codex on Windows only inside MXC.
  */
-export const CODEX_UNELEVATED_PROTOCOL = 79;
+export const CODEX_UNELEVATED_PROTOCOL = 80;
 /** What holds Codex's commands on a Windows computer (`executors.codex.sandbox`): `none`, nothing it could start. */
 export const CODEX_SANDBOXES = ["mxc", "unelevated", "none"] as const;
 export type CodexSandbox = (typeof CODEX_SANDBOXES)[number];
