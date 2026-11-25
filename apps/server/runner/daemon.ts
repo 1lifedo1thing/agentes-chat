@@ -195,7 +195,8 @@ import { XcodeFixer, type XcodeFixOptions } from "./xcode-fix";
  * Where the runner reads free memory (Linux), an idle Claude Code closes when memory runs short (a turn that needs its
  * room, `reclaim`, or `closeIdleUnderPressure`), so keeping it warm costs no admission: follow-ups skip a cold start
  * and keep the prompt cache. The idle limit there is only a backstop, as long as a session is picked up again
- * (`SESSION_IDLE_MS` on the server). Elsewhere a count of turns decides room, so idle CLIs close soon.
+ * (`SESSION_IDLE_MS` on the server). Elsewhere a count of turns decides room and one process per agent stays open,
+ * for half an hour: `closeIdleUnderPressure` reads macOS's and Windows's memory too.
  */
 const MEMORY_READ = process.platform === "linux";
 /** How often the tasks' room is read for the server (sent only when it changed). */
@@ -213,11 +214,16 @@ export function sizedTaskLimit(size: Pick<MachineSize, "memoryGb" | "limit">): n
   return Math.min(TASK_LIMIT_BOUNDS[1], Math.max(3, Math.floor(((memoryGb - 4) * 2) / 3)));
 }
 
+/** Claude Code's keep-warm limits by platform (the desktop app's Preferences show the same, `defaultLimits`). */
+export const brainLimitsFor = (platform: NodeJS.Platform) =>
+  platform === "linux"
+    ? { brainIdleMinutes: 60, brainMaxProcesses: 8 }
+    : { brainIdleMinutes: 30, brainMaxProcesses: 1 };
+
 export const DEFAULT_LIMITS = {
   maxConcurrentTasks: sizedTaskLimit(machineSize(os.homedir())),
   taskMaxSeconds: 4 * 3600,
-  brainIdleMinutes: MEMORY_READ ? 60 : 3,
-  brainMaxProcesses: MEMORY_READ ? 8 : 1,
+  ...brainLimitsFor(process.platform),
 } as const;
 
 /** Codex app-servers aren't closed for memory (`reclaimIdle` is Claude Code's): they keep the shorter limits. */
@@ -961,7 +967,7 @@ export class RunnerDaemon implements RequestObserver {
     }, 60_000);
     relayed.unref?.();
     this.timers.push(relayed);
-    if (MEMORY_READ) this.timers.push(closeIdleUnderPressure(() => this.reclaimIdleBrains()));
+    this.timers.push(closeIdleUnderPressure(() => this.reclaimIdleBrains()));
     this.expireRequests();
   }
 

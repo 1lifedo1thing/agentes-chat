@@ -39,7 +39,7 @@ import { type BrowserManager, browserSetupText } from "./browser";
 import type { BrowserViews } from "./browser-views";
 import { allowedMerge, commandApproval, mergeOf, ownBranches } from "./command-gate";
 import type { DesktopManager } from "./desktop";
-import { type DesktopSessions, hostMemAvailable, MIN_FREE_BYTES } from "./desktop-session";
+import { type DesktopSessions, freeMemoryNow, hostMemAvailable, MIN_FREE_BYTES } from "./desktop-session";
 import { RunnerError, toMachineError } from "./errors";
 import { runCommand } from "./exec";
 import { type CacheFill, type CloneSlots, gitSync } from "./git";
@@ -97,8 +97,8 @@ export const BRAIN_PRESSURE_USED = 0.65;
 export const PRESSURE_POLL_MS = 30_000;
 
 /**
- * Where memory is read (Linux): while more than `BRAIN_PRESSURE_USED` of it is in use, `close` closes one idle CLI
- * (the least recently used) every `PRESSURE_POLL_MS`. The interval, for the caller to clear.
+ * Where memory is read (`freeMemoryNow`: Linux, macOS, Windows): while more than `BRAIN_PRESSURE_USED` of it is in use,
+ * `close` closes one idle CLI (the least recently used) every `PRESSURE_POLL_MS`. The interval, for the caller to clear.
  */
 export function closeIdleUnderPressure(
   close: () => Promise<boolean>,
@@ -106,7 +106,7 @@ export function closeIdleUnderPressure(
 ) {
   let closing = false;
   const timer = setInterval(() => {
-    const free = (o.memAvailable ?? hostMemAvailable)();
+    const free = (o.memAvailable ?? freeMemoryNow)();
     if (closing || free === null || free >= (1 - BRAIN_PRESSURE_USED) * (o.totalBytes ?? os.totalmem())) return;
     closing = true;
     void close()
