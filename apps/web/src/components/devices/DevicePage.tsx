@@ -5,11 +5,13 @@ import {
   findPhone,
   iosOf,
   iphoneOverWifi,
+  lendingDevice,
   mayChangeTasks,
   osName,
   personInControl,
   phoneLink,
   phoneSystem,
+  shareInternetText,
   statusLook,
   statusSentence,
   taskChoices,
@@ -317,6 +319,10 @@ function ComputerPage({ machineId }: { machineId: string }) {
         : d.status;
   const owner = d.ownerUserId === me.user.id;
   const admin = can(org, "configure");
+  const lending = lendingDevice(devices.data?.devices);
+  const internet = d.shareInternet;
+  // Someone else's lends now: its owner may pick this one instead (on again moves it first).
+  const mayPick = internet?.on === true && !internet.inUse && lending !== null && owner;
   const helpOff = devices.data?.devicesHelp === false;
   const tasksEditable = mayChangeTasks(d, me.user.id, admin);
   const pausedFromApps = status.kind === "paused" ? pausedByText(t, i18n.language, machine?.paused, me.user.id) : null;
@@ -348,7 +354,8 @@ function ComputerPage({ machineId }: { machineId: string }) {
   const extra = Boolean(
     machine &&
       ((machine.workspace && machine.mode !== "system") ||
-        (machine.kind === "managed" && (machine.networkTransition || (machine.online && machine.egress?.ip)))),
+        (machine.kind === "managed" &&
+          (machine.networkTransition || (machine.online && (machine.egress?.ip || machine.egressVia))))),
   );
   return (
     <>
@@ -513,6 +520,43 @@ function ComputerPage({ machineId }: { machineId: string }) {
                   onCheckedChange={(first) => save({ id: d.id, spill: { first } })}
                 />
               }
+            />
+          )}
+          {/* Its owner lends its internet to the workspace's computer; an admin may only stop it (ADR 0237). */}
+          {internet && (d.mayManage || internet.on) && (
+            <PrefRow
+              id="dv-pc-internet"
+              icon="globe"
+              label={t("devices.shareInternet")}
+              hint={t("devices.shareInternetHint")}
+              status={shareInternetText(t, d, lending)}
+              {...(mayPick
+                ? {
+                    // Beside a button the row's words are no label: the switch names itself.
+                    actions: (
+                      <>
+                        <Button size="sm" onClick={() => save({ id: d.id, shareInternet: true })}>
+                          {t("devices.shareInternetPick")}
+                        </Button>
+                        <Switch
+                          id="dv-pc-internet-switch"
+                          aria-label={t("devices.shareInternet")}
+                          checked
+                          onCheckedChange={(on) => save({ id: d.id, shareInternet: on })}
+                        />
+                      </>
+                    ),
+                  }
+                : {
+                    control: (
+                      <Switch
+                        id="dv-pc-internet-switch"
+                        checked={internet.on}
+                        disabled={!d.mayManage || (!owner && !internet.on)}
+                        onCheckedChange={(on) => save({ id: d.id, shareInternet: on })}
+                      />
+                    ),
+                  })}
             />
           )}
           {admin && d.machineKind === "connected" && (

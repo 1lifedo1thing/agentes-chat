@@ -2193,6 +2193,7 @@
       "tool_request": "{{names}} vous demande d'activer {{tool}} sur votre {{device}}",
       "cli_request": "{{names}} vous demande d'installer {{tool}} sur votre {{device}}",
       "folder_request": "{{names}} vous demande le dossier {{path}} sur votre {{device}}",
+      "internet_shared": "Les agents ouvrent désormais les sites web via la connexion internet de {{device}}",
       "allowOnce": "Autoriser une fois",
       "always": "Toujours autoriser {{name}}",
       "no": "Non",

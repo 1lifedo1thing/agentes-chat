@@ -39505,6 +39505,12 @@
   "errors.device.spillOwnerOnly": {
     "value": "Only the person who connected this computer can turn its help on. You can turn it off."
   },
+  "errors.device.shareOwnerOnly": {
+    "value": "Only the person who connected this computer can let agents use its internet. You can turn it off."
+  },
+  "errors.device.shareConnectedOnly": {
+    "value": "Only a computer someone connected can share its internet with the agents."
+  },
   "errors.device.tasksOwnerOnly": {
     "value": "Only the person who connected this computer can change how many tasks it runs at once."
   },
@@ -39873,6 +39879,15 @@
   },
   "machines.egress.waiting": {
     "value": "Reconnecting the agents’ internet. Their connections wait until it’s back."
+  },
+  "machines.egress.via": {
+    "value": "Agents use the internet of {{name}}"
+  },
+  "machines.egress.viaBy": {
+    "value": "Agents use the internet of {{name}} ({{person}})"
+  },
+  "machines.egress.viaHint": {
+    "value": "Websites see that computer’s location. Its owner can turn it off on its page."
   },
   "machines.moving.short": {
     "value": "Moving servers"
@@ -40643,6 +40658,24 @@
   },
   "devices.helpWorkspaceHint": {
     "value": "Each computer helps only if its owner allows it. Off: none helps, whatever its owner chose."
+  },
+  "devices.shareInternet": {
+    "value": "Agents use this computer's internet"
+  },
+  "devices.shareInternetHint": {
+    "value": "Websites the agents open go out through this computer's connection, so they see your location. Only websites, up to 5 GB a day, and never anything on your own network. While this computer is offline, the agents use their usual connection."
+  },
+  "devices.shareInternetInUse": {
+    "value": "In use now"
+  },
+  "devices.shareInternetOther": {
+    "value": "Agents use {{name}} now"
+  },
+  "devices.shareInternetPick": {
+    "value": "Use this one"
+  },
+  "devices.shareInternetJoin": {
+    "value": "The agents will also open websites through this computer's internet, so sites see your location. You can turn it off on its page."
   },
   "devices.connectedBy": {
     "value": "Connected by {{name}}"
@@ -42023,6 +42056,18 @@
   },
   "devices.notice.folderRequest": {
     "value": "<b>{{who}}</b> asks for the folder {{path}} on your <b>{{deviceName}}</b>"
+  },
+  "devices.notice.internetShared": {
+    "value": "Agents now open websites through the internet of <b>{{deviceName}}</b>"
+  },
+  "devices.notice.internetSharedLine": {
+    "value": "Only this workspace's agents, only websites, up to 5 GB a day, never anything on its own network. While it's offline, they use their usual connection."
+  },
+  "devices.notice.internetOff": {
+    "value": "Turn off"
+  },
+  "devices.notice.internetOffDone": {
+    "value": "Agents no longer use the internet of {{deviceName}}."
   },
   "devices.notice.once": {
     "value": "Allow once"

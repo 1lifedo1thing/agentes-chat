@@ -2421,6 +2421,20 @@
       "idx": 347,
       "version": "7",
       "when": 1795620378850,
+      "tag": "0350_egress_share",
+      "breakpoints": true
+    },
+    {
+      "idx": 348,
+      "version": "7",
+      "when": 1795620379850,
+      "tag": "0351_egress_share_notice",
+      "breakpoints": true
+    },
+    {
+      "idx": 349,
+      "version": "7",
+      "when": 1795620380850,
       "tag": "0352_channels_in_sectors",
       "breakpoints": true
     }

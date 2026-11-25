@@ -14828,10 +14828,20 @@ html:not([data-pointer]) .ac-typing__see:focus-visible {
 .settings-row--acts {
   row-gap: var(--space-2);
 }
+/* Several controls in that group (a button beside its switch) keep a gap between them. */
+.settings-row--acts > .settings-row__end {
+  gap: var(--space-2);
+}
 .settings-row__lead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
+  gap: 2px var(--space-3);
+}
+/* Its status goes under the name, as a line's does; on a phone, under the icon too, from the row's edge. */
+.settings-row__lead > .settings-row__status {
+  flex-basis: 100%;
+  padding-left: calc(28px + var(--space-3));
 }
 /* Configurações › Aprovações (ADR 0139): a row whose box is the choice, centred on its label, on the label's first line
    when a line says under it why it is off. */
@@ -15069,6 +15079,12 @@ html:not([data-pointer]) .app-icons__agent:focus-visible {
   .settings-row--lead:not(.settings-row--open, :has(> .settings-row__end))
     > .settings-row__text:has(> .settings-row__status) {
     display: contents;
+  }
+  .settings-row__lead:has(> .settings-row__status) {
+    row-gap: var(--space-2);
+  }
+  .settings-row__lead > .settings-row__status {
+    padding-left: 0;
   }
   .settings-row--lead:has(> .settings-row__end > .ac-switch)
     > .settings-row__text:has(> .settings-row__status)

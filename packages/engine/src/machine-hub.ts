@@ -5,6 +5,7 @@ import {
   type BrowserHandoffInfo,
   brainTopic,
   CLAUDE_SHARED_PROTOCOL,
+  EGRESS_SHARE_PROTOCOL,
   type ErrorReporter,
   HEARTBEAT_MS,
   HELLO_TIMEOUT_MS,
@@ -899,6 +900,7 @@ export function createMachineHub(deps: MachineHubDeps) {
       heartbeatMs,
       mcpOnce: true,
       observeEgress: machine.kind === "managed",
+      ...(machine.kind === "managed" && frame.protocol >= EGRESS_SHARE_PROTOCOL ? { egressRelay: true } : {}),
     });
     // Pings start with `welcome` (the runner's watchdog starts there), not after the slower work below.
     startPings(conn);

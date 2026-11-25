@@ -586,6 +586,8 @@ function itemWords(t: TFunction, n: AppNotification, dir: Dir, channelName: (id:
       ? computerOutageLine(t, n, locale)
       : n.kind === "usage_limit"
         ? usageLimitLine(t, n)
+        : n.kind === "device.internet_shared"
+          ? deviceNoticeLine(t, n)
         : widgetLine
           ? widgetLine
           : // What the right hand found is the headline itself: nothing under it says it again.

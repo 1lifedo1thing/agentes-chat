@@ -636,3 +636,12 @@ const OS_CODES = new Set(["linux", "darwin", "windows", "other"]);
 /** "macOS", "Windows", or the server's own words when it sends a full name with a version ("Ubuntu 24.04"). */
 export const osName = (t: TFunction, os: string) =>
   OS_CODES.has(os) ? (t as unknown as (key: string) => string)(`machines.os.${os}`) : os;
+
+/** ADR 0237: "Agents use the internet of Ana's laptop (Ana)" while a person's computer lends its internet; else null. */
+export function egressViaText(t: TFunction, m: Pick<Machine, "kind" | "online" | "egressVia">): string | null {
+  const via = m.kind === "managed" && m.online ? m.egressVia : null;
+  if (!via) return null;
+  return via.userName
+    ? t("machines.egress.viaBy", { name: via.name, person: via.userName })
+    : t("machines.egress.via", { name: via.name });
+}

@@ -280,6 +280,20 @@ export const spillUseOf = (d: Pick<ComputerDevice, "spill">): SpillUse =>
   d.spill.first ? "first" : d.spill.own ? "help" : "off";
 export const spillOfUse = (use: SpillUse) => ({ own: use !== "off", first: use === "first" });
 
+/**
+ * ADR 0237, under "Agents use this computer's internet": in use now, or which computer the agents use instead (the
+ * computer that lends now, `lending`, from the same list). Null: nothing to say.
+ */
+export function shareInternetText(t: TFunction, d: ComputerDevice, lending: ComputerDevice | null): string | null {
+  if (!d.shareInternet?.on) return null;
+  if (d.shareInternet.inUse) return t("devices.shareInternetInUse");
+  return lending && lending.id !== d.id ? t("devices.shareInternetOther", { name: lending.name }) : null;
+}
+
+/** The computer of a devices list whose internet the workspace's computer uses now (ADR 0237), if any. */
+export const lendingDevice = (devices: readonly ComputerDevice[] | undefined) =>
+  devices?.find((x) => x.shareInternet?.inUse) ?? null;
+
 /** A computer in the line's "More computers" list: "Online · macOS · 16 GB · your Claude Max plan" (`plan`: the viewer's there). */
 export const spillDeviceText = (t: TFunction, d: ComputerDevice, plan: string | null) =>
   [statusPill(t, d.status), computerLine(t, d), plan && t("queue.spill.plan", { plan })].filter(Boolean).join(" · ");
@@ -1232,7 +1246,8 @@ export type DeviceNoticeKind =
   | "device.waiting"
   | "device.tool_request"
   | "device.cli_request"
-  | "device.folder_request";
+  | "device.folder_request"
+  | "device.internet_shared";
 const NOTICE_KINDS = new Set<string>([
   "device.join_request",
   "device.in_use",
@@ -1241,6 +1256,7 @@ const NOTICE_KINDS = new Set<string>([
   "device.tool_request",
   "device.cli_request",
   "device.folder_request",
+  "device.internet_shared",
 ]);
 
 /**
@@ -1293,8 +1309,8 @@ export function deviceNoticeOf(
     device: str(s.label) ?? str(l.title) ?? "",
     agentId: actor?.id ?? str(s.agentId),
     userId: str(s.userId),
-    // A folder request's `latest.title` is the folder itself, not a person: it reads in the line, not as a name.
-    forName: join || kind === "device.folder_request" ? null : str(l.title),
+    // A folder request's `latest.title` is the folder itself, and a lent internet's the computer: neither is a person.
+    forName: join || kind === "device.folder_request" || kind === "device.internet_shared" ? null : str(l.title),
     text: str(l.text),
     join: join
       ? {

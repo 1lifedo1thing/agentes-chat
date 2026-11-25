@@ -2154,6 +2154,7 @@ export const featureKeysPtBR = {
       tool_request: "{{names}} pede para ligar {{tool}} no seu {{device}}",
       cli_request: "{{names}} pede para instalar {{tool}} no seu {{device}}",
       folder_request: "{{names}} pede a pasta {{path}} no seu {{device}}",
+      internet_shared: "Agora os agentes abrem sites pela internet de {{device}}",
       allowOnce: "Permitir uma vez",
       always: "Sempre permitir {{name}}",
       no: "Não",

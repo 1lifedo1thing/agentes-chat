@@ -16573,6 +16573,9 @@ export const en = {
       notLinkMaker: "Only the person who made the link can let this computer join.",
       widenForbidden: "Admins can only narrow who can use someone's own device.",
       spillOwnerOnly: "Only the person who connected this computer can turn its help on. You can turn it off.",
+      shareOwnerOnly:
+        "Only the person who connected this computer can let agents use its internet. You can turn it off.",
+      shareConnectedOnly: "Only a computer someone connected can share its internet with the agents.",
       tasksOwnerOnly: "Only the person who connected this computer can change how many tasks it runs at once.",
       tasksCloud: "The Cloud sizes this computer's room for tasks itself.",
       notHome: "Agents live on the workspace computer and use this one when they name it.",
@@ -16747,6 +16750,10 @@ export const en = {
       line: "Exit IP {{ip}}",
       hint: "The address websites see when the agents browse. It updates when the computer’s network changes.",
       waiting: "Reconnecting the agents’ internet. Their connections wait until it’s back.",
+      /** The workspace's computer opens websites through a person's computer's internet (ADR 0237). */
+      via: "Agents use the internet of {{name}}",
+      viaBy: "Agents use the internet of {{name}} ({{person}})",
+      viaHint: "Websites see that computer’s location. Its owner can turn it off on its page.",
     },
     /** The workspace's own computer, away while it moves to another server: never "offline" or "not answering". */
     moving: {
@@ -17048,6 +17055,16 @@ export const en = {
     /** Settings › Devices, admins: the workspace's switch over every computer's own (`devicesHelp`). */
     helpWorkspace: "Computers help when the team's is full or away",
     helpWorkspaceHint: "Each computer helps only if its owner allows it. Off: none helps, whatever its owner chose.",
+    /** A person's computer lends its internet to the workspace's own computer (ADR 0237). */
+    shareInternet: "Agents use this computer's internet",
+    shareInternetHint:
+      "Websites the agents open go out through this computer's connection, so they see your location. Only websites, up to 5 GB a day, and never anything on your own network. While this computer is offline, the agents use their usual connection.",
+    shareInternetInUse: "In use now",
+    shareInternetOther: "Agents use {{name}} now",
+    shareInternetPick: "Use this one",
+    /** Under Let it join, in a workspace with its own computer. */
+    shareInternetJoin:
+      "The agents will also open websites through this computer's internet, so sites see your location. You can turn it off on its page.",
     connectedBy: "Connected by {{name}}",
     downloadFor: "Download for {{system}}",
     downloadApp: "Download the app",
@@ -17673,6 +17690,17 @@ export const en = {
       toolRequest: "<b>{{who}}</b> asks you to turn on {{tool}} on your <b>{{deviceName}}</b>",
       cliRequest: "<b>{{who}}</b> asks you to install {{tool}} on your <b>{{deviceName}}</b>",
       folderRequest: "<b>{{who}}</b> asks for the folder {{path}} on your <b>{{deviceName}}</b>",
+      /**
+       * Once, for a computer paired before agents could use a person's internet (ADR 0237): to its owner, or to admins
+       * for a computer marked the workspace's. `deviceName` the computer's name.
+       */
+      internetShared: "Agents now open websites through the internet of <b>{{deviceName}}</b>",
+      /** Under it: what lending keeps out and what happens while the computer is offline. */
+      internetSharedLine:
+        "Only this workspace's agents, only websites, up to 5 GB a day, never anything on its own network. While it's offline, they use their usual connection.",
+      /** Its one button: stops lending this computer's internet. */
+      internetOff: "Turn off",
+      internetOffDone: "Agents no longer use the internet of {{deviceName}}.",
       once: "Allow once",
       always: "Always",
       no: "No",

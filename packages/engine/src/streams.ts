@@ -94,6 +94,8 @@ export interface ClaimedStream {
   data(data: string | Uint8Array): void;
   /** Its socket ended; `code` as the runner closed it (`STREAM_CLOSE`), absent when the server ended it. */
   closed(code?: number): void;
+  /** Its taker sends `stream.ready` itself, once what the socket serves is there (a lent connection, ADR 0237). */
+  readyLater?: boolean;
 }
 
 /** A data socket the runner opened: its stream once its hello named one. */
@@ -125,7 +127,7 @@ export interface StreamBrokerDeps {
    * A hello naming no stream of the broker's: another part of the server may take that data socket (an agent
    * browser's live view, ADR 0040 §7.1) once its machine is known. Null leaves it unknown.
    */
-  claim?(streamId: string, machineId: string, socket: StreamSocket): ClaimedStream | null;
+  claim?(streamId: string, machineId: string, socket: StreamSocket, hello: StreamHello): ClaimedStream | null;
   /** A stream got its data socket (session screening starts), once. */
   onReady?(stream: Stream): unknown;
   /** A stream that got its data socket ended (the audit). */
@@ -364,12 +366,12 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
     if (!machine) return endLink(link, STREAM_CLOSE.badToken, "bad token");
     const s = streams.get(hello.streamId);
     if (!s) {
-      const taker = deps.claim?.(hello.streamId, machine.id, link.socket) ?? null;
+      const taker = deps.claim?.(hello.streamId, machine.id, link.socket, hello) ?? null;
       if (taker && !link.closed) {
         waiting.delete(link);
         link.claimed = taker;
         claimed.add(link);
-        quietly(() => link.socket.send(JSON.stringify({ type: "stream.ready" })));
+        if (!taker.readyLater) quietly(() => link.socket.send(JSON.stringify({ type: "stream.ready" })));
         return;
       }
       taker?.closed();
