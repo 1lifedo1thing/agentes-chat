@@ -4281,7 +4281,9 @@
       "noAi": "未连接 AI"
     },
     "bySelf": "由 {{name}} 设置 · 完成后自动清除",
-    "byAuto": "它现在正在做的事"
+    "byAuto": "它现在正在做的事",
+    "byPrivate": "在私人对话中 · 只有对话里的人能看到详情",
+    "openWork": "打开对话"
   },
   "agentWork": {
     "working": "工作中",
@@ -4290,6 +4292,7 @@
     "queued": "排队中",
     "here": "这里",
     "routine": "在执行例行任务",
+    "private": "在私人对话中",
     "yourApproval": "你的批准",
     "yourAnswer": "你的回答",
     "later": "跟进 {{when}}",

@@ -4833,6 +4833,10 @@ export const en = {
     },
     bySelf: "Written by {{name}} · clears when it's done",
     byAuto: "What it's doing now",
+    /** Under its line when its work is in a conversation the reader doesn't read (someone else's DM). */
+    byPrivate: "In a private conversation · only the people in it see the details",
+    /** The line's tip and name for screen readers when it opens where the work is. */
+    openWork: "Open the conversation",
   },
   /**
    * An agent's work in a list's line and on its profile card (ADR 0084 addendum of 2026-11-13), lowercase: where it
@@ -4847,6 +4851,8 @@ export const en = {
     /** Its own work in the conversation the list belongs to (the members column). */
     here: "here",
     routine: "on a routine",
+    /** In a conversation the reader doesn't read (someone else's DM, a private channel). */
+    private: "in a private conversation",
     /** After "Waiting for you" on the profile card. */
     yourApproval: "your approval",
     yourAnswer: "your answer",

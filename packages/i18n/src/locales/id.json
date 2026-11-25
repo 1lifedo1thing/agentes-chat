@@ -4297,7 +4297,9 @@
       "noAi": "Belum ada AI yang terhubung"
     },
     "bySelf": "Ditulis oleh {{name}} · hilang setelah selesai",
-    "byAuto": "Yang sedang dilakukannya"
+    "byAuto": "Yang sedang dilakukannya",
+    "byPrivate": "Di percakapan pribadi · hanya orang di dalamnya yang melihat detailnya",
+    "openWork": "Buka percakapan"
   },
   "agentWork": {
     "working": "sedang bekerja",
@@ -4306,6 +4308,7 @@
     "queued": "dalam antrean",
     "here": "di sini",
     "routine": "dalam rutinitas",
+    "private": "di percakapan pribadi",
     "yourApproval": "persetujuanmu",
     "yourAnswer": "jawabanmu",
     "later": "tindak lanjut {{when}}",

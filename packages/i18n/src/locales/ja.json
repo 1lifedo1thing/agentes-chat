@@ -4281,7 +4281,9 @@
       "noAi": "AIが接続されていません"
     },
     "bySelf": "{{name}}が設定 · 完了するとクリアされます",
-    "byAuto": "今やっていること"
+    "byAuto": "今やっていること",
+    "byPrivate": "非公開の会話で作業中 · 詳細は参加者だけが見られます",
+    "openWork": "会話を開く"
   },
   "agentWork": {
     "working": "作業中",
@@ -4290,6 +4292,7 @@
     "queued": "順番待ち",
     "here": "ここ",
     "routine": "ルーティン中",
+    "private": "非公開の会話で",
     "yourApproval": "あなたの承認",
     "yourAnswer": "あなたの回答",
     "later": "フォローアップ {{when}}",

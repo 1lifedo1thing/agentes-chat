@@ -4607,7 +4607,9 @@
       "noAi": "Nessuna IA collegata"
     },
     "bySelf": "Scritto da {{name}} · si cancella quando ha finito",
-    "byAuto": "Cosa sta facendo ora"
+    "byAuto": "Cosa sta facendo ora",
+    "byPrivate": "In una conversazione privata · solo chi ne fa parte vede i dettagli",
+    "openWork": "Apri la conversazione"
   },
   "agentWork": {
     "working": "al lavoro",
@@ -4616,6 +4618,7 @@
     "queued": "in coda",
     "here": "qui",
     "routine": "in una routine",
+    "private": "in una conversazione privata",
     "yourApproval": "la tua approvazione",
     "yourAnswer": "la tua risposta",
     "later": "follow-up {{when}}",
