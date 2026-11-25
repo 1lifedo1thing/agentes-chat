@@ -1706,6 +1706,12 @@
   "auth.desktop.doneLead": {
     "value": "You're signed in to the agentes app. You can close this tab."
   },
+  "auth.desktop.back": {
+    "value": "Going back to the app."
+  },
+  "auth.desktop.openApp": {
+    "value": "Open the app"
+  },
   "auth.desktop.expired": {
     "value": "This request expired."
   },
@@ -3021,7 +3027,7 @@
     "value": "Choose how to bring them. You check everything before anything is made."
   },
   "onboarding.import.sheet.paths.best": {
-    "value": "the most complete"
+    "value": "The most complete"
   },
   "onboarding.import.sheet.paths.safe": {
     "value": "{{app}}'s keys, passwords and sessions never come, whichever way you pick."
@@ -9911,6 +9917,15 @@
   "agentActions.channel.agent_added": {
     "value": "Brought {{agentName}} into <b>#{{channel}}</b>"
   },
+  "agentActions.channel.lead_changed": {
+    "value": "Made {{agentName}} responsible for <b>#{{channel}}</b>"
+  },
+  "agentActions.channel.lead_changed_self": {
+    "value": "Became responsible for <b>#{{channel}}</b>"
+  },
+  "agentActions.channel.lead_changed_none": {
+    "value": "Left <b>#{{channel}}</b> with no agent responsible"
+  },
   "agentActions.channel.created": {
     "value": "Created the channel <b>#{{name}}</b>"
   },
@@ -10693,6 +10708,9 @@
   "presence.waiting": {
     "value": "Waiting for you"
   },
+  "presence.idle": {
+    "value": "Idle"
+  },
   "presence.lower.online": {
     "value": "online"
   },
@@ -11061,6 +11079,9 @@
   },
   "accountSwitch.extra": {
     "value": "Went on with the <to/> account because the <from/> account would go into paid extra usage"
+  },
+  "accountSwitch.busy": {
+    "value": "Went on with the <to/> account because the <from/> account was already answering as many conversations as it can at once"
   },
   "channelRefs.list": {
     "value": "Channels"
@@ -30447,6 +30468,9 @@
   "brain.reasons.system": {
     "value": "{{program}} doesn't run on {{computer}}'s system yet."
   },
+  "brain.reasons.systemAntigravity": {
+    "value": "Gemini plans don't run on {{computer}} yet: on Windows the Antigravity CLI keeps its Google sign-in in the Credential Manager, which agentes.chat can't yet keep apart for each account. Use a Gemini API key instead."
+  },
   "brain.reasons.windows_sandbox": {
     "value": "{{computer}}'s Windows can't isolate {{program}}'s commands. Choose Claude or an API key instead, or update that computer to Windows 11 24H2 or newer, with its latest updates."
   },
@@ -30622,7 +30646,7 @@
     "value": "Your computers"
   },
   "queue.spill.text": {
-    "value": "When this computer is full, replies to you can start on one of yours. Long work and the agents' files stay here."
+    "value": "When this computer is full or away, your agents can start on one of yours. Missions, code sessions and agents with repositories stay here."
   },
   "queue.spill.plan": {
     "value": "your {{plan}} plan"
@@ -36235,6 +36259,9 @@
   "toolNames.label.add_agent_to_channel": {
     "value": "Add agent to a channel"
   },
+  "toolNames.label.set_channel_lead": {
+    "value": "Choose the agent responsible for a channel"
+  },
   "toolNames.label.ask_agent": {
     "value": "Ask another agent"
   },
@@ -39521,7 +39548,7 @@
     "value": "Admins can only narrow who can use someone's own device."
   },
   "errors.device.spillOwnerOnly": {
-    "value": "Only the person who connected this computer can let replies think on it. You can turn it off."
+    "value": "Only the person who connected this computer can turn its help on. You can turn it off."
   },
   "errors.device.tasksOwnerOnly": {
     "value": "Only the person who connected this computer can change how many tasks it runs at once."
@@ -39891,6 +39918,15 @@
   },
   "machines.egress.waiting": {
     "value": "Reconnecting the agents’ internet. Their connections wait until it’s back."
+  },
+  "machines.moving.short": {
+    "value": "Moving servers"
+  },
+  "machines.moving.line": {
+    "value": "Moving to a new server… back in a few minutes"
+  },
+  "machines.moving.named": {
+    "value": "{{computer}} is moving to a new server… back in a few minutes"
   },
   "machines.online": {
     "value": "Online"
@@ -40600,16 +40636,22 @@
     "value": "It stays when the person who connected it leaves, and everyone can use it while nobody owns it."
   },
   "devices.spillOwn": {
-    "value": "Your replies can think here"
+    "value": "Help when the team's computer is full or away"
   },
   "devices.spillOwnHint": {
-    "value": "When an agent's computer is full, its replies to you start here."
+    "value": "When your agents' computer is full or away, their replies, asks and routines can think here with your sign-in."
   },
-  "devices.spillOthers": {
-    "value": "Other people's agents can think here"
+  "devices.spillTeamHint": {
+    "value": "When an agent's computer is full or away, its replies, asks and routines can think here with its owner's sign-in on this computer."
   },
-  "devices.spillOthersHint": {
-    "value": "When an agent's computer is full, its replies to other people can start here too."
+  "devices.spillWorkspaceOff": {
+    "value": "An admin turned this off for the workspace."
+  },
+  "devices.helpWorkspace": {
+    "value": "Computers help when the team's is full or away"
+  },
+  "devices.helpWorkspaceHint": {
+    "value": "Each computer helps only if its owner allows it. Off: none helps, whatever its owner chose."
   },
   "devices.connectedBy": {
     "value": "Connected by {{name}}"
@@ -45441,6 +45483,15 @@
   "chat.standIn.change": {
     "value": "Change"
   },
+  "chat.spilled.full": {
+    "value": "Thought on {{to}}: {{from}} was full."
+  },
+  "chat.spilled.away": {
+    "value": "Thought on {{to}}: {{from}} was away."
+  },
+  "chat.spilled.itsComputer": {
+    "value": "its computer"
+  },
   "chat.modelStandIn.text": {
     "value": "{{plan}} refused {{from}} with this key. I answered with {{to}}, which works with it."
   },
@@ -45476,6 +45527,15 @@
   },
   "chat.wait.said": {
     "value": "“{{text}}”"
+  },
+  "chat.trail.label": {
+    "value": "What {{name}} did so far"
+  },
+  "chat.trail.earlier": {
+    "value": {
+      "one": "{{count}} earlier step",
+      "other": "{{count}} earlier steps"
+    }
   },
   "chat.consult.asking": {
     "value": "{{from}} is asking {{to}}"
@@ -46217,6 +46277,9 @@
   "chat.work.step.addingAgent": {
     "value": "Added an agent to a channel"
   },
+  "chat.work.step.settingChannelLead": {
+    "value": "Chose the agent responsible for a channel"
+  },
   "chat.work.step.readingConversation": {
     "value": "Read the conversation"
   },
@@ -46573,6 +46636,9 @@
   },
   "chat.activity.addingAgent": {
     "value": "adding an agent to a channel"
+  },
+  "chat.activity.settingChannelLead": {
+    "value": "choosing the agent responsible for a channel"
   },
   "chat.activity.readingConversation": {
     "value": "reading the conversation"
@@ -49915,6 +49981,9 @@
   "agentComputer.state.offlineHelpPlain": {
     "value": "{{name}} waits for the computer to come back."
   },
+  "agentComputer.state.helping": {
+    "value": "Meanwhile, its new work can think on {{names}}."
+  },
   "agentComputer.state.noRoom": {
     "value": "{{computer}} is showing as many screens as it can. Try again in a moment."
   },
@@ -52968,6 +53037,210 @@
   },
   "problemReport.settingsText": {
     "value": "Send the technical details to the agentes.chat team."
+  },
+  "live.type.font": {
+    "value": "Font"
+  },
+  "live.type.search": {
+    "value": "Search fonts"
+  },
+  "live.type.noResults": {
+    "value": "No font by that name"
+  },
+  "live.type.list": {
+    "value": "Fonts"
+  },
+  "live.type.groups.slides": {
+    "value": "In this presentation"
+  },
+  "live.type.groups.canvas": {
+    "value": "On this canvas"
+  },
+  "live.type.groups.document": {
+    "value": "In this document"
+  },
+  "live.type.groups.company": {
+    "value": "From your company"
+  },
+  "live.type.groups.sans": {
+    "value": "Sans serif"
+  },
+  "live.type.groups.serif": {
+    "value": "Serif"
+  },
+  "live.type.groups.display": {
+    "value": "For headings"
+  },
+  "live.type.groups.mono": {
+    "value": "Monospaced"
+  },
+  "live.type.groups.handwriting": {
+    "value": "Handwritten"
+  },
+  "live.type.headings": {
+    "value": "Headings"
+  },
+  "live.type.body": {
+    "value": "Text"
+  },
+  "live.type.fromDrive": {
+    "value": "From the Drive"
+  },
+  "live.type.ownFont": {
+    "value": "The file's font"
+  },
+  "live.type.fileFonts.slides": {
+    "value": "Presentation fonts"
+  },
+  "live.type.fileFonts.document": {
+    "value": "Document fonts"
+  },
+  "live.type.fileFontsNote": {
+    "value": "They apply to the whole file. A text with a font of its own keeps it."
+  },
+  "live.type.headingFont": {
+    "value": "Heading font"
+  },
+  "live.type.bodyFont": {
+    "value": "Text font"
+  },
+  "live.type.bring": {
+    "value": "Bring a font from the Drive…"
+  },
+  "live.type.bringButton": {
+    "value": "Bring from the Drive"
+  },
+  "live.type.bringTitle": {
+    "value": "Bring a font from the Drive"
+  },
+  "live.type.bringSearch": {
+    "value": "Search the Drive's fonts"
+  },
+  "live.type.bringEmpty": {
+    "value": "No fonts in the Drive. Add a .ttf, .otf or .woff file to the Drive first."
+  },
+  "live.type.brought": {
+    "value": "{{name}} is in the file now"
+  },
+  "live.type.notFont": {
+    "value": "This file isn't a font. Pick a .ttf, .otf or .woff file."
+  },
+  "live.type.done": {
+    "value": "Done"
+  },
+  "live.type.text": {
+    "value": "Text style"
+  },
+  "live.type.glyph": {
+    "value": "Aa"
+  },
+  "live.type.weight": {
+    "value": "Weight"
+  },
+  "live.type.weights.w300": {
+    "value": "Light"
+  },
+  "live.type.weights.w400": {
+    "value": "Regular"
+  },
+  "live.type.weights.w500": {
+    "value": "Medium"
+  },
+  "live.type.weights.w600": {
+    "value": "Semibold"
+  },
+  "live.type.weights.w700": {
+    "value": "Bold"
+  },
+  "live.type.weights.w800": {
+    "value": "Extra bold"
+  },
+  "live.type.tracking": {
+    "value": "Letter spacing"
+  },
+  "live.type.trackings.tight": {
+    "value": "Tighter"
+  },
+  "live.type.trackings.normal": {
+    "value": "Normal"
+  },
+  "live.type.trackings.open": {
+    "value": "Open"
+  },
+  "live.type.trackings.wide": {
+    "value": "Wide"
+  },
+  "live.type.lineHeight": {
+    "value": "Line height"
+  },
+  "live.type.caps": {
+    "value": "All caps"
+  },
+  "live.type.highlight": {
+    "value": "Highlight"
+  },
+  "live.type.highlights.none": {
+    "value": "None"
+  },
+  "live.type.highlights.yellow": {
+    "value": "Yellow"
+  },
+  "live.type.highlights.green": {
+    "value": "Green"
+  },
+  "live.type.highlights.blue": {
+    "value": "Blue"
+  },
+  "live.type.highlights.pink": {
+    "value": "Pink"
+  },
+  "live.type.highlights.orange": {
+    "value": "Orange"
+  },
+  "live.type.effects": {
+    "value": "Effects"
+  },
+  "live.type.shadow": {
+    "value": "Shadow"
+  },
+  "live.type.shadows.none": {
+    "value": "None"
+  },
+  "live.type.shadows.soft": {
+    "value": "Soft"
+  },
+  "live.type.shadows.strong": {
+    "value": "Strong"
+  },
+  "live.type.border": {
+    "value": "Border"
+  },
+  "live.type.dashes.solid": {
+    "value": "Solid"
+  },
+  "live.type.dashes.dashed": {
+    "value": "Dashed"
+  },
+  "live.type.dashes.dotted": {
+    "value": "Dotted"
+  },
+  "live.type.gradient": {
+    "value": "Gradient"
+  },
+  "live.type.gradients.none": {
+    "value": "None"
+  },
+  "live.type.gradients.ocean": {
+    "value": "Ocean"
+  },
+  "live.type.gradients.graphite": {
+    "value": "Graphite"
+  },
+  "live.type.gradients.sunset": {
+    "value": "Sunset"
+  },
+  "live.type.gradients.violet": {
+    "value": "Violet"
   },
   "live.slides.rail.label": {
     "value": "Slides"

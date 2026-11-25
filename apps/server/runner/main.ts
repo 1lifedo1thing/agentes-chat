@@ -38,6 +38,7 @@ import {
 } from "./browser-bind-check";
 import { ensureBrowserBindPolicy, prepareAgents } from "./browser-bind-policy";
 import { browserPortsForUid } from "./browser-ports";
+import { scriptCheck } from "./command-gate";
 import { computerNow } from "./computer-now";
 import {
   accessToStore,
@@ -1573,6 +1574,9 @@ async function main(argv: string[]): Promise<number> {
       runTaskWrapper(path.resolve(sub));
       return new Promise<number>(() => {});
     }
+    case "script-check":
+      // A long script's check, for the runner that started it (command-gate.ts).
+      return scriptCheck(process.stdin, process.stdout);
     case "migrate":
       // Reads another app's agents on this computer into a file for the import page; it needs no connection.
       return runMigrate({
