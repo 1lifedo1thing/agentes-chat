@@ -3,6 +3,7 @@ import type { AgentStatusLine, ConsultationWait, RunConsultation } from "../api/
 import type { LiveConsult, LiveConsultStatus } from "../realtime/consults";
 import type { LiveRun } from "../realtime/streams";
 import type { TypingWho } from "../realtime/typing";
+import { durationText } from "./computer-queue";
 import { formatLineTime, joinNames } from "./format";
 import { agentGrammar } from "./grammar";
 import { MAIL_BRANDS } from "./mail";
@@ -664,12 +665,11 @@ export function barAsking(entries: ActivityEntry[]): EntryConsult | undefined {
   return consult?.status === "asking" ? consult : undefined;
 }
 
-/** " · 4 s" shows from 2 s on: minutes and seconds past a minute. */
-export function elapsedParts(ms: number): { m: number; s: number } | null {
-  const secs = Math.floor(Math.max(0, ms) / 1000);
-  if (secs < 2) return null;
-  return { m: Math.floor(secs / 60), s: secs % 60 };
-}
+/**
+ * A run's time shows only past a minute, coarse ("1 min", "2 min"): seconds ticking by make an agent at work feel
+ * slow.
+ */
+export const RUN_CLOCK_AFTER_MS = 60_000;
 
 /**
  * The turn the bar tells for one agent on its own, its phrase and its time alike: a turn that failed can still be
@@ -678,15 +678,14 @@ export function elapsedParts(ms: number): { m: number; s: number } | null {
 const turnAtWork = (runs: LiveRun[], agentId: string) =>
   runs.find((r) => r.agentId === agentId && r.status !== "failed");
 
-/** How long a run has been at it ("16 s", "1 min 5 s"), from 2 s on: the bar's time and its live row's alike. */
+/** How long a run has been at it ("1 min", "2 min"), from a minute on: the bar's time and its live row's alike. */
 export function runElapsed(t: TFunction, run: Pick<LiveRun, "startedAt" | "workingSince">, now: number): string | null {
   // The work it is doing now (`workingSince`), not the run's first start: a run that posted or waited counts again.
-  const took = elapsedParts(now - (run.workingSince ?? run.startedAt ?? now));
-  if (!took) return null;
-  return took.m > 0 ? t("run.elapsedMinutes", { m: took.m, s: took.s }) : t("run.elapsedSeconds", { n: took.s });
+  const took = now - (run.workingSince ?? run.startedAt ?? now);
+  return took < RUN_CLOCK_AFTER_MS ? null : durationText(t, took);
 }
 
-/** How long one agent on its own has been at it ("16 s", "1 min 5 s"): none for several, or while it asks another. */
+/** How long one agent on its own has been at it ("1 min", "2 min"): none for several, or while it asks another. */
 export function barElapsed(t: TFunction, entries: ActivityEntry[], runs: LiveRun[], now: number): string | null {
   const agents = entries.filter((e) => e.type === "agent");
   const only = agents.length === 1 ? agents[0] : undefined;
