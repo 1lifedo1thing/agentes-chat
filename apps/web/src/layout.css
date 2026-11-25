@@ -6533,15 +6533,17 @@ html:not([data-pointer]) .tr-ok:focus-visible {
   color: var(--ink);
   font-weight: 600;
 }
+/* The unread pill stands whole inside the sidebar, 4 in from its edge: flush with the edge it was cut in half by the
+   window, and the phone's drawer drew its frame through it. */
 .sidebar__item[data-kind="channel"][data-unread="true"]::before {
   content: "";
   position: absolute;
-  left: -12px;
+  left: -8px;
   top: 50%;
   width: 4px;
   height: 8px;
   margin-top: -4px;
-  border-radius: 0 4px 4px 0;
+  border-radius: 2px;
   background: var(--ink);
   pointer-events: none;
 }
@@ -12947,6 +12949,10 @@ html[data-menu-overlay] .shell {
 }
 .sidebar__section-head:hover {
   background: var(--plate-soft);
+}
+/* A closed part's or sector's unread count ends on the rows' counts' edge (8 in from the row, the head's 2 plus 6). */
+.sidebar__section-head > .sidebar__unread {
+  margin-inline-end: calc(var(--space-2) - 2px);
 }
 /* A category's header is laid out as a row: its chevron centred in the icons' place, its name in the names' column. */
 .sidebar__section-toggle {
