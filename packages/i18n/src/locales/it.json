@@ -21032,6 +21032,9 @@
     "failed": "Impossibile aprirlo ora. Riprova tra un attimo.",
     "adminsOnly": "Solo i proprietari e gli admin dello spazio di lavoro gestiscono il suo piano agentes.chat.",
     "seeOptions": "Vedi le opzioni",
+    "plan": "Piano",
+    "planMonth": "{{plan}}, mensile",
+    "planYear": "{{plan}}, annuale",
     "people": "Persone",
     "files": "File",
     "usedOf": "{{used}} su {{limit}}",
@@ -22680,6 +22683,36 @@
     },
     "approvals": "Ciò che va ai clienti aspetta la tua approvazione. Puoi lasciarlo andare più avanti, quando ti fiderai di loro.",
     "approvalsPersonal": "Tutto ciò che viene inviato, pagato o prenotato a tuo nome aspetta la tua approvazione. Puoi lasciarlo andare più avanti, quando ti fiderai di loro."
+  },
+  "paidMoment": {
+    "on": "Il tuo piano è attivo",
+    "onPlan": "Hai il piano {{plan}}",
+    "onMonth": "Hai il piano {{plan}}, mensile",
+    "onYear": "Hai il piano {{plan}}, annuale",
+    "room": {
+      "both_one": "Spazio per {{people}} persona e {{files}} di file.",
+      "both_other": "Spazio per {{people}} persone e {{files}} di file.",
+      "people_one": "Spazio per {{people}} persona, senza limiti per i file.",
+      "people_other": "Spazio per {{people}} persone, senza limiti per i file.",
+      "files": "Spazio per {{files}} di file, senza limiti per le persone.",
+      "none": "Nessun limite per persone o file."
+    },
+    "computer": {
+      "on": "Il tuo computer è acceso.",
+      "starting": "Il tuo computer è in preparazione.",
+      "startingTold": "Il tuo computer è in preparazione. Ti avvisiamo quando è acceso."
+    },
+    "hello": "Ciao, {{first}}",
+    "hi": "Ciao",
+    "say": "Ci siamo tutti. Al lavoro.",
+    "sayOn": "Ci siamo tutti e il computer è acceso. Al lavoro.",
+    "sayStarting": "Ci siamo tutti. Ti avvisiamo quando il computer è acceso.",
+    "next": {
+      "ai": "Collega un'IA",
+      "people": "Invita persone",
+      "open": "Entra nello spazio di lavoro",
+      "talk": "Parla con {{name}}"
+    }
   },
   "arrival": {
     "beta": {

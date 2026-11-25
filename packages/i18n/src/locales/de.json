@@ -20348,6 +20348,9 @@
     "failed": "Konnte gerade nicht geöffnet werden. Versuch es gleich noch einmal.",
     "adminsOnly": "Nur Inhaber und Admins des Workspace verwalten seinen agentes.chat-Tarif.",
     "seeOptions": "Optionen ansehen",
+    "plan": "Tarif",
+    "planMonth": "{{plan}}, monatlich",
+    "planYear": "{{plan}}, jährlich",
     "people": "Personen",
     "files": "Dateien",
     "usedOf": "{{used}} von {{limit}}",
@@ -21901,6 +21904,36 @@
     },
     "approvals": "Was an Kunden rausgeht, wartet auf deine Freigabe. Du kannst es später freigeben, wenn du ihnen vertraust.",
     "approvalsPersonal": "Alles, was in deinem Namen gesendet, bezahlt oder gebucht wird, wartet auf deine Freigabe. Du kannst es später freigeben, wenn du ihnen vertraust."
+  },
+  "paidMoment": {
+    "on": "Dein Tarif ist aktiv",
+    "onPlan": "Du nutzt jetzt {{plan}}",
+    "onMonth": "Du nutzt jetzt {{plan}}, monatlich",
+    "onYear": "Du nutzt jetzt {{plan}}, jährlich",
+    "room": {
+      "both_one": "Platz für {{people}} Person und {{files}} an Dateien.",
+      "both_other": "Platz für {{people}} Personen und {{files}} an Dateien.",
+      "people_one": "Platz für {{people}} Person, ohne Limit für Dateien.",
+      "people_other": "Platz für {{people}} Personen, ohne Limit für Dateien.",
+      "files": "Platz für {{files}} an Dateien, ohne Limit für Personen.",
+      "none": "Kein Limit für Personen oder Dateien."
+    },
+    "computer": {
+      "on": "Dein Computer läuft.",
+      "starting": "Dein Computer wird vorbereitet.",
+      "startingTold": "Dein Computer wird vorbereitet. Wir sagen dir Bescheid, sobald er läuft."
+    },
+    "hello": "Hallo, {{first}}",
+    "hi": "Hallo",
+    "say": "Wir sind alle da. Legen wir los.",
+    "sayOn": "Wir sind alle da, und der Computer läuft. Legen wir los.",
+    "sayStarting": "Wir sind alle da. Wir sagen dir Bescheid, sobald der Computer läuft.",
+    "next": {
+      "ai": "KI verbinden",
+      "people": "Leute einladen",
+      "open": "Zum Workspace",
+      "talk": "Mit {{name}} sprechen"
+    }
   },
   "arrival": {
     "beta": {

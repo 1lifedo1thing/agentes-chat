@@ -20272,6 +20272,9 @@
     "failed": "Şu anda açılamadı. Birazdan tekrar deneyin.",
     "adminsOnly": "Çalışma alanının agentes.chat planını yalnızca sahipleri ve yöneticileri yönetir.",
     "seeOptions": "Seçenekleri gör",
+    "plan": "Plan",
+    "planMonth": "{{plan}}, aylık",
+    "planYear": "{{plan}}, yıllık",
     "people": "Kişiler",
     "files": "Dosyalar",
     "usedOf": "{{used}} / {{limit}}",
@@ -21825,6 +21828,36 @@
     },
     "approvals": "Müşterilere gidenler onayını bekler. Onlara güvendiğinde daha sonra serbest bırakabilirsin.",
     "approvalsPersonal": "Senin adına gönderilen, ödenen veya rezerve edilen her şey onayını bekler. Onlara güvendiğinde daha sonra serbest bırakabilirsin."
+  },
+  "paidMoment": {
+    "on": "Planınız etkin",
+    "onPlan": "{{plan}} planındasınız",
+    "onMonth": "{{plan}} planındasınız, aylık",
+    "onYear": "{{plan}} planındasınız, yıllık",
+    "room": {
+      "both_one": "{{people}} kişi ve {{files}} dosya için yer var.",
+      "both_other": "{{people}} kişi ve {{files}} dosya için yer var.",
+      "people_one": "{{people}} kişi için yer var, dosyalarda sınır yok.",
+      "people_other": "{{people}} kişi için yer var, dosyalarda sınır yok.",
+      "files": "{{files}} dosya için yer var, kişi sayısında sınır yok.",
+      "none": "Kişi ve dosya sınırı yok."
+    },
+    "computer": {
+      "on": "Bilgisayarınız açık.",
+      "starting": "Bilgisayarınız hazırlanıyor.",
+      "startingTold": "Bilgisayarınız hazırlanıyor. Açıldığında size haber vereceğiz."
+    },
+    "hello": "Merhaba {{first}}",
+    "hi": "Merhaba",
+    "say": "Hepimiz buradayız. Haydi işe koyulalım.",
+    "sayOn": "Hepimiz buradayız ve bilgisayar açık. Haydi işe koyulalım.",
+    "sayStarting": "Hepimiz buradayız. Bilgisayar açıldığında size haber vereceğiz.",
+    "next": {
+      "ai": "Yapay zeka bağla",
+      "people": "Kişileri davet et",
+      "open": "Çalışma alanına git",
+      "talk": "{{name}} ile konuş"
+    }
   },
   "arrival": {
     "beta": {

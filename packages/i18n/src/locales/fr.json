@@ -21015,6 +21015,9 @@
     "failed": "Impossible de l'ouvrir pour le moment. Réessayez dans un instant.",
     "adminsOnly": "Seuls les propriétaires et admins de l'espace de travail gèrent son abonnement agentes.chat.",
     "seeOptions": "Voir les options",
+    "plan": "Abonnement",
+    "planMonth": "{{plan}}, au mois",
+    "planYear": "{{plan}}, à l'année",
     "people": "Personnes",
     "files": "Fichiers",
     "usedOf": "{{used}} sur {{limit}}",
@@ -22663,6 +22666,36 @@
     },
     "approvals": "Ce qui part vers les clients attend ton accord. Tu pourras le libérer plus tard, quand tu leur feras confiance.",
     "approvalsPersonal": "Tout ce qui est envoyé, payé ou réservé en ton nom attend ton accord. Tu pourras le libérer plus tard, quand tu leur feras confiance."
+  },
+  "paidMoment": {
+    "on": "Votre abonnement est actif",
+    "onPlan": "Vous êtes sur {{plan}}",
+    "onMonth": "Vous êtes sur {{plan}}, au mois",
+    "onYear": "Vous êtes sur {{plan}}, à l'année",
+    "room": {
+      "both_one": "De la place pour {{people}} personne et {{files}} de fichiers.",
+      "both_other": "De la place pour {{people}} personnes et {{files}} de fichiers.",
+      "people_one": "De la place pour {{people}} personne, sans limite de fichiers.",
+      "people_other": "De la place pour {{people}} personnes, sans limite de fichiers.",
+      "files": "De la place pour {{files}} de fichiers, sans limite de personnes.",
+      "none": "Aucune limite de personnes ni de fichiers."
+    },
+    "computer": {
+      "on": "Votre ordinateur est allumé.",
+      "starting": "Votre ordinateur se prépare.",
+      "startingTold": "Votre ordinateur se prépare. Nous vous prévenons dès qu'il est allumé."
+    },
+    "hello": "Bonjour, {{first}}",
+    "hi": "Bonjour",
+    "say": "Nous sommes tous là. Au travail.",
+    "sayOn": "Nous sommes tous là et l'ordinateur est allumé. Au travail.",
+    "sayStarting": "Nous sommes tous là. Nous vous prévenons dès que l'ordinateur est allumé.",
+    "next": {
+      "ai": "Connecter une IA",
+      "people": "Inviter des personnes",
+      "open": "Entrer dans l'espace de travail",
+      "talk": "Parler à {{name}}"
+    }
   },
   "arrival": {
     "beta": {
