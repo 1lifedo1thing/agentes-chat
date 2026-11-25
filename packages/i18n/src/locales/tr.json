@@ -2820,6 +2820,7 @@
     "nameLabel": "Ad",
     "nameHelp": "Herkes için değişir. Eski bağlantılar çalışmaya devam eder.",
     "replyInThreads": "Ajanlar ileti dizilerinde yanıtlar",
+    "replyInChannel": "Ajanlar kanalda yanıtlar",
     "replyInThreadsHelp": "Kanalda çağrılan bir ajan, o mesajın altındaki ileti dizisinde yanıt verir ve kanal bunun için tek satır gösterir. Süren işler olduğu yerde kalır.",
     "nameTaken": "#{{name}} zaten var.",
     "generalName": "#general adını korur.",

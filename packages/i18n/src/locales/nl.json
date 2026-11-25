@@ -2820,6 +2820,7 @@
     "nameLabel": "Naam",
     "nameHelp": "Verandert voor iedereen. Oude links blijven werken.",
     "replyInThreads": "Agents antwoorden in threads",
+    "replyInChannel": "Agents antwoorden in het kanaal",
     "replyInThreadsHelp": "Een agent die in het kanaal wordt aangeroepen, antwoordt in de thread onder dat bericht, en het kanaal toont er één regel voor. Werk dat al loopt, blijft waar het is.",
     "nameTaken": "Er is al een #{{name}}.",
     "generalName": "#general houdt zijn naam.",

@@ -2723,6 +2723,7 @@
     "nameLabel": "Nama",
     "nameHelp": "Berubah untuk semua orang. Tautan lama tetap berfungsi.",
     "replyInThreads": "Agen membalas di utas",
+    "replyInChannel": "Agen membalas di kanal",
     "replyInThreadsHelp": "Agen yang dipanggil di kanal menjawab di utas di bawah pesan itu, dan kanal menampilkan satu baris untuk utas itu. Pekerjaan yang sudah berjalan tetap di tempatnya.",
     "nameTaken": "Sudah ada #{{name}}.",
     "generalName": "#general tetap dengan namanya.",

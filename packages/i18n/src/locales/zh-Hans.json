@@ -2723,6 +2723,7 @@
     "nameLabel": "名称",
     "nameHelp": "对所有人生效。旧链接仍然有效。",
     "replyInThreads": "智能体在话题中回复",
+    "replyInChannel": "智能体在频道中回复",
     "replyInThreadsHelp": "在频道中被叫到的智能体会在该消息下的话题中回答，频道只为它显示一行。已在进行的工作保持原处。",
     "nameTaken": "已存在 #{{name}}。",
     "generalName": "#general 的名称不能更改。",
