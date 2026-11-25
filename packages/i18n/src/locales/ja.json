@@ -7823,6 +7823,38 @@
       "label": "Vaultの連絡先を編集",
       "description": "Vaultの連絡先を保存・更新し、保存済みログインのユーザー名や説明を変更し、自分で作るアカウントのパスワードを作成し、自分が保存したものを削除します。"
     },
+    "gitlab_git_read": {
+      "label": "リポジトリをクローン（git）",
+      "description": "当社のプロキシを経由し、gitでエージェントのコンピューターにリポジトリをクローン・更新します。GitLabのトークンがマシンに入ることはありません。"
+    },
+    "gitlab_git_write": {
+      "label": "ブランチをプッシュ（git push）",
+      "description": "agentes/{agent}/…ブランチにコミットをプッシュします。デフォルトブランチへのプッシュ、強制プッシュ、タグは行いません。ブランチの削除や他人のブランチへのプッシュは、先に承認を求めます。"
+    },
+    "gitlab_pr_write": {
+      "label": "プルリクエストを作成",
+      "description": "プルリクエストを作成し、コメントします。"
+    },
+    "bitbucket_git_read": {
+      "label": "リポジトリをクローン（git）",
+      "description": "当社のプロキシを経由し、gitでエージェントのコンピューターにリポジトリをクローン・更新します。Bitbucketのトークンがマシンに入ることはありません。"
+    },
+    "bitbucket_git_write": {
+      "label": "ブランチをプッシュ（git push）",
+      "description": "agentes/{agent}/…ブランチにコミットをプッシュします。デフォルトブランチへのプッシュ、強制プッシュ、タグは行いません。ブランチの削除や他人のブランチへのプッシュは、先に承認を求めます。"
+    },
+    "bitbucket_pr_write": {
+      "label": "プルリクエストを作成",
+      "description": "プルリクエストを作成し、コメントします。"
+    },
+    "git_git_read": {
+      "label": "リポジトリをクローン（git）",
+      "description": "当社のプロキシを経由し、gitでエージェントのコンピューターにリポジトリをクローン・更新します。Gitのトークンがマシンに入ることはありません。"
+    },
+    "git_git_write": {
+      "label": "ブランチをプッシュ（git push）",
+      "description": "agentes/{agent}/…ブランチにコミットをプッシュします。デフォルトブランチへのプッシュ、強制プッシュ、タグは行いません。ブランチの削除や他人のブランチへのプッシュは、先に承認を求めます。"
+    },
     "github_git_read": {
       "label": "リポジトリをクローン（git）",
       "description": "当社のプロキシを経由し、gitでエージェントのコンピューターにリポジトリをクローン・更新します。GitHubのトークンがマシンに入ることはありません。"
@@ -10957,10 +10989,10 @@
       "agent": "エージェント",
       "repo": "作業場所",
       "repoPlaceholder": "リポジトリまたはプロジェクト",
-      "repoSearch": "検索、または owner/name か新しい名前を入力",
+      "repoSearch": "検索するか、owner/name、リポジトリのアドレス、または新しい名前を入力",
       "newLocal": "コンピューター上の新しいプロジェクト: {{name}}",
       "useRepo": "{{repo}}を使う",
-      "repoNote": "ownerなしの名前にすると、GitHubの外で、エージェントのコンピューター上にプロジェクトを作ります。",
+      "repoNote": "owner のない名前は、エージェントのコンピューター上だけにプロジェクトを作ります。リモートリポジトリはありません。",
       "hint": "@で誰かをセッションに呼べます",
       "start": "開始"
     },
@@ -10974,7 +11006,7 @@
       "closeHint": "リストから消えます。ワークツリーは削除され、ブランチは残ります",
       "failed": "ワークツリーを準備できませんでした。",
       "retry": "もう一度試す",
-      "githubAccess": "このワークスペースには、このリポジトリへのGitHubアクセスがありません。「設定 › コネクタ」でGitHubを接続するか、コンピューター上のプロジェクトでセッションを始めてください（名前だけを入力）。"
+      "githubAccess": "このワークスペースはこのリポジトリにアクセスできません。設定 › コネクタで、リポジトリのある場所（GitHub、GitLab、Bitbucket）を接続するか、コンピューター上のプロジェクト（名前だけ）でセッションを始めてください。"
     },
     "panel": {
       "label": "セッションパネル",
@@ -12868,6 +12900,7 @@
       "teamLocked": "チームのものを追加できるのはコネクタを管理する人だけです。",
       "mailLocked": "メールボックスは常に接続した人のものです。",
       "done": "エージェントはあなたが頼んだときだけ使います。",
+      "githubDone": "コードセッションでは、あなたが頼んだ作業のコミット、プッシュ、プルリクエストがあなたの名前で出ていきます。",
       "worksWhenAsked": "あなたが頼んだときだけ動きます。",
       "remove": "削除",
       "removeName": "{{name}}を削除",
@@ -13626,6 +13659,7 @@
     },
     "label": {
       "git_clone": "リポジトリをクローン",
+      "list_repositories": "リポジトリを一覧表示",
       "create_repository": "リポジトリを作成",
       "delete_repository": "リポジトリを削除",
       "fork_repository": "リポジトリをフォーク",
@@ -14518,6 +14552,19 @@
       "asks_other": "{{count}}件の操作は、チャットで承認を求めます。",
       "adjust": "調整",
       "ok": "完了"
+    },
+    "git": {
+      "token": "アクセストークン",
+      "address": "アドレス",
+      "addressHelp": {
+        "gitlab": "会社が自前で運用している GitLab の場合のみ入力します。空欄なら gitlab.com です。",
+        "git": "git サーバーの場所です。例: https://git.company.com"
+      },
+      "tokenHelp": {
+        "gitlab": "api と write_repository のスコープを持つ GitLab のアクセストークン（個人、グループ、プロジェクトのいずれか）。サーバーに保管され、エージェントのコンピューターには渡りません。",
+        "bitbucket": "リポジトリとプルリクエストへの書き込み権限を持つ、ワークスペースまたはリポジトリのアクセストークン。自分の API トークンを使う場合は、Atlassian のメールアドレス、コロン、トークンの順に入力します: you@company.com:TOKEN",
+        "git": "サーバーが git のパスワードとして受け付けるトークン。ユーザー名が必要な場合は username:token と入力します。"
+      }
     },
     "telegram": {
       "token": "ボットのトークン",
@@ -15467,6 +15514,7 @@
       "tooLarge": "このファイルはサイズの上限に達しています。先に何かを削除してください。",
       "assetTooLarge": "画像が1枚あたりの上限である{{max}} MBを超えています。",
       "assetType": "このファイルに入れられるのは画像（PNG、JPEG、WebP、GIF）だけです。",
+      "fontInvalid": "このフォントは使えません。アプリが読み込めるフォントファイルではありません。.ttf、.otf、.woff のファイルを試してください。",
       "liveOnly": "このファイルはその場で直接編集するため、まるごと置き換えることはできません。"
     },
     "office": {
@@ -18076,6 +18124,7 @@
         "runningCommandAny": "コマンドを実行しました",
         "usingScreen": "画面を使いました",
         "cloningRepo": "リポジトリをクローンしました",
+        "listingRepos": "リポジトリを一覧表示しました",
         "openingPullRequest": "プルリクエストを作成しました",
         "handingOff": "レポートを届けました",
         "recordingFindings": "調査結果を記録しました",
@@ -18197,6 +18246,7 @@
       "runningCommandAny": "コマンドを実行中",
       "usingScreen": "画面を使用中",
       "cloningRepo": "リポジトリをクローン中",
+      "listingRepos": "リポジトリを一覧表示中",
       "openingPullRequest": "プルリクエストを作成中",
       "handingOff": "レポートを届けています",
       "recordingFindings": "調査結果を記録中",
