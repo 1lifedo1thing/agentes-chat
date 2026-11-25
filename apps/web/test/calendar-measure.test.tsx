@@ -3,9 +3,10 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
+import type { ApiClient } from "@agenteschat/client";
 import { HOUR_PX } from "@agenteschat/client/lib/calendar";
 import { toYmd } from "@agenteschat/client/lib/format";
-import { act, cleanup, fireEvent } from "@testing-library/react";
+import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { pinFileClock } from "./clock";
 import { createFakeApi, ORG_ID, seedState } from "./fake-api";
 import { renderApp, screen, settle } from "./render";
@@ -29,7 +30,7 @@ async function todaysColumn(
   drawn: (el: HTMLElement) => number,
   routines: (readonly [name: string, time: string])[],
   events: { title: string; start: Date; end: Date }[] = [],
-  change?: () => Promise<void>,
+  change?: (app: Awaited<ReturnType<typeof renderApp>> & { api: ApiClient }) => Promise<void>,
 ) {
   const own = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight");
   Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
@@ -59,10 +60,10 @@ async function todaysColumn(
         recurrence: "none",
         participants: [],
       });
-    await renderApp(`/org/${ORG_ID}/calendar`, { api });
+    const app = await renderApp(`/org/${ORG_ID}/calendar`, { api });
     await settle(8);
     if (change) {
-      await change();
+      await change({ ...app, api });
       await settle(8);
     }
     return document.querySelector<HTMLElement>(`.cal-week__col[data-day="${toYmd(new Date())}"]`);
@@ -141,4 +142,44 @@ test("a meeting made shorter keeps no height it no longer has: the one at its ne
   );
   expect(col?.querySelector('[aria-label="Planejamento, 14:00–15:00"]')).not.toBeNull();
   expect(coffee().style.getPropertyValue("--cols")).toBe("1");
+});
+
+/**
+ * The stack of runs of the first test, its second run's details open, and a meeting hours later renamed by someone
+ * else: the page reads the calendar again. Only what met the meeting is measured again, so the stack keeps the height
+ * that holds both runs, and the run's chip and details stay the same elements: they neither pop in again nor drop the
+ * focus.
+ */
+test("an item changed elsewhere on the day leaves an open run's chip and details in place", async () => {
+  const run = () =>
+    within(document.querySelector(`.cal-week__col[data-day="${toYmd(new Date())}"]`) as HTMLElement).getByRole(
+      "button",
+      { name: "Rotina Resumo, 07:40" },
+    );
+  const details = () => screen().getByRole("dialog", { name: "Resumo" });
+  let before: { chip: HTMLElement; details: HTMLElement; focus: Element | null } | undefined;
+  await todaysColumn(
+    (el) =>
+      !el.classList.contains("cal-week__runs") ? 0 : el.querySelectorAll(".cal-chip--run").length === 1 ? 44 : 24,
+    [
+      ["Bom dia", "07:00"],
+      ["Resumo", "07:40"],
+    ],
+    [{ title: "Planejamento", start: today(14, 0), end: today(15, 0) }],
+    async ({ api, sockets }) => {
+      await act(async () => sockets.last().open());
+      await act(async () => fireEvent.click(run()));
+      await settle(2);
+      before = { chip: run(), details: details(), focus: document.activeElement };
+      const { events } = await api.calendar.range(ORG_ID, today(0, 0).toISOString(), today(23, 59).toISOString());
+      const meeting = events.find((e) => e.title === "Planejamento");
+      await api.calendar.update(ORG_ID, meeting?.id ?? "", { title: "Planejamento do trimestre" });
+      await act(async () => sockets.last().push({ type: "event", scope: "org", event: { type: "calendar.changed" } }));
+    },
+  );
+  expect(screen().getByRole("button", { name: "Planejamento do trimestre, 14:00–15:00" })).toBeTruthy();
+  expect(run()).toBe(before?.chip as HTMLElement);
+  expect(details()).toBe(before?.details as HTMLElement);
+  expect(before?.details.contains(before.focus)).toBe(true);
+  expect(document.activeElement).toBe(before?.focus as Element);
 });

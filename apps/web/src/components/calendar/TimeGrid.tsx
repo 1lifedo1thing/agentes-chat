@@ -8,6 +8,7 @@ import {
   hourLabel,
   initialScrollMinutes,
   isRunMark,
+  keptHeights,
   layoutBars,
   layoutDay,
   minutesOfDay,
@@ -130,14 +131,15 @@ export function TimeGrid({
 
   // How tall each block and stack of runs is drawn: a name that wraps reaches past its slot, and what starts under it
   // then goes beside it, never under it (`layoutDay`, `runStacks`). For one set of days at one width they only grow
-  // (`grownHeights`), so the layout settles; other days or another width measure again from nothing, and so does a
-  // day whose items changed (`dayItemsKey`), drawn first with none of its old heights. The grid's own width, not the
-  // scroll area's: a scrollbar that comes and goes with what is drawn must not start it over.
+  // (`grownHeights`), so the layout settles; other days or another width measure again from nothing, and on a day
+  // whose items changed (`dayItemsKey`), so does whatever met the change (`keptHeights`), drawn first without its
+  // height. The grid's own width, not the scroll area's: a scrollbar that comes and goes with what is drawn must not
+  // start it over.
   const [measured, setMeasured] = useState<{ at: string; days: readonly DayMeasure[] }>(() => ({ at: "", days: [] }));
   const held = days.map((d) => dayItemsKey(items, d));
   const heightsOn = (i: number) => {
     const day = measured.at.startsWith(`${daysKey}@`) ? measured.days[i] : undefined;
-    return day && day.held === held[i] ? day.heights : NO_HEIGHTS;
+    return day ? keptHeights(day.heights, day.held, held[i] as string) : NO_HEIGHTS;
   };
   useLayoutEffect(() => {
     const at = `${daysKey}@${scroller.current?.parentElement?.clientWidth ?? 0}`;
@@ -146,9 +148,9 @@ export function TimeGrid({
       const drawn = new Map<string, number>();
       for (const el of cols?.[i]?.querySelectorAll<HTMLElement>("[data-measure]") ?? [])
         if (el.offsetHeight > 0) drawn.set(el.dataset.measure ?? "", el.offsetHeight);
-      const was = measured.at === at && measured.days[i]?.held === h ? measured.days[i] : undefined;
-      const heights = grownHeights(was?.heights ?? NO_HEIGHTS, drawn);
-      return was?.heights === heights ? was : { held: h, heights };
+      const was = measured.at === at ? measured.days[i] : undefined;
+      const heights = grownHeights(was ? keptHeights(was.heights, was.held, h) : NO_HEIGHTS, drawn);
+      return was?.held === h && was.heights === heights ? was : { held: h, heights };
     });
     if (measured.at !== at || next.some((day, i) => day !== measured.days[i])) setMeasured({ at, days: next });
   });
