@@ -270,14 +270,14 @@ export function NewChannelDialog({
   const [touched, setTouched] = useState(false);
   const create = useMutation({
     mutationFn: async () => {
-      const channel = await api.chat.createChannel(org.id, {
+      // Who it starts with goes along: the server decides from them whether its agents answer in threads.
+      return api.chat.createChannel(org.id, {
         name,
         topic: topic.trim() || undefined,
         ...accessInput(access),
         ...(categoryId ? { categoryId } : {}),
+        ...(selected.size > 0 ? { members: [...selected].map(memberOf) } : {}),
       });
-      for (const key of selected) await api.chat.addMember(org.id, channel.id, memberOf(key));
-      return channel;
     },
     onSuccess: async (channel) => {
       // In the list at once, so its page opens on it without waiting for the list to be read again.

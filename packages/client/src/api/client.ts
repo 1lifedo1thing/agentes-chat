@@ -1024,7 +1024,15 @@ export interface ApiClient {
   };
   chat: {
     channels(orgId: string): Promise<Channel[]>;
-    createChannel(orgId: string, input: ChannelInput & { name: string; categoryId?: string | null }): Promise<Channel>;
+    /** `members` join right after you; another person among them has its agents answer in threads (ADR 0214). */
+    createChannel(
+      orgId: string,
+      input: ChannelInput & {
+        name: string;
+        categoryId?: string | null;
+        members?: ({ userId: string } | { agentId: string })[];
+      },
+    ): Promise<Channel>;
     /** The sidebar's categories, in order (ADR 0080). */
     categories(orgId: string): Promise<ChannelCategory[]>;
     /** Admins: a category at the end, optionally taking `channelIds` along. */

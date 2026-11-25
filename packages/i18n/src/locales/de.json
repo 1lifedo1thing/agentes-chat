@@ -2820,6 +2820,7 @@
     "nameLabel": "Name",
     "nameHelp": "Ändert sich für alle. Alte Links funktionieren weiter.",
     "replyInThreads": "Agenten antworten in Threads",
+    "replyInChannel": "Agenten antworten im Kanal",
     "replyInThreadsHelp": "Ein Agent, der im Kanal gerufen wird, antwortet im Thread unter dieser Nachricht, und der Kanal zeigt dafür eine Zeile. Laufende Arbeit bleibt, wo sie ist.",
     "nameTaken": "#{{name}} gibt es schon.",
     "generalName": "#general behält seinen Namen.",
