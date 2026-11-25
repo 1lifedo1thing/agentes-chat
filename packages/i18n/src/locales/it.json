@@ -21844,7 +21844,8 @@
     },
     "add": {
       "label": "Aggiungi widget",
-      "short": "Widget"
+      "short": "Widget",
+      "word": "Aggiungi"
     },
     "alert": {
       "label": "Avvisami quando qualcosa non va",

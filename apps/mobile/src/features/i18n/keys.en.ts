@@ -3037,11 +3037,12 @@ export const featureKeysEn = {
     formatAuto: "{{name}} picks the best one",
     /** New widget's card, which is the form. */
     newWidget: {
-      alerts: "Alerts",
       realData: "Real data",
       editAsk: "Change the ask",
       asked: "“{{ask}}”",
-      autoFormat: "Auto format",
+      testReal: "Test with real data",
+      addHome: "Add to Home",
+      addTo: "Add to {{where}}",
     },
     /** "Who looks after it", pushed from New widget's card. */
     agentPick: {

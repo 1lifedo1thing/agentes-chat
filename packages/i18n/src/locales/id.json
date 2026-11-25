@@ -20504,7 +20504,8 @@
     },
     "add": {
       "label": "Tambah widget",
-      "short": "Widget"
+      "short": "Widget",
+      "word": "Tambah"
     },
     "alert": {
       "label": "Beri tahu saya kalau ada yang tidak beres",

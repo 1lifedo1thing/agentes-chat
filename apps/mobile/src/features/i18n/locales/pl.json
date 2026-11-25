@@ -3050,11 +3050,12 @@
     },
     "formatAuto": "{{name}} wybiera najlepszą",
     "newWidget": {
-      "alerts": "Alert włączony",
       "realData": "Prawdziwe dane",
       "editAsk": "Zmień prośbę",
       "asked": "„{{ask}}”",
-      "autoFormat": "Forma automatyczna"
+      "testReal": "Testuj na prawdziwych danych",
+      "addHome": "Dodaj do Startu",
+      "addTo": "Dodaj do: {{where}}"
     },
     "agentPick": {
       "search": "Szukaj agentów",

@@ -2885,11 +2885,12 @@ export const featureKeysPtBR = {
     formatAuto: "{{name}} escolhe o melhor",
     /** New widget's card, which is the form. */
     newWidget: {
-      alerts: "Avisa",
       realData: "Dados de verdade",
       editAsk: "Mudar o pedido",
       asked: "“{{ask}}”",
-      autoFormat: "Formato automático",
+      testReal: "Testar com dados de verdade",
+      addHome: "Adicionar ao Início",
+      addTo: "Adicionar em {{where}}",
     },
     /** "Who looks after it", pushed from New widget's card. */
     agentPick: {

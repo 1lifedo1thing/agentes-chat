@@ -2915,11 +2915,12 @@
     },
     "formatAuto": "{{name}} elige el mejor",
     "newWidget": {
-      "alerts": "Avisa",
       "realData": "Datos reales",
       "editAsk": "Cambiar el pedido",
       "asked": "“{{ask}}”",
-      "autoFormat": "Formato automático"
+      "testReal": "Probar con datos reales",
+      "addHome": "Agregar a Inicio",
+      "addTo": "Agregar a {{where}}"
     },
     "agentPick": {
       "search": "Buscar agentes",

@@ -51499,6 +51499,9 @@
   "widgets.add.short": {
     "value": "Widget"
   },
+  "widgets.add.word": {
+    "value": "Add"
+  },
   "widgets.alert.label": {
     "value": "Tell me when something is off"
   },

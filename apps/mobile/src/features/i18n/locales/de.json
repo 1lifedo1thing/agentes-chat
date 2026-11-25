@@ -2806,11 +2806,12 @@
     },
     "formatAuto": "{{name}} wählt die beste aus",
     "newWidget": {
-      "alerts": "Alarm an",
       "realData": "Echte Daten",
       "editAsk": "Anfrage ändern",
       "asked": "„{{ask}}“",
-      "autoFormat": "Automatische Darstellung"
+      "testReal": "Mit echten Daten testen",
+      "addHome": "Zum Start hinzufügen",
+      "addTo": "Zu {{where}} hinzufügen"
     },
     "agentPick": {
       "search": "Agenten suchen",

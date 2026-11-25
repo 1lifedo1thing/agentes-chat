@@ -21827,7 +21827,8 @@
     },
     "add": {
       "label": "Ajouter un widget",
-      "short": "Widget"
+      "short": "Widget",
+      "word": "Ajouter"
     },
     "alert": {
       "label": "Me prévenir quand quelque chose cloche",

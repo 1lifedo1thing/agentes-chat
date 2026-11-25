@@ -21680,7 +21680,8 @@
     },
     "add": {
       "label": "Agregar widget",
-      "short": "Widget"
+      "short": "Widget",
+      "word": "Agregar"
     },
     "alert": {
       "label": "Avísame cuando algo ande mal",
