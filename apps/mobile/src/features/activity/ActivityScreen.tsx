@@ -1,5 +1,6 @@
 import {
   type AppNotification,
+  type Approval,
   type NotificationCounts,
   type NotificationFilter,
   type Routine,
@@ -10,6 +11,7 @@ import {
   useNotifications,
   useRoutines,
 } from "@agenteschat/client";
+import { approvalLines } from "@agenteschat/client/lib/approval-card";
 import { approvalTitle } from "@agenteschat/client/lib/approval-words";
 import { errorText, restrictionLine } from "@agenteschat/client/lib/errors";
 import { dateFormat, timeLeft, upperFirst } from "@agenteschat/client/lib/format";
@@ -49,6 +51,7 @@ import {
   useToast,
 } from "@/ui";
 import { router } from "@/ui/navigation";
+import { ApproveAllByAgent } from "../approvals/parts";
 import { dashboardWaitingCard } from "../dashboards/logic";
 import { deviceNoticeOf, isDeviceNotice } from "../devices/logic";
 import { DeviceNoticeActions, DeviceNoticeCard } from "../devices/notices";
@@ -193,6 +196,7 @@ export function ActivityScreen() {
       {waiting.length > 0 ? (
         <>
           <SectionHeader title={t("mobile.home.waiting")} count={waitingCount} />
+          <ApproveAllByAgent />
           <LayoutAnimationConfig skipEntering skipExiting>
             {waiting.map((n, i) => (
               <Animated.View key={n.id} {...cardMotion}>
@@ -383,6 +387,10 @@ function DecidedRequests() {
         .sort((a, b) => (b.decidedAt ?? b.expiresAt).localeCompare(a.decidedAt ?? a.expiresAt)),
     [approvals.data],
   );
+  // Approved and waiting for a request asked before it: "Na fila", as the web's rows say.
+  const lines = useMemo(() => approvalLines(approvals.data ?? []), [approvals.data]);
+  const stateOf = (a: Approval) =>
+    lines.get(a.id)?.waitsOn ? "queued" : a.status === "pending" ? "expired" : a.status;
   if (approvals.isPending) return <SkeletonList rows={3} />;
   if (approvals.isError && !approvals.data) return <LoadFailed onRetry={() => void approvals.refetch()} />;
   if (decided.length === 0) return <EmptyState size="inline" title={t("notifications.noneRequests")} />;
@@ -398,9 +406,7 @@ function DecidedRequests() {
           title={dir.agentById.get(a.agentId)?.name ?? t("channel.unknownAgent")}
           time={when.short(a.decidedAt ?? a.expiresAt)}
           // How it ended, in one word after what it was.
-          sub={[approvalTitle(t, a), t(`approvals.status.${a.status === "pending" ? "expired" : a.status}`)].join(
-            " · ",
-          )}
+          sub={[approvalTitle(t, a), t(`approvals.status.${stateOf(a)}`)].join(" · ")}
         />
       ))}
     </>

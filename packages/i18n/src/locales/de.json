@@ -5087,8 +5087,17 @@
     "expiredChip": "Abgelaufen · {{when}}",
     "canceledChip": "Abgebrochen · {{when}}",
     "line": {
-      "after": "läuft nach „{{title}}“",
       "notRun": "nicht ausgeführt: die Anfrage davor wurde nicht freigegeben"
+    },
+    "held": {
+      "waiting": "Wartet auf <link/>",
+      "runNow": "Jetzt ausführen"
+    },
+    "byAgent": {
+      "head_one": "{{count}} Anfrage von {{name}}",
+      "head_other": "{{count}} Anfragen von {{name}}",
+      "approve": "Alle freigeben",
+      "refuse": "Alle ablehnen"
     },
     "waitingFor": "Wartet auf {{name}}",
     "waitingAdmin": "Wartet auf einen Admin",
@@ -5689,7 +5698,6 @@
       "queued": "In der Warteschlange",
       "notRun": "Nicht ausgeführt"
     },
-    "queuedLine": "Freigegeben. Läuft nach „{{title}}“, das vorher angefragt wurde.",
     "notRunRefused": "„{{title}}“, vorher angefragt, wurde abgelehnt, nachdem diese Anfrage freigegeben war. Deshalb wurde sie nicht ausgeführt.",
     "notRunExpired": "„{{title}}“, vorher angefragt, ist ohne Entscheidung abgelaufen, nachdem diese Anfrage freigegeben war. Deshalb wurde sie nicht ausgeführt.",
     "notRunEarlier": "Eine vorherige Anfrage wurde abgelehnt oder ist abgelaufen, nachdem diese freigegeben war. Deshalb wurde sie nicht ausgeführt.",

@@ -507,6 +507,7 @@ const KNOWN = {
   "agent_proposal.asked": "errors.said.alreadyDone",
   "approval.not_ahead": "errors.said.alreadyDone",
   "approval.not_cancelable": "errors.said.alreadyDone",
+  "approval.not_waiting": "errors.said.alreadyDone",
   "browser.handoff_over": "errors.said.alreadyDone",
   "choices.answered": "errors.said.alreadyDone",
   "follow_up.not_pending": "errors.said.alreadyDone",

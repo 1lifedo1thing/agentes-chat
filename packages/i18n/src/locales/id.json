@@ -4912,8 +4912,16 @@
     "expiredChip": "Kedaluwarsa · {{when}}",
     "canceledChip": "Dibatalkan · {{when}}",
     "line": {
-      "after": "berjalan setelah “{{title}}”",
       "notRun": "tidak dijalankan: permintaan sebelumnya tidak disetujui"
+    },
+    "held": {
+      "waiting": "Menunggu <link/>",
+      "runNow": "Jalankan ini sekarang"
+    },
+    "byAgent": {
+      "head_other": "{{count}} permintaan dari {{name}}",
+      "approve": "Setujui semua",
+      "refuse": "Tolak semua"
     },
     "waitingFor": "Menunggu {{name}}",
     "waitingAdmin": "Menunggu admin",
@@ -5479,7 +5487,6 @@
       "queued": "Dalam antrean",
       "notRun": "Tidak dijalankan"
     },
-    "queuedLine": "Disetujui. Berjalan setelah “{{title}}”, yang diminta lebih dulu.",
     "notRunRefused": "“{{title}}”, yang diminta lebih dulu, ditolak setelah permintaan ini disetujui. Karena itu yang ini tidak dijalankan.",
     "notRunExpired": "“{{title}}”, yang diminta lebih dulu, kedaluwarsa tanpa keputusan setelah permintaan ini disetujui. Karena itu yang ini tidak dijalankan.",
     "notRunEarlier": "Permintaan sebelumnya ditolak atau kedaluwarsa setelah yang ini disetujui. Karena itu yang ini tidak dijalankan.",

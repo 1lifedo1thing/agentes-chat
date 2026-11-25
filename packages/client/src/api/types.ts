@@ -2421,6 +2421,13 @@ export interface Approval {
   /** Approved ahead and not run yet, and you may withdraw it (`approvals.cancel`). */
   canCancel?: boolean;
   /**
+   * Other runs' requests the agent was told already waited in this conversation when it asked: once approved it runs
+   * after they settle (ADR 0182). Absent from older servers: then it waits for none.
+   */
+  afterIds?: string[];
+  /** Approved and waiting for `afterIds`, and you may run it now (`approvals.runNow`, "Rodar este agora"). */
+  canRunNow?: boolean;
+  /**
    * Asked with `request_approval` (ADR 0126): who decides, in words ("Diretoria"), and whose request it was, who
    * decides it only as an approver by role (`requesterDecides`). Null or absent: any other approval.
    */

@@ -5365,8 +5365,19 @@ export const ptBR = {
     canceledChip: "Cancelado · {{when}}",
     /** After an approved request's outcome on a shared card: it runs in the order asked. */
     line: {
-      after: "roda depois de “{{title}}”",
       notRun: "não rodou: o pedido anterior não foi aprovado",
+    },
+    /** Approved, and waiting for a request asked before it (ADR 0182): what it waits for, and a way past it. */
+    held: {
+      waiting: "Esperando <link/>",
+      runNow: "Rodar este agora",
+    },
+    /** Every waiting request of one agent, decided at once (the inbox, the phone's list of what waits on you). */
+    byAgent: {
+      head_one: "{{count}} pedido de {{name}}",
+      head_other: "{{count}} pedidos de {{name}}",
+      approve: "Aprovar todos",
+      refuse: "Recusar todos",
     },
     waitingFor: "Aguardando {{name}}",
     waitingAdmin: "Aguardando um admin",
@@ -5995,8 +6006,6 @@ export const ptBR = {
       queued: "Na fila",
       notRun: "Não rodou",
     },
-    /** Approved, waiting for a request the agent asked before it on the same card to be decided and done. */
-    queuedLine: "Aprovado. Roda depois de “{{title}}”, pedido antes.",
     /** Approved before a request asked ahead of it was refused or expired: it didn't run. */
     notRunRefused: "“{{title}}”, pedido antes, foi recusado depois que este foi aprovado. Por isso este não rodou.",
     notRunExpired:

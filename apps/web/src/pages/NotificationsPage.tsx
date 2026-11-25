@@ -102,7 +102,13 @@ import { useInboxWaiting } from "@/hooks/useInboxWaiting";
 import { matchesNow } from "@/hooks/useMatchMedia";
 import { lookOf } from "@/lib/look";
 import { useToast } from "@/lib/toast";
-import { ApprovalRow, approvalDecidedAt, decidedGroups } from "@/pages/ApprovalsPage";
+import {
+  ApprovalLinesProvider,
+  ApprovalRow,
+  ApproveAllByAgent,
+  approvalDecidedAt,
+  decidedGroups,
+} from "@/pages/ApprovalsPage";
 import { useLiveStore } from "@/realtime/context";
 import "./notifications.css";
 
@@ -1727,16 +1733,18 @@ export function NotificationsPage({
             {approvals.isSuccess && decided.length === 0 && (
               <EmptyState size="panel">{t("notifications.noneRequests")}</EmptyState>
             )}
-            {decidedGroups(decided).map(([day, rows]) => (
-              <section key={day} className="ib-group" aria-label={t(`approvals.groups.${day}`)}>
-                <GroupHeading title={t(`approvals.groups.${day}`)} />
-                <div className="ap-list__rows">
-                  {rows.map((a) => (
-                    <ApprovalRow key={a.id} approval={a} selected={req === a.id} onOpen={() => setReq(a.id)} />
-                  ))}
-                </div>
-              </section>
-            ))}
+            <ApprovalLinesProvider list={approvals.data ?? []}>
+              {decidedGroups(decided).map(([day, rows]) => (
+                <section key={day} className="ib-group" aria-label={t(`approvals.groups.${day}`)}>
+                  <GroupHeading title={t(`approvals.groups.${day}`)} />
+                  <div className="ap-list__rows">
+                    {rows.map((a) => (
+                      <ApprovalRow key={a.id} approval={a} selected={req === a.id} onOpen={() => setReq(a.id)} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </ApprovalLinesProvider>
           </>
         ) : (
           <>
@@ -1773,6 +1781,7 @@ export function NotificationsPage({
             {waiting.length > 0 && (
               <section className="ib-group nt-wait" aria-label={t("notifications.wait.title")}>
                 <GroupHeading title={t("notifications.wait.title")} count={waiting.length} />
+                <ApproveAllByAgent list={approvals.data ?? []} />
                 {waiting.map((n) => (
                   <InboxRow key={n.id} n={n} s={stateOf(n)} h={handlers} dir={dir} channelName={channelName} />
                 ))}

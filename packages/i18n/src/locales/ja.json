@@ -4896,8 +4896,16 @@
     "expiredChip": "期限切れ · {{when}}",
     "canceledChip": "キャンセル済み · {{when}}",
     "line": {
-      "after": "「{{title}}」の後に実行",
       "notRun": "未実行：前の依頼が承認されませんでした"
+    },
+    "held": {
+      "waiting": "<link/> を待っています",
+      "runNow": "今すぐ実行"
+    },
+    "byAgent": {
+      "head_other": "{{name}} からの依頼 {{count}} 件",
+      "approve": "すべて承認",
+      "refuse": "すべて却下"
     },
     "waitingFor": "{{name}}の対応待ち",
     "waitingAdmin": "管理者の対応待ち",
@@ -5459,7 +5467,6 @@
       "queued": "順番待ち",
       "notRun": "未実行"
     },
-    "queuedLine": "承認済み。先に依頼された「{{title}}」の後に実行されます。",
     "notRunRefused": "先に依頼された「{{title}}」が、これを承認した後に却下されたため、これは実行されませんでした。",
     "notRunExpired": "先に依頼された「{{title}}」が、これを承認した後に判断のないまま期限切れになったため、これは実行されませんでした。",
     "notRunEarlier": "これを承認した後に前の依頼が却下されたか期限切れになったため、これは実行されませんでした。",
