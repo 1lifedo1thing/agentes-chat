@@ -719,6 +719,8 @@
       "confirmNo": "No fui yo",
       "done": "Todo listo.",
       "doneLead": "Iniciaste sesión en la app de agentes. Puedes cerrar esta pestaña.",
+      "back": "Volviendo a la app.",
+      "openApp": "Abrir la app",
       "expired": "Esta solicitud venció.",
       "expiredLead": "Vuelve a la app y elige {{provider}} de nuevo.",
       "handover": "Iniciando sesión con tu cuenta del otro dispositivo…",
@@ -1256,7 +1258,7 @@
         "fileLead": "El archivo de cualquier app que conocemos. Se reconoce solo.",
         "paths": {
           "lead": "Elige cómo traerlos. Revisas todo antes de que se cree nada.",
-          "best": "el más completo",
+          "best": "El más completo",
           "safe": "Las claves, contraseñas y sesiones de {{app}} nunca vienen, por ningún camino.",
           "command": {
             "title": "Con un comando",
@@ -4509,6 +4511,7 @@
     "available": "Disponible",
     "working": "Trabajando",
     "waiting": "Esperándote",
+    "idle": "Inactivo",
     "lower": {
       "online": "en línea",
       "away": "ausente",
@@ -12882,6 +12885,7 @@
       "home_only": "{{program}} está instalado solo para root en {{computer}}, donde los agentes no llegan.",
       "not_reported": "{{computer}} todavía está comprobando qué programas tiene. Esto cambia solo cuando termine.",
       "system": "{{program}} todavía no funciona en el sistema de {{computer}}.",
+      "systemAntigravity": "Los planes de Gemini todavía no funcionan en {{computer}}: en Windows, Antigravity CLI guarda el inicio de sesión de Google en el Administrador de credenciales, que agentes.chat todavía no puede separar por cuenta. Usa una clave de API de Gemini en su lugar.",
       "windows_sandbox": "El Windows de {{computer}} no puede aislar los comandos de {{program}}. Elige Claude o una clave de API en su lugar, o actualiza esa computadora a Windows 11 24H2 o posterior, con sus últimas actualizaciones.",
       "no_computerCloud": "Listo en cuanto {{computer}} lo esté."
     },
@@ -19045,6 +19049,12 @@
       "held": "Esperando aprobación…",
       "said": "«{{text}}»"
     },
+    "trail": {
+      "label": "Lo que {{name}} hizo hasta ahora",
+      "earlier_one": "{{count}} paso anterior",
+      "earlier_many": "{{count}} pasos anteriores",
+      "earlier_other": "{{count}} pasos anteriores"
+    },
     "consult": {
       "asking": "{{from}} le está preguntando a {{to}}",
       "answered": "{{to}} respondió. {{from}} está escribiendo",
@@ -22315,6 +22325,92 @@
     "settingsText": "Envía los detalles técnicos al equipo de agentes.chat."
   },
   "live": {
+    "type": {
+      "font": "Fuente",
+      "search": "Buscar fuente",
+      "noResults": "Ninguna fuente con ese nombre",
+      "list": "Fuentes",
+      "groups": {
+        "slides": "En esta presentación",
+        "canvas": "En esta pizarra",
+        "document": "En este documento",
+        "company": "De tu empresa",
+        "sans": "Sin serifa",
+        "serif": "Con serifa",
+        "display": "Para títulos",
+        "mono": "Monoespaciadas",
+        "handwriting": "Manuscritas"
+      },
+      "headings": "Títulos",
+      "body": "Texto",
+      "fromDrive": "Del Drive",
+      "ownFont": "Fuente del archivo",
+      "fileFonts": {
+        "slides": "Fuentes de la presentación",
+        "document": "Fuentes del documento"
+      },
+      "fileFontsNote": "Se aplican a todo el archivo. Un texto con fuente propia la conserva.",
+      "headingFont": "Fuente de los títulos",
+      "bodyFont": "Fuente del texto",
+      "bring": "Traer fuente del Drive…",
+      "bringButton": "Traer del Drive",
+      "bringTitle": "Traer fuente del Drive",
+      "bringSearch": "Buscar fuentes en el Drive",
+      "bringEmpty": "No hay fuentes en el Drive. Sube antes un archivo .ttf, .otf o .woff al Drive.",
+      "brought": "{{name}} ya está en el archivo",
+      "notFont": "Este archivo no es una fuente. Elige un .ttf, .otf o .woff.",
+      "done": "Listo",
+      "text": "Estilo del texto",
+      "glyph": "Aa",
+      "weight": "Grosor",
+      "weights": {
+        "w300": "Fina",
+        "w400": "Normal",
+        "w500": "Media",
+        "w600": "Seminegrita",
+        "w700": "Negrita",
+        "w800": "Extranegrita"
+      },
+      "tracking": "Espaciado entre letras",
+      "trackings": {
+        "tight": "Más junto",
+        "normal": "Normal",
+        "open": "Abierto",
+        "wide": "Muy abierto"
+      },
+      "lineHeight": "Altura de línea",
+      "caps": "Todo en mayúsculas",
+      "highlight": "Resaltado",
+      "highlights": {
+        "none": "Ninguno",
+        "yellow": "Amarillo",
+        "green": "Verde",
+        "blue": "Azul",
+        "pink": "Rosa",
+        "orange": "Naranja"
+      },
+      "effects": "Efectos",
+      "shadow": "Sombra",
+      "shadows": {
+        "none": "Ninguna",
+        "soft": "Suave",
+        "strong": "Fuerte"
+      },
+      "border": "Borde",
+      "dashes": {
+        "solid": "Continuo",
+        "dashed": "Discontinuo",
+        "dotted": "Punteado"
+      },
+      "gradient": "Degradado",
+      "gradients": {
+        "none": "Ninguno",
+        "ocean": "Océano",
+        "graphite": "Grafito",
+        "sunset": "Atardecer",
+        "violet": "Violeta"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Diapositivas",

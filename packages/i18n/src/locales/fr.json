@@ -719,6 +719,8 @@
       "confirmNo": "Ce n'était pas moi",
       "done": "Tout est prêt.",
       "doneLead": "Vous êtes connecté à l'app agentes. Vous pouvez fermer cet onglet.",
+      "back": "Retour à l'app.",
+      "openApp": "Ouvrir l'app",
       "expired": "Cette demande a expiré.",
       "expiredLead": "Retournez dans l'app et choisissez de nouveau {{provider}}.",
       "handover": "Connexion avec votre compte depuis l'autre appareil…",
@@ -1257,7 +1259,7 @@
         "fileLead": "Le fichier de n'importe quelle app que nous connaissons. Il est reconnu tout seul.",
         "paths": {
           "lead": "Choisissez comment les importer. Vous vérifiez tout avant que rien ne soit créé.",
-          "best": "le plus complet",
+          "best": "Le plus complet",
           "safe": "Les clés, mots de passe et sessions de {{app}} ne viennent jamais, quel que soit le chemin.",
           "command": {
             "title": "Avec une commande",
@@ -4514,6 +4516,7 @@
     "available": "Disponible",
     "working": "Au travail",
     "waiting": "Vous attend",
+    "idle": "Inactif",
     "lower": {
       "online": "en ligne",
       "away": "absent",
@@ -12956,6 +12959,7 @@
       "home_only": "{{program}} est installé uniquement pour root sur {{computer}}, où les agents n'ont pas accès.",
       "not_reported": "{{computer}} vérifie encore quels programmes il a. Ceci change tout seul une fois terminé.",
       "system": "{{program}} ne fonctionne pas encore sur le système de {{computer}}.",
+      "systemAntigravity": "Les abonnements Gemini ne fonctionnent pas encore sur {{computer}} : sous Windows, Antigravity CLI garde sa connexion Google dans le Gestionnaire d'identification, qu'agentes.chat ne sait pas encore séparer par compte. Utilisez plutôt une clé API Gemini.",
       "windows_sandbox": "Le Windows de {{computer}} ne peut pas isoler les commandes de {{program}}. Choisissez plutôt Claude ou une clé API, ou mettez cet ordinateur à jour vers Windows 11 24H2 ou plus récent, avec ses dernières mises à jour.",
       "no_computerCloud": "Prêt dès que {{computer}} l'est."
     },
@@ -19119,6 +19123,12 @@
       "held": "En attente d'approbation…",
       "said": "« {{text}} »"
     },
+    "trail": {
+      "label": "Ce que {{name}} a fait jusqu’ici",
+      "earlier_one": "{{count}} étape précédente",
+      "earlier_many": "{{count}} étapes précédentes",
+      "earlier_other": "{{count}} étapes précédentes"
+    },
     "consult": {
       "asking": "{{from}} interroge {{to}}",
       "answered": "{{to}} a répondu. {{from}} écrit",
@@ -22462,6 +22472,92 @@
     "settingsText": "Envoyez les détails techniques à l'équipe agentes.chat."
   },
   "live": {
+    "type": {
+      "font": "Police",
+      "search": "Rechercher une police",
+      "noResults": "Aucune police de ce nom",
+      "list": "Polices",
+      "groups": {
+        "slides": "Dans cette présentation",
+        "canvas": "Sur ce tableau blanc",
+        "document": "Dans ce document",
+        "company": "De votre entreprise",
+        "sans": "Sans empattement",
+        "serif": "Avec empattement",
+        "display": "Pour les titres",
+        "mono": "À chasse fixe",
+        "handwriting": "Manuscrites"
+      },
+      "headings": "Titres",
+      "body": "Texte",
+      "fromDrive": "Du Drive",
+      "ownFont": "Police du fichier",
+      "fileFonts": {
+        "slides": "Polices de la présentation",
+        "document": "Polices du document"
+      },
+      "fileFontsNote": "Elles s'appliquent à tout le fichier. Un texte qui a sa propre police la garde.",
+      "headingFont": "Police des titres",
+      "bodyFont": "Police du texte",
+      "bring": "Importer une police du Drive…",
+      "bringButton": "Importer du Drive",
+      "bringTitle": "Importer une police du Drive",
+      "bringSearch": "Rechercher des polices dans le Drive",
+      "bringEmpty": "Aucune police dans le Drive. Ajoutez d'abord un fichier .ttf, .otf ou .woff au Drive.",
+      "brought": "{{name}} est maintenant dans le fichier",
+      "notFont": "Ce fichier n'est pas une police. Choisissez un .ttf, .otf ou .woff.",
+      "done": "Terminé",
+      "text": "Style du texte",
+      "glyph": "Aa",
+      "weight": "Graisse",
+      "weights": {
+        "w300": "Maigre",
+        "w400": "Normale",
+        "w500": "Médium",
+        "w600": "Demi-gras",
+        "w700": "Gras",
+        "w800": "Extra-gras"
+      },
+      "tracking": "Espacement des lettres",
+      "trackings": {
+        "tight": "Plus serré",
+        "normal": "Normal",
+        "open": "Aéré",
+        "wide": "Très aéré"
+      },
+      "lineHeight": "Hauteur de ligne",
+      "caps": "Tout en majuscules",
+      "highlight": "Surligneur",
+      "highlights": {
+        "none": "Aucun",
+        "yellow": "Jaune",
+        "green": "Vert",
+        "blue": "Bleu",
+        "pink": "Rose",
+        "orange": "Orange"
+      },
+      "effects": "Effets",
+      "shadow": "Ombre",
+      "shadows": {
+        "none": "Aucune",
+        "soft": "Douce",
+        "strong": "Forte"
+      },
+      "border": "Bordure",
+      "dashes": {
+        "solid": "Continue",
+        "dashed": "Tirets",
+        "dotted": "Pointillés"
+      },
+      "gradient": "Dégradé",
+      "gradients": {
+        "none": "Aucun",
+        "ocean": "Océan",
+        "graphite": "Graphite",
+        "sunset": "Coucher de soleil",
+        "violet": "Violet"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Diapositives",

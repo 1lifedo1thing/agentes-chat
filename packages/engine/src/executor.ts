@@ -5599,6 +5599,7 @@ async function executeRunInner(
           io,
           deltas.push,
           {
+            onNote: deltas.note,
             // Plan usage of a computer brain: tokens on the run, cost zero (the person's plan).
             onUsage: (u) =>
               turnPlan.kind !== "model" &&
@@ -6090,10 +6091,12 @@ async function executeRunInner(
       const turnText = dropSquashedEcho(textOf(result.content).trim());
       // Text it wrote before its calls, without the line it said on the way in the same response (`say_now`).
       const lines = result.toolCalls.filter((c) => isSayNow(c.name));
+      // Notes its API kept apart (Claude's progress updates, a reasoning summary) narrate the same work.
+      const worded = turnText || deltas.notes();
       const narration =
-        result.stopReason === "tool_use" && turnText
+        result.stopReason === "tool_use" && worded
           ? withoutSaidNow(
-              turnText,
+              worded,
               lines.map((c) => ({ text: sayNowText((c.input as { text?: unknown }).text) })),
             )
           : "";
@@ -6152,7 +6155,7 @@ async function executeRunInner(
         /** Mission tools' own waits (a blocking decision, a review): their ids. */
         const waits: string[] = [];
         // What it wrote before these calls is the first one's step line (`takeStepWords`), never posted.
-        if (!run.background) holdStepWords(run.id, isRightHand(agent) ? scrubSignIns(turnText, "••••").text : turnText);
+        if (!run.background) holdStepWords(run.id, isRightHand(agent) ? scrubSignIns(worded, "••••").text : worded);
         // Its line on the way (`say_now`, ADR 0207) goes out before the work it announces, whatever order it wrote them in.
         const saidBefore = transcript.saidNow?.length ?? 0;
         const callingAt = transcript.messages.length - 1;
@@ -7163,6 +7166,8 @@ async function thinkOnce(
     onStarted?(call: { id: string; name: string; input?: unknown }): void;
     /** A subagent or a workflow of its own while it works (`tool_progress`, ADR 0215). */
     onProgress?(progress: Extract<BrainEvent, { type: "tool_progress" }>): void;
+    /** A note it wrote between its calls, apart from its text (`note`). */
+    onNote?(text: string): void;
     /** A file a tool of the brain's own made in the agent's folder (`file`). */
     onFile?(path: string): void;
     /** Messages handed to the turn mid-turn that it read (live steering). */
@@ -7225,6 +7230,7 @@ async function thinkOnce(
     if (event.type === "text_delta") onDelta(event.text);
     else if (event.type === "tool_started") hooks.onStarted?.(event);
     else if (event.type === "tool_progress") hooks.onProgress?.(event);
+    else if (event.type === "note") hooks.onNote?.(event.text);
     else if (event.type === "stalled") hooks.onStalled?.(event);
     else if (event.type === "tool_call") {
       // Executed elsewhere (a computer brain through the runner bridge, which recorded its steps): shown only.
@@ -7581,7 +7587,16 @@ function createTurnText(
     return out;
   };
   let pending: Promise<void> = Promise.resolve();
+  /** The notes its API kept apart from its text this turn (`note`): narration, as text before a call is. */
+  const notes: string[] = [];
   return {
+    /** A note it wrote between its calls (`BrainEvent` `note`): the next call's step line, never the reply. */
+    note(text: string) {
+      notes.push(text);
+      if (!first.quiet) holdStepWords(run.id, scrubbed(text.slice(0, STEP_HELD_MAX)));
+    },
+    /** This turn's notes, as one stretch of narration. */
+    notes: () => notes.join("\n\n"),
     push(text: string) {
       if (text && !started) {
         started = true;

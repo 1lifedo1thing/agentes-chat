@@ -689,6 +689,8 @@
       "confirmNo": "不是我",
       "done": "全部就绪。",
       "doneLead": "你已登录 agentes 应用，可以关闭这个标签页了。",
+      "back": "正在返回应用。",
+      "openApp": "打开应用",
       "expired": "这个请求已过期。",
       "expiredLead": "请返回应用，重新选择 {{provider}}。",
       "handover": "正在用另一台设备上的账号登录…",
@@ -4195,6 +4197,7 @@
     "available": "空闲",
     "working": "工作中",
     "waiting": "等你处理",
+    "idle": "无活动",
     "lower": {
       "online": "在线",
       "away": "离开",
@@ -12064,6 +12067,7 @@
       "home_only": "{{computer}} 上的 {{program}} 只为 root 安装了，智能体访问不到。",
       "not_reported": "{{computer}} 还在检查有哪些程序。完成后这里会自动更新。",
       "system": "{{program}} 暂时还不能在 {{computer}} 的系统上运行。",
+      "systemAntigravity": "Gemini 套餐暂时还不能在 {{computer}} 上使用：在 Windows 上，Antigravity CLI 把 Google 登录保存在凭据管理器中，agentes.chat 目前还无法按账号分开。请改用 Gemini API 密钥。",
       "windows_sandbox": "{{computer}} 的 Windows 无法隔离 {{program}} 的命令。请改选 Claude 或 API 密钥，或把那台电脑更新到 Windows 11 24H2 或更高版本，并装好最新更新。",
       "no_computerCloud": "{{computer}} 一就绪即可使用。"
     },
@@ -17983,6 +17987,10 @@
       "held": "等待审批…",
       "said": "“{{text}}”"
     },
+    "trail": {
+      "label": "{{name}} 目前做了什么",
+      "earlier_other": "之前的 {{count}} 步"
+    },
     "consult": {
       "asking": "{{from}} 正在询问 {{to}}",
       "answered": "{{to}} 已回答。{{from}} 正在撰写",
@@ -21229,6 +21237,92 @@
     "settingsText": "将技术详细信息发送给 agentes.chat 团队。"
   },
   "live": {
+    "type": {
+      "font": "字体",
+      "search": "搜索字体",
+      "noResults": "没有这个名称的字体",
+      "list": "字体",
+      "groups": {
+        "slides": "此演示文稿中",
+        "canvas": "此白板中",
+        "document": "此文档中",
+        "company": "公司字体",
+        "sans": "无衬线",
+        "serif": "衬线",
+        "display": "用于标题",
+        "mono": "等宽",
+        "handwriting": "手写"
+      },
+      "headings": "标题",
+      "body": "正文",
+      "fromDrive": "来自 Drive",
+      "ownFont": "文件字体",
+      "fileFonts": {
+        "slides": "演示文稿字体",
+        "document": "文档字体"
+      },
+      "fileFontsNote": "适用于整个文件。有自己字体的文字保持不变。",
+      "headingFont": "标题字体",
+      "bodyFont": "正文字体",
+      "bring": "从 Drive 导入字体…",
+      "bringButton": "从 Drive 导入",
+      "bringTitle": "从 Drive 导入字体",
+      "bringSearch": "在 Drive 中搜索字体",
+      "bringEmpty": "Drive 中没有字体。请先把 .ttf、.otf 或 .woff 文件上传到 Drive。",
+      "brought": "{{name}} 已加入文件",
+      "notFont": "这个文件不是字体。请选择 .ttf、.otf 或 .woff 文件。",
+      "done": "完成",
+      "text": "文字样式",
+      "glyph": "Aa",
+      "weight": "粗细",
+      "weights": {
+        "w300": "细",
+        "w400": "常规",
+        "w500": "中等",
+        "w600": "半粗",
+        "w700": "粗",
+        "w800": "特粗"
+      },
+      "tracking": "字间距",
+      "trackings": {
+        "tight": "更紧",
+        "normal": "常规",
+        "open": "宽松",
+        "wide": "很宽"
+      },
+      "lineHeight": "行高",
+      "caps": "全部大写",
+      "highlight": "高亮",
+      "highlights": {
+        "none": "无",
+        "yellow": "黄色",
+        "green": "绿色",
+        "blue": "蓝色",
+        "pink": "粉色",
+        "orange": "橙色"
+      },
+      "effects": "效果",
+      "shadow": "阴影",
+      "shadows": {
+        "none": "无",
+        "soft": "柔和",
+        "strong": "强烈"
+      },
+      "border": "边框",
+      "dashes": {
+        "solid": "实线",
+        "dashed": "虚线",
+        "dotted": "点线"
+      },
+      "gradient": "渐变",
+      "gradients": {
+        "none": "无",
+        "ocean": "海洋",
+        "graphite": "石墨",
+        "sunset": "日落",
+        "violet": "紫罗兰"
+      }
+    },
     "slides": {
       "rail": {
         "label": "幻灯片",

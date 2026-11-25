@@ -719,6 +719,8 @@
       "confirmNo": "Non sono stato io",
       "done": "Tutto pronto.",
       "doneLead": "Hai effettuato l'accesso all'app agentes. Puoi chiudere questa scheda.",
+      "back": "Ritorno all'app.",
+      "openApp": "Apri l'app",
       "expired": "Questa richiesta è scaduta.",
       "expiredLead": "Torna all'app e scegli di nuovo {{provider}}.",
       "handover": "Accesso con il tuo account dall'altro dispositivo…",
@@ -1257,7 +1259,7 @@
         "fileLead": "Il file di qualsiasi app che conosciamo. Viene riconosciuto da solo.",
         "paths": {
           "lead": "Scegli come portarli. Controlli tutto prima che venga creato qualcosa.",
-          "best": "il più completo",
+          "best": "Il più completo",
           "safe": "Chiavi, password e sessioni di {{app}} non arrivano mai, in nessun modo.",
           "command": {
             "title": "Con un comando",
@@ -4521,6 +4523,7 @@
     "available": "Disponibile",
     "working": "Al lavoro",
     "waiting": "Ti aspetta",
+    "idle": "Inattivo",
     "lower": {
       "online": "online",
       "away": "assente",
@@ -12983,6 +12986,7 @@
       "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano.",
       "not_reported": "{{computer}} sta ancora controllando quali programmi ha. Questo cambia da solo quando ha finito.",
       "system": "{{program}} non funziona ancora sul sistema di {{computer}}.",
+      "systemAntigravity": "I piani Gemini non funzionano ancora su {{computer}}: su Windows, Antigravity CLI tiene l'accesso Google in Gestione credenziali, che agentes.chat non riesce ancora a separare per ogni account. Usa invece una chiave API di Gemini.",
       "windows_sandbox": "Il Windows di {{computer}} non riesce a isolare i comandi di {{program}}. Scegli invece Claude o una chiave API, oppure aggiorna quel computer a Windows 11 24H2 o successivo, con gli ultimi aggiornamenti.",
       "no_computerCloud": "Pronto appena lo è {{computer}}."
     },
@@ -19136,6 +19140,12 @@
       "held": "In attesa di approvazione…",
       "said": "«{{text}}»"
     },
+    "trail": {
+      "label": "Cosa ha fatto {{name}} finora",
+      "earlier_one": "{{count}} passo precedente",
+      "earlier_many": "{{count}} passi precedenti",
+      "earlier_other": "{{count}} passi precedenti"
+    },
     "consult": {
       "asking": "{{from}} sta chiedendo a {{to}}",
       "answered": "{{to}} ha risposto. {{from}} sta scrivendo",
@@ -22479,6 +22489,92 @@
     "settingsText": "Invia i dettagli tecnici al team di agentes.chat."
   },
   "live": {
+    "type": {
+      "font": "Carattere",
+      "search": "Cerca carattere",
+      "noResults": "Nessun carattere con questo nome",
+      "list": "Caratteri",
+      "groups": {
+        "slides": "In questa presentazione",
+        "canvas": "In questa lavagna",
+        "document": "In questo documento",
+        "company": "Della tua azienda",
+        "sans": "Senza grazie",
+        "serif": "Con grazie",
+        "display": "Per i titoli",
+        "mono": "Monospaziati",
+        "handwriting": "Calligrafiche"
+      },
+      "headings": "Titoli",
+      "body": "Testo",
+      "fromDrive": "Dal Drive",
+      "ownFont": "Carattere del file",
+      "fileFonts": {
+        "slides": "Caratteri della presentazione",
+        "document": "Caratteri del documento"
+      },
+      "fileFontsNote": "Valgono per tutto il file. Un testo con un carattere suo lo mantiene.",
+      "headingFont": "Carattere dei titoli",
+      "bodyFont": "Carattere del testo",
+      "bring": "Porta un carattere dal Drive…",
+      "bringButton": "Porta dal Drive",
+      "bringTitle": "Porta un carattere dal Drive",
+      "bringSearch": "Cerca caratteri nel Drive",
+      "bringEmpty": "Nessun carattere nel Drive. Carica prima un file .ttf, .otf o .woff nel Drive.",
+      "brought": "{{name}} ora è nel file",
+      "notFont": "Questo file non è un carattere. Scegli un .ttf, .otf o .woff.",
+      "done": "Fatto",
+      "text": "Stile del testo",
+      "glyph": "Aa",
+      "weight": "Peso",
+      "weights": {
+        "w300": "Sottile",
+        "w400": "Normale",
+        "w500": "Medio",
+        "w600": "Semigrassetto",
+        "w700": "Grassetto",
+        "w800": "Extragrassetto"
+      },
+      "tracking": "Spaziatura tra le lettere",
+      "trackings": {
+        "tight": "Più stretta",
+        "normal": "Normale",
+        "open": "Ampia",
+        "wide": "Molto ampia"
+      },
+      "lineHeight": "Altezza della riga",
+      "caps": "Tutto maiuscolo",
+      "highlight": "Evidenziatore",
+      "highlights": {
+        "none": "Nessuno",
+        "yellow": "Giallo",
+        "green": "Verde",
+        "blue": "Blu",
+        "pink": "Rosa",
+        "orange": "Arancione"
+      },
+      "effects": "Effetti",
+      "shadow": "Ombra",
+      "shadows": {
+        "none": "Nessuna",
+        "soft": "Morbida",
+        "strong": "Forte"
+      },
+      "border": "Bordo",
+      "dashes": {
+        "solid": "Continuo",
+        "dashed": "Tratteggiato",
+        "dotted": "Punteggiato"
+      },
+      "gradient": "Sfumatura",
+      "gradients": {
+        "none": "Nessuna",
+        "ocean": "Oceano",
+        "graphite": "Grafite",
+        "sunset": "Tramonto",
+        "violet": "Viola"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Diapositive",
