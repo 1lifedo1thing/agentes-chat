@@ -1,5 +1,5 @@
 {
-  "id": "1e498e8f-1a72-4dfd-b664-392d76bc04c3",
+  "id": "3ce8081f-dbd0-4960-914e-eab6670a2eb5",
   "prevId": "d2170596-4686-43bd-ad65-f3e7b4bbfa2f",
   "version": "7",
   "dialect": "postgresql",
@@ -13234,6 +13234,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "moving_at": {
+          "name": "moving_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "wanted_at": {
           "name": "wanted_at",
           "type": "timestamp with time zone",
@@ -18943,13 +18949,6 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
-        },
-        "after_ids": {
-          "name": "after_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
         },
         "created_at": {
           "name": "created_at",
