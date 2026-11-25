@@ -3817,7 +3817,7 @@
     "nowEveryAgent": "Alle Agenten jetzt: {{level}}.",
     "undo": "Rückgängig",
     "everyAgent": "Für alle Agenten im Workspace",
-    "follows": "Folgt dem Workspace",
+    "follows": "{{level}} · vom Workspace",
     "edit": "Ändern",
     "workspaceLead": "Wann die Agenten vor dem Handeln eine Person fragen.",
     "workspaceHelp": "Jeder Agent folgt dieser Wahl, bis jemand seine eigene auf der Seite des Agenten ändert.",

@@ -3950,7 +3950,7 @@
     "nowEveryAgent": "Todos los agentes ahora: {{level}}.",
     "undo": "Deshacer",
     "everyAgent": "Para todos los agentes del workspace",
-    "follows": "Sigue al workspace",
+    "follows": "{{level}} · del workspace",
     "edit": "Cambiar",
     "workspaceLead": "Cuándo los agentes preguntan a una persona antes de actuar.",
     "workspaceHelp": "Cada agente sigue esta elección hasta que alguien cambie la suya en la página del agente.",

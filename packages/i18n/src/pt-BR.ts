@@ -4046,8 +4046,8 @@ export const ptBR = {
     undo: "Desfazer",
     /** In that dialog, for who may set the workspace's level: it also clears each agent's own choice. */
     everyAgent: "Para todos os agentes do workspace",
-    /** An agent's row value while it has no choice of its own. */
-    follows: "Segue o workspace",
+    /** An agent's row value while it has no choice of its own. {{level}}: the workspace's level, as its title. */
+    follows: "{{level}} · do workspace",
     /** Settings → Aprovações: the button that opens the three choices. */
     edit: "Mudar",
     /** Settings → Aprovações: the workspace's level. */
