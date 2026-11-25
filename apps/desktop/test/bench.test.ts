@@ -38,10 +38,19 @@ describe("the bench's summary", () => {
 
   test("the first opening apart, the warm ones' median and p95, the floor beside them; failed ones left out", () => {
     const runs = [
-      opening("first", 4_100),
+      opening("first", 4_100, {
+        paints: [
+          ["/desktop/handover", 2_900],
+          ["/org/o/c/c", 4_100],
+        ],
+      }),
       ...[2_300, 2_100, 2_500, 2_200, 2_900].map((ms) => opening("warm", ms)),
       opening("warm", 9_999, { failed: "it opened on /login instead of /org/o/c/c" }),
       opening("floor", 600, {
+        paints: [
+          ["/", 600],
+          ["/", 12_900],
+        ],
         shown: [sample(20_600, 40, 90, 100, 200), sample(50_600, 40, 92, 103, 203)],
         hidden: [],
       }),
@@ -60,5 +69,8 @@ describe("the bench's summary", () => {
     expect(text).toContain("| Web view processes | 4 | 4 | 4 | 4 |");
     expect(text).toContain("6 warm openings.");
     expect(text).toContain("- A warm opening failed: it opened on /login instead of /org/o/c/c");
+    // Only a paint after the one that ended the opening is a page loaded again, never the sign-in on the way.
+    expect(text.match(/loaded again/g)).toHaveLength(1);
+    expect(text).toContain("- A floor opening's page loaded again: `/` painted at 12900 ms");
   });
 });

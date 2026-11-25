@@ -124,9 +124,14 @@ const cell = (unit: Unit, v: number | null) => {
   return `${Math.round(v)}${unit === "ms" ? " ms" : ""}`;
 };
 
-/** The job summary: the machine, the table, what its numbers cover, and the openings that failed. */
+/** The job summary: the machine, the table, what its numbers cover, the openings that failed and pages loaded again. */
 export function report(runs: Run[], heading: string): string {
   const failed = runs.filter((r) => r.failed);
+  const again = runs.flatMap((r) =>
+    (r.paints ?? [])
+      .filter(([, ms]) => r.pageReadyMs != null && ms > r.pageReadyMs)
+      .map(([path, ms]) => `- A ${r.kind} opening's page loaded again: \`${path}\` painted at ${ms} ms`),
+  );
   const lines = [
     heading,
     "",
@@ -140,7 +145,8 @@ export function report(runs: Run[], heading: string): string {
     `${runs.filter((r) => r.kind === "warm").length} warm openings. First: a new profile, signing in through a one-time link on its way to the busiest channel. Warm: signed in, straight there. Floor: the app on a blank page of its own instead of the site.`,
     "",
     "Times from the top of the app's `run`, except the first row (from the bench starting it). Memory at the end of a 30 s idle stretch, shown (it starts 20 s after the site painted) and hidden (it starts after 30 s hidden); idle CPU over that stretch, the app and its web view together. Memory is macOS's footprint, Windows' private bytes, Linux's anonymous resident memory; the web view is WebKit's processes working for the app on macOS, every process under it elsewhere.",
-    ...(failed.length ? ["", ...failed.map((r) => `- A ${r.kind} opening failed: ${r.failed}`)] : []),
+    ...(failed.length || again.length ? ["", ...failed.map((r) => `- A ${r.kind} opening failed: ${r.failed}`)] : []),
+    ...again,
   ];
   return `${lines.join("\n")}\n`;
 }

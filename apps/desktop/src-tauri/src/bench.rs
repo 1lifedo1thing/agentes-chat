@@ -133,12 +133,15 @@ pub fn painted(app: &AppHandle, page: &tauri::Webview) {
     }
 }
 
-/// The cover stepped aside from the site's screen that ended the opening.
+/// The cover stepped aside from the site's screen that ended the opening: the last time before the measuring starts,
+/// since a cover that came back over the painted site (a whole page loading again) is gone only then.
 pub fn cover_gone() {
     let Some(bench) = bench() else { return };
     let mut record = record(bench);
-    if record.page_ready_ms.is_some() && record.cover_gone_ms.is_none() {
-        record.cover_gone_ms = Some(now_ms());
+    let now = now_ms();
+    let settle = u64::try_from(SETTLE.as_millis()).unwrap_or(u64::MAX);
+    if record.page_ready_ms.is_some_and(|ready| now < ready.saturating_add(settle)) {
+        record.cover_gone_ms = Some(now);
     }
 }
 
