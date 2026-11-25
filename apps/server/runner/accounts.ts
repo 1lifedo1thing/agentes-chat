@@ -3056,9 +3056,11 @@ export class AccountManager {
       if (now === uid) return true;
       if (now) await this.reclaimNow(kind, id);
       for (const [d, mode] of this.parents(kind)) await chmod(d, mode);
-      // Cursor's models while root still holds the folder: a turn right after the sign-in may come before any look.
+      // The models the CLI lists to this account while root still holds the folder: a turn right after the sign-in may
+      // come before any look, and a lent folder is never run on again (Grok's and Gemini's look is their listing).
       if (kind === "cursor" && !this.listedBy("cursor").has(id))
         await this.listCursorModels(id, dir, (await cursorKeyOf(dir)) ?? undefined);
+      else if (listsInStatus(kind) && !this.listedBy(kind).has(id)) await this.look(kind, id).catch(() => undefined);
       // Marked before the first chown: a folder an agent's user may have written to never runs as root again.
       await writeFile(this.marker(kind, id, "lent"), String(uid), { mode: 0o600 });
       await chownTree(dir, uid, chown);
