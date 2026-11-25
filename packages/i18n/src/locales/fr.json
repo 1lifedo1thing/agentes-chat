@@ -8409,6 +8409,38 @@
       "label": "Modifier les coordonnées du Vault",
       "description": "Enregistrer et mettre à jour des coordonnées dans le Vault, changer le nom d'utilisateur d'un identifiant enregistré ou une description, créer des mots de passe pour les comptes qu'il ouvre, et supprimer ce qu'il a enregistré."
     },
+    "gitlab_git_read": {
+      "label": "Cloner des dépôts (git)",
+      "description": "Cloner et mettre à jour des dépôts sur l'ordinateur de l'agent avec git, via notre proxy. Le jeton GitLab n'entre jamais dans la machine."
+    },
+    "gitlab_git_write": {
+      "label": "Pousser des branches (git push)",
+      "description": "Pousser des commits sur les branches agentes/{agent}/… : jamais sur la branche par défaut, pas de force push, pas de tags. Supprimer des branches et pousser sur la branche de quelqu'un d'autre demandent d'abord une approbation."
+    },
+    "gitlab_pr_write": {
+      "label": "Ouvrir des merge requests",
+      "description": "Ouvrir des merge requests et les commenter."
+    },
+    "bitbucket_git_read": {
+      "label": "Cloner des dépôts (git)",
+      "description": "Cloner et mettre à jour des dépôts sur l'ordinateur de l'agent avec git, via notre proxy. Le jeton Bitbucket n'entre jamais dans la machine."
+    },
+    "bitbucket_git_write": {
+      "label": "Pousser des branches (git push)",
+      "description": "Pousser des commits sur les branches agentes/{agent}/… : jamais sur la branche par défaut, pas de force push, pas de tags. Supprimer des branches et pousser sur la branche de quelqu'un d'autre demandent d'abord une approbation."
+    },
+    "bitbucket_pr_write": {
+      "label": "Ouvrir des pull requests",
+      "description": "Ouvrir des pull requests et les commenter."
+    },
+    "git_git_read": {
+      "label": "Cloner des dépôts (git)",
+      "description": "Cloner et mettre à jour des dépôts sur l'ordinateur de l'agent avec git, via notre proxy. Le jeton Git n'entre jamais dans la machine."
+    },
+    "git_git_write": {
+      "label": "Pousser des branches (git push)",
+      "description": "Pousser des commits sur les branches agentes/{agent}/… : jamais sur la branche par défaut, pas de force push, pas de tags. Supprimer des branches et pousser sur la branche de quelqu'un d'autre demandent d'abord une approbation."
+    },
     "github_git_read": {
       "label": "Cloner des dépôts (git)",
       "description": "Cloner et mettre à jour des dépôts sur l'ordinateur de l'agent avec git, via notre proxy. Le jeton GitHub n'entre jamais dans la machine."
@@ -11838,10 +11870,10 @@
       "agent": "Agent",
       "repo": "Où travailler",
       "repoPlaceholder": "Dépôt ou projet",
-      "repoSearch": "Cherchez, ou tapez owner/name ou un nouveau nom",
+      "repoSearch": "Recherchez, ou saisissez owner/name, l’adresse d’un dépôt ou un nouveau nom",
       "newLocal": "Nouveau projet sur l'ordinateur : {{name}}",
       "useRepo": "Utiliser {{repo}}",
-      "repoNote": "Un nom sans owner crée un projet sur l'ordinateur de l'agent, en dehors de GitHub.",
+      "repoNote": "Un nom sans owner crée un projet uniquement sur l’ordinateur de l’agent, sans dépôt distant.",
       "hint": "@ fait venir quelqu'un dans la session",
       "start": "Démarrer"
     },
@@ -11855,7 +11887,7 @@
       "closeHint": "Elle quitte la liste : le worktree est supprimé, la branche reste",
       "failed": "Le worktree n'a pas pu être préparé.",
       "retry": "Réessayer",
-      "githubAccess": "Cet espace de travail n'a pas accès à ce dépôt sur GitHub. Connectez GitHub dans Paramètres › Connecteurs, ou démarrez une session sur un projet de l'ordinateur (juste un nom)."
+      "githubAccess": "Cet espace de travail n’a pas accès à ce dépôt. Connectez l’endroit où il se trouve (GitHub, GitLab ou Bitbucket) dans Paramètres › Connecteurs, ou démarrez une session sur un projet de l’ordinateur (juste un nom)."
     },
     "panel": {
       "label": "Panneau de la session",
@@ -13907,6 +13939,7 @@
       "teamLocked": "Seules les personnes qui gèrent les connecteurs ajoutent ceux de l’équipe.",
       "mailLocked": "Une boîte mail appartient toujours à qui la connecte.",
       "done": "Vos agents l’utilisent seulement quand vous le demandez.",
+      "githubDone": "Dans les sessions de code, les commits, les pushes et les pull requests de ce que vous demandez partent à votre nom.",
       "worksWhenAsked": "Fonctionne seulement quand vous le demandez.",
       "remove": "Retirer",
       "removeName": "Retirer {{name}}",
@@ -14675,6 +14708,7 @@
     },
     "label": {
       "git_clone": "Cloner un dépôt",
+      "list_repositories": "Lister les dépôts",
       "create_repository": "Créer un dépôt",
       "delete_repository": "Supprimer un dépôt",
       "fork_repository": "Forker un dépôt",
@@ -15607,6 +15641,19 @@
       "asks_other": "{{count}} actions demandent une approbation dans le chat.",
       "adjust": "Ajuster",
       "ok": "Terminé"
+    },
+    "git": {
+      "token": "Jeton d’accès",
+      "address": "Adresse",
+      "addressHelp": {
+        "gitlab": "Seulement pour un GitLab que votre entreprise héberge elle-même. Laissé vide, c’est gitlab.com.",
+        "git": "Où se trouve le serveur git, par exemple https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "Un jeton d’accès GitLab (personnel, de groupe ou de projet) avec les portées api et write_repository. Il reste sur le serveur : les ordinateurs des agents ne le reçoivent jamais.",
+        "bitbucket": "Un jeton d’accès de workspace ou de dépôt, avec l’écriture sur les dépôts et les pull requests. Avec votre propre jeton d’API, saisissez votre e-mail Atlassian, deux-points et le jeton : you@company.com:TOKEN.",
+        "git": "Le jeton que le serveur accepte comme mot de passe git. S’il demande un nom d’utilisateur, saisissez username:token."
+      }
     },
     "telegram": {
       "token": "Jeton du bot",
@@ -19291,6 +19338,7 @@
         "runningCommandAny": "A exécuté une commande",
         "usingScreen": "A utilisé l'écran",
         "cloningRepo": "A cloné un dépôt",
+        "listingRepos": "A listé les dépôts",
         "openingPullRequest": "A ouvert une pull request",
         "handingOff": "A livré un rapport",
         "recordingFindings": "A noté les résultats",
@@ -19412,6 +19460,7 @@
       "runningCommandAny": "exécution d'une commande",
       "usingScreen": "utilisation de l'écran",
       "cloningRepo": "clonage d'un dépôt",
+      "listingRepos": "liste les dépôts",
       "openingPullRequest": "ouverture d'une pull request",
       "handingOff": "livraison d'un rapport",
       "recordingFindings": "prise de notes des résultats",

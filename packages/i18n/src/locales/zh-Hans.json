@@ -7860,6 +7860,38 @@
       "label": "编辑 Vault 联系信息",
       "description": "在 Vault 中保存和更新联系信息，修改已保存登录信息的用户名或描述，为它创建的账号生成密码，并删除它自己保存的内容。"
     },
+    "gitlab_git_read": {
+      "label": "克隆仓库（git）",
+      "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。GitLab 令牌永远不会进入这台电脑。"
+    },
+    "gitlab_git_write": {
+      "label": "推送分支（git push）",
+      "description": "将提交推送到 agentes/{agent}/… 分支：绝不推送到默认分支，不强制推送，不推送标签。删除分支和推送到他人的分支需要先审批。"
+    },
+    "gitlab_pr_write": {
+      "label": "创建 Merge request",
+      "description": "创建 Merge request 并发表评论。"
+    },
+    "bitbucket_git_read": {
+      "label": "克隆仓库（git）",
+      "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。Bitbucket 令牌永远不会进入这台电脑。"
+    },
+    "bitbucket_git_write": {
+      "label": "推送分支（git push）",
+      "description": "将提交推送到 agentes/{agent}/… 分支：绝不推送到默认分支，不强制推送，不推送标签。删除分支和推送到他人的分支需要先审批。"
+    },
+    "bitbucket_pr_write": {
+      "label": "创建 Pull Request",
+      "description": "创建 Pull Request 并发表评论。"
+    },
+    "git_git_read": {
+      "label": "克隆仓库（git）",
+      "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。Git 令牌永远不会进入这台电脑。"
+    },
+    "git_git_write": {
+      "label": "推送分支（git push）",
+      "description": "将提交推送到 agentes/{agent}/… 分支：绝不推送到默认分支，不强制推送，不推送标签。删除分支和推送到他人的分支需要先审批。"
+    },
     "github_git_read": {
       "label": "克隆仓库（git）",
       "description": "通过我们的代理，在智能体的电脑上用 git 克隆和更新仓库。GitHub 令牌永远不会进入这台电脑。"
@@ -11028,10 +11060,10 @@
       "agent": "智能体",
       "repo": "在哪里工作",
       "repoPlaceholder": "仓库或项目",
-      "repoSearch": "搜索，或输入 owner/name 或新名称",
+      "repoSearch": "搜索，或输入 owner/name、仓库地址或一个新名称",
       "newLocal": "电脑上的新项目：{{name}}",
       "useRepo": "使用 {{repo}}",
-      "repoNote": "不带 owner 的名称会在智能体的电脑上新建项目，不放在 GitHub 上。",
+      "repoNote": "不带 owner 的名称只会在智能体的电脑上创建项目，没有远程仓库。",
       "hint": "用 @ 呼叫他人加入会话",
       "start": "开始"
     },
@@ -11045,7 +11077,7 @@
       "closeHint": "会从列表中移除：工作树会被删除，分支会保留",
       "failed": "无法准备工作树。",
       "retry": "重试",
-      "githubAccess": "此工作区没有这个仓库的 GitHub 访问权限。请在“设置 › 连接器”中连接 GitHub，或在电脑上的项目中开始会话（只需输入名称）。"
+      "githubAccess": "此工作区无权访问该仓库。请在设置 › 连接器中连接它所在的平台（GitHub、GitLab 或 Bitbucket），或在电脑上的项目中开始会话（只需一个名称）。"
     },
     "panel": {
       "label": "会话面板",
@@ -12935,6 +12967,7 @@
       "teamLocked": "只有管理连接器的人才能添加团队的连接。",
       "mailLocked": "邮箱始终属于连接它的人。",
       "done": "你的智能体只在你提出请求时使用它。",
+      "githubDone": "在代码会话中，你所请求工作的提交、推送和拉取请求都以你的名义发出。",
       "worksWhenAsked": "只在你提出请求时生效。",
       "remove": "移除",
       "removeName": "移除 {{name}}",
@@ -13693,6 +13726,7 @@
     },
     "label": {
       "git_clone": "克隆仓库",
+      "list_repositories": "列出仓库",
       "create_repository": "创建仓库",
       "delete_repository": "删除仓库",
       "fork_repository": "Fork 仓库",
@@ -14585,6 +14619,19 @@
       "asks_other": "{{count}} 项操作会在聊天中请求审批。",
       "adjust": "调整",
       "ok": "完成"
+    },
+    "git": {
+      "token": "访问令牌",
+      "address": "地址",
+      "addressHelp": {
+        "gitlab": "仅用于贵公司自行托管的 GitLab。留空则为 gitlab.com。",
+        "git": "git 服务器的位置，例如 https://git.company.com。"
+      },
+      "tokenHelp": {
+        "gitlab": "具有 api 和 write_repository 权限范围的 GitLab 访问令牌（个人、群组或项目）。它保存在服务器上：智能体的电脑永远拿不到它。",
+        "bitbucket": "具有仓库写入和拉取请求写入权限的工作区或仓库访问令牌。使用你自己的 API 令牌时，请输入你的 Atlassian 邮箱、冒号和令牌：you@company.com:TOKEN。",
+        "git": "服务器作为 git 密码接受的令牌。如果需要用户名，请输入 username:token。"
+      }
     },
     "telegram": {
       "token": "机器人令牌",
@@ -18149,6 +18196,7 @@
         "runningCommandAny": "运行了命令",
         "usingScreen": "使用了屏幕",
         "cloningRepo": "克隆了仓库",
+        "listingRepos": "已列出仓库",
         "openingPullRequest": "创建了拉取请求",
         "handingOff": "交付了报告",
         "recordingFindings": "记录了发现",
@@ -18270,6 +18318,7 @@
       "runningCommandAny": "运行命令",
       "usingScreen": "使用屏幕",
       "cloningRepo": "克隆仓库",
+      "listingRepos": "正在列出仓库",
       "openingPullRequest": "创建拉取请求",
       "handingOff": "交付报告",
       "recordingFindings": "记录发现",

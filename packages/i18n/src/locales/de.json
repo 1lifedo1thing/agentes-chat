@@ -8128,6 +8128,38 @@
       "label": "Vault-Kontakte bearbeiten",
       "description": "Kontaktdaten im Vault speichern und aktualisieren, den Benutzernamen eines gespeicherten Logins oder eine Beschreibung ändern, Passwörter für selbst angelegte Konten erstellen und löschen, was er gespeichert hat."
     },
+    "gitlab_git_read": {
+      "label": "Repositorys klonen (git)",
+      "description": "Repositorys mit git auf dem Computer des Agenten klonen und aktualisieren, über unseren Proxy. Das GitLab-Token gelangt nie auf die Maschine."
+    },
+    "gitlab_git_write": {
+      "label": "Branches pushen (git push)",
+      "description": "Commits auf Branches agentes/{agent}/… pushen: nie auf den Standard-Branch, kein Force-Push, keine Tags. Branches löschen und auf den Branch einer anderen Person pushen fragt zuerst nach Freigabe."
+    },
+    "gitlab_pr_write": {
+      "label": "Merge requests öffnen",
+      "description": "Merge requests öffnen und kommentieren."
+    },
+    "bitbucket_git_read": {
+      "label": "Repositorys klonen (git)",
+      "description": "Repositorys mit git auf dem Computer des Agenten klonen und aktualisieren, über unseren Proxy. Das Bitbucket-Token gelangt nie auf die Maschine."
+    },
+    "bitbucket_git_write": {
+      "label": "Branches pushen (git push)",
+      "description": "Commits auf Branches agentes/{agent}/… pushen: nie auf den Standard-Branch, kein Force-Push, keine Tags. Branches löschen und auf den Branch einer anderen Person pushen fragt zuerst nach Freigabe."
+    },
+    "bitbucket_pr_write": {
+      "label": "Pull Requests öffnen",
+      "description": "Pull Requests öffnen und kommentieren."
+    },
+    "git_git_read": {
+      "label": "Repositorys klonen (git)",
+      "description": "Repositorys mit git auf dem Computer des Agenten klonen und aktualisieren, über unseren Proxy. Das Git-Token gelangt nie auf die Maschine."
+    },
+    "git_git_write": {
+      "label": "Branches pushen (git push)",
+      "description": "Commits auf Branches agentes/{agent}/… pushen: nie auf den Standard-Branch, kein Force-Push, keine Tags. Branches löschen und auf den Branch einer anderen Person pushen fragt zuerst nach Freigabe."
+    },
     "github_git_read": {
       "label": "Repositorys klonen (git)",
       "description": "Repositorys mit git auf dem Computer des Agenten klonen und aktualisieren, über unseren Proxy. Das GitHub-Token gelangt nie auf die Maschine."
@@ -11407,10 +11439,10 @@
       "agent": "Agent",
       "repo": "Wo gearbeitet wird",
       "repoPlaceholder": "Repository oder Projekt",
-      "repoSearch": "Suche oder gib owner/name oder einen neuen Namen ein",
+      "repoSearch": "Suche oder gib owner/name, die Adresse eines Repositorys oder einen neuen Namen ein",
       "newLocal": "Neues Projekt auf dem Computer: {{name}}",
       "useRepo": "{{repo}} verwenden",
-      "repoNote": "Ein Name ohne Owner legt ein Projekt auf dem Computer des Agenten an, außerhalb von GitHub.",
+      "repoNote": "Ein Name ohne owner legt ein Projekt nur auf dem Computer des Agenten an, ohne Remote-Repository.",
       "hint": "@ holt jemanden in die Sitzung",
       "start": "Starten"
     },
@@ -11424,7 +11456,7 @@
       "closeHint": "Sie verschwindet aus der Liste: der Worktree geht, der Branch bleibt",
       "failed": "Der Worktree konnte nicht vorbereitet werden.",
       "retry": "Erneut versuchen",
-      "githubAccess": "Dieser Workspace hat keinen GitHub-Zugriff auf dieses Repository. Verbinde GitHub unter Einstellungen › Konnektoren oder starte eine Sitzung in einem Projekt auf dem Computer (nur ein Name)."
+      "githubAccess": "Dieser Workspace hat keinen Zugriff auf dieses Repository. Verbinde den Ort, an dem es liegt (GitHub, GitLab oder Bitbucket), unter Einstellungen › Konnektoren oder starte eine Sitzung in einem Projekt auf dem Computer (nur ein Name)."
     },
     "panel": {
       "label": "Sitzungsbereich",
@@ -13408,6 +13440,7 @@
       "teamLocked": "Nur wer Konnektoren verwaltet, fügt die des Teams hinzu.",
       "mailLocked": "Ein Postfach gehört immer der Person, die es verbindet.",
       "done": "Deine Agenten nutzen es nur, wenn du fragst.",
+      "githubDone": "In Code-Sitzungen gehen die Commits, Pushes und Pull Requests für das, was du anfragst, unter deinem Namen raus.",
       "worksWhenAsked": "Funktioniert nur, wenn du fragst.",
       "remove": "Entfernen",
       "removeName": "{{name}} entfernen",
@@ -14171,6 +14204,7 @@
     },
     "label": {
       "git_clone": "Repository klonen",
+      "list_repositories": "Repositorys auflisten",
       "create_repository": "Repository erstellen",
       "delete_repository": "Repository löschen",
       "fork_repository": "Repository forken",
@@ -15084,6 +15118,19 @@
       "asks_other": "{{count}} Aktionen fragen im Chat nach Freigabe.",
       "adjust": "Anpassen",
       "ok": "Fertig"
+    },
+    "git": {
+      "token": "Zugriffstoken",
+      "address": "Adresse",
+      "addressHelp": {
+        "gitlab": "Nur für ein GitLab, das dein Unternehmen selbst betreibt. Leer gelassen ist es gitlab.com.",
+        "git": "Wo der Git-Server liegt, zum Beispiel https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "Ein GitLab-Zugriffstoken (persönlich, für Gruppe oder Projekt) mit den Scopes api und write_repository. Es bleibt auf dem Server: Die Computer der Agenten bekommen es nie.",
+        "bitbucket": "Ein Zugriffstoken für Workspace oder Repository mit Schreibrechten für Repositorys und Pull Requests. Mit deinem eigenen API-Token gibst du deine Atlassian-E-Mail, einen Doppelpunkt und das Token ein: you@company.com:TOKEN.",
+        "git": "Das Token, das der Server als Git-Passwort annimmt. Wenn er einen Benutzernamen verlangt, gib username:token ein."
+      }
     },
     "telegram": {
       "token": "Bot-Token",
@@ -18700,6 +18747,7 @@
         "runningCommandAny": "Einen Befehl ausgeführt",
         "usingScreen": "Den Bildschirm genutzt",
         "cloningRepo": "Ein Repository geklont",
+        "listingRepos": "Hat die Repositorys aufgelistet",
         "openingPullRequest": "Einen Pull Request geöffnet",
         "handingOff": "Einen Bericht geliefert",
         "recordingFindings": "Die Ergebnisse notiert",
@@ -18821,6 +18869,7 @@
       "runningCommandAny": "Ausführen eines Befehls",
       "usingScreen": "Nutzen des Bildschirms",
       "cloningRepo": "Klonen eines Repositorys",
+      "listingRepos": "listet die Repositorys auf",
       "openingPullRequest": "Öffnen eines Pull Requests",
       "handingOff": "Liefern eines Berichts",
       "recordingFindings": "Notieren der Ergebnisse",

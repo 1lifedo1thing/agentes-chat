@@ -865,6 +865,30 @@ export const envVars = {
     section: "Connectors",
     secret: true,
   },
+  CONNECTOR_GITLAB_CLIENT_ID: {
+    schema: z.string().optional(),
+    description:
+      "Application ID of this server's GitLab application (gitlab.com › Preferences › Applications, confidential, scopes `api` and `write_repository`), so people connect GitLab by signing in (ADR 0227). Set together with `CONNECTOR_GITLAB_CLIENT_SECRET`. Redirect URI: `{PUBLIC_URL}/api/app/connectors/oauth/callback`. Without it, GitLab connects with an access token, as a GitLab of one's own always does.",
+    section: "Connectors",
+  },
+  CONNECTOR_GITLAB_CLIENT_SECRET: {
+    schema: z.string().optional(),
+    description: "Secret of the GitLab application for the GitLab connector.",
+    section: "Connectors",
+    secret: true,
+  },
+  CONNECTOR_BITBUCKET_CLIENT_ID: {
+    schema: z.string().optional(),
+    description:
+      "Key of this server's Bitbucket OAuth consumer (a workspace's settings › OAuth consumers; permissions: Account read, Repositories write, Pull requests write), so people connect Bitbucket by signing in (ADR 0227). Set together with `CONNECTOR_BITBUCKET_CLIENT_SECRET`. Callback URL: `{PUBLIC_URL}/api/app/connectors/oauth/callback`. Without it, Bitbucket connects with an access token.",
+    section: "Connectors",
+  },
+  CONNECTOR_BITBUCKET_CLIENT_SECRET: {
+    schema: z.string().optional(),
+    description: "Secret of the Bitbucket OAuth consumer for the Bitbucket connector.",
+    section: "Connectors",
+    secret: true,
+  },
   CONNECTOR_X_CLIENT_ID: {
     schema: z.string().optional(),
     description:
