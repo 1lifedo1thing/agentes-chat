@@ -315,8 +315,7 @@ describe("Conectar uma IA: one picker, plans first", () => {
         ],
       },
     });
-    const row = (name: RegExp) =>
-      within(dialog).getByRole("button", { name }).closest(".ac-optrow") as HTMLElement;
+    const row = (name: RegExp) => within(dialog).getByRole("button", { name }).closest(".ac-optrow") as HTMLElement;
     expect(shownText(row(/^Outro plano/))).toContain("Gemini, Grok e Cursor ainda não rodam no Windows");
     await click(within(dialog).getByRole("button", { name: /^Outro plano/ }));
     for (const name of ["Gemini", "Grok", "Cursor"])
