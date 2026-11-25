@@ -1,5 +1,5 @@
 {
-  "id": "8461f690-a5f5-468e-a727-193076536826",
+  "id": "3ce8081f-dbd0-4960-914e-eab6670a2eb5",
   "prevId": "d2170596-4686-43bd-ad65-f3e7b4bbfa2f",
   "version": "7",
   "dialect": "postgresql",
@@ -5374,19 +5374,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "instructions": {
-          "name": "instructions",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "use_instructions": {
-          "name": "use_instructions",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         },
         "status": {
           "name": "status",
@@ -13243,6 +13230,12 @@
         },
         "egress_waiting_at": {
           "name": "egress_waiting_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moving_at": {
+          "name": "moving_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
