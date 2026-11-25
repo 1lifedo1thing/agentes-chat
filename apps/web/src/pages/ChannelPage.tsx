@@ -120,7 +120,7 @@ import { choiceReplyLine } from "@agenteschat/client/lib/choices";
 import { draftKeyOf } from "@agenteschat/client/lib/composer-drafts";
 import { type ConsultPairItem, consultsForLine } from "@agenteschat/client/lib/consult-group";
 import { consultationsOf } from "@agenteschat/client/lib/consultations";
-import { deviceWaitOf } from "@agenteschat/client/lib/devices";
+import { deviceWaitOf, spilledText } from "@agenteschat/client/lib/devices";
 import { clearDraft, peekDraft } from "@agenteschat/client/lib/drafts";
 import { ErrorBoundary } from "@agenteschat/client/lib/error-boundary";
 import {
@@ -208,6 +208,7 @@ import {
   Locked,
   Mention,
   Menu,
+  MenuCheckboxItem,
   MenuItem,
   MenuRadioGroup,
   MenuSeparator,
@@ -298,6 +299,7 @@ import {
   RoutineReport,
   RoutineTag,
   SpeedFallbackLine,
+  SpilledLine,
   StopPill,
   StopsProvider,
   SurfaceViaMark,
@@ -906,8 +908,9 @@ function ChannelView({
   // A thread whose replies are still loading: only their skeleton shows, never the root the channel holds above it,
   // which the replies would push out of view. It opens on them, at its end, in one paint.
   const repliesPending = Boolean(thread && messages.isPlaceholderData && thread.replyCount > 0);
-  // An agent's DM whose setup checklist still reads its data: shown with the messages once it can draw as it stays.
-  const introPending = Boolean(!thread && chrome?.introPending);
+  // An agent's DM whose setup checklist still reads its data, or whose first page is still loading: the intro shows with
+  // the messages, never alone over their skeleton (the rows would then land under it and push it out of view).
+  const introPending = Boolean(!thread && (chrome?.introPending || (chrome?.intro && messages.isLoading)));
   // The channel's threads: closed lines, context marks, markers (not in a thread view or while adjusting).
   const listsThreads = readable && !thread;
   const openThreads = useChannelThreads(org.id, channel.id, "all", listsThreads);
@@ -4606,6 +4609,7 @@ export const TimelineMessage = memo(function TimelineMessage({
   };
   const meta = m.meta ?? {};
   const standIn = modelStandInText(t, meta);
+  const spilled = m.author.type === "agent" ? spilledText(t, meta, org) : null;
   const approvalId = typeof meta.approvalId === "string" ? meta.approvalId : null;
   const proposalId = typeof meta.proposalId === "string" ? meta.proposalId : null;
   const memoryUpdates = Array.isArray(meta.memoryUpdates)
@@ -4994,6 +4998,7 @@ export const TimelineMessage = memo(function TimelineMessage({
             {voice && <ChatVoice message={m} voice={voice} />}
             {m.author.type === "agent" && meta.speedFallback === true && <SpeedFallbackLine agent={agent} />}
             {m.author.type === "agent" && standIn && <ModelStandInLine text={standIn} agent={agent} meta={meta} />}
+            {spilled && <SpilledLine text={spilled} />}
             {(stopped.canceled || atLimit || providerCut) && (
               <StoppedLine
                 runId={m.agentRunId}
@@ -5440,6 +5445,18 @@ function ChannelDetails({
       <span className="member-group__count">{count}</span>
     </p>
   );
+  // How an agent answers my messages; the responsible agent's line says that first, alone when it answers on its own
+  // and something picks for me.
+  const agentLine = (r: (typeof all)[number]) => {
+    const line = !r.autoReply
+      ? t("channelMembers.mentionLine", { handle: r.handle })
+      : !picksForMe(routing)
+        ? t(replyAloneKey(routing), agentGrammar(r.name))
+        : t("channelMembers.aloneLine", agentGrammar(r.name));
+    if (r.id !== channel.leadAgentId) return line;
+    const lead = t("channelMembers.lead");
+    return r.autoReply && picksForMe(routing) ? lead : [lead, line].join(" · ");
+  };
   const membersList = (
     <DialogSearchList
       query={q}
@@ -5461,13 +5478,7 @@ function ChannelDetails({
           </OpensAgent>
           <span className="list-col">
             <span style={{ fontWeight: 600 }}>{r.name}</span>
-            <span className="small muted">
-              {!r.autoReply
-                ? t("channelMembers.mentionLine", { handle: r.handle })
-                : !picksForMe(routing)
-                  ? t(replyAloneKey(routing), agentGrammar(r.name))
-                  : t("channelMembers.aloneLine", agentGrammar(r.name))}
-            </span>
+            <span className="small muted">{agentLine(r)}</span>
           </span>
           {r.setsReply && (
             <Menu
@@ -5513,6 +5524,20 @@ function ChannelDetails({
               />
               {editable && (
                 <>
+                  <MenuSeparator />
+                  <MenuCheckboxItem
+                    checked={r.id === channel.leadAgentId}
+                    disabled={update.isPending}
+                    description={t("channelMembers.leadHelp")}
+                    onCheckedChange={(on) =>
+                      update.mutate(
+                        { leadAgentId: on ? r.id : null },
+                        { onError: (e) => toast.show(errorText(t, e), "error") },
+                      )
+                    }
+                  >
+                    {t("channelMembers.lead")}
+                  </MenuCheckboxItem>
                   <MenuSeparator />
                   <MenuItem icon="close" danger onSelect={() => setRemoving({ kind: "agent", id: r.id, name: r.name })}>
                     {t("channelMembers.remove")}
