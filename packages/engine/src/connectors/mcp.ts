@@ -453,7 +453,7 @@ export function createConnectorToolSource(
 
   /**
    * What the agent writes to GitHub, signed (ADR 0156): a body ends with its line naming the agent and the person it
-   * works for, a commit message with the agent's own `Co-authored-by` and that person's. The approval card showed the
+   * works for, a commit message with the agent's own `Co-Authored-By` and that person's. The approval card showed the
    * agent's own words.
    */
   async function signed(
