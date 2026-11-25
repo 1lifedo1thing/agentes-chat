@@ -616,14 +616,15 @@ export class RunnerDaemon implements RequestObserver {
         onChange: () => this.executorsChanged(),
         ...(windows.chooseCodexSandbox ? { choose: windows.chooseCodexSandbox } : {}),
       });
-    // Grok Build's and Antigravity's models as the accounts signed in here list them: the computer's own
-    // `grok models` and `agy models` are signed out.
+    // Grok Build's, Antigravity's and Cursor's models as the accounts signed in here list them: the computer's own
+    // `grok models`, `agy models` and `agent models` are signed out.
     this.executors = () => {
       const found: NonNullable<RunnerInfo["executors"]> = { ...exec() };
-      const grok = this.accounts?.listedModels("grok");
-      if (found.grok && grok) found.grok = { ...found.grok, models: grok };
-      const agy = this.accounts?.listedModels("antigravity");
-      if (found.antigravity && agy) found.antigravity = { ...found.antigravity, models: agy };
+      for (const kind of ["grok", "antigravity", "cursor"] as const) {
+        const models = this.accounts?.listedModels(kind);
+        const entry = found[kind];
+        if (entry && models) found[kind] = { ...entry, models };
+      }
       if (found.codex && codexSandbox) found.codex = codexSandbox(found.codex, this.access().tools.codex);
       return found;
     };

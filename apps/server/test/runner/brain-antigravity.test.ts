@@ -607,6 +607,41 @@ test.skipIf(!posix)(
 );
 
 test.skipIf(!posix)(
+  "system mode: a Gemini account lent before any look lists its models as it is lent, never after",
+  async () => {
+    const home = tempDir("agy-accounts-");
+    dirs.push(home);
+    const log = path.join(home, "agy.log");
+    process.env.FAKE_AGY_LOG = log;
+    const root = path.join(home, "accounts");
+    // Signed in, with nothing listed for it yet: the computer's own `agy models` says "Please sign in".
+    const dir = path.join(root, "antigravity", ACCOUNT);
+    mkdirSync(path.dirname(path.join(dir, AGY_SIGN_IN_FILE)), { recursive: true });
+    writeFileSync(path.join(dir, AGY_SIGN_IN_FILE), JSON.stringify({ ...TOKEN, home: dir }));
+    const m = new AccountManager({
+      root,
+      orgId: () => ORG,
+      platform: "linux",
+      commands: { antigravity: [process.execPath, FAKE] },
+      lending: { chown: async () => {} },
+    });
+    managers.push(m);
+    expect(m.listedModels("antigravity")).toBeUndefined();
+    expect(await m.lendTo("antigravity", ACCOUNT, 21001)).toBe(true);
+    expect(m.listedModels("antigravity")).toEqual([
+      { id: "gemini-4-argon-high", label: "Gemini 4 Argon (High)" },
+      { id: "gemini-3.8-flash-medium", label: "Gemini 3.8 Flash (Medium)" },
+    ]);
+    const looks = () => logOf(log).filter((l) => l.args[0] === "models").length;
+    expect(looks()).toBe(1);
+    // Lent to another agent: listed already, its folder is never run on again.
+    expect(await m.lendTo("antigravity", ACCOUNT, 21002)).toBe(true);
+    expect(looks()).toBe(1);
+  },
+  20_000,
+);
+
+test.skipIf(!posix)(
   "a sign-in that fails says why as a code with the CLI's own words, never the pasted code, and leaves no folder",
   async () => {
     const home = tempDir("agy-accounts-");
