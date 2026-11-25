@@ -689,6 +689,8 @@
       "confirmNo": "Ini bukan aku",
       "done": "Beres.",
       "doneLead": "Kamu sudah masuk di aplikasi agentes. Kamu bisa menutup tab ini.",
+      "back": "Kembali ke aplikasi.",
+      "openApp": "Buka aplikasi",
       "expired": "Permintaan ini sudah kedaluwarsa.",
       "expiredLead": "Kembali ke aplikasi lalu pilih {{provider}} lagi.",
       "handover": "Masuk dengan akunmu dari perangkat lain…",
@@ -1201,7 +1203,7 @@
         "fileLead": "File dari aplikasi apa pun yang kami kenal. File itu dikenali dengan sendirinya.",
         "paths": {
           "lead": "Pilih cara membawanya. Kamu memeriksa semuanya sebelum apa pun dibuat.",
-          "best": "paling lengkap",
+          "best": "Paling lengkap",
           "safe": "Kunci, kata sandi, dan sesi {{app}} tidak pernah ikut, lewat cara apa pun.",
           "command": {
             "title": "Dengan perintah",
@@ -4217,6 +4219,7 @@
     "available": "Tersedia",
     "working": "Sedang bekerja",
     "waiting": "Menunggumu",
+    "idle": "Tidak aktif",
     "lower": {
       "online": "online",
       "away": "sedang pergi",
@@ -12056,6 +12059,7 @@
       "home_only": "{{program}} hanya terpasang untuk root di {{computer}}, yang tidak bisa dijangkau para agen.",
       "not_reported": "{{computer}} masih memeriksa program apa saja yang dimilikinya. Ini berubah sendiri setelah selesai.",
       "system": "{{program}} belum berjalan di sistem {{computer}}.",
+      "systemAntigravity": "Paket Gemini belum berjalan di {{computer}}: di Windows, Antigravity CLI menyimpan login Google-nya di Credential Manager, yang belum bisa dipisahkan agentes.chat per akun. Pakai kunci API Gemini sebagai gantinya.",
       "windows_sandbox": "Windows di {{computer}} tidak dapat mengisolasi perintah {{program}}. Pilih Claude atau kunci API sebagai gantinya, atau perbarui komputer itu ke Windows 11 24H2 atau yang lebih baru, dengan pembaruan terbarunya.",
       "no_computerCloud": "Siap begitu {{computer}} siap."
     },
@@ -17986,6 +17990,10 @@
       "held": "Menunggu persetujuan…",
       "said": "“{{text}}”"
     },
+    "trail": {
+      "label": "Yang sudah dikerjakan {{name}}",
+      "earlier_other": "{{count}} langkah sebelumnya"
+    },
     "consult": {
       "asking": "{{from}} sedang bertanya ke {{to}}",
       "answered": "{{to}} sudah menjawab. {{from}} sedang menulis",
@@ -21159,6 +21167,92 @@
     "settingsText": "Kirim detail teknis ke tim agentes.chat."
   },
   "live": {
+    "type": {
+      "font": "Font",
+      "search": "Cari font",
+      "noResults": "Tidak ada font dengan nama itu",
+      "list": "Font",
+      "groups": {
+        "slides": "Di presentasi ini",
+        "canvas": "Di kanvas ini",
+        "document": "Di dokumen ini",
+        "company": "Dari perusahaan Anda",
+        "sans": "Sans serif",
+        "serif": "Serif",
+        "display": "Untuk judul",
+        "mono": "Monospace",
+        "handwriting": "Tulisan tangan"
+      },
+      "headings": "Judul",
+      "body": "Teks",
+      "fromDrive": "Dari Drive",
+      "ownFont": "Font file",
+      "fileFonts": {
+        "slides": "Font presentasi",
+        "document": "Font dokumen"
+      },
+      "fileFontsNote": "Berlaku untuk seluruh file. Teks yang punya font sendiri tetap memakainya.",
+      "headingFont": "Font judul",
+      "bodyFont": "Font teks",
+      "bring": "Ambil font dari Drive…",
+      "bringButton": "Ambil dari Drive",
+      "bringTitle": "Ambil font dari Drive",
+      "bringSearch": "Cari font di Drive",
+      "bringEmpty": "Tidak ada font di Drive. Unggah dulu file .ttf, .otf, atau .woff ke Drive.",
+      "brought": "{{name}} sekarang ada di file",
+      "notFont": "File ini bukan font. Pilih file .ttf, .otf, atau .woff.",
+      "done": "Selesai",
+      "text": "Gaya teks",
+      "glyph": "Aa",
+      "weight": "Ketebalan",
+      "weights": {
+        "w300": "Tipis",
+        "w400": "Normal",
+        "w500": "Sedang",
+        "w600": "Semi tebal",
+        "w700": "Tebal",
+        "w800": "Ekstra tebal"
+      },
+      "tracking": "Jarak antarhuruf",
+      "trackings": {
+        "tight": "Lebih rapat",
+        "normal": "Normal",
+        "open": "Renggang",
+        "wide": "Sangat renggang"
+      },
+      "lineHeight": "Tinggi baris",
+      "caps": "Semua huruf kapital",
+      "highlight": "Sorotan",
+      "highlights": {
+        "none": "Tidak ada",
+        "yellow": "Kuning",
+        "green": "Hijau",
+        "blue": "Biru",
+        "pink": "Merah muda",
+        "orange": "Oranye"
+      },
+      "effects": "Efek",
+      "shadow": "Bayangan",
+      "shadows": {
+        "none": "Tidak ada",
+        "soft": "Lembut",
+        "strong": "Kuat"
+      },
+      "border": "Garis tepi",
+      "dashes": {
+        "solid": "Utuh",
+        "dashed": "Putus-putus",
+        "dotted": "Titik-titik"
+      },
+      "gradient": "Gradien",
+      "gradients": {
+        "none": "Tidak ada",
+        "ocean": "Samudra",
+        "graphite": "Grafit",
+        "sunset": "Senja",
+        "violet": "Ungu"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Slide",
