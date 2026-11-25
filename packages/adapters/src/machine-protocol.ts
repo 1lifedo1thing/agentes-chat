@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 80;
+export const MACHINE_PROTOCOL_VERSION = 83;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -466,6 +466,12 @@ export const CODEX_FOLDER_PROTOCOL = 32;
  * open again in the new mode.
  */
 export const DESKTOP_SWITCH_PROTOCOL = 30;
+/**
+ * From this protocol on: a runner that starts a desktop for a `stream.open` says so first (`stream.starting`), and the
+ * server then waits `STREAM_LIMITS.startTimeoutMs` for that stream instead of `openTimeoutMs`. An older runner can't
+ * say it, so each of its opens that may start the desktop gets the longer wait.
+ */
+export const DESKTOP_STARTING_PROTOCOL = 83;
 
 /**
  * From this protocol on (ADR 0114): the Cursor brain. `brain.turn` takes `kind: "cursor"` (Cursor's CLI, `agent -p`,
@@ -1627,6 +1633,11 @@ export type RunnerDesktopUseInfo = RunnerTerminalInfo;
 export const STREAM_LIMITS = {
   /** The server waits this long for the runner's data socket after `stream.open`. */
   openTimeoutMs: 20_000,
+  /**
+   * The same for an open that starts the agent's desktop first (`DESKTOP_STARTING_PROTOCOL`): its steps may take
+   * 10 s each, and it may wait for another start of that agent's (its browser) to end.
+   */
+  startTimeoutMs: 90_000,
   /** A data socket's `stream.hello` must come this soon. */
   helloTimeoutMs: 10_000,
   /** Both sides ping this often: an idle desktop sends nothing, and proxies drop idle sockets. */
@@ -1838,6 +1849,32 @@ export function parseAgentPointer(f: Record<string, unknown>): AgentPointer | nu
   if (width < 1 || height < 1 || width > 16_384 || height > 16_384) return null;
   const within = (n: number, max: number) => Math.round(Math.min(Math.max(n, 0), max));
   return { x: within(x, width), y: within(y, height), width: Math.round(width), height: Math.round(height), act };
+}
+
+/** Where a desktop start's time went (ms), as its runner's log line says it: the look runs beside its screen. */
+export const DESKTOP_START_STEPS = ["room", "prepared", "screen", "look", "session"] as const;
+export type DesktopStartStep = (typeof DESKTOP_START_STEPS)[number];
+
+/** A desktop start (`desktop.started`): its whole time, and each step's once it started, or why it failed. */
+export interface DesktopStart {
+  ms: number;
+  steps?: Record<DesktopStartStep, number>;
+  /** The error code it failed with. */
+  error?: string;
+}
+
+export function parseDesktopStart(f: Record<string, unknown>): DesktopStart | null {
+  const time = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.round(v) : undefined);
+  const ms = time(f.ms);
+  if (ms === undefined) return null;
+  const given = isObject(f.steps) ? f.steps : null;
+  const steps = given ? Object.fromEntries(DESKTOP_START_STEPS.map((k) => [k, time(given[k])])) : null;
+  const whole = steps !== null && Object.values(steps).every((v) => v !== undefined);
+  return {
+    ms,
+    ...(whole ? { steps: steps as Record<DesktopStartStep, number> } : {}),
+    ...(isString(f.error) && /^[a-z0-9_]{1,64}$/.test(f.error) ? { error: f.error } : {}),
+  };
 }
 
 /** What a frame shows. */
@@ -3589,7 +3626,14 @@ export type RunnerFrame =
   /** `KEEP_RUNNING_PROTOCOL`: a hold ended on the computer by itself (the next `hello` says so again). */
   | { type: "keep.ended"; holdId: string; reason: HoldEnd }
   /** `ROOM_FREED_PROTOCOL`: room again after a `no_slot`. */
-  | { type: "room.freed" };
+  | { type: "room.freed" }
+  /** `DESKTOP_STARTING_PROTOCOL`: this `stream.open` starts the agent's desktop first, so it takes longer. */
+  | { type: "stream.starting"; streamId: string }
+  /**
+   * A desktop start ended here (for a viewer, the agent's own use or its browser): how long it took in all and in
+   * each step (ms), or the error code it failed with. The operator's events feed keeps it. An older server drops it.
+   */
+  | ({ type: "desktop.started"; agentId: string } & DesktopStart);
 
 /** A tool as `mcp.tools` lists it (what MCP `tools/list` returns). */
 export interface McpToolInfo {
@@ -4160,6 +4204,14 @@ export function parseRunnerFrame(raw: string): RunnerFrame | null {
     }
     case "room.freed":
       return { type: "room.freed" };
+    case "stream.starting":
+      return isStreamId(f.streamId) ? { type: "stream.starting", streamId: f.streamId } : null;
+    case "desktop.started": {
+      const start = parseDesktopStart(f);
+      return isString(f.agentId) && start
+        ? { type: "desktop.started", agentId: f.agentId.slice(0, 64), ...start }
+        : null;
+    }
     case "keep.ended": {
       const reason = HOLD_ENDS.find((r) => r === f.reason);
       return isUuid(f.holdId) && reason ? { type: "keep.ended", holdId: f.holdId, reason } : null;

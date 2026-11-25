@@ -665,6 +665,7 @@ export function buildEngine(o: EngineOptions) {
     ...browserLive.hubHooks,
     desktopPointer: desktopPointers.report,
     desktopStopped: desktopPointers.stopped,
+    streamStarting: (machineId, streamId) => streams.starting(machineId, streamId),
     closed(machineId) {
       browserLive.hubHooks.closed(machineId);
       desktopPointers.closed(machineId);

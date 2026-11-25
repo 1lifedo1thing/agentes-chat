@@ -385,6 +385,8 @@ export interface HandlerContext {
   desktopUse?: DesktopManager;
   /** A person takes control of the agent's desktop: what the agent's pointer and keys are doing stops. */
   desktopTaken?: (agentId: string) => void;
+  /** `DESKTOP_STARTING_PROTOCOL`: tells the server a stream's open starts the desktop first (`stream.starting`). */
+  streamStarting?: (streamId: string) => void;
   /** The phones this computer reaches (`PHONES_PROTOCOL`); without it every phone op answers `phone_missing`. */
   phones?: PhoneManager;
   /** `KEEP_RUNNING_PROTOCOL` (system mode under systemd): the agents' holds; without it `keep.*` is `unsupported`. */
@@ -1056,6 +1058,7 @@ async function handleStream(
     // One that isn't running starts when the server says so, and stays on; never on a paused computer.
     if (req.start === true && !ctx.desktops.status(agent).running) {
       if (ctx.paused?.()) throw new RunnerError("paused", PAUSED);
+      ctx.streamStarting?.(streamId);
       await ctx.desktops.ensure(agent);
     }
     if (req.mode === "control") ctx.desktopTaken?.(agent.id);
