@@ -8921,8 +8921,11 @@ export interface ComputerDevice {
   memoryGb: number | null;
   ownerUserId: string | null;
   belongsToWorkspace: boolean;
-  /** While an agent's own computer is full, replies people wait on may think here: to its owner, to anyone else. */
-  spill: { own: boolean; others: boolean };
+  /**
+   * "Help when the team's computer is full or away": fresh turns of its owner's agents (anyone's, on one marked the
+   * workspace's) may think here while their own computer is full or away. An older server also sent a retired `others`.
+   */
+  spill: { own: boolean };
   systemMode: boolean;
   audience: DeviceAudience;
   status: DeviceStatus;
@@ -8958,6 +8961,8 @@ export interface DeviceJoinRequest {
 export interface DevicesList {
   devices: ComputerDevice[];
   requests: DeviceJoinRequest[];
+  /** People's computers may help when the workspace's is full or away (an admin's switch). Absent from an older server: on. */
+  devicesHelp?: boolean;
 }
 
 /** A one-line install: works once, for a few minutes, and the computer still asks to join. */
@@ -9060,7 +9065,7 @@ export interface ComputerDeviceInput {
   belongsToWorkspace?: boolean;
   maxTasks?: number;
   pushHarder?: boolean;
-  spill?: { own?: boolean; others?: boolean };
+  spill?: { own?: boolean };
 }
 
 export interface PhoneDeviceInput {

@@ -12571,7 +12571,7 @@
     "rule": "Neue Arbeit startet, wenn der Computer freien Speicher hat. Menschen zuerst. Zusammen erwähnte Agenten starten nacheinander.",
     "spill": {
       "title": "Deine Computer",
-      "text": "Wenn dieser Computer voll ist, können Antworten an dich auf einem deiner Computer starten. Lange Arbeiten und die Dateien der Agenten bleiben hier.",
+      "text": "Wenn dieser Computer voll oder weg ist, können deine Agenten auf einem deiner Computer starten. Missionen, Code-Sitzungen und Agenten mit Repositorys bleiben hier.",
       "plan": "dein {{plan}}-Abo"
     },
     "youFirst": "Du bist zuerst dran",
@@ -16122,7 +16122,7 @@
     "device": {
       "notLinkMaker": "Nur die Person, die den Link erstellt hat, kann diesen Computer beitreten lassen.",
       "widenForbidden": "Admins können nur einschränken, wer das eigene Gerät einer Person nutzen darf.",
-      "spillOwnerOnly": "Nur wer diesen Computer verbunden hat, kann Antworten hier denken lassen. Ausschalten kannst du es.",
+      "spillOwnerOnly": "Nur die Person, die diesen Computer verbunden hat, kann seine Hilfe einschalten. Du kannst sie ausschalten.",
       "tasksOwnerOnly": "Nur wer diesen Computer verbunden hat, kann ändern, wie viele Aufgaben er gleichzeitig ausführt.",
       "tasksCloud": "Die Cloud bemisst den Platz dieses Computers für Aufgaben selbst.",
       "notHome": "Agenten leben auf dem Computer des Workspace und nutzen diesen, wenn sie ihn beim Namen nennen."
@@ -16555,10 +16555,12 @@
     "pushHarderHint": "Mehr Aufgaben gleichzeitig: Nur 0,5 GB Arbeitsspeicher bleiben frei, und ein ausgelasteter Prozessor hält sie nicht auf. Deine eigenen Apps können langsamer werden.",
     "belongs": "Gehört dem Workspace",
     "belongsHint": "Es bleibt, wenn die Person geht, die es verbunden hat, und alle können es nutzen, solange es niemandem gehört.",
-    "spillOwn": "Deine Antworten können hier denken",
-    "spillOwnHint": "Wenn der Computer eines Agenten voll ist, starten seine Antworten an dich hier.",
-    "spillOthers": "Agenten anderer Personen können hier denken",
-    "spillOthersHint": "Wenn der Computer eines Agenten voll ist, können seine Antworten an andere Personen auch hier starten.",
+    "spillOwn": "Helfen, wenn der Computer des Teams voll oder weg ist",
+    "spillOwnHint": "Wenn der Computer deiner Agenten voll oder weg ist, können ihre Antworten, Anfragen und Routinen hier mit deiner Anmeldung denken.",
+    "spillTeamHint": "Wenn der Computer eines Agenten voll oder weg ist, können seine Antworten, Anfragen und Routinen hier mit der Anmeldung seines Besitzers auf diesem Computer denken.",
+    "spillWorkspaceOff": "Ein Admin hat das für den Workspace ausgeschaltet.",
+    "helpWorkspace": "Computer helfen, wenn der des Teams voll oder weg ist",
+    "helpWorkspaceHint": "Jeder Computer hilft nur, wenn sein Besitzer es erlaubt. Aus: Keiner hilft, egal was sein Besitzer gewählt hat.",
     "connectedBy": "Verbunden von {{name}}",
     "downloadFor": "Für {{system}} herunterladen",
     "downloadApp": "App herunterladen",
@@ -18509,6 +18511,11 @@
       "cant": "Mit {{via}} geantwortet: {{plan}} kann gerade nicht denken.",
       "change": "Ändern"
     },
+    "spilled": {
+      "full": "Hat auf {{to}} gedacht: {{from}} war voll.",
+      "away": "Hat auf {{to}} gedacht: {{from}} war weg.",
+      "itsComputer": "sein Computer"
+    },
     "modelStandIn": {
       "text": "{{plan}} hat {{from}} mit diesem Schlüssel abgelehnt. Ich habe mit {{to}} geantwortet, das damit funktioniert.",
       "useAll": "{{model}} für alle verwenden",
@@ -20416,6 +20423,7 @@
       "notAnsweringHelp": "Meist ist er in ein paar Minuten zurück. Wir kümmern uns.",
       "offline": "{{computer}} ist offline",
       "offlineHelpPlain": "{{name}} wartet, bis der Computer zurück ist.",
+      "helping": "Inzwischen kann neue Arbeit auf {{names}} denken.",
       "noRoom": "{{computer}} zeigt schon so viele Bildschirme, wie er kann. Versuch es gleich noch einmal.",
       "unavailable": "Der Bildschirm von {{name}} kann gerade nicht angezeigt werden",
       "unavailableHelp": "Versuch es gleich noch einmal.",

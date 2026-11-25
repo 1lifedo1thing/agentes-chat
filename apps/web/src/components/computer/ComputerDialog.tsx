@@ -19,6 +19,7 @@ import {
 import { ownsAgentAs } from "@agenteschat/client/lib/agent-owner";
 import { managesAgent } from "@agenteschat/client/lib/audience";
 import { computerName, READY_FLASH_MS, WORKSPACE_COMPUTER_KIND } from "@agenteschat/client/lib/computer";
+import { helpingDevices, withHelping } from "@agenteschat/client/lib/devices";
 import { clockAt } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { computerKind, isPaused } from "@agenteschat/client/lib/machines";
@@ -39,6 +40,7 @@ import { lookOf } from "@/lib/look";
 import { useSaid, useToast } from "@/lib/toast";
 import { BrowserCard, Cover, stepText } from "../browser/BrowserCard";
 import { DesktopView } from "../desktop/DesktopView";
+import { useDevices } from "../devices/queries";
 import { MachineToolButton, useToolOneClick } from "../devices/ToolOneClick";
 import { SwitchComputerDialog } from "../MachineOutages";
 import { useOrg } from "../org-context";
@@ -316,6 +318,9 @@ export function ComputerStage({
   const oneClick = useToolOneClick(machine);
   const browserOneClick = Boolean(machine && oneClick && oneClick.kind !== "outdated");
   const computer = computerName(t, org.name, machine, isPersonal(org));
+  // Away, the computers that help take its new work (ADR 0233): said under the cover. Never the right hand's.
+  const devices = useDevices(org.id).data;
+  const helping = isRightHand(agent) ? [] : helpingDevices(devices, agent.ownerUserId, machine?.id ?? null);
   // Its owner: the person, or whoever holds the role that answers for it (ADR 0085, addendum of 2026-11-21).
   const owns = ownsAgentAs(agent, me.user.id, dir.rolesOf(me.user.id));
   const manages = managesAgent(agent) || owns;
@@ -508,7 +513,7 @@ export function ComputerStage({
             color={color}
             art={<ComputerPortrait kind={WORKSPACE_COMPUTER_KIND} state="offline" size={96} />}
             text={t("agentComputer.state.notAnsweringHelp")}
-            help={t("desktop.state.retrying")}
+            help={withHelping(t, t("desktop.state.retrying"), helping)}
           />
         </Stage>
         {notice}
@@ -522,7 +527,7 @@ export function ComputerStage({
             art={<ComputerPortrait kind={computerKind(machine.os)} state="offline" size={96} />}
             text={t("agentComputer.state.offline", { computer })}
             // The head already says since when.
-            help={t("agentComputer.state.offlineHelpPlain", g)}
+            help={withHelping(t, t("agentComputer.state.offlineHelpPlain", g), helping)}
             action={
               manages &&
               outage &&

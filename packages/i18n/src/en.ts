@@ -13085,7 +13085,7 @@ export const en = {
     /** The viewer's own computers that may take their replies while this one is full (`machines.spill_own`). */
     spill: {
       title: "Your computers",
-      text: "When this computer is full, replies to you can start on one of yours. Long work and the agents' files stay here.",
+      text: "When this computer is full or away, your agents can start on one of yours. Missions, code sessions and agents with repositories stay here.",
       /** The viewer's own sign-in there, "Claude Max". */
       plan: "your {{plan}} plan",
     },
@@ -16550,7 +16550,7 @@ export const en = {
     device: {
       notLinkMaker: "Only the person who made the link can let this computer join.",
       widenForbidden: "Admins can only narrow who can use someone's own device.",
-      spillOwnerOnly: "Only the person who connected this computer can let replies think on it. You can turn it off.",
+      spillOwnerOnly: "Only the person who connected this computer can turn its help on. You can turn it off.",
       tasksOwnerOnly: "Only the person who connected this computer can change how many tasks it runs at once.",
       tasksCloud: "The Cloud sizes this computer's room for tasks itself.",
       notHome: "Agents live on the workspace computer and use this one when they name it.",
@@ -16995,10 +16995,18 @@ export const en = {
       "More tasks at once: only 0.5 GB of memory stays free and a busy processor doesn't hold them. Your own apps may slow down.",
     belongs: "Belongs to the workspace",
     belongsHint: "It stays when the person who connected it leaves, and everyone can use it while nobody owns it.",
-    spillOwn: "Your replies can think here",
-    spillOwnHint: "When an agent's computer is full, its replies to you start here.",
-    spillOthers: "Other people's agents can think here",
-    spillOthersHint: "When an agent's computer is full, its replies to other people can start here too.",
+    /** One switch per computer (`machines.spill_own`, ADR 0233): its owner's to turn on. */
+    spillOwn: "Help when the team's computer is full or away",
+    spillOwnHint:
+      "When your agents' computer is full or away, their replies, asks and routines can think here with your sign-in.",
+    /** The same switch on a computer marked the workspace's: anyone's agents, on their owner's sign-in there. */
+    spillTeamHint:
+      "When an agent's computer is full or away, its replies, asks and routines can think here with its owner's sign-in on this computer.",
+    /** Under the switch while an admin turned devices' help off for the whole workspace. */
+    spillWorkspaceOff: "An admin turned this off for the workspace.",
+    /** Settings › Devices, admins: the workspace's switch over every computer's own (`devicesHelp`). */
+    helpWorkspace: "Computers help when the team's is full or away",
+    helpWorkspaceHint: "Each computer helps only if its owner allows it. Off: none helps, whatever its owner chose.",
     connectedBy: "Connected by {{name}}",
     downloadFor: "Download for {{system}}",
     downloadApp: "Download the app",
@@ -19097,6 +19105,15 @@ export const en = {
       limit: "Answered with {{via}}: {{plan}} reached its limit.",
       cant: "Answered with {{via}}: {{plan}} can't think right now.",
       change: "Change",
+    },
+    /**
+     * Under a reply that thought on another computer because the agent's own was full or away (`meta.spilled`, ADR
+     * 0233): `to` and `from` are computers' names, `itsComputer` stands in for an unknown `from`.
+     */
+    spilled: {
+      full: "Thought on {{to}}: {{from}} was full.",
+      away: "Thought on {{to}}: {{from}} was away.",
+      itsComputer: "its computer",
     },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
@@ -21239,6 +21256,8 @@ export const en = {
       notAnsweringHelp: "It usually comes back within a few minutes. We're on it.",
       offline: "{{computer}} is offline",
       offlineHelpPlain: "{{name}} waits for the computer to come back.",
+      /** Under it while computers that help take its new work (ADR 0233): `names` is a list of computers. */
+      helping: "Meanwhile, its new work can think on {{names}}.",
       noRoom: "{{computer}} is showing as many screens as it can. Try again in a moment.",
       unavailable: "{{name}}'s screen can't be shown right now",
       unavailableHelp: "Try again in a moment.",
