@@ -18,6 +18,7 @@ import {
   memberStatus,
   postPersonMessage,
   setMyStatus,
+  soleStatusPick,
   startRunStatus,
   statusCandidates,
   touchLastSeen,
@@ -216,6 +217,16 @@ test("a running run whose worker died stops counting at once: no line, and the a
   const s = await presenceOf(f);
   expect(s?.presence).not.toBe("busy");
   expect(s?.status).toBeNull();
+});
+
+test("a run whose only line is its task's shows it at once; a sole line of where it answers or a tool waits for Jev", () => {
+  const one = (kind: "task" | "mission" | "channel" | "browsing") => [{ key: "c0", kind, subject: "x", text: "x" }];
+  expect(soleStatusPick(one("task"))).toEqual({ line: "c0", heavy: 0, worth: 1 });
+  expect(soleStatusPick(one("mission"))?.line).toBe("c0");
+  // Whether "Answering in #general" or "Browsing" is worth a line depends on the message: a quick reply says nothing.
+  expect(soleStatusPick(one("channel"))).toBeNull();
+  expect(soleStatusPick(one("browsing"))).toBeNull();
+  expect(soleStatusPick([...one("task"), { key: "c1", kind: "channel", subject: "g", text: "g" }])).toBeNull();
 });
 
 test("a waiting run says what it waits on, and keeps the agent online, not busy", async () => {

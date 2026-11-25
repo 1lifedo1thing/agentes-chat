@@ -2200,7 +2200,7 @@ async function executeRunInner(
           startGroup?.skip("agent_status");
           throw error;
         });
-        // A routine's run shows its routine's line (`STICKY`), and a run with one line shows it: nothing to pick.
+        // A routine's run shows its routine's line (`STICKY`), and a run with only a task's or mission's: nothing to pick.
         const routineLine = lines.some((c) => c.kind === "routine");
         const sole = routineLine ? null : soleStatusPick(lines);
         if (routineLine || sole) startGroup?.skip("agent_status");

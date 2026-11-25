@@ -699,11 +699,14 @@ export interface StatusPick {
 }
 
 /**
- * A run with a single line it may show shows that one at once: nothing to choose between, and asking Jev first held
- * it back by a model round trip. Not weighed, so it doesn't make the agent busy.
+ * A run whose only line says what its work is for (a task, a mission) shows it at once, as it would without Jev:
+ * asking first held it back by a model round trip. Any other sole line (where it answers, what a tool could do) still
+ * waits for Jev, who keeps a quick reply from saying anything (§8). Not weighed, so it doesn't make the agent busy.
  */
-export const soleStatusPick = (candidates: StatusCandidate[]): StatusPick | null =>
-  candidates.length === 1 && candidates[0] ? { line: candidates[0].key, heavy: 0, worth: 1 } : null;
+export const soleStatusPick = (candidates: StatusCandidate[]): StatusPick | null => {
+  const [only] = candidates;
+  return candidates.length === 1 && only && STICKY.has(only.kind) ? { line: only.key, heavy: 0, worth: 1 } : null;
+};
 
 /**
  * The run's line and whether it is busy, as it starts (§8–9): Jev's pick when it rated it worth showing, else no
