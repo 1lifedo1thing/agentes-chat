@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { ConnectorDef, CustomServer, CustomTool, ToolAccess } from "@agenteschat/client";
+import { instructionsSave, instructionsView } from "@agenteschat/client/lib/custom-tools";
 import { mailActionsChanged, mailActionsFrom, mailReviewTools } from "@agenteschat/client/lib/mail";
 import { type ReviewTool, reviewDecisions, reviewToolsOf } from "@agenteschat/client/lib/tool-review";
 import {
@@ -14,8 +15,6 @@ import {
   doneSummary,
   emptyReview,
   firstStep,
-  instructionsSave,
-  instructionsView,
   isWaiting,
   returnHref,
   reviewAgain,

@@ -45,9 +45,14 @@ import {
   outcomeText,
   personalAllowed,
 } from "@agenteschat/client/lib/connected";
-import { humanize, isHttpsUrl, sameServer } from "@agenteschat/client/lib/custom-tools";
+import {
+  humanize,
+  instructionsSave,
+  instructionsView,
+  isHttpsUrl,
+  sameServer,
+} from "@agenteschat/client/lib/custom-tools";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { formatInt } from "@agenteschat/client/lib/format";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { can } from "@agenteschat/client/lib/permissions";
 import {
@@ -1234,28 +1239,20 @@ function ServerInstructions({
   onChange: (on: boolean) => void;
 }) {
   const { t, i18n } = useTranslation();
-  const said = server.instructions;
-  const title = t("toolReview.instructions.title");
-  // An older server doesn't say, and a service through Composio has no `initialize`: nothing to show.
-  if (said === undefined || server.via === "composio") return null;
-  if (!said) return <SettingRow title={title} status={t("toolReview.instructions.none")} />;
-  const max = formatInt(i18n.language, said.maxChars);
-  const status = !on
-    ? t("toolReview.instructions.off")
-    : said.cut
-      ? t("toolReview.instructions.cut", { max })
-      : t("toolReview.instructions.chars", { used: formatInt(i18n.language, said.text.length), max });
+  const view = instructionsView(t, i18n.language, server, on);
+  if (view.kind === "hidden") return null;
+  if (view.kind === "none") return <SettingRow title={view.title} status={view.status} />;
   return (
-    <section className="cflow-notes" aria-label={title} data-off={on ? undefined : true}>
+    <section className="cflow-notes" aria-label={view.title} data-off={view.faded ? true : undefined}>
       <SettingRow
-        title={title}
-        hint={{ name: t("common.about", { label: title }), text: t("toolReview.instructions.hint") }}
-        status={status}
+        title={view.title}
+        hint={{ name: t("common.about", { label: view.title }), text: view.hint }}
+        status={view.status}
         htmlFor="cflow-notes-use"
       >
         <Switch id="cflow-notes-use" checked={on} onCheckedChange={onChange} />
       </SettingRow>
-      <FoldedBody body={said.text} plain />
+      <FoldedBody body={view.text} plain />
     </section>
   );
 }
@@ -1329,8 +1326,7 @@ function ToolsStep({
         id: server.id,
         label: named,
         tools: reviewDecisions(tools, state.levels, state.decided),
-        // Only a switch the person moved: a save that didn't never undoes what another device set meanwhile.
-        ...(server.instructions && useInstructions !== startedOn ? { useInstructions } : {}),
+        ...instructionsSave(server, useInstructions, startedOn),
       },
       { onSuccess: (saved) => next(saved) },
     );

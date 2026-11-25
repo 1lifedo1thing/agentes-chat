@@ -7,6 +7,7 @@ import {
   useCustomServers,
   useMailAction,
 } from "@agenteschat/client";
+import { instructionsSave, instructionsView } from "@agenteschat/client/lib/custom-tools";
 import { mailActionsChanged, mailActionsFrom, mailReviewTools } from "@agenteschat/client/lib/mail";
 import { type ReviewTool, reviewDecisions, reviewToolsOf } from "@agenteschat/client/lib/tool-review";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
@@ -41,8 +42,6 @@ import {
   chosenLevel,
   confirm,
   emptyReview,
-  instructionsSave,
-  instructionsView,
   isWaiting,
   type ReviewState,
   reviewAgain,
