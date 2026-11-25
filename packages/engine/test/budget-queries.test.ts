@@ -70,8 +70,12 @@ async function mentionRun(options: { askAgent?: boolean; sayNow?: boolean } = {}
   // Its status line is still written beside the run (ADR 0084 §8), counted in neither. Its one line (where it answers)
   // shows at once: no request to Jev to pick it.
   const lineOf = async () =>
-    (await f.db.select({ runId: schema.agents.statusRunId }).from(schema.agents).where(eq(schema.agents.id, f.agent.id)))[0]
-      ?.runId;
+    (
+      await f.db
+        .select({ runId: schema.agents.statusRunId })
+        .from(schema.agents)
+        .where(eq(schema.agents.id, f.agent.id))
+    )[0]?.runId;
   await until(async () => (await lineOf()) === p.runId, "the run's status line");
   expect(statusAsked.has(p.runId)).toBe(false);
   return { beforeModel, total: p.total.queries, runId: p.runId };

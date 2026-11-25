@@ -17,9 +17,9 @@ import {
   queueLeftText,
   queuePurposeText,
   queueStartText,
-  queueWaitText,
   queueStatusText,
   queueView,
+  queueWaitText,
   queueWhereText,
   waitingFor,
 } from "../src/lib/computer-queue";
