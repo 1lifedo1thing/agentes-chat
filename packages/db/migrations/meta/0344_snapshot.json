@@ -1,5 +1,5 @@
 {
-  "id": "8768c8f9-42d6-4352-a534-107fffff919a",
+  "id": "d2170596-4686-43bd-ad65-f3e7b4bbfa2f",
   "prevId": "f0d125c2-6939-444e-9adc-e92403d4465f",
   "version": "7",
   "dialect": "postgresql",
@@ -5374,19 +5374,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "instructions": {
-          "name": "instructions",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "use_instructions": {
-          "name": "use_instructions",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         },
         "status": {
           "name": "status",
@@ -10850,6 +10837,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "font": {
+          "name": "font",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
