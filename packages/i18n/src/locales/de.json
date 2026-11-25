@@ -12507,6 +12507,7 @@
       "home_only": "{{program}} ist auf {{computer}} nur für root installiert, wo die Agenten nicht hinkommen.",
       "not_reported": "{{computer}} prüft noch, welche Programme vorhanden sind. Das ändert sich von selbst, wenn es so weit ist.",
       "system": "{{program}} läuft noch nicht auf dem System von {{computer}}.",
+      "systemAntigravity": "Gemini-Abos laufen auf {{computer}} noch nicht: Unter Windows speichert die Antigravity CLI ihre Google-Anmeldung in der Anmeldeinformationsverwaltung, die agentes.chat noch nicht pro Konto trennen kann. Nutze stattdessen einen Gemini-API-Schlüssel.",
       "windows_sandbox": "Windows auf {{computer}} kann die Befehle von {{program}} nicht isolieren. Wähle stattdessen Claude oder einen API-Schlüssel oder aktualisiere diesen Computer auf Windows 11 24H2 oder neuer, mit den neuesten Updates.",
       "no_computerCloud": "Bereit, sobald {{computer}} es ist."
     },

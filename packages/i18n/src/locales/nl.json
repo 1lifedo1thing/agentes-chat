@@ -12578,6 +12578,7 @@
       "home_only": "{{program}} is op {{computer}} alleen voor root geïnstalleerd, waar de agents niet bij kunnen.",
       "not_reported": "{{computer}} controleert nog welke programma's erop staan. Dit verandert vanzelf als het klaar is.",
       "system": "{{program}} werkt nog niet op het systeem van {{computer}}.",
+      "systemAntigravity": "Gemini-abonnementen werken nog niet op {{computer}}: op Windows bewaart de Antigravity CLI de Google-aanmelding in Referentiebeheer, dat agentes.chat nog niet per account kan scheiden. Gebruik in plaats daarvan een Gemini-API-sleutel.",
       "windows_sandbox": "Windows op {{computer}} kan de opdrachten van {{program}} niet isoleren. Kies in plaats daarvan Claude of een API-sleutel, of werk die computer bij naar Windows 11 24H2 of nieuwer, met de nieuwste updates.",
       "no_computerCloud": "Klaar zodra {{computer}} klaar is."
     },
