@@ -9221,6 +9221,7 @@
     "busyAnyComputer_other": "Läuft {{count}}-mal am Tag auf dem Computer, der eingeschaltet bleiben muss.",
     "outcome": {
       "queued": "In der Warteschlange",
+      "queuedBehind": "In der Warteschlange: wartet, bis die Routine {{name}} fertig ist",
       "running": "Arbeitet gerade",
       "waiting": "Wartet auf eine Antwort",
       "waitingApproval": "Wartet auf deine Freigabe",

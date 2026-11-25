@@ -9265,6 +9265,7 @@
     "busyAnyComputer_other": "Draait {{count}} keer per dag op de computer, die aan moet blijven.",
     "outcome": {
       "queued": "In de wachtrij",
+      "queuedBehind": "In de wachtrij: wacht tot de routine {{name}} klaar is",
       "running": "Nu bezig",
       "waiting": "Wacht tot iemand antwoordt",
       "waitingApproval": "Wacht op jouw goedkeuring",

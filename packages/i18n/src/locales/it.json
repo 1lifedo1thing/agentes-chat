@@ -9551,6 +9551,7 @@
     "busyAnyComputer_other": "Parte {{count}} volte al giorno sul computer, che deve restare acceso.",
     "outcome": {
       "queued": "In coda",
+      "queuedBehind": "In coda: aspetta che finisca la routine {{name}}",
       "running": "Al lavoro ora",
       "waiting": "In attesa che qualcuno risponda",
       "waitingApproval": "In attesa della tua approvazione",

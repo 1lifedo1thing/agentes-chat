@@ -9828,6 +9828,7 @@
     "busyAnyComputer_other": "Działa {{count}} razy dziennie na komputerze, który musi być włączony.",
     "outcome": {
       "queued": "W kolejce",
+      "queuedBehind": "W kolejce: czeka, aż rutyna {{name}} się skończy",
       "running": "Pracuje teraz",
       "waiting": "Czeka na czyjąś odpowiedź",
       "waitingApproval": "Czeka na twoje zatwierdzenie",

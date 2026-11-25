@@ -8888,6 +8888,7 @@
     "busyAnyComputer_other": "컴퓨터에서 하루 {{count}}번 실행되니 컴퓨터를 켜 두어야 해요.",
     "outcome": {
       "queued": "대기열에 있음",
+      "queuedBehind": "대기열에 있음: {{name}} 루틴이 끝나기를 기다려요",
       "running": "지금 작업 중",
       "waiting": "누군가의 답변 대기 중",
       "waitingApproval": "내 승인 대기 중",
