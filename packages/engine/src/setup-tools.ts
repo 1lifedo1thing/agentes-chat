@@ -918,8 +918,7 @@ export function createSetupToolSource(deps: {
             type: "string",
             minLength: 9,
             maxLength: 2000,
-            description:
-              "An MCP server's https address, as the person gave it: only for one the catalog doesn't have.",
+            description: "An MCP server's https address, as the person gave it: only for one the catalog doesn't have.",
           },
           why: {
             type: "string",
