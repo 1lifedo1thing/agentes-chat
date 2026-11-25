@@ -9393,7 +9393,7 @@
     "value": "For every agent in the workspace"
   },
   "approvalsLevel.follows": {
-    "value": "Follows the workspace"
+    "value": "{{level}} · from the workspace"
   },
   "approvalsLevel.edit": {
     "value": "Change"

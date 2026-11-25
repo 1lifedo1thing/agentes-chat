@@ -3689,7 +3689,7 @@
     "nowEveryAgent": "Semua agen sekarang: {{level}}.",
     "undo": "Urungkan",
     "everyAgent": "Untuk semua agen di workspace",
-    "follows": "Mengikuti workspace",
+    "follows": "{{level}} · dari workspace",
     "edit": "Ubah",
     "workspaceLead": "Kapan agen bertanya kepada seseorang sebelum bertindak.",
     "workspaceHelp": "Setiap agen mengikuti pilihan ini sampai seseorang mengubah pilihannya di halaman agen.",

@@ -16,6 +16,7 @@ import {
   schema,
   sql,
 } from "@agenteschat/db";
+import { ROUTINE_PROMPT_MAX } from "@agenteschat/tokens/routines";
 import { getAgent } from "./agents";
 import { type AiStatusDeps, rightHandWorkAi } from "./ai-status";
 import { decidesAgentApprovals, MAX_OWN_ACTIONS, OWN_ACTION_NAME } from "./approval-rules";
@@ -1458,7 +1459,7 @@ export async function createRoutine(
   if (!agent || agent.archivedAt) throw new NotFoundError("Agent not found");
   // A routine asks the agent on its creator's behalf: only people who can talk to it create one.
   if (!canTalkTo(agent, actorId, await speakerFor(db, orgId, actorId))) throw await audienceError(db, agent);
-  const prompt = input.prompt.trim().slice(0, 10_000);
+  const prompt = input.prompt.trim().slice(0, ROUTINE_PROMPT_MAX);
   if (!prompt) throw new ValidationError("Say what the agent should do", "routine.prompt_required");
   await checkTarget(db, orgId, agent.id, input.target, actorId);
   const trigger = await resolveTrigger(deps, actorId, orgId, input.trigger);
@@ -1764,7 +1765,7 @@ export async function updateRoutine(
     set.name = name;
   }
   if (patch.prompt !== undefined) {
-    const prompt = patch.prompt.trim().slice(0, 10_000);
+    const prompt = patch.prompt.trim().slice(0, ROUTINE_PROMPT_MAX);
     if (!prompt) throw new ValidationError("Say what the agent should do", "routine.prompt_required");
     set.prompt = prompt;
   }

@@ -228,6 +228,18 @@ test("commands run on the clock of the turn's zone, as the CLI does; an unknown 
   expect(parseBridge({ ...bridgeFrame, timeZone: "Mars/Olympus" })?.timeZone).toBeUndefined();
 });
 
+test("each session's commands get a temp folder of their own: two runs of one agent never share /tmp", async () => {
+  const { call, state, tools, scope, ask } = setup();
+  state.answer = allow;
+  const other = tools.surface({ ...scope, session: "s2" });
+  const first = textOf(await call("Bash", { command: 'mktemp "$TMPDIR/x.XXXX" >/dev/null && echo "$TMPDIR"' }));
+  const second = textOf(await other.call("Bash", { command: 'echo "$TMPDIR"' }, { id: "o1", ask }));
+  expect(first).toEndWith("/tmp");
+  expect(second).toEndWith("/tmp");
+  expect(second).not.toBe(first);
+  expect(textOf(await call("Bash", { command: 'echo "$TMPDIR"' }))).toBe(first);
+});
+
 test("output past the inline limit comes back as a preview and a file Read can page, redacted", async () => {
   const { call, state } = setup({}, { secrets: async () => SECRETS });
   state.answer = allow;

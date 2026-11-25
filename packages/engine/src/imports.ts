@@ -1,6 +1,7 @@
 import type { BlobStoreResolver, PubSub } from "@agenteschat/adapters";
 import { and, type Database, eq, inArray, isNull, like, or, schema, sql } from "@agenteschat/db";
 import { isCustomModel, isKnownModel, isOpenRouterModel } from "@agenteschat/providers";
+import { ROUTINE_PROMPT_MAX } from "@agenteschat/tokens/routines";
 import { driveFolder, isIdHandle, isSecretFile } from "@agenteschat/ui/names";
 import { createAgent, freeHandle, HANDLE_PATTERN, updateAgent } from "./agents";
 import { type AgentAppearance, setAgentAppearance, validateAppearance } from "./appearance";
@@ -165,7 +166,7 @@ const FIELD = {
   channelName: 80,
   topic: 500,
   routineName: 120,
-  prompt: 10_000,
+  prompt: ROUTINE_PROMPT_MAX,
   noteTitle: 300,
   note: 8000,
 };

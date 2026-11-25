@@ -3834,7 +3834,7 @@
     "nowEveryAgent": "Alle agents nu: {{level}}.",
     "undo": "Ongedaan maken",
     "everyAgent": "Voor alle agents in de workspace",
-    "follows": "Volgt de workspace",
+    "follows": "{{level}} · van de workspace",
     "edit": "Wijzigen",
     "workspaceLead": "Wanneer agents iemand vragen voordat ze iets doen.",
     "workspaceHelp": "Elke agent volgt deze keuze tot iemand die van de agent wijzigt op zijn pagina.",

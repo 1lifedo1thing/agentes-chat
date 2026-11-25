@@ -4189,8 +4189,8 @@ export const en = {
     undo: "Undo",
     /** In that dialog, for who may set the workspace's level: it also clears each agent's own choice. */
     everyAgent: "For every agent in the workspace",
-    /** An agent's row value while it has no choice of its own. */
-    follows: "Follows the workspace",
+    /** An agent's row value while it has no choice of its own. {{level}}: the workspace's level, as its title. */
+    follows: "{{level}} · from the workspace",
     /** Settings → Approvals: the button that opens the three choices. */
     edit: "Change",
     /** Settings → Approvals: the workspace's level. */
