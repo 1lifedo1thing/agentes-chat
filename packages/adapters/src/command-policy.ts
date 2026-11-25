@@ -2364,11 +2364,11 @@ const SUBSTITUTION_RUN = String.raw`\b(eval|(ba|z|da|k)?sh\s+-c)\s+["']?\$\(`;
 const ENCODED_RUN: ReadonlyArray<readonly RegExp[]> = [
   // Piped into a shell or an interpreter that reads its program from that pipe (`| python3 -m json.tool` reads data).
   // The decode is read once, to its last flag (`(?=(…))\1` takes no other length), and the words up to the pipe stop
-  // at the next decode, which reads on from there. A shell's path stops at the shell's operators, as
-  // `REVERSE_SHELL`'s does: run over them, each pipe of a long run of them would scan to its end.
+  // at the next decode, which reads on from there. A shell's path stops at the next pipe: run over pipes, each pipe of
+  // a long run of them would scan to its end. It holds the other operators, since `| (/bin/sh)` and `|&/bin/sh` run it.
   [
     new RegExp(
-      String.raw`(?=(${DECODE}))\1(?:(?!${DECODE})[^;&\n])*\|\s*([^\s|;&<>()]*\/)?((ba|z|da|k)?sh|python[\d.]*|perl|ruby|node|php)\b(\s+-[\w-]*)*\s*($|[|;&)])`,
+      String.raw`(?=(${DECODE}))\1(?:(?!${DECODE})[^;&\n])*\|\s*([^\s|]*\/)?((ba|z|da|k)?sh|python[\d.]*|perl|ruby|node|php)\b(\s+-[\w-]*)*\s*($|[|;&)])`,
       "m",
     ),
   ],

