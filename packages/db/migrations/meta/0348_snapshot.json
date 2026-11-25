@@ -1,6 +1,6 @@
 {
   "id": "768cd41d-9a46-4ff5-b7b9-27fde58c4873",
-  "prevId": "f39105ae-f3a0-47b8-ba23-06f80a954660",
+  "prevId": "8186fc81-a4cc-49f3-9bba-706b06a49b8d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -18976,6 +18976,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "after_ids": {
+          "name": "after_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
         }
       },
       "indexes": {

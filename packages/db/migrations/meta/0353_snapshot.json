@@ -1,6 +1,6 @@
 {
   "id": "051aebb9-9e0e-4c63-9699-b410c183e6d2",
-  "prevId": "f39105ae-f3a0-47b8-ba23-06f80a954660",
+  "prevId": "b16dca69-e68f-4c41-a214-8772c7ef5846",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3630,6 +3630,12 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -3679,6 +3685,19 @@
           "tableTo": "agents",
           "columnsFrom": [
             "lead_agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "channels_group_id_agent_groups_id_fk": {
+          "name": "channels_group_id_agent_groups_id_fk",
+          "tableFrom": "channels",
+          "tableTo": "agent_groups",
+          "columnsFrom": [
+            "group_id"
           ],
           "columnsTo": [
             "id"
@@ -5426,6 +5445,19 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "instructions": {
+          "name": "instructions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "use_instructions": {
+          "name": "use_instructions",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
         }
       },
       "indexes": {
@@ -13272,6 +13304,32 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "egress_share": {
+          "name": "egress_share",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "egress_share_at": {
+          "name": "egress_share_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "egress_via": {
+          "name": "egress_via",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "spill_first": {
+          "name": "spill_first",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {
@@ -18963,6 +19021,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "after_ids": {
+          "name": "after_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
         }
       },
       "indexes": {

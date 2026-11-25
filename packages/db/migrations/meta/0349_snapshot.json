@@ -1,6 +1,6 @@
 {
   "id": "8677ce77-a3d4-4459-84e4-d0e6b76e59b3",
-  "prevId": "f39105ae-f3a0-47b8-ba23-06f80a954660",
+  "prevId": "768cd41d-9a46-4ff5-b7b9-27fde58c4873",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -5426,6 +5426,19 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "instructions": {
+          "name": "instructions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "use_instructions": {
+          "name": "use_instructions",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
         }
       },
       "indexes": {
@@ -18970,6 +18983,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "after_ids": {
+          "name": "after_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
         }
       },
       "indexes": {
