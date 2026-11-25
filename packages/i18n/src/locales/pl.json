@@ -19701,6 +19701,14 @@
       "held": "Czeka na zatwierdzenie…",
       "said": "„{{text}}”"
     },
+    "trail": {
+      "label": "Co {{name}} zrobił do tej pory",
+      "label_female": "Co {{name}} zrobiła do tej pory",
+      "earlier_one": "{{count}} wcześniejszy krok",
+      "earlier_few": "{{count}} wcześniejsze kroki",
+      "earlier_many": "{{count}} wcześniejszych kroków",
+      "earlier_other": "{{count}} wcześniejszego kroku"
+    },
     "consult": {
       "asking": "{{from}} pyta: {{to}}",
       "answered": "Jest odpowiedź od: {{to}}. {{from}} pisze",

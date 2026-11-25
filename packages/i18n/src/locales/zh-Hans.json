@@ -17978,6 +17978,10 @@
       "held": "等待审批…",
       "said": "“{{text}}”"
     },
+    "trail": {
+      "label": "{{name}} 目前做了什么",
+      "earlier_other": "之前的 {{count}} 步"
+    },
     "consult": {
       "asking": "{{from}} 正在询问 {{to}}",
       "answered": "{{to}} 已回答。{{from}} 正在撰写",

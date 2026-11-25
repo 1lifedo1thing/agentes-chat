@@ -18537,6 +18537,11 @@
       "held": "Wartet auf Freigabe…",
       "said": "„{{text}}“"
     },
+    "trail": {
+      "label": "Was {{name}} bisher getan hat",
+      "earlier_one": "{{count}} früherer Schritt",
+      "earlier_other": "{{count}} frühere Schritte"
+    },
     "consult": {
       "asking": "{{from}} fragt {{to}}",
       "answered": "{{to}} hat geantwortet. {{from}} schreibt",

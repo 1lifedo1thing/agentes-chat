@@ -18461,6 +18461,11 @@
       "held": "Onay bekleniyor…",
       "said": "“{{text}}”"
     },
+    "trail": {
+      "label": "{{name}} şimdiye kadar ne yaptı",
+      "earlier_one": "{{count}} önceki adım",
+      "earlier_other": "{{count}} önceki adım"
+    },
     "consult": {
       "asking": "{{from}}, {{to}} ajanına soruyor",
       "answered": "{{to}} yanıtladı. {{from}} yazıyor",

@@ -19141,6 +19141,12 @@ export const en = {
       /** The agent's own words for its step (what it wrote before the call), quoted. */
       said: "“{{text}}”",
     },
+    /** Under an agent at work, the last row of the conversation: what it did so far, a few lines, older ones as "+N". */
+    trail: {
+      label: "What {{name}} did so far",
+      earlier_one: "{{count}} earlier step",
+      earlier_other: "{{count}} earlier steps",
+    },
     /** The working line while an agent asks another one (names come in bold). */
     consult: {
       asking: "{{from}} is asking {{to}}",

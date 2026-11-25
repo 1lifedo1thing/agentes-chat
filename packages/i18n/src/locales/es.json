@@ -19040,6 +19040,12 @@
       "held": "Esperando aprobación…",
       "said": "«{{text}}»"
     },
+    "trail": {
+      "label": "Lo que {{name}} hizo hasta ahora",
+      "earlier_one": "{{count}} paso anterior",
+      "earlier_many": "{{count}} pasos anteriores",
+      "earlier_other": "{{count}} pasos anteriores"
+    },
     "consult": {
       "asking": "{{from}} le está preguntando a {{to}}",
       "answered": "{{to}} respondió. {{from}} está escribiendo",

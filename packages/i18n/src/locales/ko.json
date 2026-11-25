@@ -17907,6 +17907,10 @@
       "held": "승인 대기 중…",
       "said": "“{{text}}”"
     },
+    "trail": {
+      "label": "{{name}}이(가) 지금까지 한 일",
+      "earlier_other": "이전 단계 {{count}}개"
+    },
     "consult": {
       "asking": "{{from}}이(가) {{to}}에게 묻는 중",
       "answered": "{{to}}이(가) 답했어요. {{from}}이(가) 작성 중",

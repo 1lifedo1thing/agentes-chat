@@ -19131,6 +19131,12 @@
       "held": "In attesa di approvazione…",
       "said": "«{{text}}»"
     },
+    "trail": {
+      "label": "Cosa ha fatto {{name}} finora",
+      "earlier_one": "{{count}} passo precedente",
+      "earlier_many": "{{count}} passi precedenti",
+      "earlier_other": "{{count}} passi precedenti"
+    },
     "consult": {
       "asking": "{{from}} sta chiedendo a {{to}}",
       "answered": "{{to}} ha risposto. {{from}} sta scrivendo",

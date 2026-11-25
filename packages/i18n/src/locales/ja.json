@@ -17915,6 +17915,10 @@
       "held": "承認を待っています…",
       "said": "「{{text}}」"
     },
+    "trail": {
+      "label": "{{name}}がここまでにしたこと",
+      "earlier_other": "前の{{count}}ステップ"
+    },
     "consult": {
       "asking": "{{from}}が{{to}}に質問しています",
       "answered": "{{to}}が回答しました。{{from}}が書いています",

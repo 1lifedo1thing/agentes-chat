@@ -19645,6 +19645,14 @@
       "held": "Ждёт одобрения…",
       "said": "«{{text}}»"
     },
+    "trail": {
+      "label": "Что {{name}} уже сделал",
+      "label_female": "Что {{name}} уже сделала",
+      "earlier_one": "{{count}} предыдущий шаг",
+      "earlier_few": "{{count}} предыдущих шага",
+      "earlier_many": "{{count}} предыдущих шагов",
+      "earlier_other": "{{count}} предыдущего шага"
+    },
     "consult": {
       "asking": "{{from}} спрашивает {{to}}",
       "answered": "{{to}} ответил. {{from}} пишет",

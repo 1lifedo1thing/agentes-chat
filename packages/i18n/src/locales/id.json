@@ -17974,6 +17974,10 @@
       "held": "Menunggu persetujuan…",
       "said": "“{{text}}”"
     },
+    "trail": {
+      "label": "Yang sudah dikerjakan {{name}}",
+      "earlier_other": "{{count}} langkah sebelumnya"
+    },
     "consult": {
       "asking": "{{from}} sedang bertanya ke {{to}}",
       "answered": "{{to}} sudah menjawab. {{from}} sedang menulis",

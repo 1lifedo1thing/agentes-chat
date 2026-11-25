@@ -279,6 +279,7 @@ export {
   type OptionListItem,
   type OptionListProps,
 } from "./components/OptionList";
+export { OrbitGlyph } from "./components/OrbitGlyph";
 export { PageHeader, type PageHeaderProps } from "./components/PageHeader";
 export {
   PixelDone,
