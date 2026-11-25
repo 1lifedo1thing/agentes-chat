@@ -6706,7 +6706,7 @@
         "cli_sandbox": "El programa {{brain}} no puede iniciar su sandbox en esta computadora. Elige otra IA en la configuración del agente.",
         "cli_system": "El programa {{brain}} todavía no funciona en el sistema de esta computadora. Elige otra IA en la configuración del agente.",
         "account_missing": "La cuenta elegida para este agente ya no está en su computadora. Elige otra en la configuración del agente o agrégala de nuevo.",
-        "windows_sandbox": "Esta computadora con Windows no puede aislar los comandos de Codex: necesita Windows 11 24H2 o una versión más reciente. Actualiza Windows, elige Claude o una clave de API para este agente, o muévelo a una computadora con Linux.",
+        "windows_sandbox": "Codex no pudo iniciar ningún aislamiento para sus comandos en esta computadora con Windows. Elige Claude o una clave de API para este agente, o actualiza la computadora a Windows 11 24H2 o posterior, con sus últimas actualizaciones.",
         "our_error": "Algo salió mal de nuestro lado y la tarea se detuvo. Pide de nuevo en un rato.",
         "unknown": "Falló."
       }
@@ -12881,8 +12881,10 @@
       "home_only": "{{program}} está instalado solo para root en {{computer}}, donde los agentes no llegan.",
       "not_reported": "{{computer}} todavía está comprobando qué programas tiene. Esto cambia solo cuando termine.",
       "system": "{{program}} todavía no funciona en el sistema de {{computer}}.",
+      "windows_sandbox": "El Windows de {{computer}} no puede aislar los comandos de {{program}}. Elige Claude o una clave de API en su lugar, o actualiza esa computadora a Windows 11 24H2 o posterior, con sus últimas actualizaciones.",
       "no_computerCloud": "Listo en cuanto {{computer}} lo esté."
     },
+    "sandboxPartial": "En este Windows, los comandos de Codex solo escriben en las carpetas de los agentes, pero internet solo está bloqueado en parte para ellos. Windows 11 24H2 o posterior, con sus últimas actualizaciones, lo bloquea por completo.",
     "notAvailableNow": "Elegido, pero no disponible ahora.",
     "offline": "{{computer}} está desconectada ahora.",
     "modelLabel": "Modelo",
