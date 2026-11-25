@@ -65,7 +65,7 @@ import {
   sendQueuedEmail,
 } from "./email";
 import { forgetCodeEmail } from "./email-codes";
-import { type DecidedBy, publishListChanged, publishRouted } from "./events";
+import { type DecidedBy, publishAgentsChanged, publishListChanged, publishRouted } from "./events";
 import { executeRun, type RunExecutorDeps } from "./executor";
 import {
   FEEDBACK_FILE_PURGE_JOB,
@@ -134,6 +134,7 @@ import { type AgentRun, NO_AI } from "./runs";
 import type { SandboxDeps } from "./sandbox";
 import { indexSource, reindexOrg } from "./search";
 import { activateDeliveredSecret, discardClosedSecret } from "./secrets";
+import { describeSkill, SKILL_DESCRIBE_JOB } from "./skill-library";
 import { runSkillUpdates, SKILL_UPDATES_JOB } from "./skill-updates";
 import type { SkillDeps } from "./skills";
 import { TEAM_HELLO_JOB } from "./standing";
@@ -1300,6 +1301,12 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     // The Live Activity of a person's agents at work, on their iPhones (ADR 0210): sent when what it shows changed.
     [LIVE_ACTIVITY_JOB]: async (job) => {
       await runLiveActivityJob({ db: deps.db, push: deps.push }, job);
+    },
+    // A skill's name, line and icon for people, after it is installed or made (or its name or "when to use" changed).
+    [SKILL_DESCRIBE_JOB]: async (job) => {
+      if (!deps.context) return;
+      await describeSkill(deps.context, orgOf(job), String(job.payload.skillId));
+      await publishAgentsChanged(deps.pubsub, orgOf(job));
     },
     // A workspace's skills that update by themselves from their links, once a day.
     [SKILL_UPDATES_JOB]: async (job) => {

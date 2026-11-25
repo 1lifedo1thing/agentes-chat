@@ -401,6 +401,7 @@ export async function setup(
             blobs: artifactDeps.blobs,
             pubsub,
             judge: context.judge,
+            context,
             ...(sandboxDeps ? { computer: sandboxDeps } : {}),
           }),
         ]

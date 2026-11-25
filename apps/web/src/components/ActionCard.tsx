@@ -15,7 +15,6 @@ import {
   useRoles,
   useSkillAction,
   useSkills,
-  useSkillUsage,
 } from "@agenteschat/client";
 import {
   actionCardOf,
@@ -82,8 +81,9 @@ import {
   WorkspaceActionCardView,
 } from "@/components/RightHandCards";
 import { DelegateNote, DelegateUndo, useDelegateLine } from "@/components/RightHandDelegate";
-import { InstallSkillDialog, SkillSheet } from "@/components/Skills";
+import { InstallSkillDialog } from "@/components/Skills";
 import { StretchCardView } from "@/components/StretchCard";
+import { skillTitle } from "@/components/skills/common";
 import { TeamPlanCardView } from "@/components/TeamPlan";
 import { TeamWeekCardView } from "@/components/TeamWeekCard";
 import { TextAction, UsagePauseCardView } from "@/components/UsagePauseCard";
@@ -336,11 +336,10 @@ function UpdateSkillsCardView({ message, card }: { message: Message; card: Updat
   const may = can(org, "manage_agents");
   const skills = useSkills(org.id, true);
   const action = useSkillAction(org.id);
-  const [open, setOpen] = useState<string | null>(null);
-  const usage = useSkillUsage(org.id, open !== null);
+  const navigate = useNavigate();
   const rows = card.skillIds.map((id) => {
     const skill = skills.data?.find((s) => s.id === id);
-    return { id, name: skill?.name ?? "", state: skillUpdateState(skill, message.createdAt) };
+    return { id, name: skill ? skillTitle(skill) : "", state: skillUpdateState(skill, message.createdAt) };
   });
   const title = t("actionCard.update_skills.title", { count: rows.length });
   if (skills.data && rows.every((r) => r.state === "done")) {
@@ -363,49 +362,55 @@ function UpdateSkillsCardView({ message, card }: { message: Message; card: Updat
     );
   const named = rows.filter((r) => r.name);
   return (
-    <>
-      <RequestOpen
-        mine={may}
-        icon="book"
-        label={title}
-        below={
-          <>
-            {card.why && <p>{inlineWords(card.why)}</p>}
-            {/* A skill a line, each with its own action ("Update", "Review"): the pill's sentence covers them all. */}
-            <ul className="waitcard__lines">
-              {named.map((r) => (
-                <li key={r.id} className="ac-iconline">
-                  <Icon name={r.state === "done" ? "check" : "book"} size={14} />
-                  <span>
-                    <b>{r.name}</b>
-                    {r.state === "done" ? (
-                      <> · {t("actionCard.update_skills.done")}</>
-                    ) : !may ? (
-                      r.state === "waiting" && <> · {t("actionCard.update_skills.waiting")}</>
-                    ) : (
-                      <>
-                        {" · "}
-                        {r.state === "waiting" ? (
-                          <TextAction onClick={() => setOpen(r.id)}>{t("actionCard.update_skills.review")}</TextAction>
-                        ) : (
-                          <TextAction pending={action.isPending} onClick={() => update(r)}>
-                            {t("actionCard.update_skills.update")}
-                          </TextAction>
-                        )}
-                      </>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            {!may && <p>{t("actionCard.update_skills.adminOnly")}</p>}
-          </>
-        }
-      >
-        {title}
-      </RequestOpen>
-      {open && <SkillSheet id={open} users={usage.get(open) ?? []} onClose={() => setOpen(null)} />}
-    </>
+    <RequestOpen
+      mine={may}
+      icon="book"
+      label={title}
+      below={
+        <>
+          {card.why && <p>{inlineWords(card.why)}</p>}
+          {/* A skill a line, each with its own action ("Update", "Review"): the pill's sentence covers them all. */}
+          <ul className="waitcard__lines">
+            {named.map((r) => (
+              <li key={r.id} className="ac-iconline">
+                <Icon name={r.state === "done" ? "check" : "book"} size={14} />
+                <span>
+                  <b>{r.name}</b>
+                  {r.state === "done" ? (
+                    <> · {t("actionCard.update_skills.done")}</>
+                  ) : !may ? (
+                    r.state === "waiting" && <> · {t("actionCard.update_skills.waiting")}</>
+                  ) : (
+                    <>
+                      {" · "}
+                      {r.state === "waiting" ? (
+                        <TextAction
+                          onClick={() =>
+                            void navigate({
+                              to: "/org/$orgId/skills/$skillId",
+                              params: { orgId: org.id, skillId: r.id },
+                            })
+                          }
+                        >
+                          {t("actionCard.update_skills.review")}
+                        </TextAction>
+                      ) : (
+                        <TextAction pending={action.isPending} onClick={() => update(r)}>
+                          {t("actionCard.update_skills.update")}
+                        </TextAction>
+                      )}
+                    </>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {!may && <p>{t("actionCard.update_skills.adminOnly")}</p>}
+        </>
+      }
+    >
+      {title}
+    </RequestOpen>
   );
 }
 
