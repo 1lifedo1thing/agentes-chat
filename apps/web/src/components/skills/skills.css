@@ -272,21 +272,21 @@ html:not([data-pointer]) .sk-row__link:focus-visible::after {
 }
 .sk-teach__check {
   margin: 0;
-  align-items: flex-start;
   gap: 8px;
   font-size: 14px;
   line-height: 20px;
   color: var(--ink-muted);
 }
 .sk-teach__check .ac-icon {
-  flex: none;
-  margin-top: 2px;
   color: var(--ok);
 }
 .sk-teach__check--miss .ac-icon {
   color: var(--warn);
 }
 .sk-teach__other {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
   font-size: 14px;
   color: var(--ink-muted);
@@ -544,15 +544,12 @@ html:not([data-pointer]) .sk-line__open:focus-visible {
 .sk-choice__text {
   flex: 1;
   min-width: 0;
-  align-items: flex-start;
   gap: 8px;
   font-size: 15px;
   line-height: 22px;
   color: var(--ink);
 }
 .sk-choice__text .ac-icon {
-  flex: none;
-  margin-top: 3px;
   color: var(--warn);
 }
 .sk-choice__text small {

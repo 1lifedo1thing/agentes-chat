@@ -300,22 +300,23 @@ export function TeachSkillDialog({
       <DialogFooter
         note={
           !draft && (onFromLink || onFromZip) ? (
-            <span className="sk-teach__other ac-iconline">
-              <Icon name="link" size={14} />
-              <span>
-                {t("skills.teach.haveOne")}{" "}
-                {onFromLink && (
-                  <button type="button" className="ac-link" onClick={onFromLink}>
-                    {t("skills.teach.link")}
-                  </button>
-                )}
-                {onFromLink && onFromZip && " · "}
-                {onFromZip && (
-                  <button type="button" className="ac-link" onClick={onFromZip}>
-                    {t("skills.teach.zip")}
-                  </button>
-                )}
+            // The icon and the question as one line; the ways in after it, out of that line.
+            <span className="sk-teach__other">
+              <span className="ac-iconline">
+                <Icon name="link" size={14} />
+                <span>{t("skills.teach.haveOne")}</span>
               </span>
+              {onFromLink && (
+                <button type="button" className="ac-link" onClick={onFromLink}>
+                  {t("skills.teach.link")}
+                </button>
+              )}
+              {onFromLink && onFromZip && <span aria-hidden="true">·</span>}
+              {onFromZip && (
+                <button type="button" className="ac-link" onClick={onFromZip}>
+                  {t("skills.teach.zip")}
+                </button>
+              )}
             </span>
           ) : undefined
         }
