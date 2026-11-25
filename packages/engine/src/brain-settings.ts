@@ -548,6 +548,8 @@ export interface BrainComputer {
   machineId: string;
   name: string;
   online: boolean;
+  /** Its system (`machines.os`): the apps name it where a plan doesn't run there (`brainRunsOn`). */
+  os: string;
 }
 
 /** A computer the caller may give the agent, with what it offers (the page moves the agent to one that has a brain). */
@@ -759,7 +761,7 @@ async function candidateMachines(
         (admin || m.kind !== "connected" || m.pairedByUserId === userId || m.id === current) &&
         (mayBeHome(m) || m.id === current),
     )
-    .map((m) => ({ machineId: m.id, name: m.name, online: shownOnline(m), options: brainOptions(m) }));
+    .map((m) => ({ machineId: m.id, name: m.name, online: shownOnline(m), os: m.os, options: brainOptions(m) }));
 }
 
 async function agentMachine(db: Database, orgId: string, machineId: string | null) {
@@ -784,7 +786,9 @@ function view(
     effectiveModel: brain === "model" ? null : (agent.brainModel ?? defaultBrainModel(brain)),
     fallback: false,
     extraUsage: paysExtraUsage(agent),
-    computer: machine ? { machineId: machine.id, name: machine.name, online: shownOnline(machine) } : null,
+    computer: machine
+      ? { machineId: machine.id, name: machine.name, online: shownOnline(machine), os: machine.os }
+      : null,
     options: brainOptions(machine),
     machines,
     canEdit: true,
@@ -2062,6 +2066,8 @@ export interface AiComputer {
   machineId: string;
   name: string;
   online: boolean;
+  /** Its system (`machines.os`), as `BrainComputer.os`. */
+  os: string;
   /** The caller connected it. */
   mine: boolean;
   /** The caller adds accounts there (they connected it, or nobody did), on a runner that knows accounts. */
@@ -2139,6 +2145,7 @@ export async function listAiAccounts(deps: BrainDeps, userId: string, orgId: str
         machineId: m.id,
         name: m.name,
         online: shownOnline(m),
+        os: m.os,
         mine: m.pairedByUserId === userId,
         canAdd: mayAddAccounts(m, userId) && m.protocol >= ACCOUNTS_PROTOCOL,
         keys: m.protocol >= PLAN_KEYS_PROTOCOL,

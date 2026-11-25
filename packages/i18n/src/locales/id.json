@@ -3457,6 +3457,9 @@
       "plan": "Dengan paket",
       "key": "Dengan kunci API"
     },
+    "offSystem": "Belum berjalan di {{system}}",
+    "offSystemGroup": "Belum berjalan di {{system}}",
+    "offSystemSome_other": "{{names}} belum berjalan di {{system}}",
     "pick": {
       "plan": "Paket",
       "placeholder": "Pilih paket",

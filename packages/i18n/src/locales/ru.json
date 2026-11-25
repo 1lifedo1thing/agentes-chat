@@ -3872,6 +3872,12 @@
       "plan": "По тарифу",
       "key": "По API-ключу"
     },
+    "offSystem": "Пока не работает в {{system}}",
+    "offSystemGroup": "Пока не работают в {{system}}",
+    "offSystemSome_one": "{{names}} пока не работает в {{system}}",
+    "offSystemSome_few": "{{names}} пока не работают в {{system}}",
+    "offSystemSome_many": "{{names}} пока не работают в {{system}}",
+    "offSystemSome_other": "{{names}} пока не работают в {{system}}",
     "pick": {
       "plan": "Тариф",
       "placeholder": "Выберите тариф",

@@ -206,6 +206,7 @@ export function AiPicker({
   choice,
   onPick,
   dims,
+  offSystem,
   panel,
   have,
   keySelect,
@@ -214,6 +215,8 @@ export function AiPicker({
   choice: AiChoice | null;
   onPick: (choice: AiChoice) => void;
   dims?: (choice: PlanChoice) => boolean;
+  /** The computer's system where a plan doesn't run there (`planOffSystem`): its row says so before it is picked. */
+  offSystem?: (choice: PlanChoice) => string | null;
   panel: ReactNode;
   have?: (panel: ReactNode) => ReactNode;
   keySelect?: ReactNode;
@@ -248,11 +251,19 @@ export function AiPicker({
           value={choice ?? undefined}
           onValueChange={onPick}
           matches={(o, q) => matchesWords(planPickText(t, o.value), q)}
-          options={PLAN_CHOICES.map((c) => ({
-            value: c,
-            label: planLabel(t, c),
-            leading: <ProviderLogo id={planMark(c)} size="xs" off={dims?.(c)} />,
-          }))}
+          // Plans that don't run on the computer's system go last, under a heading that says so: every row stays
+          // one line tall.
+          options={[...PLAN_CHOICES.filter((c) => !offSystem?.(c)), ...PLAN_CHOICES.filter((c) => offSystem?.(c))].map(
+            (c) => {
+              const off = offSystem?.(c);
+              return {
+                value: c,
+                label: planLabel(t, c),
+                leading: <ProviderLogo id={planMark(c)} size="xs" off={dims?.(c)} />,
+                ...(off ? { group: t("connectAi.offSystemGroup", { system: off }) } : {}),
+              };
+            },
+          )}
         />
       )}
       {choice !== null && panel}

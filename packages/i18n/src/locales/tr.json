@@ -3582,6 +3582,10 @@
       "plan": "Planla",
       "key": "API anahtarıyla"
     },
+    "offSystem": "Henüz {{system}} üzerinde çalışmıyor",
+    "offSystemGroup": "Henüz {{system}} üzerinde çalışmıyor",
+    "offSystemSome_one": "{{names}} henüz {{system}} üzerinde çalışmıyor",
+    "offSystemSome_other": "{{names}} henüz {{system}} üzerinde çalışmıyor",
     "pick": {
       "plan": "Plan",
       "placeholder": "Plan seçin",

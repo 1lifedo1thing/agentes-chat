@@ -18,10 +18,13 @@ export function ConnectChoices({
   dims,
   mayAddKey,
   perAgent,
+  offSystem,
 }: {
   onPick: (choice: AiChoice) => void;
   /** A plan that can't sign in now: its mark dims, and its steps say why. */
   dims: (choice: PlanChoice) => boolean;
+  /** The computer's system where a plan doesn't run there (`planOffSystem`): its card says so before it is picked. */
+  offSystem?: (choice: PlanChoice) => string | null;
   mayAddKey: boolean;
   /**
    * For several agents: a plan that will ask for one login per agent there ends its card saying so, quietly, before
@@ -41,16 +44,18 @@ export function ConnectChoices({
       {end ?? <Icon name="chevronRight" className="arrival-opts__end" />}
     </button>
   );
+  const off = (c: PlanChoice) => offSystem?.(c) ?? null;
   const plan = (c: PlanChoice) =>
     card(
       c,
       <ProviderLogo id={planMark(c)} size="tile" off={dims(c)} />,
       planLabel(t, c),
-      t(`connectAi.plan.${c}.tiers`),
+      off(c) ? t("connectAi.offSystem", { system: off(c) }) : t(`connectAi.plan.${c}.tiers`),
       perAgent?.(c) ? (
         <span className="arrival-opts__tag arrival-opts__tag--quiet">{t("connectAi.team.perAgent")}</span>
       ) : undefined,
     );
+  const offOthers = OTHERS.filter((c) => off(c));
   return (
     <div className="arrival-opts">
       {FIRST.map(plan)}
@@ -71,6 +76,18 @@ export function ConnectChoices({
                 t,
               )}
             </span>
+            {offOthers.length > 0 && (
+              <span className="ac-option__desc">
+                {t("connectAi.offSystemSome", {
+                  count: offOthers.length,
+                  names: joinNames(
+                    offOthers.map((c) => planLabel(t, c)),
+                    t,
+                  ),
+                  system: off(offOthers[0] as PlanChoice),
+                })}
+              </span>
+            )}
           </span>
           <Icon name="chevronDown" className="arrival-opts__end" />
         </button>

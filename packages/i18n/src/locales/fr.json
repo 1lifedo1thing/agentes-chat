@@ -3734,6 +3734,11 @@
       "plan": "Avec un abonnement",
       "key": "Avec une clé API"
     },
+    "offSystem": "Ne fonctionne pas encore sous {{system}}",
+    "offSystemGroup": "Ne fonctionnent pas encore sous {{system}}",
+    "offSystemSome_one": "{{names}} ne fonctionne pas encore sous {{system}}",
+    "offSystemSome_many": "{{names}} ne fonctionnent pas encore sous {{system}}",
+    "offSystemSome_other": "{{names}} ne fonctionnent pas encore sous {{system}}",
     "pick": {
       "plan": "Abonnement",
       "placeholder": "Choisir un abonnement",

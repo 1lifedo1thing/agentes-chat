@@ -3820,6 +3820,16 @@ export const ptBR = {
       plan: "Com um plano",
       key: "Com chave de API",
     },
+    /**
+     * A plan's line in the pickers when it doesn't run on the computer's system (`planOffSystem`), in place of its
+     * tiers: `system` is "Windows", "macOS"…
+     */
+    offSystem: "Ainda não roda no {{system}}",
+    /** The heading over those plans at the end of the plans' select. */
+    offSystemGroup: "Ainda não rodam no {{system}}",
+    /** Under "More plans" while it's folded: the plans in it that don't run on the computer's system. */
+    offSystemSome_one: "{{names}} ainda não roda no {{system}}",
+    offSystemSome_other: "{{names}} ainda não rodam no {{system}}",
     pick: {
       plan: "Plano",
       placeholder: "Escolha um plano",

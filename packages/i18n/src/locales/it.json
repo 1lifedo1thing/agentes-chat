@@ -3742,6 +3742,11 @@
       "plan": "Con un piano",
       "key": "Con una chiave API"
     },
+    "offSystem": "Non funziona ancora su {{system}}",
+    "offSystemGroup": "Non funzionano ancora su {{system}}",
+    "offSystemSome_one": "{{names}} non funziona ancora su {{system}}",
+    "offSystemSome_many": "{{names}} non funzionano ancora su {{system}}",
+    "offSystemSome_other": "{{names}} non funzionano ancora su {{system}}",
     "pick": {
       "plan": "Piano",
       "placeholder": "Scegli un piano",

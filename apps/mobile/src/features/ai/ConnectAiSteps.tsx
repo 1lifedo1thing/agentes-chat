@@ -58,6 +58,7 @@ import {
   planLabel,
   planMark,
   planOfAccount,
+  planOffSystem,
   planPickText,
 } from "@agenteschat/client/lib/no-ai";
 import { can } from "@agenteschat/client/lib/permissions";
@@ -500,7 +501,8 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
         onHave={pickHave}
       />
     );
-  if (view.page === "plans") return <Plans onPlan={toPlan} dims={dims} />;
+  if (view.page === "plans")
+    return <Plans onPlan={toPlan} dims={dims} offSystem={(choice) => planOffSystem(t, gateAt(choice))} />;
   // The makers are a choice for the key's page under them: picking one goes back to it.
   if (view.page === "makers") return <Makers form={props.keyForm} onDone={() => goBack()} />;
   if (view.page === "plan")
@@ -686,14 +688,23 @@ function AllHave({
 }
 
 /** The plans, the most used first, with a search: what each is sold as under its name. Picking one pushes its page. */
-function Plans({ onPlan, dims }: { onPlan: (choice: PlanChoice) => void; dims: (choice: PlanChoice) => boolean }) {
+function Plans({
+  onPlan,
+  dims,
+  offSystem,
+}: {
+  onPlan: (choice: PlanChoice) => void;
+  dims: (choice: PlanChoice) => boolean;
+  /** The computer's system where a plan doesn't run there (`planOffSystem`): its row says so before it is picked. */
+  offSystem: (choice: PlanChoice) => string | null;
+}) {
   const { t } = useTranslation();
   return (
     <PickList
       options={PLAN_CHOICES.map((c) => ({
         value: c,
         label: planLabel(t, c),
-        description: t(`connectAi.plan.${c}.tiers`),
+        description: offSystem(c) ? t("connectAi.offSystem", { system: offSystem(c) }) : t(`connectAi.plan.${c}.tiers`),
         mark: planMark(c),
         off: dims(c),
         keywords: planPickText(t, c),
