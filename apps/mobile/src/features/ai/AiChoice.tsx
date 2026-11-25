@@ -3,18 +3,22 @@ import {
   type AiChoice,
   type AiChoiceRow,
   type AiChoiceTarget,
+  aiChoiceAsks,
   aiChoiceOf,
   aiChoiceRows,
 } from "@agenteschat/client/lib/ai-choice";
-import type { EffortLevel } from "@agenteschat/client/lib/brain-advanced";
+import { type EffortLevel, effortLevel, shownEffort } from "@agenteschat/client/lib/brain-advanced";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { isAuto } from "@agenteschat/client/lib/providers";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { GroupedList, GroupedRow, ProviderLogo, useToast } from "@/ui";
+import { Button, GroupedList, GroupedRow, ProviderLogo, useToast } from "@/ui";
 import { useMeId } from "../shared/hooks";
 import { type PickOption, pickOne } from "../shared/PickerSheet";
 import { choiceText, withModel } from "./hub";
+import { Note } from "./parts";
 
 /** An option the caller adds to the "Conta" list (the computer's own sign-in, Conectar uma IA). */
 export interface ChoiceExtra {
@@ -33,7 +37,8 @@ const GROUP_NAMES = { workspace: null, yours: "yours", others: "others", keys: "
  * each opening its list in the app's sheet (Conta and Modelo searchable, the one in use lit, no column of checks).
  * Accounts that can't think for the target stay listed, faint, with why. The same for an agent, Lodi (`scope`, "A do
  * workspace" first), a mission (no Esforço), several agents and a new agent: those two are the caller's (`value`,
- * `onChange`); the others save at once.
+ * `onChange`); the others save at once, said with Desfazer. Someone else's plan and a login another agent thinks with
+ * ask first, in one line under the list with one button (`AskLine`); `ask` is a caller's own line there.
  */
 export function AiChoiceFields({
   target,
@@ -41,6 +46,7 @@ export function AiChoiceFields({
   onChange,
   extras = [],
   onAccount,
+  ask,
   disabled = false,
   lockAccount = false,
 }: {
@@ -51,6 +57,8 @@ export function AiChoiceFields({
   extras?: readonly ChoiceExtra[];
   /** Saves a picked account itself (an agent's: a login lent to one agent asks first). */
   onAccount?: (row: AiChoiceRow) => void;
+  /** A line under the list (an `onAccount` caller's own "asks first"). */
+  ask?: ReactNode;
   disabled?: boolean;
   /** The account (a mission's brain after Start) stays; the model still changes. */
   lockAccount?: boolean;
@@ -68,9 +76,28 @@ export function AiChoiceFields({
   const selected = extraOn ? null : (rows.find((r) => r.selected) ?? null);
   const locked = disabled || !state.canEdit || state.saving;
 
+  const [asking, setAsking] = useState<AiChoiceRow | null>(null);
+  const agentId = target.kind === "agent" || target.kind === "lodi" ? target.agentId : "";
+  const asks = asking ? aiChoiceAsks(asking, agentId) : null;
+  const failed = (e: unknown) => toast({ title: errorText(t, e), icon: "x" });
   const apply = (choice: AiChoice) => {
     if (controlled) return onChange(choice);
-    state.save(choice).catch((e: unknown) => toast({ title: errorText(t, e), icon: "x" }));
+    const before = state.current;
+    setAsking(null);
+    state.save(choice).then(() => {
+      if (!before) return;
+      toast({
+        title: t("common.saved"),
+        icon: "check",
+        action: {
+          label: t("agentPage.work.brain.v2.undo"),
+          onPress: () =>
+            void state
+              .save(before)
+              .then(() => toast({ title: t("agentPage.work.brain.v2.undone"), icon: "check" }), failed),
+        },
+      });
+    }, failed);
   };
 
   const pickAccount = async () => {
@@ -106,8 +133,9 @@ export function AiChoiceFields({
     const extra = extras.find((e) => e.option.key === picked);
     if (extra) return extra.onPick();
     const row = rows.find((r) => r.key === picked);
-    if (!row || row.key === selected?.key) return;
+    if (!row || row.key === selected?.key) return setAsking(null);
     if (onAccount && row.type === "plan" && !controlled) return onAccount(row);
+    if (!controlled && aiChoiceAsks(row, agentId)) return setAsking(row);
     // A choice the caller keeps carries its own model and effort over, not the target's saved one.
     apply(controlled ? aiChoiceOf(row, current) : state.choose(row));
   };
@@ -136,11 +164,12 @@ export function AiChoiceFields({
     apply(withModel(current, picked));
   };
 
-  const efforts = active && target.kind !== "mission" ? state.efforts(active) : [];
+  const efforts =
+    active && target.kind !== "mission"
+      ? state.efforts(active, isAuto(model?.value) ? null : (model?.value ?? null))
+      : [];
   const effort: EffortLevel | null =
-    current?.effort && !isAuto(current.effort)
-      ? ((current.effort === "xhigh" ? "high" : current.effort) as EffortLevel)
-      : null;
+    current?.effort && !isAuto(current.effort) ? shownEffort(effortLevel(current.effort), efforts) : null;
   const effortName = (e: EffortLevel | null) => t(`agentPage.work.brain.efforts.${e ?? "none"}`);
   const pickEffort = async () => {
     if (!current) return;
@@ -150,7 +179,9 @@ export function AiChoiceFields({
       value: effort,
       lit: true,
     });
-    if (picked === null || picked === effort) return;
+    // Against what is stored, not shown: a stored level the model doesn't take shows as the one under it, which then
+    // saves when picked.
+    if (picked === null || picked === current.effort) return;
     apply({ ...current, effort: picked as EffortLevel });
   };
 
@@ -162,34 +193,83 @@ export function AiChoiceFields({
       ? { name: t("common.about", { label: t("mobile.aiHub.choice.account") }), text: t("brain.sandboxPartial") }
       : null;
   return (
-    <GroupedList>
-      <GroupedRow
-        label={t("mobile.aiHub.choice.account")}
-        value={extraOn?.option.label ?? account?.label ?? ""}
-        {...(partial ? { hint: partial } : {})}
-        {...(account?.mark ? { valueLeading: <ProviderLogo id={account.mark} size="xs" /> } : {})}
-        menu={!lockAccount}
-        disabled={locked || lockAccount || state.loading}
-        onPress={() => void pickAccount()}
-      />
-      {models.length > 0 ? (
+    <>
+      <GroupedList>
         <GroupedRow
-          label={t("mobile.aiHub.choice.model")}
-          value={model?.label ?? ""}
-          menu
-          disabled={locked}
-          onPress={() => void pickModel()}
+          label={t("mobile.aiHub.choice.account")}
+          value={extraOn?.option.label ?? account?.label ?? ""}
+          {...(partial ? { hint: partial } : {})}
+          {...(account?.mark ? { valueLeading: <ProviderLogo id={account.mark} size="xs" /> } : {})}
+          menu={!lockAccount}
+          disabled={locked || lockAccount || state.loading}
+          onPress={() => void pickAccount()}
         />
-      ) : null}
-      {efforts.length > 0 && !autoModel ? (
-        <GroupedRow
-          label={t("mobile.aiHub.choice.effort")}
-          value={effortName(effort ?? "medium")}
-          menu
+        {models.length > 0 ? (
+          <GroupedRow
+            label={t("mobile.aiHub.choice.model")}
+            value={model?.label ?? ""}
+            menu
+            disabled={locked}
+            onPress={() => void pickModel()}
+          />
+        ) : null}
+        {efforts.length > 0 && !autoModel ? (
+          <GroupedRow
+            label={t("mobile.aiHub.choice.effort")}
+            value={effortName(effort ?? "medium")}
+            menu
+            disabled={locked}
+            onPress={() => void pickEffort()}
+          />
+        ) : null}
+      </GroupedList>
+      {asking && asks ? (
+        <AskLine
+          icon={asks.owner ? "mail" : "info"}
+          text={[
+            asks.owner ? t("connectAi.chat.told", { name: asks.owner }) : null,
+            asks.takesFrom ? t("mobile.aiHub.choice.asksMove", { agent: asks.takesFrom }) : null,
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          action={t("agentPage.work.brain.v2.switchTo", { label: choiceText(t, asking, i18n.language).label })}
           disabled={locked}
-          onPress={() => void pickEffort()}
+          onPress={() => apply({ ...state.choose(asking), ...(asks.takesFrom ? { moveAccount: true as const } : {}) })}
         />
-      ) : null}
-    </GroupedList>
+      ) : (
+        ask
+      )}
+    </>
   );
 }
+
+/** A pick that asks first: why, in a line under the list, and its one button (the web's `SettingNote` with an action). */
+export function AskLine({
+  icon,
+  text,
+  action,
+  disabled = false,
+  onPress,
+}: {
+  icon: "mail" | "info" | "clock";
+  text: string;
+  action: string;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <>
+      <Note icon={icon} live inset>
+        {text}
+      </Note>
+      <View style={styles.ask}>
+        <Button variant="primary" label={action} wide disabled={disabled} onPress={onPress} />
+      </View>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  // Under its line, on the groups' sides.
+  ask: { paddingHorizontal: 16, paddingTop: 12 },
+});
