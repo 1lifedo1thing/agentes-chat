@@ -879,6 +879,8 @@ export const desktopEn = {
       brainMax: "Open conversations",
       brainMaxDesc: "How many stay open in each workspace. More of them answer faster but use more memory.",
       brainIdle: "Close an idle conversation after",
+      /** Under a limit whose number differs between the workspaces this computer works for. `values`: "Acme 3, Beta 12". */
+      mixed: "Not the same everywhere: {{values}}. A change here sets all of them.",
       folder: "Agents' folder",
       folderDesc: "One folder per workspace, with a folder for each agent.",
     },

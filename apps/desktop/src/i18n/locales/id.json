@@ -790,6 +790,7 @@
       "brainMax": "Percakapan terbuka",
       "brainMaxDesc": "Berapa banyak yang tetap terbuka di setiap ruang kerja. Makin banyak, makin cepat menjawab, tapi memakai lebih banyak memori.",
       "brainIdle": "Tutup percakapan yang menganggur setelah",
+      "mixed": "Tidak sama di semua tempat: {{values}}. Perubahan di sini berlaku untuk semuanya.",
       "folder": "Folder agen",
       "folderDesc": "Satu folder per ruang kerja, dengan satu folder untuk setiap agen."
     }

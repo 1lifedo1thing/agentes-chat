@@ -1174,6 +1174,10 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       // machine's queue per task end (also kicked for a resumed item queued with this job, its own id).
       await afterMachineTaskEnded(missions, String(job.payload.taskId)).catch(() => 0);
     },
+    // The runner's connection had no room for a queued task's start (`TASK_BUSY_RETRY_MS`): its queue tries again.
+    "machine.queue_retry": async (job) => {
+      await startQueuedMissionTasks(missions, String(job.payload.machineId)).catch(() => 0);
+    },
     // The `.agentes/` files of a mission changed (debounced): written to its machine.
     "mission.sync_files": async (job) => {
       await syncMissionFiles(missions, String(job.payload.missionId));
@@ -1218,7 +1222,8 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     [WAKE_OVERDUE_JOB]: async (job) => {
       await wakeOverdue({ db: deps.db, pubsub: deps.pubsub }, String(job.payload.machineId));
     },
-    // A task start cut by a drop, once it can't still be underway: the agent's journal on its computer settles it.
+    // A task start cut by a drop (or taken from the queue before a restart), once it can't still be underway: the
+    // agent's journal on its computer settles it.
     "machine.task_start_check": async (job) => {
       const hub = missions.hub;
       if (!hub) return;
@@ -1231,6 +1236,7 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
           startQueued: (machineId) => startQueuedMissionTasks(missions, machineId),
         },
         String(job.payload.taskId),
+        typeof job.payload.claimedAt === "string" ? job.payload.claimedAt : undefined,
       );
     },
     // A request to join through an invitation link, filed apart from the ask's reply (ADR 0068).

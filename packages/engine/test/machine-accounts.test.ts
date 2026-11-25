@@ -58,6 +58,7 @@ import {
   setAgentComputerTarget,
   setClaudeAuthPolicy,
   syncMachineAccounts,
+  usageWaitKey,
   ValidationError,
 } from "../src";
 import { isDefaultAccountLabel } from "../src/machine-accounts";
@@ -1614,6 +1615,52 @@ test("plan usage: stored with the account, kept when the runner doesn't know it 
   await runner.hello([account()], PLAN_USAGE_PROTOCOL);
   const [view] = await listMachineAccounts({ db: f.db }, f.org.id, machineId, f.owner.id);
   expect(view?.usage).toEqual(usage(41, "2030-01-01T10:06:00.000Z"));
+});
+
+test("plan usage: another plan or key on the account drops the old plan's reading until the runner reads the new one", async () => {
+  f = await setup();
+  const hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-a" });
+  hubs.push(hub);
+  const { token, machineId } = await ownedMachine(PLAN_USAGE_PROTOCOL);
+  const runner = connectedRunner(hub, token);
+  const account = (plan: string, keyHint: string, u?: PlanUsage): RunnerAccountInfo => ({
+    id: CLAUDE_ID,
+    kind: "claude_code",
+    loggedIn: true,
+    email: "ana@example.com",
+    plan,
+    keyHint,
+    ...(u ? { usage: u } : {}),
+  });
+  await runner.hello([account("max", "…f4ke", usage(99))], PLAN_USAGE_PROTOCOL);
+  // The same plan and key with nothing read yet: the last reading stays.
+  await runner.changed([account("max", "…f4ke")]);
+  expect((await accountRow(CLAUDE_ID))?.usage).toEqual(usage(99));
+  // Long work paused on that 99%.
+  const id = Bun.randomUUIDv7();
+  const waitKey = usageWaitKey({ code: "plan_limit", machineId, kind: "claude_code", accountId: CLAUDE_ID });
+  await f.db.insert(schema.agentRuns).values({
+    id,
+    orgId: f.org.id,
+    agentId: f.agent.id,
+    channelId: f.general.id,
+    threadRootId: id,
+    triggerMessageId: id,
+    trigger: "mention",
+    hop: 1,
+    status: "waiting_input",
+    transcript: {
+      waitingForBrain: { kind: "claude_code", machineId, code: "usage_pause", waitKey, waitId: id },
+      usageWait: { parkedAt: Date.now() - 60_000 },
+    },
+  });
+  // Another plan with nothing read yet: the 99% was the old plan's, and nothing pauses on it any more.
+  await runner.changed([account("pro", "…f4ke")]);
+  expect((await accountRow(CLAUDE_ID))?.usage).toBeNull();
+  const woken = await f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, "agent_run.execute"));
+  expect(woken.map((j) => j.payload)).toEqual([{ runId: id, wait: id }]);
+  await runner.changed([account("pro", "…f4ke", usage(19, "2030-01-01T10:06:00.000Z"))]);
+  expect((await accountRow(CLAUDE_ID))?.usage).toEqual(usage(19, "2030-01-01T10:06:00.000Z"));
 });
 
 test("an OpenCode Go reading keeps the models at their own limits, and a refusal with no window full isn't the account's", async () => {

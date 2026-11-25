@@ -795,6 +795,7 @@
       "brainMax": "Open gesprekken",
       "brainMaxDesc": "Hoeveel er open blijven in elke werkruimte. Meer ervan antwoorden sneller, maar gebruiken meer geheugen.",
       "brainIdle": "Een inactief gesprek sluiten na",
+      "mixed": "Niet overal hetzelfde: {{values}}. Een wijziging hier geldt voor allemaal.",
       "folder": "Map van de agents",
       "folderDesc": "Eén map per werkruimte, met een map voor elke agent."
     }

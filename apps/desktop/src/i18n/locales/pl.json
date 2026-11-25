@@ -805,6 +805,7 @@
       "brainMax": "Otwarte rozmowy",
       "brainMaxDesc": "Ile zostaje otwartych w każdej przestrzeni roboczej. Więcej oznacza szybsze odpowiedzi, ale większe zużycie pamięci.",
       "brainIdle": "Zamknij nieaktywną rozmowę po",
+      "mixed": "Nie wszędzie tak samo: {{values}}. Zmiana tutaj dotyczy wszystkich.",
       "folder": "Folder agentów",
       "folderDesc": "Jeden folder na przestrzeń roboczą, z folderem dla każdego agenta."
     }
