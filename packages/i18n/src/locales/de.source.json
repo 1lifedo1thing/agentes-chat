@@ -52948,6 +52948,210 @@
   "problemReport.settingsText": {
     "value": "Send the technical details to the agentes.chat team."
   },
+  "live.type.font": {
+    "value": "Font"
+  },
+  "live.type.search": {
+    "value": "Search fonts"
+  },
+  "live.type.noResults": {
+    "value": "No font by that name"
+  },
+  "live.type.list": {
+    "value": "Fonts"
+  },
+  "live.type.groups.slides": {
+    "value": "In this presentation"
+  },
+  "live.type.groups.canvas": {
+    "value": "On this canvas"
+  },
+  "live.type.groups.document": {
+    "value": "In this document"
+  },
+  "live.type.groups.company": {
+    "value": "From your company"
+  },
+  "live.type.groups.sans": {
+    "value": "Sans serif"
+  },
+  "live.type.groups.serif": {
+    "value": "Serif"
+  },
+  "live.type.groups.display": {
+    "value": "For headings"
+  },
+  "live.type.groups.mono": {
+    "value": "Monospaced"
+  },
+  "live.type.groups.handwriting": {
+    "value": "Handwritten"
+  },
+  "live.type.headings": {
+    "value": "Headings"
+  },
+  "live.type.body": {
+    "value": "Text"
+  },
+  "live.type.fromDrive": {
+    "value": "From the Drive"
+  },
+  "live.type.ownFont": {
+    "value": "The file's font"
+  },
+  "live.type.fileFonts.slides": {
+    "value": "Presentation fonts"
+  },
+  "live.type.fileFonts.document": {
+    "value": "Document fonts"
+  },
+  "live.type.fileFontsNote": {
+    "value": "They apply to the whole file. A text with a font of its own keeps it."
+  },
+  "live.type.headingFont": {
+    "value": "Heading font"
+  },
+  "live.type.bodyFont": {
+    "value": "Text font"
+  },
+  "live.type.bring": {
+    "value": "Bring a font from the Drive…"
+  },
+  "live.type.bringButton": {
+    "value": "Bring from the Drive"
+  },
+  "live.type.bringTitle": {
+    "value": "Bring a font from the Drive"
+  },
+  "live.type.bringSearch": {
+    "value": "Search the Drive's fonts"
+  },
+  "live.type.bringEmpty": {
+    "value": "No fonts in the Drive. Add a .ttf, .otf or .woff file to the Drive first."
+  },
+  "live.type.brought": {
+    "value": "{{name}} is in the file now"
+  },
+  "live.type.notFont": {
+    "value": "This file isn't a font. Pick a .ttf, .otf or .woff file."
+  },
+  "live.type.done": {
+    "value": "Done"
+  },
+  "live.type.text": {
+    "value": "Text style"
+  },
+  "live.type.glyph": {
+    "value": "Aa"
+  },
+  "live.type.weight": {
+    "value": "Weight"
+  },
+  "live.type.weights.w300": {
+    "value": "Light"
+  },
+  "live.type.weights.w400": {
+    "value": "Regular"
+  },
+  "live.type.weights.w500": {
+    "value": "Medium"
+  },
+  "live.type.weights.w600": {
+    "value": "Semibold"
+  },
+  "live.type.weights.w700": {
+    "value": "Bold"
+  },
+  "live.type.weights.w800": {
+    "value": "Extra bold"
+  },
+  "live.type.tracking": {
+    "value": "Letter spacing"
+  },
+  "live.type.trackings.tight": {
+    "value": "Tighter"
+  },
+  "live.type.trackings.normal": {
+    "value": "Normal"
+  },
+  "live.type.trackings.open": {
+    "value": "Open"
+  },
+  "live.type.trackings.wide": {
+    "value": "Wide"
+  },
+  "live.type.lineHeight": {
+    "value": "Line height"
+  },
+  "live.type.caps": {
+    "value": "All caps"
+  },
+  "live.type.highlight": {
+    "value": "Highlight"
+  },
+  "live.type.highlights.none": {
+    "value": "None"
+  },
+  "live.type.highlights.yellow": {
+    "value": "Yellow"
+  },
+  "live.type.highlights.green": {
+    "value": "Green"
+  },
+  "live.type.highlights.blue": {
+    "value": "Blue"
+  },
+  "live.type.highlights.pink": {
+    "value": "Pink"
+  },
+  "live.type.highlights.orange": {
+    "value": "Orange"
+  },
+  "live.type.effects": {
+    "value": "Effects"
+  },
+  "live.type.shadow": {
+    "value": "Shadow"
+  },
+  "live.type.shadows.none": {
+    "value": "None"
+  },
+  "live.type.shadows.soft": {
+    "value": "Soft"
+  },
+  "live.type.shadows.strong": {
+    "value": "Strong"
+  },
+  "live.type.border": {
+    "value": "Border"
+  },
+  "live.type.dashes.solid": {
+    "value": "Solid"
+  },
+  "live.type.dashes.dashed": {
+    "value": "Dashed"
+  },
+  "live.type.dashes.dotted": {
+    "value": "Dotted"
+  },
+  "live.type.gradient": {
+    "value": "Gradient"
+  },
+  "live.type.gradients.none": {
+    "value": "None"
+  },
+  "live.type.gradients.ocean": {
+    "value": "Ocean"
+  },
+  "live.type.gradients.graphite": {
+    "value": "Graphite"
+  },
+  "live.type.gradients.sunset": {
+    "value": "Sunset"
+  },
+  "live.type.gradients.violet": {
+    "value": "Violet"
+  },
   "live.slides.rail.label": {
     "value": "Slides"
   },
