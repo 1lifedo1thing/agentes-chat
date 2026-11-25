@@ -2933,6 +2933,7 @@
     "nameLabel": "Nome",
     "nameHelp": "Cambia per tutti. I vecchi link continuano a funzionare.",
     "replyInThreads": "Gli agenti rispondono nei thread",
+    "replyInChannel": "Gli agenti rispondono nel canale",
     "replyInThreadsHelp": "Un agente chiamato nel canale risponde nel thread sotto quel messaggio, e il canale mostra una riga per il thread. Il lavoro già in corso resta dov'è.",
     "nameTaken": "Esiste già #{{name}}.",
     "generalName": "#general mantiene il suo nome.",
@@ -9312,6 +9313,11 @@
         "text": "Quando arriva un'email, l'agente prepara la risposta.",
         "prompt": "Leggi l'email arrivata e di' di cosa parla e quanto è urgente. Scrivi una proposta di risposta, senza inviarla."
       },
+      "inbox": {
+        "name": "Email che chiedono una risposta",
+        "text": "Nei giorni feriali alle 9 e alle 14, ciò che chiede una risposta, con bozza.",
+        "prompt": "Guarda le email arrivate dall'ultima volta. Elenca quelle che chiedono una risposta, dalla più urgente alla meno urgente, e scrivi una bozza di risposta per ognuna, senza inviarla."
+      },
       "tickets": {
         "name": "Ticket senza risposta",
         "text": "Nei giorni feriali alle 9 e alle 14, chi sta ancora aspettando.",
@@ -9396,6 +9402,11 @@
         "name": "Rivedi le nuove PR",
         "text": "Quando si apre una PR, l'agente la legge e la commenta.",
         "prompt": "Leggi il diff della nuova PR, segnala i rischi e indica cosa testare a mano."
+      },
+      "openPrs": {
+        "name": "PR in attesa di revisione",
+        "text": "Nei giorni feriali alle 10, le PR aperte che nessuno ha ancora rivisto.",
+        "prompt": "Guarda le PR aperte che aspettano ancora una revisione. Per ognuna, di' cosa cambia, da quanto aspetta e cosa guardare per primo."
       },
       "week": {
         "name": "Bilancio della settimana",
@@ -15682,6 +15693,27 @@
       "asks_other": "{{count}} azioni chiedono l'approvazione in chat.",
       "adjust": "Regola",
       "ok": "Fatto"
+    },
+    "routine": {
+      "inbox": "{{name}} legge le tue email e ti manda in un messaggio diretto ciò che chiede una risposta, già con la bozza.",
+      "dayPlan": "{{name}} guarda il tuo calendario e ti manda in un messaggio diretto le riunioni del giorno e cosa preparare.",
+      "failed": "{{name}} controlla rifiuti, rimborsi e contestazioni e ti scrive in un messaggio diretto.",
+      "leads": "{{name}} vede chi è entrato nel CRM e ti dice in un messaggio diretto da chi cominciare.",
+      "tickets": "{{name}} trova i ticket in attesa di risposta e te li manda in un messaggio diretto, con una risposta suggerita.",
+      "late": "{{name}} trova le attività in ritardo e ti dice in un messaggio diretto chi se ne occupa.",
+      "openPrs": "{{name}} guarda le PR in attesa di revisione e ti dice in un messaggio diretto cosa guardare per primo.",
+      "errors": "{{name}} controlla i nuovi errori e ti dice in un messaggio diretto cosa richiede attenzione.",
+      "noAgent": "Dai accesso a un agente qui sopra e se ne occupa lui.",
+      "preparing": "Preparo la routine…",
+      "who": "Chi lo fa",
+      "when": "Quando",
+      "on": "Crea la routine {{name}}",
+      "created": "Routine creata: {{name}}",
+      "createdDetail": "{{agent}} ha già iniziato: il primo riepilogo arriva nel tuo messaggio diretto.",
+      "undo": "Annulla",
+      "undone": "Routine annullata",
+      "notCreated": "Non è stato possibile creare la routine. Puoi crearla in Routine.",
+      "mailboxOnly": "Solo la casella {{address}}."
     },
     "git": {
       "token": "Token di accesso",

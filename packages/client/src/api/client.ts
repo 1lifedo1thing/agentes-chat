@@ -1026,7 +1026,15 @@ export interface ApiClient {
   };
   chat: {
     channels(orgId: string): Promise<Channel[]>;
-    createChannel(orgId: string, input: ChannelInput & { name: string; groupId?: string | null }): Promise<Channel>;
+    /** `members` join right after you; another person among them has its agents answer in threads (ADR 0214). */
+    createChannel(
+      orgId: string,
+      input: ChannelInput & {
+        name: string;
+        groupId?: string | null;
+        members?: ({ userId: string } | { agentId: string })[];
+      },
+    ): Promise<Channel>;
     /** Into sector `groupId` (null: none, ADR 0240), before `beforeChannelId` or at the end. */
     place(
       orgId: string,

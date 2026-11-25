@@ -1006,8 +1006,8 @@ const channelTarget = (c: Pick<ChannelRow, "id" | "name">): AgentActionTarget =>
   title: c.name,
 });
 /**
- * With its roles' audience (made public, a private channel forgets them, and Undo gives them back) and its responsible
- * agent (ADR 0095).
+ * With its roles' audience (made public, a private channel forgets them, and Undo gives them back), its responsible
+ * agent (ADR 0095) and whether its agents answer in threads (ADR 0214).
  */
 const channelSnapshot = (c: ChannelRow) => ({
   name: c.name,
@@ -1015,11 +1015,12 @@ const channelSnapshot = (c: ChannelRow) => ({
   visibility: c.visibility,
   audienceRoleIds: [...c.audienceRoleIds],
   leadAgentId: c.leadAgentId,
+  replyInThreads: c.replyInThreads,
 });
 
 const updateChannelAction: WorkspaceAction = {
   id: "update_channel",
-  does: "Rename a channel, change its topic, make it private (invite only) or public, or choose the agent responsible for it.",
+  does: "Rename a channel, change its topic, make it private (invite only) or public, choose the agent responsible for it, or have agents answer there in threads or in the channel.",
   input: {
     type: "object",
     properties: {
@@ -1032,6 +1033,11 @@ const updateChannelAction: WorkspaceAction = {
         maxLength: 64,
         description:
           'The @handle of an agent in the channel to make responsible for it: it answers what people say to the room for the team and takes the next step of work that ends there. One per channel. "" for none.',
+      },
+      reply_in_threads: {
+        type: "boolean",
+        description:
+          "true: agents called in its main timeline answer in the thread under that message; false: in the channel itself. Work already going stays where it is.",
       },
     },
     required: ["channel"],
@@ -1046,9 +1052,10 @@ const updateChannelAction: WorkspaceAction = {
       input.name === undefined &&
       input.topic === undefined &&
       input.private === undefined &&
-      input.responsible === undefined
+      input.responsible === undefined &&
+      input.reply_in_threads === undefined
     )
-      return "Say what changes: its name, topic, whether it is private or the agent responsible for it.";
+      return "Say what changes: its name, topic, whether it is private, the agent responsible for it or whether agents answer in threads.";
     const { channel: _, responsible, ...rest } = input;
     let lead: { leadAgentId?: string | null } = {};
     if (typeof responsible === "string") {
@@ -1075,6 +1082,7 @@ const updateChannelAction: WorkspaceAction = {
         ...(input.leadAgentId !== undefined
           ? { leadAgentId: typeof input.leadAgentId === "string" ? input.leadAgentId : null }
           : {}),
+        ...(typeof input.reply_in_threads === "boolean" ? { replyInThreads: input.reply_in_threads } : {}),
       },
       deps,
     );
@@ -1092,12 +1100,13 @@ const updateChannelAction: WorkspaceAction = {
       : { visibility: to.visibility as "public" | "private", audienceRoleIds: list(to.audienceRoleIds) };
     // Only when it changed: saving a lead checks it is still in the channel, and an archived one is kept, not saved.
     const lead = same(from.leadAgentId, to.leadAgentId) ? {} : { leadAgentId: str(to.leadAgentId) || null };
+    const threads = from.replyInThreads === to.replyInThreads ? {} : { replyInThreads: to.replyInThreads === true };
     await updateChannel(
       deps.db,
       actorId,
       a.orgId,
       row.id,
-      { name: str(to.name), topic: String(to.topic ?? ""), ...access, ...lead },
+      { name: str(to.name), topic: String(to.topic ?? ""), ...access, ...lead, ...threads },
       deps,
     );
     return undefined;

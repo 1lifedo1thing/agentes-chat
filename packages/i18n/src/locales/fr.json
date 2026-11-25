@@ -2934,6 +2934,7 @@
     "nameLabel": "Nom",
     "nameHelp": "Change pour tout le monde. Les anciens liens continuent de fonctionner.",
     "replyInThreads": "Les agents répondent dans des fils",
+    "replyInChannel": "Les agents répondent dans le canal",
     "replyInThreadsHelp": "Un agent appelé dans le canal répond dans le fil sous ce message, et le canal affiche une ligne pour ce fil. Le travail déjà en cours reste où il est.",
     "nameTaken": "#{{name}} existe déjà.",
     "generalName": "#general garde son nom.",
@@ -9297,6 +9298,11 @@
         "text": "À l'arrivée d'un e-mail, l'agent prépare la réponse.",
         "prompt": "Lisez l'e-mail reçu et dites de quoi il s'agit et à quel point c'est urgent. Rédigez une proposition de réponse, sans l'envoyer."
       },
+      "inbox": {
+        "name": "E-mails qui attendent une réponse",
+        "text": "Les jours ouvrés à 9 h et 14 h, ce qui attend une réponse, avec un brouillon.",
+        "prompt": "Regarde les e-mails arrivés depuis la dernière fois. Liste ceux qui demandent une réponse, du plus urgent au moins urgent, et rédige un brouillon de réponse pour chacun, sans l'envoyer."
+      },
       "tickets": {
         "name": "Tickets sans réponse",
         "text": "Les jours ouvrés à 9 h et 14 h, qui attend encore.",
@@ -9381,6 +9387,11 @@
         "name": "Relire les nouvelles PR",
         "text": "Quand une PR s'ouvre, l'agent la lit et la commente.",
         "prompt": "Lis le diff de la nouvelle PR, signale les risques et dis quoi tester à la main."
+      },
+      "openPrs": {
+        "name": "PR en attente de relecture",
+        "text": "Les jours ouvrés à 10 h, les PR ouvertes que personne n'a relues.",
+        "prompt": "Regarde les PR ouvertes qui attendent encore une relecture. Pour chacune, dis ce qu'elle change, depuis combien de temps elle attend et ce qu'il faut regarder en premier."
       },
       "week": {
         "name": "Bilan de la semaine",
@@ -15659,6 +15670,27 @@
       "asks_other": "{{count}} actions demandent une approbation dans le chat.",
       "adjust": "Ajuster",
       "ok": "Terminé"
+    },
+    "routine": {
+      "inbox": "{{name}} lit vos e-mails et vous envoie en message direct ce qui demande une réponse, avec un brouillon.",
+      "dayPlan": "{{name}} regarde votre agenda et vous envoie en message direct les réunions du jour et ce qu'il faut préparer.",
+      "failed": "{{name}} vérifie les refus, remboursements et litiges et vous écrit en message direct.",
+      "leads": "{{name}} voit qui est arrivé dans le CRM et vous dit en message direct par qui commencer.",
+      "tickets": "{{name}} trouve les tickets qui attendent une réponse et vous les envoie en message direct, avec une réponse suggérée.",
+      "late": "{{name}} trouve les tâches en retard et vous dit en message direct qui s'occupe de chacune.",
+      "openPrs": "{{name}} regarde les PR en attente de relecture et vous dit en message direct quoi regarder en premier.",
+      "errors": "{{name}} vérifie les nouvelles erreurs et vous dit en message direct ce qui demande de l'attention.",
+      "noAgent": "Donnez accès à un agent ci-dessus et il s'en occupe pour vous.",
+      "preparing": "Préparation de la routine…",
+      "who": "Qui s'en charge",
+      "when": "Quand",
+      "on": "Créer la routine {{name}}",
+      "created": "Routine créée : {{name}}",
+      "createdDetail": "{{agent}} a commencé : le premier résumé arrive dans votre message direct.",
+      "undo": "Annuler",
+      "undone": "Routine annulée",
+      "notCreated": "Impossible de créer la routine. Vous pouvez la créer dans Routines.",
+      "mailboxOnly": "Seulement la boîte {{address}}."
     },
     "git": {
       "token": "Jeton d’accès",

@@ -916,6 +916,22 @@ describe("what Desfazer, the card and the people card keep to", () => {
     expect((await row())?.leadAgentId).toBeNull();
   });
 
+  test("the right hand has a channel's agents answer in threads (ADR 0214); Desfazer takes it back", async () => {
+    f = await setup({ rightHand: true });
+    const threads = async () =>
+      (await f.db.select().from(schema.channels).where(eq(schema.channels.id, f.general.id)))[0]?.replyInThreads;
+    expect(await threads()).toBe(false);
+    const ctx = await lodiRun(f, f.owner.id, "agentes respondem em threads no general");
+    const out = await act(f, ctx, { action: "update_channel", input: { channel: "general", reply_in_threads: true } });
+    expect(out.content).toContain("Done at once, with Undo");
+    expect(await threads()).toBe(true);
+    const messageId = await reply(f, ctx);
+    expect((await undoMessageActions({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, messageId)).failed).toEqual(
+      [],
+    );
+    expect(await threads()).toBe(false);
+  });
+
   test("a new role's Desfazer waits while a channel's exception holds it; Desfazer tudo takes both back", async () => {
     f = await setup({ rightHand: true });
     const deps = { db: f.db, pubsub: f.pubsub };

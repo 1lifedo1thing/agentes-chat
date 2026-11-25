@@ -1728,6 +1728,9 @@ async function routineContext(
       .join("\n");
   // Another agent's record is not this agent's memory of the routine: dropped when the agent changed.
   const record = last && (last.agentId === null || last.agentId === run.agentId) ? last : null;
+  // A person ran it now and it never ran before (one made on connecting an app starts so, ADR 0242): they wait to see
+  // what it does, so this run speaks even when nothing is news.
+  const speaks = brief.report === "always" || (brief.trigger === "manual" && !last);
   const lastAt = last ? (last.startedAt ?? last.at) : null;
   const event = current?.event && Object.keys(current.event).length > 0 ? current.event : null;
   const name = brief.name || row?.name || "routine";
@@ -1744,8 +1747,8 @@ async function routineContext(
       ? `Prepared for this run but not approved in time: do each with run_approved_action and its id. ${agent.approvalsLevel === "never" ? "It runs when you call it." : "It asks a person first if that change asks."}\n${listed("other")}`
       : "",
     `When it speaks: ${
-      brief.report === "always"
-        ? `every run. Call hand_off once with the message, even when nothing changed: then say so in a line. If you end without it, your final record is handed to you in ${place} instead, to tell the people from.`
+      speaks
+        ? `${brief.report === "always" ? "every run" : "this run"}. Call hand_off once with the message, even when nothing changed: then say so in a line. If you end without it, your final record is handed to you in ${place} instead, to tell the people from.`
         : "only when there is news. When there is something the people need to know or act on, call hand_off once with the message; when the instructions ask for a message every time (a greeting, a digest, a reminder), there always is one. Otherwise just finish: nothing is posted. Something you already reported or proposed (your last record, what was said there) is not news: don't hand it off again unless it changed."
     }`,
     `What hand_off posts: its message, as-is, as your own message in ${place}. Write the message itself, to the people, in their language: what its instructions ask them to be told (the greeting, the digest, the reminder, or what you found, why it matters and what you recommend or already did). Never talk about this routine or its runs (that it ran, that it is the first run, that there is nothing earlier to compare with) and never bring in matters from other conversations its instructions don't ask for. Set wake_me only when what you found needs you to act or decide in ${place} (its instructions say so, or there is work you can only do there): then your message is a note to yourself there, and you tell the people when you wake.`,

@@ -2834,6 +2834,7 @@
     "nameLabel": "Naam",
     "nameHelp": "Verandert voor iedereen. Oude links blijven werken.",
     "replyInThreads": "Agents antwoorden in threads",
+    "replyInChannel": "Agents antwoorden in het kanaal",
     "replyInThreadsHelp": "Een agent die in het kanaal wordt aangeroepen, antwoordt in de thread onder dat bericht, en het kanaal toont er één regel voor. Werk dat al loopt, blijft waar het is.",
     "nameTaken": "Er is al een #{{name}}.",
     "generalName": "#general houdt zijn naam.",
@@ -9032,6 +9033,11 @@
         "text": "Als er een e-mail binnenkomt, maakt de agent een antwoord klaar.",
         "prompt": "Lees de binnengekomen e-mail en zeg waar die over gaat en hoe dringend die is. Schrijf een voorstel voor een antwoord, zonder het te versturen."
       },
+      "inbox": {
+        "name": "E-mails die een antwoord nodig hebben",
+        "text": "Werkdagen om 9:00 en 14:00, wat een antwoord nodig heeft, met concept.",
+        "prompt": "Bekijk de e-mails die sinds de vorige keer zijn binnengekomen. Zet de mails die een antwoord nodig hebben op een rij, de dringendste eerst, en schrijf voor elke mail een conceptantwoord, zonder het te versturen."
+      },
       "tickets": {
         "name": "Onbeantwoorde tickets",
         "text": "Werkdagen om 9:00 en 14:00, wie nog wacht.",
@@ -9116,6 +9122,11 @@
         "name": "Nieuwe PR's reviewen",
         "text": "Als er een PR opent, leest de agent hem en geeft commentaar.",
         "prompt": "Lees de diff van de nieuwe PR, wijs op risico's en zeg wat je met de hand moet testen."
+      },
+      "openPrs": {
+        "name": "PR's die op een review wachten",
+        "text": "Werkdagen om 10:00, de open PR's die nog niemand heeft gereviewd.",
+        "prompt": "Bekijk de open PR's die nog op een review wachten. Zeg bij elke PR wat hij verandert, hoe lang hij al wacht en waar je eerst naar moet kijken."
       },
       "week": {
         "name": "Weekafsluiting",
@@ -15204,6 +15215,27 @@
       "asks_other": "{{count}} acties vragen om goedkeuring in de chat.",
       "adjust": "Aanpassen",
       "ok": "Klaar"
+    },
+    "routine": {
+      "inbox": "{{name}} leest je e-mails en stuurt je in een DM wat een antwoord nodig heeft, al met een concept.",
+      "dayPlan": "{{name}} kijkt in je agenda en stuurt je in een DM de afspraken van vandaag en wat je moet voorbereiden.",
+      "failed": "{{name}} controleert weigeringen, terugbetalingen en geschillen en stuurt je een DM.",
+      "leads": "{{name}} ziet wie er in het CRM is binnengekomen en zegt je in een DM met wie je begint.",
+      "tickets": "{{name}} zoekt tickets die op een antwoord wachten en stuurt ze je in een DM, met een voorgesteld antwoord.",
+      "late": "{{name}} zoekt achterstallige taken en zegt je in een DM wie elke taak oppakt.",
+      "openPrs": "{{name}} bekijkt de PR's die op een review wachten en zegt je in een DM waar je eerst naar moet kijken.",
+      "errors": "{{name}} controleert de nieuwe fouten en zegt je in een DM wat aandacht nodig heeft.",
+      "noAgent": "Geef hierboven een agent toegang en die regelt dit voor je.",
+      "preparing": "Routine wordt klaargezet…",
+      "who": "Wie het doet",
+      "when": "Wanneer",
+      "on": "De routine {{name}} maken",
+      "created": "Routine gemaakt: {{name}}",
+      "createdDetail": "{{agent}} is begonnen: de eerste samenvatting komt in je DM.",
+      "undo": "Ongedaan maken",
+      "undone": "Routine ongedaan gemaakt",
+      "notCreated": "De routine kon niet worden gemaakt. Je kunt hem maken bij Routines.",
+      "mailboxOnly": "Alleen de mailbox {{address}}."
     },
     "git": {
       "token": "Toegangstoken",

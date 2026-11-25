@@ -2903,6 +2903,7 @@ export const ptBR = {
     nameLabel: "Nome",
     nameHelp: "Muda para todo mundo. Os links antigos continuam funcionando.",
     replyInThreads: "Agentes respondem em threads",
+    replyInChannel: "Agentes respondem no canal",
     replyInThreadsHelp:
       "O agente chamado no canal responde na thread abaixo da mensagem, e o canal mostra uma linha para ela. O que já está em andamento fica onde está.",
     nameTaken: "Já existe #{{name}}.",
@@ -9488,6 +9489,12 @@ export const ptBR = {
         prompt:
           "Leia o email que chegou e diga do que se trata e o quanto é urgente. Escreva uma sugestão de resposta, sem enviar.",
       },
+      inbox: {
+        name: "Emails que pedem resposta",
+        text: "Dias úteis às 9h e às 14h, o que precisa de resposta, com rascunho.",
+        prompt:
+          "Veja os emails que chegaram desde a última vez. Liste os que precisam de resposta, do mais urgente ao menos, e escreva um rascunho de resposta para cada um, sem enviar.",
+      },
       tickets: {
         name: "Chamados sem resposta",
         text: "Dias úteis às 9h e às 14h, quem ainda espera.",
@@ -9583,6 +9590,12 @@ export const ptBR = {
         name: "Revisar PRs novos",
         text: "Quando abrir um PR, o agente lê e comenta.",
         prompt: "Leia o diff do PR novo, aponte riscos e diga o que testar à mão.",
+      },
+      openPrs: {
+        name: "PRs esperando revisão",
+        text: "Dias úteis às 10h, os PRs abertos que ninguém revisou.",
+        prompt:
+          "Veja os PRs abertos que ainda esperam revisão. Para cada um, diga o que ele muda, há quanto tempo espera e o que olhar primeiro.",
       },
       week: {
         name: "Fechamento da semana",
@@ -15538,6 +15551,33 @@ export const ptBR = {
       asks_other: "{{count}} ações pedem aprovação no chat.",
       adjust: "Ajustar",
       ok: "Pronto",
+    },
+    /** The routine that comes on with the connection (ADR 0242): what it does, with the agent's name in it. */
+    routine: {
+      inbox: "{{name}} lê seus emails e te manda no privado o que precisa de resposta, já com rascunho.",
+      dayPlan: "{{name}} olha sua agenda e te manda no privado as reuniões do dia e o que preparar.",
+      failed: "{{name}} confere recusas, reembolsos e contestações e te manda no privado.",
+      leads: "{{name}} vê quem chegou no CRM e te manda no privado por quem começar.",
+      tickets: "{{name}} procura chamados esperando resposta e te manda no privado, com sugestão de resposta.",
+      late: "{{name}} procura tarefas atrasadas e te manda no privado quem cuida de cada uma.",
+      openPrs: "{{name}} vê os PRs esperando revisão e te manda no privado o que olhar primeiro.",
+      errors: "{{name}} confere os erros novos e te manda no privado o que precisa de atenção.",
+      /** Nobody may read the mailbox yet: no routine is made. */
+      noAgent: "Dê acesso a um agente acima e ele cuida disso para você.",
+      /** Its line while the routines and the agents load. */
+      preparing: "Preparando a rotina…",
+      who: "Quem faz",
+      when: "Quando",
+      /** Its switch, for a screen reader. */
+      on: "Criar a rotina {{name}}",
+      created: "Rotina criada: {{name}}",
+      /** Its first run starts at once. */
+      createdDetail: "{{agent}} já começou: o primeiro resumo chega no seu privado.",
+      undo: "Desfazer",
+      undone: "Rotina desfeita",
+      notCreated: "Não deu para criar a rotina. Dá para criar em Rotinas.",
+      /** Added to a mailbox routine's instructions: the mailbox it was made for. */
+      mailboxOnly: "Só a caixa {{address}}.",
     },
     git: {
       token: "Token de acesso",

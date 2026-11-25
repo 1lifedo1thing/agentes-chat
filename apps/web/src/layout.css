@@ -5761,6 +5761,69 @@ html:not([data-pointer]) .cflow__more summary:focus-visible {
   width: 15px;
   height: 15px;
 }
+/*
+ * The routine that comes on with a connection (ADR 0242): a line under what was said, no card. Its icon and switch
+ * sit on the title's line (22), never in the middle of a sentence that wraps; who and when line up with the words.
+ */
+.cflow-routine {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.cflow-routine__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 12px;
+  cursor: pointer;
+}
+.cflow-routine:has(.ac-switch:disabled) .cflow-routine__head {
+  cursor: default;
+}
+.cflow-routine__icon {
+  display: inline-grid;
+  place-items: center;
+  height: 22px;
+  color: var(--ink2);
+}
+.cflow-routine__words {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cflow-routine__words b {
+  font-weight: 600;
+  line-height: 22px;
+}
+.cflow-routine__head .ac-switch {
+  margin-top: 1px;
+}
+.cflow-routine__props {
+  padding-left: 30px;
+}
+.cflow-routine[data-off] .cflow-routine__icon,
+.cflow-routine[data-off] .cflow-routine__words b {
+  color: var(--ink-muted);
+}
+/* Loading: the sentence's line and the two selects as their shapes, at their size. */
+.cflow-routine__wait {
+  display: flex;
+  align-items: center;
+  height: 20px;
+}
+.cflow-routine__select {
+  height: var(--control-h-sm);
+  border-radius: var(--control-r-sm);
+}
+/* Who and when land softly where their shapes were. */
+@media (prefers-reduced-motion: no-preference) {
+  .cflow-routine:not(.ac-skeleton-group) .cflow-routine__props {
+    animation: ac-fade-in var(--dur-fast) ease-out;
+  }
+}
 
 /* Email (ADR 0038): app password help, hosts under "Avançado", actions by level, address lists, the agent's rules. */
 .mail-howto {

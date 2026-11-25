@@ -213,6 +213,14 @@ export function chatRoutes(deps: AppDeps) {
                 "Private only: people holding one of these roles (departments) also see it and may join (ADR 0125); empty: invite only.",
             }),
             groupId: z.uuid().nullable().optional().openapi({ description: "Put it in this sector (`agent-groups`)." }),
+            members: z
+              .array(z.union([z.object({ userId: z.string() }), z.object({ agentId: z.uuid() })]))
+              .max(200)
+              .optional()
+              .openapi({
+                description:
+                  "Who joins it right after you, with the same checks as adding each one. Its agents answer in threads (ADR 0214) only when another person is among them, and never in a personal workspace.",
+              }),
           }),
         ),
       },

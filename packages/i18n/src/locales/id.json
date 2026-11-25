@@ -2737,6 +2737,7 @@
     "nameLabel": "Nama",
     "nameHelp": "Berubah untuk semua orang. Tautan lama tetap berfungsi.",
     "replyInThreads": "Agen membalas di utas",
+    "replyInChannel": "Agen membalas di kanal",
     "replyInThreadsHelp": "Agen yang dipanggil di kanal menjawab di utas di bawah pesan itu, dan kanal menampilkan satu baris untuk utas itu. Pekerjaan yang sudah berjalan tetap di tempatnya.",
     "nameTaken": "Sudah ada #{{name}}.",
     "generalName": "#general tetap dengan namanya.",
@@ -8706,6 +8707,11 @@
         "text": "Saat email masuk, agen menyiapkan balasan.",
         "prompt": "Baca email yang masuk dan katakan isinya serta seberapa mendesak. Tulis saran balasan, tetapi jangan dikirim."
       },
+      "inbox": {
+        "name": "Email yang perlu dibalas",
+        "text": "Hari kerja pukul 9 dan pukul 2 siang, yang perlu dibalas, dengan draf.",
+        "prompt": "Lihat email yang masuk sejak terakhir kali. Daftar email yang perlu dibalas, dari yang paling mendesak, dan tulis draf balasan untuk masing-masing, tanpa mengirimnya."
+      },
       "tickets": {
         "name": "Tiket belum dibalas",
         "text": "Hari kerja pukul 9 dan pukul 2 siang, siapa yang masih menunggu.",
@@ -8790,6 +8796,11 @@
         "name": "Tinjau PR baru",
         "text": "Saat PR dibuka, agen membacanya dan memberi komentar.",
         "prompt": "Baca diff PR baru, tunjukkan risikonya, dan sebutkan apa yang perlu diuji manual."
+      },
+      "openPrs": {
+        "name": "PR yang menunggu ditinjau",
+        "text": "Hari kerja pukul 10, PR terbuka yang belum ditinjau siapa pun.",
+        "prompt": "Lihat PR terbuka yang masih menunggu ditinjau. Untuk masing-masing, sebutkan apa yang diubahnya, sudah berapa lama menunggu, dan apa yang perlu dilihat lebih dulu."
       },
       "week": {
         "name": "Rangkuman minggu ini",
@@ -14627,6 +14638,27 @@
       "asks_other": "{{count}} tindakan meminta persetujuan di chat.",
       "adjust": "Sesuaikan",
       "ok": "Selesai"
+    },
+    "routine": {
+      "inbox": "{{name}} membaca email kamu dan mengirim lewat DM mana yang perlu dibalas, sudah dengan draf.",
+      "dayPlan": "{{name}} melihat kalendermu dan mengirim lewat DM rapat hari ini dan apa yang perlu disiapkan.",
+      "failed": "{{name}} memeriksa penolakan, pengembalian dana, dan sengketa lalu mengirim DM ke kamu.",
+      "leads": "{{name}} melihat siapa yang masuk ke CRM dan memberi tahu lewat DM harus mulai dari siapa.",
+      "tickets": "{{name}} mencari tiket yang menunggu balasan dan mengirimnya lewat DM, dengan saran balasan.",
+      "late": "{{name}} mencari tugas yang terlambat dan memberi tahu lewat DM siapa yang mengurus masing-masing.",
+      "openPrs": "{{name}} melihat PR yang menunggu ditinjau dan memberi tahu lewat DM apa yang perlu dilihat lebih dulu.",
+      "errors": "{{name}} memeriksa error baru dan memberi tahu lewat DM apa yang perlu diperhatikan.",
+      "noAgent": "Beri akses ke agen di atas dan ia akan mengurus ini untukmu.",
+      "preparing": "Menyiapkan rutinitas…",
+      "who": "Siapa yang mengerjakan",
+      "when": "Kapan",
+      "on": "Buat rutinitas {{name}}",
+      "created": "Rutinitas dibuat: {{name}}",
+      "createdDetail": "{{agent}} sudah mulai: ringkasan pertama masuk ke DM kamu.",
+      "undo": "Urungkan",
+      "undone": "Rutinitas diurungkan",
+      "notCreated": "Rutinitas tidak bisa dibuat. Kamu bisa membuatnya di Rutinitas.",
+      "mailboxOnly": "Hanya kotak surat {{address}}."
     },
     "git": {
       "token": "Token akses",

@@ -62,6 +62,7 @@ import {
   fileConversationReaderSql,
   taskReaderSql,
 } from "./task-access";
+import { isPersonalWorkspace } from "./workspace-mode";
 
 const { channels, channelMembers, agents, organizationMembers, organizations, users } = schema;
 
@@ -192,6 +193,8 @@ export async function createChannel(
     audienceRoleIds?: string[];
     /** Its sector (ADR 0240): whoever may create a channel may put it in an existing one. */
     groupId?: string | null;
+    /** Who joins it right after its creator, with the same checks as adding them one by one (`addChannelMember`). */
+    members?: ({ userId: string } | { agentId: string })[];
   },
   options: { pubsub?: PubSub } = {},
 ): Promise<Channel> {
@@ -205,6 +208,11 @@ export async function createChannel(
   }
   const visibility = input.visibility ?? "public";
   const audienceRoleIds = await channelRoleIds(db, orgId, visibility, input.audienceRoleIds);
+  const members = input.members ?? [];
+  // Answers in threads keep the main timeline clear for the other people in it (ADR 0214): a channel made with no one
+  // but its creator, or in a personal workspace (ADR 0159), starts with them in the main timeline instead.
+  const alone = !members.some((m) => "userId" in m && m.userId !== actorId);
+  const threadsOff = alone || (await isPersonalWorkspace(db, orgId));
   try {
     const made = await db.transaction(async (tx) => {
       const [channel] = await tx
@@ -218,6 +226,7 @@ export async function createChannel(
           createdByUserId: actorId,
           groupId,
           position: await endOfSector(tx, orgId, groupId),
+          ...(threadsOff ? { replyInThreads: false } : {}),
         })
         .returning();
       if (!channel) throw new Error("channel insert returned nothing");
@@ -225,6 +234,10 @@ export async function createChannel(
       return channel;
     });
     await publishChannelsChanged(options.pubsub, orgId);
+    for (const member of members) {
+      if ("userId" in member && member.userId === actorId) continue;
+      await addChannelMember(db, actorId, orgId, made.id, member, options);
+    }
     return made;
   } catch (error) {
     if (isUniqueViolation(error)) throw new ConflictError(`#${name} already exists`);

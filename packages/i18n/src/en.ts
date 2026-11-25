@@ -3036,6 +3036,7 @@ export const en = {
     nameLabel: "Name",
     nameHelp: "Changes for everyone. Old links keep working.",
     replyInThreads: "Agents reply in threads",
+    replyInChannel: "Agents reply in the channel",
     replyInThreadsHelp:
       "An agent called in the channel answers in the thread under that message, and the channel shows one line for it. Work already going stays where it is.",
     nameTaken: "There is already #{{name}}.",
@@ -9534,6 +9535,12 @@ export const en = {
         prompt:
           "Read the email that arrived and say what it's about and how urgent it is. Draft a reply, but don't send it.",
       },
+      inbox: {
+        name: "Emails that need a reply",
+        text: "Weekdays at 9am and 2pm, what needs a reply, with a draft.",
+        prompt:
+          "Look at the emails that arrived since last time. List the ones that need a reply, most urgent first, and draft a reply to each, without sending it.",
+      },
       tickets: {
         name: "Unanswered tickets",
         text: "Weekdays at 9am and 2pm, who's still waiting.",
@@ -9632,6 +9639,12 @@ export const en = {
         name: "Review new PRs",
         text: "When a PR opens, the agent reads it and comments.",
         prompt: "Read the new PR's diff, point out risks and say what to test by hand.",
+      },
+      openPrs: {
+        name: "PRs waiting for review",
+        text: "Weekdays at 10am, the open PRs nobody reviewed yet.",
+        prompt:
+          "Look at the open PRs still waiting for a review. For each, say what it changes, how long it has waited and what to look at first.",
       },
       week: {
         name: "Week wrap-up",
@@ -15585,6 +15598,33 @@ export const en = {
       asks_other: "{{count}} actions ask for approval in the chat.",
       adjust: "Adjust",
       ok: "Done",
+    },
+    /** The routine that comes on with the connection (ADR 0242): what it does, with the agent's name in it. */
+    routine: {
+      inbox: "{{name}} reads your emails and sends you in a DM what needs a reply, with a draft.",
+      dayPlan: "{{name}} looks at your calendar and sends you in a DM today's meetings and what to prepare.",
+      failed: "{{name}} checks declines, refunds and disputes and sends you a DM.",
+      leads: "{{name}} sees who came into the CRM and sends you in a DM who to start with.",
+      tickets: "{{name}} finds tickets waiting for a reply and sends them to you in a DM, with a suggested reply.",
+      late: "{{name}} finds overdue tasks and sends you in a DM who looks after each one.",
+      openPrs: "{{name}} looks at the PRs waiting for review and sends you in a DM what to look at first.",
+      errors: "{{name}} checks the new errors and sends you in a DM what needs attention.",
+      /** Nobody may read the mailbox yet: no routine is made. */
+      noAgent: "Give an agent access above and it takes care of this for you.",
+      /** Its line while the routines and the agents load. */
+      preparing: "Getting the routine ready…",
+      who: "Who does it",
+      when: "When",
+      /** Its switch, for a screen reader. */
+      on: "Create the routine {{name}}",
+      created: "Routine created: {{name}}",
+      /** Its first run starts at once. */
+      createdDetail: "{{agent}} has started: the first summary arrives in your DM.",
+      undo: "Undo",
+      undone: "Routine undone",
+      notCreated: "Couldn't create the routine. You can create it in Routines.",
+      /** Added to a mailbox routine's instructions: the mailbox it was made for. */
+      mailboxOnly: "Only the mailbox {{address}}.",
     },
     git: {
       token: "Access token",
