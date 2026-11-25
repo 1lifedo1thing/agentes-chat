@@ -3,11 +3,12 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
+import { HOUR_PX } from "@agenteschat/client/lib/calendar";
 import { toYmd } from "@agenteschat/client/lib/format";
-import { cleanup } from "@testing-library/react";
+import { act, cleanup, fireEvent } from "@testing-library/react";
 import { pinFileClock } from "./clock";
 import { createFakeApi, ORG_ID, seedState } from "./fake-api";
-import { renderApp, settle } from "./render";
+import { renderApp, screen, settle } from "./render";
 
 pinFileClock();
 
@@ -21,12 +22,14 @@ const today = (h: number, m: number) => {
 
 /**
  * The week of a workspace with daily `routines` (name and time) and today's `events`, each element as tall as `drawn`
- * says (0: not measured): today's column once it settled, or null when the page broke.
+ * says (0: not measured), and `change` made once it settled: today's column once it settled again, or null when the
+ * page broke.
  */
 async function todaysColumn(
   drawn: (el: HTMLElement) => number,
   routines: (readonly [name: string, time: string])[],
   events: { title: string; start: Date; end: Date }[] = [],
+  change?: () => Promise<void>,
 ) {
   const own = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight");
   Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
@@ -58,6 +61,10 @@ async function todaysColumn(
       });
     await renderApp(`/org/${ORG_ID}/calendar`, { api });
     await settle(8);
+    if (change) {
+      await change();
+      await settle(8);
+    }
     return document.querySelector<HTMLElement>(`.cal-week__col[data-day="${toYmd(new Date())}"]`);
   } finally {
     if (own) Object.defineProperty(HTMLElement.prototype, "offsetHeight", own);
@@ -105,4 +112,33 @@ test("the week's measured layout settles when a run beside a meeting is drawn sh
   // Thin beside the meeting, as the taller measure (the run wide, wrapping) said.
   const run = col?.querySelector('[aria-label="Rotina Bom dia, 07:00"]');
   expect(run?.closest(".cal-week__runs")?.hasAttribute("data-thin")).toBe(true);
+});
+
+/**
+ * A meeting is drawn as tall as its slot (two hours, 86px), and the one at 15:00 goes beside it. Made an hour shorter
+ * by its bottom edge, it ends where that one starts, which goes back under it. Were its day not measured again, heights
+ * that only grow would keep it as tall as it was, and the other meeting beside it.
+ */
+test("a meeting made shorter keeps no height it no longer has: the one at its new end goes back under it", async () => {
+  const coffee = () => screen().getByRole("button", { name: "Café com o time, 15:00–15:30" });
+  const col = await todaysColumn(
+    (el) => (el.classList.contains("cal-chip--block") ? Number.parseFloat(el.style.minHeight) || 0 : 0),
+    [],
+    [
+      { title: "Planejamento", start: today(14, 0), end: today(16, 0) },
+      { title: "Café com o time", start: today(15, 0), end: today(15, 30) },
+    ],
+    async () => {
+      expect(coffee().style.getPropertyValue("--cols")).toBe("2");
+      const edge = screen()
+        .getByRole("button", { name: "Planejamento, 14:00–16:00" })
+        .querySelector(".cal-chip__resize") as HTMLElement;
+      await act(async () => fireEvent.pointerDown(edge, { clientX: 10, clientY: 300, button: 0 }));
+      await settle(1);
+      await act(async () => fireEvent.pointerMove(window, { clientX: 10, clientY: 300 - HOUR_PX }));
+      await act(async () => fireEvent.pointerUp(window, { clientX: 10, clientY: 300 - HOUR_PX }));
+    },
+  );
+  expect(col?.querySelector('[aria-label="Planejamento, 14:00–15:00"]')).not.toBeNull();
+  expect(coffee().style.getPropertyValue("--cols")).toBe("1");
 });

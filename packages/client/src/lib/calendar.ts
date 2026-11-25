@@ -359,6 +359,20 @@ export function grownHeights(
 }
 
 /**
+ * What a day's column holds, as far as its measured heights go: each timed item's key, times and title. The grid
+ * measures the day again from nothing when it changes (`TimeGrid`), as heights that only grow would keep an item
+ * made shorter or renamed as tall as it was, and what it pushed aside beside it. From what is shown alone, never
+ * from what is measured: a key that followed the layout would start the measure over on every render, and a layout
+ * that changes how tall it is drawn would flip forever (`grownHeights`).
+ */
+export const dayItemsKey = (items: CalItem[], day: Date) =>
+  JSON.stringify(
+    items
+      .filter((it) => !isBarItem(it) && onDay(it, day))
+      .map((it) => [it.key, it.start.getTime(), it.end.getTime(), it.title]),
+  );
+
+/**
  * Timed items of one day, and its stacks of routine runs, laid out side by
  * side when they overlap: each cluster of overlapping items splits the width
  * into as many columns as it needs (greedy, by start). `heights` (px, by key)
