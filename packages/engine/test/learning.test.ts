@@ -217,6 +217,33 @@ describe("agents learn on their own (ADR 0120)", () => {
     expect(marks.get(msg.id) ?? []).toEqual([]);
   });
 
+  test("a person's 'don't… again' is learned even when the turn ends on a question to them", async () => {
+    f = await setup({
+      judge: (kind, id) => (kind === "follow_through" ? (id === "learn" ? "correction" : "ask") : undefined),
+      reply: () => ({ chunks: ["Entendi, não marco mais reunião na sexta. Que dia você prefere?"] }),
+    });
+    learnOutput = {
+      items: [
+        {
+          kind: "preference",
+          scope: "agent",
+          about_person: "",
+          title: "no Friday meetings",
+          content: "Never book meetings on Fridays.",
+          refs: ["m1"],
+        },
+      ],
+      skill_fixes: [],
+    };
+    await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
+      body: "@dev não marca mais reunião na sexta",
+    });
+    await drainOutbox(f.db, f.handlers);
+    const [run] = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.orgId, f.org.id));
+    expect(run?.status).toBe("waiting_input");
+    expect((await items()).map((i) => i.content)).toEqual(["Never book meetings on Fridays."]);
+  });
+
   test("a correction replaces the preference on record, keeps the old one as history and shows the mark", async () => {
     f = await setup();
     const { run: first } = await personRun("@dev reports in English please");
@@ -634,6 +661,11 @@ describe("agents learn on their own (ADR 0120)", () => {
     await f.db.insert(schema.agentLearningDays).values({ orgId: f.org.id, agentId: f.agent.id, day: today, jobs: 20 });
     expect(await afterTurnDone(f.context, run, { judged: true, signal: "method" })).toBe(false);
     expect((await learnRun(f.context, { orgId: f.org.id, runId: run.id })).skipped).toBe("cap_reached");
+    // A person's correction is never crowded out by the day's other learning.
+    expect(await afterTurnDone(f.context, run, { judged: true, signal: "correction" })).toBe(true);
+    expect(
+      (await learnRun(f.context, { orgId: f.org.id, runId: run.id, signal: "correction" })).skipped,
+    ).toBeUndefined();
     await f.db.delete(schema.agentLearningDays);
     expect(await afterTurnDone(f.context, run, { judged: true, signal: "method" })).toBe(true);
     expect(await afterTurnDone(f.context, run, { judged: true, signal: "none" })).toBe(false);
