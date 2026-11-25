@@ -49,10 +49,11 @@ export type PaidForm = "dialog" | "card";
 /**
  * The moment right after a paid Checkout (ADR 0079): what the address said was bought, once the plan is in force.
  * The return is kept for the tab until then (the hold lifts on the billing service's next pass), and shown once per
- * payment: as the plan is found in force, the return is used up (the address and the tab drop it) and this browser
- * notes when, so a reload, Back or the same return again shows nothing. A plain visit has no return to show. `moment`
- * stays until `done`, whatever the address does meanwhile, and only in the workspace it was paid for. `busy`: a dialog
- * the caller doesn't sequence itself is open now.
+ * payment: once its card, dialog or onboarding page is on screen (`onScreen`), the return is used up and this browser
+ * notes when, so a reload, Back or the same return again shows nothing. Until then the tab keeps it: a page left before
+ * the moment painted (another page loaded, the tab reloaded) shows it on the next one. The address drops it as soon as
+ * the plan is in force. A plain visit has no return to show. `moment` stays until `done`, whatever the address does
+ * meanwhile, and only in the workspace it was paid for. `busy`: a dialog the caller doesn't sequence itself is open now.
  */
 export function usePaidMoment(orgId: string, standing: OrgStanding | undefined, busy = false) {
   const pendingKey = `${STORAGE_KEYS.paidMoment}.${orgId}`;
@@ -77,15 +78,18 @@ export function usePaidMoment(orgId: string, standing: OrgStanding | undefined, 
       sessionStore.set(pendingKey, pendingJson);
       return;
     }
-    sessionStore.remove(pendingKey);
-    if (due) {
-      storage.set(shownKey, String(Date.now()));
-      setShown({ orgId, moment: JSON.parse(pendingJson) as PaidReturn, form });
-    }
+    // Shown lately in this browser (another tab): used up. Else kept for the tab until the moment is on screen.
+    if (seen) sessionStore.remove(pendingKey);
+    else sessionStore.set(pendingKey, pendingJson);
+    if (due) setShown({ orgId, moment: JSON.parse(pendingJson) as PaidReturn, form });
     if (inAddress) void navigate({ to: ".", replace: true, search: withoutPaid as never });
-  }, [active, due, form, inAddress, navigate, orgId, pendingJson, pendingKey, shownKey]);
+  }, [active, due, form, inAddress, navigate, orgId, pendingJson, pendingKey, seen]);
   const done = useCallback(() => setShown(null), []);
-  return { moment: mine?.moment ?? (due ? pending : null), form: mine?.form ?? form, done };
+  const onScreen = useCallback(() => {
+    storage.set(shownKey, String(Date.now()));
+    sessionStore.remove(pendingKey);
+  }, [pendingKey, shownKey]);
+  return { moment: mine?.moment ?? (due ? pending : null), form: mine?.form ?? form, done, onScreen };
 }
 
 /**

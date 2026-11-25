@@ -57,7 +57,7 @@ export function Arrival() {
   const toConnect = mayConnect && !allThink && connect !== null;
   // Before the notice, the moment's way on is the notice itself (Continue).
   if (paid.moment && beta !== null && paidFirst)
-    return <PaidDialog moment={paid.moment} next={null} onClose={paid.done} />;
+    return <PaidDialog moment={paid.moment} next={null} onClose={paid.done} onScreen={paid.onScreen} />;
   if (beta !== null)
     return (
       <BetaDialog
@@ -84,8 +84,8 @@ export function Arrival() {
         }
       : null;
   return paid.form === "dialog" ? (
-    <PaidDialog moment={paid.moment} next={next} onClose={paid.done} />
+    <PaidDialog moment={paid.moment} next={next} onClose={paid.done} onScreen={paid.onScreen} />
   ) : (
-    <PaidCard moment={paid.moment} next={next} onClose={paid.done} />
+    <PaidCard moment={paid.moment} next={next} onClose={paid.done} onScreen={paid.onScreen} />
   );
 }

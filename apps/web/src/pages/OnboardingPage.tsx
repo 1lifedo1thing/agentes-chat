@@ -526,6 +526,12 @@ export function OnboardingPage() {
       ? null
       : ([settings, agents].find((q) => q.data === undefined && q.isError && !q.isFetching)?.error ??
         (at === "open" && open.isError && open.variables === "done" ? open.error : null));
+  // The paid moment on screen here, in the plan step's place, past the splash: only now shown and used up.
+  const momentOnScreen =
+    awake && !failed && Boolean(me.data) && known && !(at === "open" && !stay && deleting === null);
+  useEffect(() => {
+    if (momentOnScreen) paidMoment.onScreen();
+  }, [momentOnScreen, paidMoment.onScreen]);
   if (failed)
     return (
       <div className="page page--mid">

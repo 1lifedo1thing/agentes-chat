@@ -119,14 +119,28 @@ export function PaidComputerLine({ computer }: { computer: NonNullable<PaidCompu
 /**
  * The moment in full, wherever the return from a paid Checkout lands (in a workspace opening after its onboarding,
  * before the beta notice): the team waking on a larger sky, the plan in force as its title, what it gives, the
- * computer as it is, and one way on (`next`; none: Continue). Every way out ends it (`onClose`).
+ * computer as it is, and one way on (`next`; none: Continue). Every way out ends it (`onClose`); `onScreen` once it
+ * is drawn.
  */
-export function PaidDialog({ moment, next, onClose }: { moment: PaidReturn; next: PaidNext; onClose: () => void }) {
+export function PaidDialog({
+  moment,
+  next,
+  onClose,
+  onScreen,
+}: {
+  moment: PaidReturn;
+  next: PaidNext;
+  onClose: () => void;
+  onScreen: () => void;
+}) {
   const { t } = useTranslation();
   const { org, me } = useOrg();
   const dir = useDirectory(org.id);
   const facts = usePaidFacts(org.id, moment, org.role === "owner");
   const go = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!facts.loading) onScreen();
+  }, [facts.loading, onScreen]);
   if (facts.loading) return null;
   const label = next?.label ?? t("common.continue");
   return (
@@ -186,14 +200,28 @@ export function PaidDialog({ moment, next, onClose }: { moment: PaidReturn; next
 /**
  * The moment's lighter form, for a plan that turned on after the person left the page the return landed on: a card in
  * the window's corner that leaves the page as it is, with the team waking on its band, the plan in force, the computer
- * as it is (else what the plan gives) and the one way on (`next`), until it is closed or used.
+ * as it is (else what the plan gives) and the one way on (`next`), until it is closed or used. `onScreen` once it is
+ * drawn.
  */
-export function PaidCard({ moment, next, onClose }: { moment: PaidReturn; next: PaidNext; onClose: () => void }) {
+export function PaidCard({
+  moment,
+  next,
+  onClose,
+  onScreen,
+}: {
+  moment: PaidReturn;
+  next: PaidNext;
+  onClose: () => void;
+  onScreen: () => void;
+}) {
   const { t } = useTranslation();
   const { org, me } = useOrg();
   const dir = useDirectory(org.id);
   const facts = usePaidFacts(org.id, moment, org.role === "owner");
   const titleId = useId();
+  useEffect(() => {
+    if (!facts.loading) onScreen();
+  }, [facts.loading, onScreen]);
   if (facts.loading) return null;
   // Over the page, outside the shell's own layers, and under every dialog (`--z-docked`), one already open included.
   return createPortal(

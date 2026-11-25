@@ -268,6 +268,25 @@ describe("a confirmation that comes later", () => {
     expect(screen().queryByRole("dialog")).toBeNull();
   });
 
+  test("a page left before the card is on screen keeps the moment for the next one, never used up unseen", async () => {
+    // Kept for the tab, the plan in force: the page opens while what the card says (the plan's limits) is on its way.
+    sessionStorage.setItem(PENDING, JSON.stringify({ plan: "team", period: "year" }));
+    const api = createFakeApi(workspace());
+    api.orgs.limits = () => new Promise<never>(() => {});
+    await renderApp(`/org/${ORG_ID}/home`, { api });
+    await settle(8);
+    expect(card()).toBeNull();
+    // Never on screen: not noted as shown in this browser, and still kept for the tab.
+    expect(localStorage.getItem(SHOWN)).toBeNull();
+    expect(sessionStorage.getItem(PENDING)).not.toBeNull();
+    cleanup();
+    // The next page shows it, and only then is it used up.
+    await open(workspace(), `/org/${ORG_ID}/home`);
+    expect(card()).toBeTruthy();
+    expect(localStorage.getItem(SHOWN)).not.toBeNull();
+    expect(sessionStorage.getItem(PENDING)).toBeNull();
+  });
+
   test("on the return, with a dialog of the person's own open as the hold lifts: the card, under it", async () => {
     const state = held(workspace());
     const { services } = await open(state, `${SETTINGS}?paid=1`);
