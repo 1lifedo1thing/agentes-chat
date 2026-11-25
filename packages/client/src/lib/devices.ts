@@ -14,7 +14,7 @@ import type {
 import { DESKTOP_CLOSE, type DesktopMode, type DesktopRetry } from "../desktop";
 import { type SocketBase, socketUrl } from "../realtime/connection";
 import { clockAt, firstName } from "./format";
-import { computerKind } from "./machines";
+import { computerKind, osName } from "./machines";
 import { norm as fold } from "./tool-review";
 
 /**
@@ -216,10 +216,7 @@ export function portraitOf(d: ComputerDevice | PhoneDevice): { kind: DevicePortr
 export const deviceName = (t: TFunction, d: { name: string; machineKind?: string; hostname?: string }) =>
   d.name || (d.machineKind === "host" ? t("machines.host.label") : (d.hostname ?? ""));
 
-const OS_CODES = new Set(["linux", "darwin", "windows", "other"]);
-
-/** "macOS", "Windows", or the server's own words when it sends a full name with a version ("Ubuntu 24.04"). */
-export const osName = (t: TFunction, os: string) => (OS_CODES.has(os) ? say(t, `machines.os.${os}`) : os);
+export { osName };
 
 /** "macOS 26.1 · 12 CPU · 36 GB"; the workspace computer says "Cloud" where a system would go. */
 export function computerLine(t: TFunction, d: ComputerDevice): string {

@@ -17,9 +17,8 @@ import { groupPlans, type OwnSignInRow, ownSignInReady, ownSignIns, planWordOf }
 import { answersOthers, audienceOf, managesAgent } from "./audience";
 import { type BillingHold, billingHoldOf } from "./billing";
 import { type SetupView, setupPending } from "./computer";
-import { osName } from "./devices";
 import { firstName } from "./format";
-import { CLI_HOME_ONLY } from "./machines";
+import { CLI_HOME_ONLY, osName } from "./machines";
 import { can } from "./permissions";
 import { CODING_PLANS, isPlanId, loginPerAgent, PLAN_IDS, type PlanId } from "./plans";
 import { isRightHand } from "./right-hand";
