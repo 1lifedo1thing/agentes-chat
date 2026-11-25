@@ -734,6 +734,8 @@
       "confirmNo": "To nie ja",
       "done": "Wszystko gotowe.",
       "doneLead": "Zalogowano w aplikacji agentes. Możesz zamknąć tę kartę.",
+      "back": "Wracamy do aplikacji.",
+      "openApp": "Otwórz aplikację",
       "expired": "Ta prośba wygasła.",
       "expiredLead": "Wróć do aplikacji i ponownie wybierz {{provider}}.",
       "handover": "Logowanie twoim kontem z drugiego urządzenia…",

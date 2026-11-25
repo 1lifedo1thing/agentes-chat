@@ -235,7 +235,7 @@ pub fn open(app: &AppHandle, url: Option<Url>) -> Result<(), String> {
         // ADR 0154), that it takes the person's app icon (`appIcon`, ADR 0179) and how this computer draws
         // (`renderer`, and Linux's `system` facts: graphics.rs); nothing else.
         .initialization_script(format!(
-            "window.__agentesDesktop = Object.freeze({{ version: {version:?}, platform: {PLATFORM:?}, servers: true, files: true, connectorReturn: true, workspaces: true, appIcon: true, renderer: {renderer:?}, system: {system} }});",
+            "window.__agentesDesktop = Object.freeze({{ version: {version:?}, platform: {PLATFORM:?}, servers: true, files: true, connectorReturn: true, signedInLink: true, workspaces: true, appIcon: true, renderer: {renderer:?}, system: {system} }});",
             renderer = crate::graphics::renderer(),
             system = serde_json::to_string(&crate::graphics::system()).unwrap_or_else(|_| "null".into()),
         ))

@@ -719,6 +719,8 @@
       "confirmNo": "Non sono stato io",
       "done": "Tutto pronto.",
       "doneLead": "Hai effettuato l'accesso all'app agentes. Puoi chiudere questa scheda.",
+      "back": "Ritorno all'app.",
+      "openApp": "Apri l'app",
       "expired": "Questa richiesta è scaduta.",
       "expiredLead": "Torna all'app e scegli di nuovo {{provider}}.",
       "handover": "Accesso con il tuo account dall'altro dispositivo…",

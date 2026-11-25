@@ -704,6 +704,8 @@
       "confirmNo": "Bu ben değildim",
       "done": "Her şey hazır.",
       "doneLead": "agentes uygulamasında giriş yaptınız. Bu sekmeyi kapatabilirsiniz.",
+      "back": "Uygulamaya dönülüyor.",
+      "openApp": "Uygulamayı aç",
       "expired": "Bu isteğin süresi doldu.",
       "expiredLead": "Uygulamaya dönüp yeniden {{provider}} seçin.",
       "handover": "Diğer cihazdaki hesabınızla giriş yapılıyor…",

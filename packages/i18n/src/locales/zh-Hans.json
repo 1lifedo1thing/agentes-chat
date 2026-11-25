@@ -689,6 +689,8 @@
       "confirmNo": "不是我",
       "done": "全部就绪。",
       "doneLead": "你已登录 agentes 应用，可以关闭这个标签页了。",
+      "back": "正在返回应用。",
+      "openApp": "打开应用",
       "expired": "这个请求已过期。",
       "expiredLead": "请返回应用，重新选择 {{provider}}。",
       "handover": "正在用另一台设备上的账号登录…",

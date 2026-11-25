@@ -719,6 +719,8 @@
       "confirmNo": "Ce n'était pas moi",
       "done": "Tout est prêt.",
       "doneLead": "Vous êtes connecté à l'app agentes. Vous pouvez fermer cet onglet.",
+      "back": "Retour à l'app.",
+      "openApp": "Ouvrir l'app",
       "expired": "Cette demande a expiré.",
       "expiredLead": "Retournez dans l'app et choisissez de nouveau {{provider}}.",
       "handover": "Connexion avec votre compte depuis l'autre appareil…",

@@ -740,6 +740,10 @@ export const en = {
       confirmNo: "This wasn't me",
       done: "All set.",
       doneLead: "You're signed in to the agentes app. You can close this tab.",
+      /** Under "All set." once the browser hands the person back to the desktop app (and alone after a connector's sign-in). */
+      back: "Going back to the app.",
+      /** The button that opens the desktop app when the browser didn't, or the person dismissed its question. */
+      openApp: "Open the app",
       expired: "This request expired.",
       expiredLead: "Go back to the app and choose {{provider}} again.",
       handover: "Signing in with your account from the other device…",
