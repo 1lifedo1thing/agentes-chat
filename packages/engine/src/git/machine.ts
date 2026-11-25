@@ -101,7 +101,7 @@ export async function machineGitSetup(
   machineId: string,
   /** A tool's call: who the computer takes the agent for (`machineScope`), the right hand's seat included. */
   scope?: AgentScope,
-  /** The git host whose proxy this is for (ADR 0220): each host's connection has its own address there. */
+  /** The git host whose proxy this is for (ADR 0227): each host's connection has its own address there. */
   host: GitHostId = "github",
 ): Promise<(Pick<GitSyncRequest, "proxy" | "author"> & { agent: AgentScope }) | null> {
   const connection = teamGitConnection(await activeConnections(deps.db, orgId), host);
@@ -362,7 +362,7 @@ export async function prepareAgentCode(
   try {
     const status = await deps.hub.status(machineId);
     if (!status || machineGitUnavailable(status, turn.orgId)) return null;
-    // Every git host the workspace connected and this agent may read (ADR 0220), GitHub first: each one's checkouts
+    // Every git host the workspace connected and this agent may read (ADR 0227), GitHub first: each one's checkouts
     // sync through that host's own proxy address.
     const setups = (
       await Promise.all(

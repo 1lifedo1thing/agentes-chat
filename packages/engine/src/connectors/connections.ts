@@ -451,7 +451,7 @@ async function nativeAccount(deps: ConnectorDeps, connector: string, secret: Con
 }
 
 /**
- * The account a token is of on its git host (ADR 0220), kept on the connection: for a person's own connection it is
+ * The account a token is of on its git host (ADR 0227), kept on the connection: for a person's own connection it is
  * who their code sessions' commits are authored as (ADR 0215 §13). A token the host doesn't answer for is theirs to
  * fix, so it fails the connect. Null where nothing is asked: the workspace's GitHub (its app or its sign-in name it),
  * and a host with no such question.

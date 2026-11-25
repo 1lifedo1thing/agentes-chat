@@ -1846,7 +1846,7 @@ export const isGitRepoName = (v: unknown): v is string =>
   v.split("/").every((part) => part !== "." && part !== "..");
 
 /**
- * Protocol 79: `git.sync` takes a repository of any git host (ADR 0220), whose path may be deeper or shallower than
+ * Protocol 79: `git.sync` takes a repository of any git host (ADR 0227), whose path may be deeper or shallower than
  * GitHub's `owner/name` (`group/subgroup/project`, `project.git`); the proxy address it comes with says which host. An
  * older runner refuses those, so the server asks it only for two-part paths.
  */

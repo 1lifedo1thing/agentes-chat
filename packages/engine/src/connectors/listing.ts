@@ -126,7 +126,7 @@ export interface ConnectorListingEntry {
    * the apps say so instead of "Em breve" (on the Cloud it stays "Em breve" until the vendor approves the app).
    */
   needsApp?: boolean;
-  /** A git host at an address of one's own (ADR 0220): the connect form asks for it (`required`) or offers it. */
+  /** A git host at an address of one's own (ADR 0227): the connect form asks for it (`required`) or offers it. */
   address?: "optional" | "required";
   /** Connects through Composio (its page, its OAuth app): available only with `COMPOSIO_API_KEY` (ADR 0107). */
   via?: "composio";

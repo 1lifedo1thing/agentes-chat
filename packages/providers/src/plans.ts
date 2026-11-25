@@ -381,6 +381,8 @@ export function planForTurn(plan: CodingPlan, value: unknown): CodingPlan {
 }
 
 const isAlias = (v: unknown): v is PlanAlias => PLAN_ALIASES.some((a) => a === v);
+/** Claude Code's aliases no plan maps (`fable`): Claude's own sign-in runs them as they are, a plan's runs `sonnet`. */
+const isClaudeOnlyAlias = (v: unknown) => v === "fable";
 
 /**
  * The model a stored value runs on a plan: one of its models by id, the model of an alias, else (`auto`, an alias
@@ -489,7 +491,7 @@ export function claudeCodeModel(plan: CodingPlan | undefined, value: unknown): s
   if (isAlias(value)) return value;
   if (typeof value !== "string") return "sonnet";
   if (plan) return plan.claudeCode.models.some((m) => m.id === value) ? value : "sonnet";
-  return value === "fable" || /^claude-/.test(value) ? value : "sonnet";
+  return isClaudeOnlyAlias(value) || /^claude-/.test(value) ? value : "sonnet";
 }
 
 /**
@@ -501,7 +503,7 @@ export function claudeCodeModel(plan: CodingPlan | undefined, value: unknown): s
 export function droppedPlanModel(provider: unknown, value: unknown): PlanModel | null {
   const plan = isPlanId(provider) ? learned.get(provider) : undefined;
   if (!isPlanId(provider) || !plan?.modelsUrl) return null;
-  if (typeof value !== "string" || isAlias(value) || value === "fable" || /^claude-/.test(value)) return null;
+  if (typeof value !== "string" || isAlias(value) || isClaudeOnlyAlias(value) || /^claude-/.test(value)) return null;
   if (plan.claudeCode.models.some((m) => m.id === value) || planModelById(value)) return null;
   const table: readonly PlanModel[] = CODING_PLANS[provider].claudeCode.models;
   return table.find((m) => m.id === value) ?? { id: value, label: value };

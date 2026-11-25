@@ -34,7 +34,7 @@ export function readAdvertisement(bytes: Uint8Array): { defaultBranch: string | 
 }
 
 /**
- * A git server by its address (ADR 0220): Gitea, Forgejo, a company's own, anything that speaks git over HTTPS. It
+ * A git server by its address (ADR 0227): Gitea, Forgejo, a company's own, anything that speaks git over HTTPS. It
  * has no API we know, so it answers with git itself: its branches and default branch come from what it advertises,
  * a push must carry the history that makes it a fast-forward, and a pull request is opened from the link the server
  * prints after a push. What is protected there, the server refuses by itself.

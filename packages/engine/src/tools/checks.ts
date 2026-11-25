@@ -9,7 +9,7 @@ type ScopedCheck = (input: Record<string, unknown>, ctx: ToolContext) => Promise
  * starts with the prefix gets the check, whichever source made it (catalog
  * MCP, our git tools), so a new tool can't forget it.
  */
-/** Another git host's tools (ADR 0220): only the agent's repositories there, as on GitHub. */
+/** Another git host's tools (ADR 0227): only the agent's repositories there, as on GitHub. */
 const hostCheck =
   (host: GitHostId): ScopedCheck =>
   async (input, ctx) => {

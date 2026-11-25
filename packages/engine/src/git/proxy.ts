@@ -227,7 +227,7 @@ export async function readBody(req: Request, max: number) {
 /**
  * Smart-HTTP git for agents' computers (ADR 0024): `/api/git/{orgId}/{connectionId}/{owner}/{repo}.git/…`.
  * - The computer authenticates with our short-lived per-computer credential.
- * - Policy is checked here, the same on every git host (ADR 0220; the host is the connection's): the agent's
+ * - Policy is checked here, the same on every git host (ADR 0227; the host is the connection's): the agent's
  *   `git.read` / `git.write` grants on that connection (and repo list, when set); pushes to
  *   `agentes/{handle}/*`, or to another existing branch a person approved
  *   (`request_branch_push`) that its host says isn't the default or protected;
@@ -332,7 +332,7 @@ async function proxyGit(
         isNull(connectorConnections.revokedAt),
       ),
     );
-  // The workspace's connection to a git host (ADR 0220): a person's own account is never a proxy's connection.
+  // The workspace's connection to a git host (ADR 0227): a person's own account is never a proxy's connection.
   const host = connection && !connection.ownerUserId ? gitHostOf(connection.connector) : null;
   if (!connection || !host) return text(404, "agentes: no git host is connected here in this organization");
   const parsed = parseHostGitPath(host.id, params.path);

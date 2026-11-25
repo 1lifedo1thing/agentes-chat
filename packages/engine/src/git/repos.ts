@@ -24,7 +24,7 @@ const { agentRepositories: table, agents } = schema;
 
 /**
  * The repositories an agent may use (`agent_repositories`): an ordered list of `owner/name` or `owner/*` (a whole
- * account) on GitHub, and of `gitlab:group/project` or `gitlab:group/*` on another git host (ADR 0220). No list =
+ * account) on GitHub, and of `gitlab:group/project` or `gitlab:group/*` on another git host (ADR 0227). No list =
  * every repository the organization's git connections reach. The first entry is where the agent starts when nobody
  * names a repository. The git proxy checks it on every fetch and push, and the Tool Gateway on every GitHub call,
  * reads included.
@@ -320,7 +320,7 @@ export async function checkGithubCall(
 }
 
 /**
- * Checks a git tool call on another host (ADR 0220) against the agent's repositories: `repo` is that host's own
+ * Checks a git tool call on another host (ADR 0227) against the agent's repositories: `repo` is that host's own
  * (`group/project`, or with the host first). The proxy checks every fetch and push the same way.
  */
 export async function checkHostRepoCall(
@@ -405,7 +405,7 @@ export function codePrompt(input: {
         : `${c.repo} is checked out at ${c.path} (${branch}, updated before this turn).`,
     );
   }
-  // Each git host has its own tools (ADR 0220): GitHub's are the plain names, another host's carry it first.
+  // Each git host has its own tools (ADR 0227): GitHub's are the plain names, another host's carry it first.
   const hostsOf = (repos: readonly string[]) => [...new Set(repos.map(hostOfEntry))];
   const onlyGitHub = (hosts: readonly GitHostId[]) => hosts.every((h) => h === "github");
   const each = (hosts: readonly GitHostId[], say: (host: GitHostId) => string | null) =>

@@ -54,7 +54,7 @@ interface Listed {
 
 const PAGES = 5;
 
-/** Bitbucket Cloud (ADR 0220). */
+/** Bitbucket Cloud (ADR 0227). */
 export const bitbucketHost: GitHost = {
   id: "bitbucket",
   label: "Bitbucket",

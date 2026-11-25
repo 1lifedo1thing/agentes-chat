@@ -1,5 +1,5 @@
 /**
- * How a repository is named, whatever git host it lives on (ADR 0220). GitHub's keep the name they always had,
+ * How a repository is named, whatever git host it lives on (ADR 0227). GitHub's keep the name they always had,
  * `owner/name`; a repository anywhere else carries its host first: `gitlab:group/sub/project`,
  * `bitbucket:workspace/repo`, `git:team/project` (a git server by address). The same string is kept on a code
  * session, in an agent's repositories and in a push grant, so nothing that stored `owner/name` changes meaning.

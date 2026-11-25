@@ -1,7 +1,7 @@
 import type { GitHostId } from "./refs";
 
 /**
- * A git host (ADR 0220): everything the proxy, the git tools and the code sessions need to know about where
+ * A git host (ADR 0227): everything the proxy, the git tools and the code sessions need to know about where
  * repositories live, behind one contract. GitHub is the first one; GitLab, Bitbucket and a git server by address
  * are the others. What agents may do is decided once, above this contract (their own branch, fast-forward only, no
  * tags, a person's approval for someone else's branch): a host only answers questions and carries out what was

@@ -8,7 +8,7 @@ import type { GitHost } from "./types";
 export * from "./refs";
 export * from "./types";
 
-/** Every git host (ADR 0220), by its connector's id. Adding one is a file here and its entry in the catalog. */
+/** Every git host (ADR 0227), by its connector's id. Adding one is a file here and its entry in the catalog. */
 export const GIT_HOSTS: Record<GitHostId, GitHost> = {
   github: githubHost,
   gitlab: gitlabHost,

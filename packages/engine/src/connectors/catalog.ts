@@ -76,7 +76,7 @@ export interface ConnectorDefinition {
    */
   native?: true;
   /**
-   * A git host (ADR 0220) that runs at an address of one's own: `optional` where the connector's own address is the
+   * A git host (ADR 0227) that runs at an address of one's own: `optional` where the connector's own address is the
    * vendor's site (GitLab), `required` where there is no such site (a git server by address). The connection keeps it
    * as its `server_url`.
    */
@@ -439,7 +439,7 @@ export const CONNECTOR_CATALOG: Record<string, ConnectorDefinition> = {
       },
     },
   },
-  // The other git hosts (ADR 0220): served by the same git tools and proxy as GitHub's, through `git/hosts`.
+  // The other git hosts (ADR 0227): served by the same git tools and proxy as GitHub's, through `git/hosts`.
   gitlab: {
     id: "gitlab",
     category: "dev",

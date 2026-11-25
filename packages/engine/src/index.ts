@@ -348,6 +348,7 @@ export * from "./surfaces/config";
 export * from "./surfaces/deliveries";
 export * from "./surfaces/inbound";
 export * from "./surfaces/links";
+export * from "./surfaces/pages";
 export * from "./surfaces/turn";
 export * from "./talker";
 export * from "./task-access";

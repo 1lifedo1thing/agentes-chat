@@ -22,7 +22,7 @@ function refusalOf(body: unknown): string {
 const PAGES = 5;
 
 /**
- * GitLab (ADR 0220), gitlab.com or a server of one's own (the connection's address). A personal, group or project
+ * GitLab (ADR 0227), gitlab.com or a server of one's own (the connection's address). A personal, group or project
  * access token is the whole sign-in: git takes it as the password of `oauth2`, the API as a bearer.
  */
 export const gitlabHost: GitHost = {

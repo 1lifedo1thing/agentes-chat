@@ -8,7 +8,7 @@ import { GIT_HOSTS, type GitHostId, isHostedRepo, parseRepoRef } from "./hosts";
 const { agentRuns, channels, codeSessions, users } = schema;
 
 /**
- * A person's own account on a git host in a code session (ADR 0215 §13, ADR 0220). A member may connect GitHub,
+ * A person's own account on a git host in a code session (ADR 0215 §13, ADR 0227). A member may connect GitHub,
  * GitLab, Bitbucket or a git server as their own (`connector_connections.owner_user_id`, ADR 0099): it has no tools
  * of its own and is never the workspace's connection. It is who the work goes as when its person asks in a code
  * session, on that session's repository alone:

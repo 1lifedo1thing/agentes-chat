@@ -472,6 +472,12 @@ export interface ClaudeTurnStats {
   thinkingChars: number;
 }
 
+/** A real model id from an assistant/message_start frame (ignores empty strings and `<synthetic>` placeholders). */
+const realModel = (v: unknown) => {
+  const s = str(v).trim();
+  return s && !s.startsWith("<") ? s : "";
+};
+
 /**
  * Claude Code's `stream-json` output → `WireBrainEvent`s. One parser per
  * process (the session id persists); `beginTurn` resets what a turn tracks.
@@ -480,12 +486,6 @@ export interface ClaudeTurnStats {
  * become executed `tool_call` events too, by their Claude Code names: the
  * engine keeps them as what the turn tried (`transcript.harnessTried`).
  */
-/** A real model id from an assistant/message_start frame (ignores empty strings and `<synthetic>` placeholders). */
-const realModel = (v: unknown) => {
-  const s = str(v).trim();
-  return s && !s.startsWith("<") ? s : "";
-};
-
 export class ClaudeStreamParser {
   session?: string;
   /** Counted from `resetStats` on, across the turns the CLI runs for one request (`beginTurn` leaves them). */

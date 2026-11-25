@@ -11,7 +11,7 @@ import { hostAt } from "./hosts/reach";
 export interface GitHubRepositoryView {
   /**
    * The repository's name as it is stored and sent back: `owner/name` as GitHub spells it, `gitlab:group/project` on
-   * another host (ADR 0220).
+   * another host (ADR 0227).
    */
   fullName: string;
   owner: string;
@@ -39,7 +39,7 @@ export interface OrgRepositoryListing {
   connected: boolean;
   accounts: GitHubAccountView[];
   /**
-   * What the organization's other git hosts reach (ADR 0220), by group or workspace: apart from GitHub's, which the
+   * What the organization's other git hosts reach (ADR 0227), by group or workspace: apart from GitHub's, which the
    * screens about GitHub alone (its webhooks, skills from a repository) go on reading by themselves.
    */
   elsewhere: GitHubAccountView[];
@@ -166,7 +166,7 @@ export async function orgRepositories(deps: RepoListingDeps, orgId: string): Pro
     });
     accounts.set(key, account);
   }
-  // The other git hosts (ADR 0220): what each one's connection reaches, by the group or workspace it sits under.
+  // The other git hosts (ADR 0227): what each one's connection reaches, by the group or workspace it sits under.
   const elsewhere: GitHubAccountView[] = [];
   for (const { host, connection: c } of others) {
     const token = await hostConnectionToken(deps.connectors, c).catch(() => null);

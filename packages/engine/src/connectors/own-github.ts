@@ -1,7 +1,7 @@
 import { isGitHostId } from "../git/hosts/refs";
 
 /**
- * A git host as the workspace's and as a person's own (ADR 0099, ADR 0215 §13, ADR 0220). The workspace has one
+ * A git host as the workspace's and as a person's own (ADR 0099, ADR 0215 §13, ADR 0227). The workspace has one
  * connection per host, the team's: the git proxy, repository lists, webhooks and the agents' tools read that one. A
  * person's own connection (`owner_user_id`) is their account in code sessions (`git/person-account.ts`): it has no
  * tools and no grants of its own, and is never read as the workspace's. Nothing but names is imported here: every

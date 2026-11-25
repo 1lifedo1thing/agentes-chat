@@ -29,7 +29,7 @@ export const PUSH_GRANT_MS = 24 * 3600_000;
 
 type Repo = { owner: string; repo: string };
 
-/** The token a connection holds for its git host (ADR 0220), fresh. Null when it has none; throws what refreshing threw. */
+/** The token a connection holds for its git host (ADR 0227), fresh. Null when it has none; throws what refreshing threw. */
 export async function hostConnectionToken(connectors: ConnectorDeps, connection: ConnectorConnection) {
   return tokenOfSecret(await connectionSecret(connectors, connection));
 }

@@ -107,7 +107,7 @@ const blocked = (block: BranchBlock, host: GitHost) =>
  *   with the org's GitHub credential (server side). Merging stays approval-gated;
  * - `delete_branches` and `request_branch_push` (`github:git.write`, sensitive): what a person approves for
  *   branches that aren't the agent's own (`branches.ts`). The default branch and protected ones are never offered.
- * One set per git host the organization connected (ADR 0220): GitHub's under these names, another host's with the
+ * One set per git host the organization connected (ADR 0227): GitHub's under these names, another host's with the
  * host first (`gitlab_git_clone`), each on its own connection and scopes, all through the same code and the same
  * rules. A host that has no call for something (a git server by address opens no pull request) offers no such tool.
  */
