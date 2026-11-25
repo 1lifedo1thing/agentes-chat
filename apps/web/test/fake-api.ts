@@ -1,5 +1,6 @@
 import type {
   AccountDeletionPlan,
+  AccountPermissions,
   ActiveRun,
   Agent,
   AgentAudience,
@@ -78,6 +79,7 @@ import type {
   PersonLimits,
   PersonUsage,
   PlanAccountUsage,
+  ProblemReportPreview,
   Proposal,
   ReactionCount,
   RightHandApprovals,
@@ -99,6 +101,7 @@ import type {
   StoragePlatform,
   StorageUsage,
   SurfaceLink,
+  SurfacePage,
   TaskManagerView,
   TaskSteps,
   TeamProposalCard,
@@ -107,7 +110,7 @@ import type {
   UsageQueue,
   WorkspaceLimits,
 } from "@agenteschat/client";
-import { ApiError } from "@agenteschat/client";
+import { ApiError, codeSuggestionOf } from "@agenteschat/client";
 import { moveInGroups } from "@agenteschat/client/lib/agent-groups";
 import { answersOthers, audienceOf, listsAllAgents } from "@agenteschat/client/lib/audience";
 import type { ChatPrefs } from "@agenteschat/client/lib/chat-look";
@@ -222,6 +225,10 @@ export interface FakeState {
     confirmError?: ApiError;
     removeError?: ApiError;
     undo?: { unlinked: boolean; display: string | null } | ApiError;
+    /** The page a link sent on the surface opens; the decision's answer replaces it, or `decideError` is thrown. */
+    page?: SurfacePage | ApiError;
+    decideError?: ApiError;
+    pinReset?: ApiError;
   };
   /** Another workspace's agents, by its id (default: `agents`, whatever the workspace). */
   agentsOf?: Record<string, Agent[]>;
@@ -409,6 +416,10 @@ export interface FakeState {
   setupResults?: Record<string, Omit<AgentSetupResult, "agentId">>;
   /** `system.telemetry`: the usage report's switch; unset = I'm not the installation's owner (null). */
   telemetry?: ServerTelemetry;
+  /** `system.previewProblemReport`: the report shown; unset = a small one with sending on. A function may wait or throw. */
+  problemReport?: ProblemReportPreview | (() => Promise<ProblemReportPreview>);
+  /** `system.sendProblemReport`: its code, or what it throws; unset = `R-7K3QXM`. */
+  problemReportSend?: { id: string } | ApiError;
   /** `system.jev`: the installation's Jev key; unset = I'm not its owner on a self-hosted server (null). */
   jev?: JevKey;
   /**
@@ -497,6 +508,8 @@ export interface FakeState {
   idRefs?: Record<string, IdRef>;
   /** The sidebar's tools in my order (`orgs.sidebarToolOrder`); unset = the default. */
   sidebarToolOrder?: SidebarItem[];
+  /** Whether Code has anything for me (`OrgOverview.code`, ADR 0215 §12); unset = no. */
+  codeWork?: boolean;
   /** How my sidebar shows the agents and what I pinned (`orgs.sidebarView`); unset = never changed. */
   sidebarView?: SidebarView;
   /**
@@ -1098,6 +1111,12 @@ function proposal(
     decider,
     createdAt: minutesAgo(minutes),
     decidedBy: null,
+    decidedByAgent: null,
+    review: null,
+    reviewed: false,
+    undoable: false,
+    undoneBy: null,
+    undoneAt: null,
     decidedAt: null,
   };
 }
@@ -1293,7 +1312,8 @@ type FakedParts =
   | "databases"
   | "browser"
   | "desktop"
-  | "live";
+  | "live"
+  | "code";
 
 /** The core of the fake backend, over `FakeState`. Records every call in `state.calls`. */
 /** A member as the signed-in person sees them: hidden reads as offline to everyone else (ADR 0084). */
@@ -1419,11 +1439,15 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
       mode === "everyone" || a.ownerUserId === me || (mode === "people" && (a.audience?.userIds ?? []).includes(me))
     );
   };
-  // The server's `listsAgentTo`: Equipe, its sectors and the counts name only these (who it answers or who edits it).
-  const listed = () => {
-    const all = listsAllAgents(state.me ? withPermissions(state.me).organizations[0] : undefined);
-    return state.agents.filter((a) => all || talksToMe(a) || rightsOf(a).canEdit);
-  };
+  // The server's `listsAgentTo`: Equipe, its sectors, the counts and every list name only these. Who sees every agent
+  // sees all but a private one (it answers only its owner); else who it answers, who edits it and admins.
+  const listsToMe = (a: Agent) =>
+    (listsAllAgents(state.me ? withPermissions(state.me).organizations[0] : undefined) &&
+      answersOthers(audienceOf(a), a.ownerUserId)) ||
+    talksToMe(a) ||
+    rightsOf(a).canEdit ||
+    seesCost();
+  const listed = () => state.agents.filter(listsToMe);
   /** Whether my workspace keys include `key`, as `me` resolves them (`withPermissions`). */
   const holds = (key: string) =>
     (state.me ? withPermissions(state.me).organizations[0]?.permissions : undefined)?.includes(key) === true;
@@ -1500,6 +1524,25 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         if (!state.telemetry) throw new ApiError(404, "not_found", "Not found");
         state.telemetry = { ...state.telemetry, enabled };
         return state.telemetry;
+      },
+      previewProblemReport: async (input) => {
+        log("system.previewProblemReport", input);
+        const p = state.problemReport;
+        if (typeof p === "function") return p();
+        return (
+          p ?? {
+            report: { format: 1, source: "server", place: input.place },
+            text: '{\n  "format": 1\n}',
+            send: "on",
+            missing: {},
+          }
+        );
+      },
+      sendProblemReport: async (input) => {
+        log("system.sendProblemReport", input);
+        const r = state.problemReportSend ?? { id: "R-7K3QXM" };
+        if (r instanceof ApiError) throw r;
+        return r;
       },
       sendFeedback: async (input) => {
         log("system.sendFeedback", input);
@@ -1734,6 +1777,42 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         if (undo instanceof ApiError) throw undo;
         return { ...undo, surface: state.surface?.name ?? "" };
       },
+      openPage: async (token) => {
+        log("surfaces.openPage", token);
+        const page = state.surface?.page;
+        if (!page) throw new ApiError(404, "surface.page_gone", "This link ran out");
+        if (page instanceof ApiError) throw page;
+        return page;
+      },
+      decidePage: async (token, decision, pin) => {
+        log("surfaces.decidePage", { token, decision, pin });
+        const sf = state.surface;
+        if (sf?.decideError) throw sf.decideError;
+        const page = sf?.page;
+        if (!sf || !page || page instanceof ApiError || !page.approval) {
+          throw new ApiError(404, "surface.page_gone", "This link ran out");
+        }
+        sf.page = {
+          ...page,
+          pin: { ...page.pin, set: true, lockedUntil: null },
+          approval: { ...page.approval, status: decision === "approve" ? "approved" : "refused" },
+        };
+        return sf.page;
+      },
+      emailPin: async (token) => {
+        log("surfaces.emailPin", token);
+      },
+      pinFromEmail: async (token, pin) => {
+        log("surfaces.pinFromEmail", { token, pin });
+        if (state.surface?.pinReset) throw state.surface.pinReset;
+        return { surface: state.surface?.name ?? "" };
+      },
+      setPin: async (linkId, pin) => {
+        log("surfaces.setPin", { linkId, pin });
+        const sf = state.surface;
+        if (!sf?.links.some((l) => l.id === linkId)) throw new ApiError(404, "surface.link_gone", "This link is gone");
+        sf.links = sf.links.map((l) => (l.id === linkId ? { ...l, pinSet: true } : l));
+      },
     },
     push: {
       webKey: async () => state.webPushKey ?? null,
@@ -1742,6 +1821,12 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
       },
       unregister: async (token) => {
         log("push.unregister", token);
+      },
+      liveActivity: async (input) => {
+        log("push.liveActivity", input);
+      },
+      liveActivityOff: async (installId) => {
+        log("push.liveActivityOff", installId);
       },
       stale: async (ids) => {
         log("push.stale", ids);
@@ -1889,6 +1974,16 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
           organizations: me.organizations.map((o) => (o.id === orgId ? { ...o, deletion, onboarding: undefined } : o)),
         };
         return { dueAt };
+      },
+      resetCode: async (orgId) => {
+        log("orgs.resetCode", orgId);
+        if (state.codeError) throw state.codeError;
+        return { email: requireMe().user.email, resendIn: 60 };
+      },
+      reset: async (orgId, input) => {
+        log("orgs.reset", orgId, input);
+        if (state.deletionError) throw state.deletionError;
+        return { startedAt: new Date().toISOString() };
       },
       restore: async (orgId) => {
         log("orgs.restore", orgId);
@@ -2053,6 +2148,9 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         if (state.billingLinkError) throw state.billingLinkError;
         return { url: `https://billing.example.com/link?t=${from}`, expiresAt: NOW.toISOString() };
       },
+      movePlan: async (orgId, to) => {
+        log("orgs.movePlan", orgId, to);
+      },
       limits: async () =>
         state.limits ?? {
           members: { used: state.members.length, limit: null },
@@ -2204,6 +2302,7 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         budgetUsedPercent: workspacePercent(),
         approvalsWaitingForMe: state.approvals.filter((a) => a.status === "pending" && a.canDecide).length,
         proposalsWaitingForMe: state.proposals.filter((p) => p.status === "pending" && !p.stale && p.canDecide).length,
+        code: state.codeWork ?? false,
       }),
       people: async () =>
         state.members.map((m) => ({
@@ -2364,8 +2463,9 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         const all = listsAllAgents(state.me ? withPermissions(state.me).organizations[0] : undefined);
         const ids = new Set(listed().map((a) => a.id));
         return structuredClone(state.agentGroups ?? [])
-          .map((g) => (all ? g : { ...g, agentIds: g.agentIds.filter((id) => ids.has(id)) }))
-          .filter((g) => all || g.agentIds.length > 0);
+          .map((g) => ({ ...g, agentIds: g.agentIds.filter((id) => ids.has(id)), was: g.agentIds.length }))
+          .filter((g) => g.agentIds.length > 0 || (all && g.was === 0))
+          .map(({ was: _was, ...g }) => g);
       },
       create: async (orgId, input) => {
         state.calls.push({ method: "agentGroups.create", args: [orgId, input] });
@@ -2464,23 +2564,27 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         return { previous };
       },
       team: async () => ({
-        agents: listed().map((a) => ({
-          id: a.id,
-          name: a.name,
-          handle: a.handle,
-          role: a.role,
-          appearance: a.appearance ?? null,
-          ownerUserId: a.ownerUserId,
-          reportsToAgentId: a.reportsToAgentId ?? null,
-          capabilities: ["drive", "issues"],
-          busy: false,
-          channelIds: state.channels
-            .filter((c) => (state.channelMembers[c.id] ?? []).some((m) => m.type === "agent" && m.id === a.id))
-            .map((c) => c.id),
-          canTalk: true,
-          canManage: rightsOf(a).canManage,
-          ...(a.seesDetails === false ? { capabilities: [], canTalk: false, seesDetails: false } : {}),
-        })),
+        // A teammate's private agent seen by its facts alone (`factsOnly` set by the test) is on Equipe too.
+        agents: state.agents
+          .filter((a) => listsToMe(a) || a.factsOnly)
+          .map((a) => ({
+            id: a.id,
+            name: a.name,
+            handle: a.handle,
+            role: a.role,
+            appearance: a.appearance ?? null,
+            ownerUserId: a.ownerUserId,
+            reportsToAgentId: a.reportsToAgentId ?? null,
+            capabilities: ["drive", "issues"],
+            busy: false,
+            channelIds: state.channels
+              .filter((c) => (state.channelMembers[c.id] ?? []).some((m) => m.type === "agent" && m.id === a.id))
+              .map((c) => c.id),
+            canTalk: true,
+            canManage: rightsOf(a).canManage,
+            ...(a.seesDetails === false ? { capabilities: [], canTalk: false, seesDetails: false } : {}),
+            ...(a.factsOnly ? { factsOnly: true } : {}),
+          })),
         people: state.members
           .filter((m) => state.agents.some((a) => a.ownerUserId === m.userId))
           .map((m) => ({ id: m.userId, name: m.name, image: m.image ?? null })),
@@ -2502,6 +2606,7 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
             canTalk,
             ...withRights(a, seesDetails),
             seesDetails,
+            listed: listsToMe(a),
           };
         }),
       create: async (orgId, input) => {
@@ -2959,6 +3064,9 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
               : [{ day: 1, runs: 12, failed: 0 }],
           pendingApprovals: state.approvals.filter((x) => x.agentId === agentId && x.status === "pending").length,
           channels,
+          editors: a.editors ?? { userIds: [], roleIds: [] },
+          createdByUserId: a.ownerUserId,
+          lastActivityAt: new Date(NOW.getTime() - 2 * 3_600_000).toISOString(),
         };
       },
       channels: async (_orgId, agentId) =>
@@ -3866,6 +3974,12 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
       setArchived: async (orgId, id, archived) => patchMemory(orgId, id, { archived }),
       confirm: async (orgId, id) => patchMemory(orgId, id, { confirmed: true }),
       listTeam: async () => state.memories.filter((m) => !m.agentId && !m.archived),
+      forgetRightHandLearned: async (orgId) => {
+        log("memory.forgetRightHandLearned", orgId);
+        const before = state.memories.length;
+        state.memories = state.memories.filter((m) => !(m.onlyYou && m.learned && m.editedByUserId === null));
+        return { forgotten: before - state.memories.length };
+      },
       makeTeam: async (orgId, id) => {
         log("memory.team", orgId, id);
         const m = state.memories.find((x) => x.id === id);
@@ -4026,6 +4140,19 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
           decidedBy: { userId: state.me?.user.id ?? "", name: state.me?.user.name ?? "" },
           decidedAt: new Date().toISOString(),
           canDecide: false,
+        });
+        return structuredClone(p);
+      },
+      // As the server's undo (ADR 0219): only an applied row the viewer may put back; 409 once it changed since.
+      undo: async (orgId, id) => {
+        log("proposals.undo", orgId, id);
+        const p = findProposal(id);
+        if (p.status !== "accepted" || !p.undoable) throw new ApiError(409, "proposal.changed", "It changed since");
+        Object.assign(p, {
+          status: "undone",
+          undoable: false,
+          undoneBy: { userId: state.me?.user.id ?? "", name: state.me?.user.name ?? "" },
+          undoneAt: new Date().toISOString(),
         });
         return structuredClone(p);
       },
@@ -4547,6 +4674,92 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
     databases: databases.client,
     dashboards: dashboards.client,
     live: live.client,
+    // Code sessions (ADR 0215): none in these tests.
+    code: {
+      list: async () => [],
+      start: async () => ({ agents: [] }),
+      create: async () => {
+        throw new Error("code sessions aren't faked");
+      },
+      get: async () => {
+        throw new Error("code sessions aren't faked");
+      },
+      rename: async () => {
+        throw new Error("code sessions aren't faked");
+      },
+      retry: async () => {
+        throw new Error("code sessions aren't faked");
+      },
+      close: async () => {},
+      diff: async () => ({
+        scope: "base" as const,
+        base: { branch: null, sha: null },
+        files: [],
+        added: 0,
+        removed: 0,
+        truncated: false,
+      }),
+      git: async () => ({ uncommitted: 0, ahead: 0, upstream: false, local: false, pr: null, next: null }),
+      gitLog: async () => ({
+        branch: null,
+        base: { branch: null, sha: null },
+        changes: [],
+        changesMore: false,
+        commits: [],
+        more: false,
+      }),
+      files: async () => ({ paths: [], truncated: false, changes: [] }),
+      file: async (_orgId: string, _sessionId: string, path: string) => ({
+        path,
+        state: "missing" as const,
+        content: "",
+        size: 0,
+        truncated: false,
+        rev: "",
+      }),
+      saveFile: async (_orgId: string, _sessionId: string, input: { path: string; content: string }) => ({
+        path: input.path,
+        state: "ok" as const,
+        content: input.content,
+        size: input.content.length,
+        truncated: false,
+        rev: "saved",
+      }),
+      // A session an agent suggested in the chat (ADR 0215 §11): opened (just started, preparing) or kept here.
+      openSuggestion: async (orgId: string, messageId: string) => {
+        state.calls.push({ method: "code.openSuggestion", args: [orgId, messageId] });
+        const s = codeSuggestionOf(state.messages.find((m) => m.id === messageId)?.meta);
+        if (s?.status !== "pending") throw new ApiError(409, "code_session.suggestion_gone", "Answered already");
+        const now = new Date().toISOString();
+        return {
+          id: "0193f1a2-7b3c-7d4e-8f90-1a2b3c4d5e6f",
+          channelId: "ch-code-1",
+          rootId: "m-code-root-1",
+          title: s.title,
+          repo: s.repo,
+          branch: null,
+          baseBranch: null,
+          agentId: s.agentId,
+          machineId: null,
+          worktree: { state: "preparing" as const, error: null, errorCode: null },
+          local: !s.repo.includes("/"),
+          pr: null,
+          stat: { files: 0, added: 0, removed: 0, at: null },
+          work: "preparing" as const,
+          createdBy: state.me?.user.id ?? null,
+          createdAt: now,
+          lastAt: now,
+        };
+      },
+      keepHere: async (orgId: string, messageId: string) => {
+        state.calls.push({ method: "code.keepHere", args: [orgId, messageId] });
+        const s = codeSuggestionOf(state.messages.find((m) => m.id === messageId)?.meta);
+        if (s?.status !== "pending") throw new ApiError(409, "code_session.suggestion_gone", "Answered already");
+        return {
+          suggestion: { ...s, status: "here" as const, by: state.me?.user.id ?? "", at: new Date().toISOString() },
+        };
+      },
+    },
     browser: browser.client,
     desktop: browser.desktop,
     // "Trabalhando agora" and the task manager only for a test that gives the task manager (`state.taskManager`).
@@ -4574,6 +4787,71 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
           },
         }
       : {}),
+  };
+  // "Contas de IA" (`hub`) as the server builds it from the same accounts, the workspace's keys and the order of use,
+  // unless a test's `setAiAccounts` gave one. Permissions start at their defaults (Gerenciar: its owner and admins,
+  // Usar em agentes: as "Quem usa" was, Atender todos: the agent's owner) and keep what a test saved.
+  const permissionsSaved = new Map<string, AccountPermissions>();
+  const seededPermissions = client.machines.setAccountPermissions;
+  client.machines.setAccountPermissions = async (orgId, accountId, input) => {
+    const saved = await seededPermissions(orgId, accountId, input);
+    const was = permissionsSaved.get(accountId);
+    permissionsSaved.set(accountId, { ...(was ?? saved.permissions), ...input } as AccountPermissions);
+    return saved;
+  };
+  const seededAi = client.machines.aiAccounts;
+  client.machines.aiAccounts = async (...args) => {
+    const view = await seededAi(...args);
+    if (view.hub) return view;
+    const nobody = { userIds: [], roleIds: [] };
+    const { groups, keyFallback, canConfigure } = await client.machines.accountOrder(args[0]);
+    return {
+      ...view,
+      hub: {
+        accounts: view.accounts.map((a) => {
+          const ownerOnly = a.serves === "owner";
+          // As the server's `sameAs`: the logins of one account on a computer share its oldest login's id.
+          const same = view.accounts.find(
+            (b) =>
+              b.machineId === a.machineId &&
+              b.kind === a.kind &&
+              b.provider === a.provider &&
+              (a.provider ? b.keyHint === a.keyHint : !!a.email && b.email?.toLowerCase() === a.email.toLowerCase()),
+          );
+          return {
+            ...a,
+            ...(a.sameAs ? {} : { sameAs: same?.id ?? a.id }),
+            permissions: permissionsSaved.get(a.sameAs ?? a.id) ??
+              permissionsSaved.get(a.id) ?? {
+                manage: { mode: "admins", ...nobody },
+                use: { mode: ownerOnly ? "owner" : "everyone", ...nobody },
+                reply: { mode: "owner", ...nobody },
+              },
+            rights: {
+              canManage: a.mine,
+              canSetManage: a.mine,
+              canUse: a.mine || !ownerOnly,
+              ...(!a.mine && ownerOnly ? { useReason: "owner_only" as const } : {}),
+              canReplyAll: a.mine,
+            },
+          };
+        }),
+        keys: state.credentials
+          .filter((c) => !c.revokedAt)
+          .map((c) => ({
+            id: c.id,
+            provider: c.provider,
+            label: c.label,
+            keyHint: c.keyHint,
+            isDefault: c.id === (state.defaultCredentialId ?? null),
+            ...(c.endpoint ? { endpoint: c.endpoint } : {}),
+          })),
+        order: groups,
+        keyFallback: keyFallback ?? false,
+        canManageKeys: true,
+        canConfigure: canConfigure ?? false,
+      },
+    };
   };
   // As the server's: the usage views list every account on a computer, so what `setAiAccounts` set is there too, each
   // the viewer's own with its address, after the computer's own sign-in.

@@ -273,6 +273,8 @@ export interface StartTaskInput {
   worktreeBranch?: string | null;
   /** A person approved starting this very task: a shell task's command runs even when the computer would hold it. */
   approved?: boolean;
+  /** `TaskStart.pushHarder`: the person asked, in their own message, to push the computer harder for it. */
+  pushHarder?: boolean;
 }
 
 /** What a task waiting in our queue keeps to start later (`machine_tasks.start_request`). */
@@ -488,6 +490,7 @@ export async function launchTask(
       ...(input.commit ? { commit: input.commit } : {}),
       ...(input.baseCheck ? { baseCheck: input.baseCheck } : {}),
       ...(input.approved ? { approved: true } : {}),
+      ...(input.pushHarder ? { pushHarder: true } : {}),
       ...signIn,
     });
     const at = new Date(started.startedAt);
@@ -1352,6 +1355,8 @@ export async function wakeConversationForTask(deps: TaskDeps, taskId: string, op
           stretchId: agentRuns.stretchId,
           triggerMessageId: agentRuns.triggerMessageId,
           background: agentRuns.background,
+          threadRootId: agentRuns.threadRootId,
+          replyInThread: agentRuns.replyInThread,
         })
         .from(agentRuns)
         .where(eq(agentRuns.id, row.runId))
@@ -1401,7 +1406,8 @@ export async function wakeConversationForTask(deps: TaskDeps, taskId: string, op
     });
     const runs =
       !blocked && eligible.length > 0 && !(await hopLimitReached(tx, message, options.maxHops))
-        ? await createAgentRuns(tx, message, [row.agentId], "mention")
+        ? // Where the origin run answered, the agent goes on where it did (ADR 0214).
+          await createAgentRuns(tx, message, [row.agentId], "mention", origin && !report ? { after: origin } : {})
         : [];
     return { message, runs };
   });

@@ -5,12 +5,16 @@ import {
   findPhone,
   iosOf,
   iphoneOverWifi,
+  mayChangeTasks,
   osName,
   personInControl,
   phoneLink,
   phoneSystem,
   statusLook,
   statusSentence,
+  taskChoices,
+  taskLimitLine,
+  tasksAutoText,
 } from "@agenteschat/client/lib/devices";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { clockAt } from "@agenteschat/client/lib/format";
@@ -23,6 +27,7 @@ import {
   Card,
   CardHeader,
   Chip,
+  codeAndBold,
   Disclosure,
   EmptyState,
   Icon,
@@ -91,7 +96,7 @@ function useBackToList() {
     void navigate({ to: "/org/$orgId/settings/$section", params: { orgId: org.id, section: "devices" }, search: {} });
 }
 
-/** The header card's top: the 96 portrait, the name with its rename pencil, chips (whose, where), the menu. */
+/** The header card's top: the 96 portrait, the name with its rename pencil, chips (whose, its state, where), its actions. */
 function Head({
   device,
   chips,
@@ -143,7 +148,7 @@ function OwnerChip({ userId }: { userId: string | null }) {
   );
 }
 
-/** The state, its reason in words, and its one action. */
+/** Under the header's chips: the state's reason in words and its one action; nothing when the pill says it all. */
 function StatusLine({
   status,
   host,
@@ -158,17 +163,17 @@ function StatusLine({
   hostOs?: string;
   action?: ReactNode;
   ios?: string | null;
-  /** In place of the status's own sentence. */
+  /** In place of the status's own sentence, as typed (it carries a person's name). */
   text?: string | null;
 }) {
   const { t, i18n } = useTranslation();
   const sentence = text ?? statusSentence(t, i18n.language, status, { host, hostOs, ios });
   const label = status.kind === "in_use" && status.label ? status.label : null;
+  if (!sentence && !action) return null;
   return (
     <div className="dv-statusline" data-status={statusLook(status)} role="status">
-      <StatusPill status={status} />
       <span className="dv-statusline__text">
-        {sentence}
+        {text ?? (sentence && codeAndBold(sentence, "cb", [host]))}
         {label && <small> · {label}</small>}
       </span>
       {action}
@@ -200,17 +205,25 @@ function PauseControl({ machine, paused }: { machine: Machine; paused: boolean }
         onError: (err) => toast.show(errorText(t, err), "error"),
       },
     );
+  const words = t(paused ? "machines.remotePause.resume" : "machines.remotePause.button");
   if (!machine.remotePause) {
     return (
-      <Button size="sm" icon={paused ? "play" : "pause"} disabled>
-        {t(paused ? "machines.remotePause.resume" : "machines.remotePause.button")}
+      <Button size="sm" icon={paused ? "play" : "pause"} disabled className="dv-pausebtn" aria-label={words}>
+        {words}
       </Button>
     );
   }
   if (paused) {
     return (
-      <Button size="sm" icon="play" loading={pause.isPending} onClick={() => set("resume")}>
-        {t("machines.remotePause.resume")}
+      <Button
+        size="sm"
+        icon="play"
+        loading={pause.isPending}
+        onClick={() => set("resume")}
+        className="dv-pausebtn"
+        aria-label={words}
+      >
+        {words}
       </Button>
     );
   }
@@ -220,8 +233,8 @@ function PauseControl({ machine, paused }: { machine: Machine; paused: boolean }
       align="end"
       label={label}
       trigger={
-        <Button size="sm" icon="pause" loading={pause.isPending}>
-          {t("machines.remotePause.button")}
+        <Button size="sm" icon="pause" loading={pause.isPending} className="dv-pausebtn" aria-label={words}>
+          {words}
         </Button>
       }
     >
@@ -268,8 +281,6 @@ function Toolchains({ tools }: { tools: Record<string, string> }) {
   );
 }
 
-const TASKS = ["1", "2", "3", "4", "6", "8"] as const;
-
 /**
  * A computer someone connected: its state and one action, facts and toolchains; who can use it, how many tasks at once
  * and whether it belongs to the workspace; the phones it reaches; then its folders and tools; Remove. The workspace
@@ -298,10 +309,16 @@ function ComputerPage({ machineId }: { machineId: string }) {
     machine && isPaused(machine)
       ? { kind: "paused", until: machine.paused?.until ?? null }
       : machine && !machine.online && d.status.kind !== "offline"
-        ? { kind: "offline", lastSeenAt: machine.lastSeenAt }
+        ? {
+            kind: "offline",
+            lastSeenAt: machine.lastSeenAt,
+            ...(machine.offlineCause ? { cause: machine.offlineCause } : {}),
+          }
         : d.status;
   const owner = d.ownerUserId === me.user.id;
   const admin = can(org, "configure");
+  const helpOff = devices.data?.devicesHelp === false;
+  const tasksEditable = mayChangeTasks(d, me.user.id, admin);
   const pausedFromApps = status.kind === "paused" ? pausedByText(t, i18n.language, machine?.paused, me.user.id) : null;
   const pausable = machine?.canManage && machine.online ? machine : null;
   const save = (input: Parameters<typeof update.mutate>[0], done?: string) =>
@@ -339,38 +356,47 @@ function ComputerPage({ machineId }: { machineId: string }) {
       <Card aria-labelledby="dv-page-title">
         <Head
           device={d}
-          chips={<OwnerChip userId={d.belongsToWorkspace ? null : d.ownerUserId} />}
+          chips={
+            <>
+              <OwnerChip userId={d.belongsToWorkspace ? null : d.ownerUserId} />
+              <StatusPill status={status} />
+            </>
+          }
           onRename={d.mayManage ? () => setRenaming(target) : undefined}
           menu={
-            d.mayManage && (
-              <Menu
-                align="end"
-                label={t("devices.menu", { name: d.name })}
-                trigger={
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    iconOnly
-                    icon="more"
-                    aria-label={t("devices.menu", { name: d.name })}
-                  />
-                }
-              >
-                <MenuItem icon="edit" onSelect={() => setRenaming(target)}>
-                  {t("devices.rename")}
-                </MenuItem>
-                <MenuSeparator />
-                <MenuItem icon={host ? "block" : "trash"} danger onSelect={() => setRemoving(target)}>
-                  {removeWords}
-                </MenuItem>
-              </Menu>
+            (pausable || d.mayManage) && (
+              <span className="row dv-headacts">
+                {pausable && <PauseControl machine={pausable} paused={status.kind === "paused"} />}
+                {d.mayManage && (
+                  <Menu
+                    align="end"
+                    label={t("devices.menu", { name: d.name })}
+                    trigger={
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        iconOnly
+                        icon="more"
+                        aria-label={t("devices.menu", { name: d.name })}
+                      />
+                    }
+                  >
+                    <MenuItem icon="edit" onSelect={() => setRenaming(target)}>
+                      {t("devices.rename")}
+                    </MenuItem>
+                    <MenuSeparator />
+                    <MenuItem icon={host ? "block" : "trash"} danger onSelect={() => setRemoving(target)}>
+                      {removeWords}
+                    </MenuItem>
+                  </Menu>
+                )}
+              </span>
             )
           }
         />
         <StatusLine
           status={status}
-          text={pausedFromApps}
-          action={pausable && <PauseControl machine={pausable} paused={status.kind === "paused"} />}
+          text={pausedFromApps ?? (status.kind === "busy" ? taskLimitLine(t, d, tasksEditable) : null)}
         />
         {pausable && !pausable.remotePause && <span className="small muted">{t("machines.remotePause.outdated")}</span>}
         <Facts facts={facts} />
@@ -400,12 +426,38 @@ function ComputerPage({ machineId }: { machineId: string }) {
             ownerUserId={d.ownerUserId}
             editable={d.mayManage}
             narrowOnly={!owner}
-            saving={update.isPending}
             hint={t("devices.who.computerHint")}
             onChange={(audience: DeviceAudience) => save({ id: d.id, audience })}
           />
+          {/* Tasks start on room there: what's running and what still fits, and the owner's Push harder. */}
+          {d.taskRoom && (
+            <PrefRow
+              id="dv-pc-tasks"
+              icon="layers"
+              label={t("devices.maxTasks")}
+              hint={t("devices.tasksAutoHint")}
+              status={tasksAutoText(t, d)}
+            />
+          )}
+          {d.taskRoom && tasksEditable && d.machineKind === "connected" && (
+            <PrefRow
+              id="dv-pc-push"
+              icon="power"
+              label={t("devices.pushHarder")}
+              hint={t("devices.pushHarderHint")}
+              control={
+                <Switch
+                  id="dv-pc-push-switch"
+                  checked={d.taskRoom.pushHarder}
+                  // The computer applies it: offline, nothing would.
+                  disabled={status.kind === "offline"}
+                  onCheckedChange={(on) => save({ id: d.id, pushHarder: on })}
+                />
+              }
+            />
+          )}
           {/* Only once the computer says its limit: a guess here would be a setting that changes nothing. */}
-          {d.maxTasks !== null && (
+          {!d.taskRoom && d.maxTasks !== null && (
             <PrefRow
               id="dv-pc-tasks"
               icon="layers"
@@ -416,38 +468,35 @@ function ComputerPage({ machineId }: { machineId: string }) {
                   size="sm"
                   align="end"
                   aria-label={t("devices.maxTasks")}
-                  disabled={!owner || update.isPending}
+                  // The computer applies it: offline, nothing would.
+                  disabled={!tasksEditable || status.kind === "offline"}
                   value={String(d.maxTasks)}
                   onValueChange={(v) => save({ id: d.id, maxTasks: Number(v) })}
                   // The value it has stays a choice even when it isn't one of ours, so the select never shows empty.
-                  options={[...new Set([...TASKS, String(d.maxTasks)])]
-                    .sort((a, b) => Number(a) - Number(b))
-                    .map((n) => ({ value: n, label: n }))}
+                  options={taskChoices(d.maxTasks).map((n) => ({ value: String(n), label: String(n) }))}
                 />
               }
             />
           )}
-          {/* Spill-over: its owner turns these on; an admin may only turn them off. A server install never takes it. */}
-          {d.mayManage &&
-            d.machineKind === "connected" &&
-            !d.systemMode &&
-            (["own", "others"] as const).map((key) => (
-              <PrefRow
-                key={key}
-                id={`dv-pc-spill-${key}`}
-                icon={key === "own" ? "bolt" : "audiencePeople"}
-                label={t(key === "own" ? "devices.spillOwn" : "devices.spillOthers")}
-                hint={t(key === "own" ? "devices.spillOwnHint" : "devices.spillOthersHint")}
-                control={
-                  <Switch
-                    id={`dv-pc-spill-${key}-switch`}
-                    checked={d.spill[key]}
-                    disabled={update.isPending || (!owner && !d.spill[key])}
-                    onCheckedChange={(on) => save({ id: d.id, spill: { [key]: on } })}
-                  />
-                }
-              />
-            ))}
+          {/* Its help: its owner turns it on, an admin only off, and the workspace's switch off wins. Never a server
+              install's. */}
+          {d.mayManage && d.machineKind === "connected" && !d.systemMode && (
+            <PrefRow
+              id="dv-pc-spill"
+              icon="bolt"
+              label={t("devices.spillOwn")}
+              hint={t(d.belongsToWorkspace ? "devices.spillTeamHint" : "devices.spillOwnHint")}
+              status={helpOff ? t("devices.spillWorkspaceOff") : undefined}
+              control={
+                <Switch
+                  id="dv-pc-spill-switch"
+                  checked={d.spill.own && !helpOff}
+                  disabled={helpOff || (!owner && !d.spill.own)}
+                  onCheckedChange={(own) => save({ id: d.id, spill: { own } })}
+                />
+              }
+            />
+          )}
           {admin && d.machineKind === "connected" && (
             <PrefRow
               id="dv-pc-belongs"
@@ -459,7 +508,6 @@ function ComputerPage({ machineId }: { machineId: string }) {
                 <Switch
                   id="dv-pc-belongs-switch"
                   checked={d.belongsToWorkspace}
-                  disabled={update.isPending}
                   onCheckedChange={(on) => save({ id: d.id, belongsToWorkspace: on })}
                 />
               }
@@ -591,6 +639,7 @@ function PhonePage({ phoneId }: { phoneId: string }) {
           chips={
             <>
               <OwnerChip userId={p.ownerUserId} />
+              <StatusPill status={p.status} />
               <Link
                 to="/org/$orgId/settings/devices/$deviceId"
                 params={{ orgId: org.id, deviceId: host.id }}
@@ -642,7 +691,6 @@ function PhonePage({ phoneId }: { phoneId: string }) {
               ownerUserId={p.ownerUserId}
               editable={p.mayManage}
               narrowOnly={!owner}
-              saving={update.isPending}
               hint={t("devices.who.phoneHint", { host: host.name })}
               onChange={(audience) =>
                 update.mutate({ id: p.id, audience }, { onError: (err) => toast.show(errorText(t, err), "error") })

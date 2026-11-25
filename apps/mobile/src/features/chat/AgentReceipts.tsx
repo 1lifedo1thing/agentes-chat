@@ -36,8 +36,10 @@ import {
 import { openAgentAi, openAgentModel } from "../ai/AgentAiScreen";
 import { openConnectAi } from "../ai/NoAiCard";
 import { Note, OpenPage, usePlanHold } from "../ai/parts";
+import { ReportProblemButton } from "../report/ReportProblemButton";
 import { AgentFace, Face } from "../shared/Face";
 import { useColors, useOrgId } from "../shared/hooks";
+import { ownsIn } from "../shared/owner";
 import { SheetTitle } from "../shared/PromptForm";
 import { useSheet } from "../shared/SheetHost";
 import {
@@ -65,7 +67,8 @@ export function FilesTextOnlyFix({ message: m }: { message: Message }) {
     ? failedRunFix(filesTextOnlyOf(m.meta), {
         keys: false,
         admin: managesAgent(dir.agentById.get(agentId)),
-        owner: meId !== null && dir.agentById.get(agentId)?.ownerUserId === meId,
+        // Its owner, or one who holds the role that answers for it (ADR 0085, addendum of 2026-11-21).
+        owner: ownsIn(dir.memberById, meId, dir.agentById.get(agentId)),
       })
     : null;
   if (fix !== "changeModel" || !agentId) return null;
@@ -124,7 +127,7 @@ export const AgentReceiptLine = memo(function AgentReceiptLine({
       ? failedRunFix(failure.code, {
           keys: can(org, "manage_credentials") && !held,
           admin: managesAgent(dir.agentById.get(failedAgent)),
-          owner: meId !== null && dir.agentById.get(failedAgent)?.ownerUserId === meId,
+          owner: ownsIn(dir.memberById, meId, dir.agentById.get(failedAgent)),
         })
       : null;
   const only = line.faces.length === 1 && line.more === 0 ? line.faces[0] : undefined;
@@ -227,6 +230,9 @@ export const AgentReceiptLine = memo(function AgentReceiptLine({
                 : openAgentAi(failedAgent)
           }
         />
+      ) : null}
+      {failedAgent && receipt?.runOf?.[failedAgent] ? (
+        <ReportProblemButton place="run" context={{ runId: receipt.runOf[failedAgent] }} />
       ) : null}
       {mine && !held && receipt?.noAi && receipt.server?.kept ? <KeptAnswer messageId={m.id} /> : null}
     </Animated.View>

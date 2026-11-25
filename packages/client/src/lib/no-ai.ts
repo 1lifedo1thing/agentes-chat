@@ -6,7 +6,6 @@ import type {
   AiComputer,
   AiStatus,
   BrainUnavailable,
-  CodexVersionRequirement,
   ConnectIntent,
   Edition,
   Machine,
@@ -19,6 +18,7 @@ import { answersOthers, audienceOf, managesAgent } from "./audience";
 import { type BillingHold, billingHoldOf } from "./billing";
 import { type SetupView, setupPending } from "./computer";
 import { firstName } from "./format";
+import { brainTool, CLI_GIT_MISSING, CLI_HOME_ONLY } from "./machines";
 import { can } from "./permissions";
 import { CODING_PLANS, isPlanId, loginPerAgent, PLAN_IDS, type PlanId } from "./plans";
 import { isRightHand } from "./right-hand";
@@ -47,6 +47,8 @@ export interface NoAiCard {
    * way is an account of that CLI's plan (`planOfKind`), connected on the agent's page or from the card.
    */
   own?: MachineAccountKind;
+  /** With `own`: the computer it isn't signed in on, by name. */
+  computer?: string;
   /**
    * The team's right hand on a plan (ADR 0137 §7): why that plan can't think now, said as one line with the way to an
    * API key (its computer away or with a problem, the plan at its limit or its model's own, the region that model needs, commands off
@@ -155,6 +157,7 @@ export function noAiCardOf(meta: Record<string, unknown> | null | undefined): No
     ...(typeof o.provider === "string" ? { provider: o.provider } : {}),
     ...(o.autoOpen === true ? { autoOpen: true } : {}),
     ...(own ? { own } : signedOut ? { signedOut: true } : {}),
+    ...(own && typeof o.computer === "string" && o.computer ? { computer: o.computer } : {}),
     ...(typeof o.reason === "string" && RIGHT_HAND_PLAN_LINES.has(o.reason)
       ? { planLine: o.reason as RightHandPlanLine }
       : {}),
@@ -212,9 +215,11 @@ export const planLinePasses = (line: RightHandPlanLine | undefined) =>
  * The key of a card's line while the agent still can't think (`agentGrammar(name)` fills it): the computer's own
  * sign-in of that CLI missing, its sign-in ended, its computer with no such CLI, no computer, else no AI at all.
  */
-export const noAiLineKey = (card: Pick<NoAiCard, "own" | "signedOut" | "missing">) =>
+export const noAiLineKey = (card: Pick<NoAiCard, "own" | "computer" | "signedOut" | "missing">) =>
   card.own
-    ? (`noAi.notSignedIn.${card.own}` as const)
+    ? card.computer
+      ? (`noAi.notSignedInOn.${card.own}` as const)
+      : (`noAi.notSignedIn.${card.own}` as const)
     : card.signedOut
       ? "noAi.signedOut"
       : card.missing === "cli_missing"
@@ -436,7 +441,6 @@ export type PlanGate =
       state: "unsupported";
       reason: BrainUnavailable | "keys";
       overdue?: boolean;
-      codexVersion?: CodexVersionRequirement;
     }
   /** `owner`: the viewer doesn't own the agent; `computer`: only whoever connected it adds a sign-in there. */
   | { state: "locked"; who: "owner" | "computer" }
@@ -463,11 +467,9 @@ export const unsupportedGate = (
   edition: Edition | null,
   setup: SetupView | null,
   now = Date.now(),
-  codexVersion?: CodexVersionRequirement,
 ): PlanGate => ({
   state: "unsupported",
   reason,
-  ...(reason === "outdated" && codexVersion ? { codexVersion } : {}),
   ...(edition === "cloud" && reason !== "tool_off" && installOverdue(setup, now) ? { overdue: true } : {}),
 });
 
@@ -505,8 +507,7 @@ export function planGate({
     return edition === "cloud" && !caughtUp ? { state: "preparing", view: null } : { state: "missing" };
   if (!brain.computer.online) return { state: "offline" };
   const option = brain.options.find((o) => o.kind === kindOf(choice));
-  if (!option?.available)
-    return unsupportedGate(option?.reason ?? "not_reported", edition, setup, now, option?.codexVersion);
+  if (!option?.available) return unsupportedGate(option?.reason ?? "not_reported", edition, setup, now);
   if (!brain.accountsSupported) return unsupportedGate("runner_old", edition, setup, now);
   if (isPlanId(choice) && !computer?.keys) return unsupportedGate("keys", edition, setup, now);
   if (!brain.canManageAccounts) return { state: "locked", who: "computer" };
@@ -560,7 +561,7 @@ export function planGateWithoutAgent({
   if (!computer.online) return { gate: { state: "offline" }, computer };
   if (computer.brains[kind] !== true)
     return {
-      gate: unsupportedGate(computer.off?.[kind] ?? "not_reported", edition, setup, now, computer.codexVersion),
+      gate: unsupportedGate(computer.off?.[kind] ?? "not_reported", edition, setup, now),
       computer,
     };
   if (isPlanId(choice) && !computer.keys) return { gate: unsupportedGate("keys", edition, setup, now), computer };
@@ -613,11 +614,11 @@ const CLOUD_REASON = {
   keys: "runnerOld",
   tool_off: "toolOff",
   not_installed: "installing",
-  outdated: "updating",
   // Said only past the wait: before it, the line says the computer is still looking.
   not_reported: "stuck",
   // The Cloud's computers run Linux, where every CLI runs: never said there.
   system: "stuck",
+  windows_sandbox: "stuck",
   cant_start: "stuck",
 } as const satisfies Record<BrainUnavailable | "keys", string>;
 
@@ -646,7 +647,7 @@ export function gateLine(
     edition: Edition | null;
     kind: MachineAccountKind;
     computer: string;
-    machine?: Partial<Pick<Machine, "lastSeenAt" | "kind">> | null;
+    machine?: Partial<Pick<Machine, "lastSeenAt" | "kind" | "cliErrors" | "moving">> | null;
     hold?: string | null;
     now?: number;
   },
@@ -658,6 +659,8 @@ export function gateLine(
   if (gate.state === "missing" && edition === "cloud")
     return { text: t("aiAccounts.connect.needsCloud.stuck", { computer, program }), rechecks };
   if (gate.state === "offline") {
+    // Away moving to another server: back by itself, never "use an API key for now".
+    if (machine?.moving) return { text: t("machines.moving.named", { computer }), rechecks };
     const seen = machine?.lastSeenAt ? Date.parse(machine.lastSeenAt) : null;
     if (edition === "cloud" && seen !== null && now - seen >= CLOUD_AWAY_MS)
       return { text: t("aiAccounts.connect.needsCloud.away", { computer }), rechecks };
@@ -682,8 +685,17 @@ export function gateLine(
     };
   if (gate.reason === "keys") return { text: t("aiAccounts.connect.needs.keys"), rechecks };
   if (gate.reason === "tool_off") return { text: t("brain.reasons.tool_offOne", { computer, program }), rechecks };
-  if (gate.reason === "outdated" && gate.codexVersion)
-    return { text: t("brain.reasons.outdatedCodex", { computer, ...gate.codexVersion }), rechecks };
+  if (gate.reason === "cant_start") {
+    // The runner's error line for it, by the CLI's own name (Claude Code's is `claude`), or one of its codes.
+    const said = machine?.cliErrors?.[brainTool(kind)] ?? machine?.cliErrors?.[kind];
+    const words = { computer, program };
+    if (said === CLI_HOME_ONLY) return { text: t("brain.reasons.home_only", words), rechecks };
+    if (said === CLI_GIT_MISSING) return { text: t("connectAi.cli.gitMissing", words), rechecks };
+    if (said) return { text: t("connectAi.cli.cantStart", { ...words, message: said }), rechecks };
+  }
+  // The Antigravity CLI's `system` is Windows, where it keeps every Google sign-in in one Credential Manager (ADR 0143).
+  if (gate.reason === "system" && kind === "antigravity")
+    return { text: t("brain.reasons.systemAntigravity", { computer }), rechecks };
   return { text: t(`brain.reasons.${gate.reason}`, { computer, program }), rechecks };
 }
 

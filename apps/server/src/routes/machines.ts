@@ -145,6 +145,10 @@ export const Machine = z
       description:
         "The workspace's own computer is asleep in standby (ADR 0161): it wakes when something wants it, and reads online meanwhile. False again once a wake failed to bring it back in time. A change comes as `machine.updated`.",
     }),
+    offlineCause: z.enum(["unresponsive", "stopped", "dropped"]).nullable().openapi({
+      description:
+        "Why it is offline, from its runner's last close: `unresponsive` (stopped answering: no network, or too busy), `stopped` (its runner stopped), `dropped` (the link dropped). Null: online, the workspace's own computer, or unknown.",
+    }),
     lastSeenAt: z.string().nullable(),
     hostname: z.string(),
     os: z.string().openapi({ description: "`linux`, `darwin`, `windows` or `other`." }),
@@ -174,6 +178,10 @@ export const Machine = z
     cliErrors: z.record(z.string(), z.string()).nullable().openapi({
       description:
         "The coding CLIs there that can't start (`claude`, `codex`…), each with its own last error line; `git_missing`: Claude Code on Windows without Git for Windows. Null unless admin or the person who paired it.",
+    }),
+    codexSandbox: z.enum(["mxc", "unelevated", "none"]).nullable().openapi({
+      description:
+        "Windows: what holds Codex's commands there (`mxc`; `unelevated`, Codex's own sandbox where MXC is missing; `none`, nothing could). Null elsewhere, or until its runner knows.",
     }),
     remotePause: z.boolean().openapi({
       description:
@@ -226,6 +234,10 @@ export const Machine = z
       .nullable()
       .optional(),
     egress: z.object({ ip: z.string(), country: z.string().optional(), at: z.string() }).nullable().optional(),
+    moving: z.boolean().optional().openapi({
+      description:
+        "The workspace's own computer is away moving to another server: it comes back by itself in a few minutes. A change comes as `machine.updated`.",
+    }),
     egressWaiting: z.boolean().optional().openapi({
       description:
         "The workspace's own computer, online, has its agents waiting for their way out: its network sends them only through a proxy and none works now, so their connections are refused for a while. A change comes as `machine.updated`.",
@@ -247,10 +259,20 @@ export const Machine = z
   })
   .openapi("Machine");
 
+const PlanDropped = z.object({ kind: z.string(), provider: z.string().nullable() });
+
 export const ComputerTarget = z
   .union([
     z.object({ kind: z.literal("none") }),
-    z.object({ kind: z.literal("machine"), machineId: z.uuid(), name: z.string(), online: z.boolean() }),
+    z.object({
+      kind: z.literal("machine"),
+      machineId: z.uuid(),
+      name: z.string(),
+      online: z.boolean(),
+      planDropped: PlanDropped.optional().openapi({
+        description: "Set when the agent's plan is signed in only on the computer it left: sign in on this one too.",
+      }),
+    }),
   ])
   .openapi("ComputerTarget");
 
@@ -345,6 +367,9 @@ const MachineOutage = z
       .boolean()
       .openapi({ description: "The workspace's own computer (ADR 0056 §10): its platform is `other`." }),
     offlineSince: z.string().openapi({ description: "ISO time of its last sign of life." }),
+    moving: z.boolean().openapi({
+      description: "The workspace's own computer is away moving to another server: it comes back by itself.",
+    }),
     agents: z.array(
       z.object({
         agentId: z.uuid(),
@@ -404,6 +429,9 @@ const ComputerQueue = z
   .object({
     machineId: z.uuid(),
     name: z.string(),
+    moving: z.boolean().optional().openapi({
+      description: "It is away moving to another server: the line waits for it, back in a few minutes.",
+    }),
     working: z.array(
       z.object({
         runId: z.uuid(),
@@ -449,6 +477,10 @@ const MoveAgentsResult = z
     resumed: z.number().int().openapi({ description: "Waiting runs queued again on the new computer." }),
     stillWaiting: z.number().int().openapi({
       description: "Waiting runs that stay with the old computer (their cut-off turn already ran tools there).",
+    }),
+    planDropped: z.array(PlanDropped.extend({ agentId: z.uuid() })).openapi({
+      description:
+        "Moved agents whose plan is signed in only on the old computer (`kind`, a coding plan's `provider`): sign in on the new one too.",
     }),
   })
   .openapi("MoveAgentsResult");
