@@ -11,9 +11,9 @@
  * folder> (apps/server/scripts/perf/seed.ts). Each opening runs the app with `AGENTES_BENCH_OUT` and
  * `AGENTES_BENCH_URL` (src-tauri/src/bench.rs): the first on a new profile, signing in through a one-time link on its
  * way to the workspace's busiest channel, the warm ones signed in and straight there, then the floor. The app's list
- * of servers is replaced, so a computer where the app already has one is refused. Writes `bench.json` (each opening
- * as the app wrote it, and the summary), `bench.md` (the table, also added to the job's summary on GitHub) and each
- * opening's output in <out folder>.
+ * of servers is replaced and its first opening needs a new profile, so a computer where the app ever opened is
+ * refused; the app is left with no servers, as it was. Writes `bench.json` (each opening as the app wrote it, and the
+ * summary), `bench.md` (the table, also added to the job's summary on GitHub) and each opening's output in <out folder>.
  */
 import {
   appendFileSync,
@@ -151,13 +151,35 @@ export function report(runs: Run[], heading: string): string {
   return `${lines.join("\n")}\n`;
 }
 
-/** Where the app keeps its list of servers (Tauri's config folder for its identifier). */
-function configDir(): string {
+/**
+ * The app's folders here, Tauri's for its identifier: its config, where its list of servers is, and its web view's
+ * profile (cache, cookies, storage): Tauri's local data folder, WebKit's own folders on macOS.
+ */
+function appDirs(): { config: string; profile: string[] } {
   const { identifier } = JSON.parse(readFileSync(join(import.meta.dir, "../src-tauri/tauri.conf.json"), "utf8"));
   const home = os.homedir();
-  if (process.platform === "darwin") return join(home, "Library", "Application Support", identifier);
-  if (process.platform === "win32") return join(process.env.APPDATA ?? join(home, "AppData", "Roaming"), identifier);
-  return join(process.env.XDG_CONFIG_HOME || join(home, ".config"), identifier);
+  if (process.platform === "darwin") {
+    const library = (folder: string) => join(home, "Library", folder, identifier);
+    return { config: library("Application Support"), profile: [library("WebKit"), library("Caches")] };
+  }
+  if (process.platform === "win32") {
+    return {
+      config: join(process.env.APPDATA ?? join(home, "AppData", "Roaming"), identifier),
+      profile: [join(process.env.LOCALAPPDATA ?? join(home, "AppData", "Local"), identifier)],
+    };
+  }
+  return {
+    config: join(process.env.XDG_CONFIG_HOME || join(home, ".config"), identifier),
+    profile: [join(process.env.XDG_DATA_HOME || join(home, ".local", "share"), identifier)],
+  };
+}
+
+/** A macOS app's own executable in its `.app`. */
+function bundleExecutable(app: string): string {
+  const plist = join(app, "Contents", "Info.plist");
+  const name = Bun.spawnSync(["plutil", "-extract", "CFBundleExecutable", "raw", plist]).stdout.toString().trim();
+  if (!name) throw new Error(`${plist} names no executable`);
+  return join(app, "Contents", "MacOS", name);
 }
 
 /** This machine, in a line: GitHub's runner image when it is one, the system, its CPUs and memory. */
@@ -197,27 +219,21 @@ async function main() {
     );
     process.exit(2);
   }
-  const config = configDir();
+  const { config, profile } = appDirs();
   const servers = join(config, "servers.json");
-  if (existsSync(servers)) {
-    console.error(`The app on this computer already has its servers (${servers}): the bench would replace them.`);
+  const used = [servers, ...profile].find((path) => existsSync(path));
+  if (used) {
+    console.error(
+      `The app has opened on this computer before (${used}): the bench would replace its servers, and its first opening wouldn't be on a new profile.`,
+    );
     process.exit(2);
   }
+  const executable = app.endsWith(".app") ? bundleExecutable(app) : app;
   // Whole: an app opened through Launch Services starts in `/`.
   const out = resolve(outArg);
   mkdirSync(out, { recursive: true });
   mkdirSync(config, { recursive: true });
   const choose = (origin: string) => writeFileSync(servers, JSON.stringify({ current: origin, servers: [origin] }));
-
-  const data = mkdtempSync(join(os.tmpdir(), "agentes-bench-"));
-  cpSync(seeded, data, { recursive: true });
-  const { orgId, channelId } = JSON.parse(readFileSync(join(data, "seed.json"), "utf8"));
-  const { server, url, seconds } = await startServer(runner, native, data).catch((e: Error) => {
-    console.error(`bench: the server didn't start: ${e.message}\n${serverLog(data)}`);
-    process.exit(1);
-  });
-  console.log(`bench: the server answers at ${url} after ${seconds} s`);
-  const channel = `${url}/org/${orgId}/c/${channelId}`;
 
   const runs: Run[] = [];
   /** Opens the app on `page`: its opening must end on `ends` (a warm one that lost its sign-in would paint `/login`). */
@@ -239,10 +255,13 @@ async function main() {
           stdout: Bun.file(`${name}.out.log`),
           stderr: Bun.file(`${name}.err.log`),
         });
-    const code = await Promise.race([child.exited, Bun.sleep(RUN_LIMIT_MS).then(() => null)]);
+    // Unref'd: once the app quit, the limit never holds the bench open.
+    const limit = new Promise<null>((done) => setTimeout(done, RUN_LIMIT_MS, null).unref());
+    const code = await Promise.race([child.exited, limit]);
     if (code === null) {
       child.kill();
-      if (bundle) Bun.spawnSync(["pkill", "-f", join(app, "Contents", "MacOS")]);
+      // The app's own executable alone: the server it carries runs from the same folder.
+      if (bundle) Bun.spawnSync(["pkill", "-f", executable]);
     }
     const run: Run = { kind, spawnedAtMs };
     try {
@@ -264,33 +283,53 @@ async function main() {
     await Bun.sleep(BETWEEN_MS);
   };
 
-  choose(url);
-  const key = readFileSync(join(data, "owner-key"), "utf8").trim();
-  const minted = await fetch(`${url}/api/auth/owner-key`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ key }),
-  });
-  if (!minted.ok) throw new Error(`the owner key was refused: ${minted.status} ${await minted.text()}`);
-  const { token } = (await minted.json()) as { token: string };
-  const path = new URL(channel).pathname;
-  await open("first", `${url}/desktop/handover?to=${encodeURIComponent(path)}#token=${token}`, path);
-  const warm = Number(warmArg ?? 5);
-  for (let i = 0; i < warm; i++) await open("warm", channel, path);
+  const data = mkdtempSync(join(os.tmpdir(), "agentes-bench-"));
+  try {
+    cpSync(seeded, data, { recursive: true });
+    const { orgId, channelId } = JSON.parse(readFileSync(join(data, "seed.json"), "utf8"));
+    const { server, url, seconds } = await startServer(runner, native, data).catch((e: Error) => {
+      throw new Error(`the server didn't start: ${e.message}\n${serverLog(data)}`);
+    });
+    console.log(`bench: the server answers at ${url} after ${seconds} s`);
+    try {
+      choose(url);
+      const key = readFileSync(join(data, "owner-key"), "utf8").trim();
+      const minted = await fetch(`${url}/api/auth/owner-key`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ key }),
+      });
+      if (!minted.ok) throw new Error(`the owner key was refused: ${minted.status} ${await minted.text()}`);
+      const { token } = (await minted.json()) as { token: string };
+      const channel = `${url}/org/${orgId}/c/${channelId}`;
+      const path = new URL(channel).pathname;
+      await open("first", `${url}/desktop/handover?to=${encodeURIComponent(path)}#token=${token}`, path);
+      const warm = Number(warmArg ?? 5);
+      for (let i = 0; i < warm; i++) await open("warm", channel, path);
 
-  const floor = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
-    fetch: (req) =>
-      new URL(req.url).pathname === "/"
-        ? new Response(FLOOR_PAGE, { headers: { "content-type": "text/html; charset=utf-8" } })
-        : new Response(null, { status: 404 }),
-  });
-  choose(`http://127.0.0.1:${floor.port}`);
-  await open("floor", `http://127.0.0.1:${floor.port}/`, "/");
-  floor.stop(true);
-  await stopServer(server);
-  rmSync(servers, { force: true });
+      const floor = Bun.serve({
+        hostname: "127.0.0.1",
+        port: 0,
+        fetch: (req) =>
+          new URL(req.url).pathname === "/"
+            ? new Response(FLOOR_PAGE, { headers: { "content-type": "text/html; charset=utf-8" } })
+            : new Response(null, { status: 404 }),
+      });
+      choose(`http://127.0.0.1:${floor.port}`);
+      await open("floor", `http://127.0.0.1:${floor.port}/`, "/");
+      floor.stop(true);
+    } finally {
+      await stopServer(server);
+    }
+  } finally {
+    // The app opens on its welcome window again.
+    rmSync(servers, { force: true });
+    try {
+      rmSync(data, { recursive: true, force: true });
+    } catch {
+      // Left in the temporary folder: on Windows a file the server just let go of can still be busy.
+    }
+  }
 
   const heading = machine(runs.find((r) => r.version)?.version ?? "?");
   const text = report(runs, heading);

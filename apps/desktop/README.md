@@ -63,10 +63,12 @@ there (`src-tauri/src/bench.rs`, only with `AGENTES_BENCH_OUT` set, never a sett
 - **Memory**: the app's own process and its web view's, 50 s after the site painted with the window shown, then after
   60 s with it hidden. macOS: footprint, the web view being WebKit's processes working for the app (its web content,
   GPU and network processes). Windows: private bytes of everything under the app (WebView2's). Linux: anonymous
-  resident memory of everything under the app (WebKitGTK's).
+  resident memory of everything under the app (WebKitGTK's). On Linux closing the window minimizes it, which the
+  runner's virtual screen can't do (it has no window manager), so there the hidden rows stand in for minimized.
 - **Idle CPU**: the CPU time the app and its web view used over 30 idle seconds, shown and hidden, in % of one core.
 - **Floor**, beside each: what the site adds is the difference.
 
 Shared runners vary from run to run, so nothing fails on a number: compare with the week's own run, or measure the same
 builds again with `builds` (an earlier run's id). On a computer of your own, `bun apps/desktop/scripts/bench.ts` (its
-header says what it takes) runs only where the app was never set up: it replaces the app's list of servers.
+header says what it takes) runs only where the app never opened, as another user for instance: its first opening needs
+a new profile, and it replaces the app's list of servers.

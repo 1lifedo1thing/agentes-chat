@@ -86,7 +86,9 @@ export async function startServer(runner: string, native: string, data: string) 
 /** Closes the server's stdin and waits for it to stop: its exit code, or null when it didn't within 40 s (ended then). */
 export async function stopServer(server: Awaited<ReturnType<typeof startServer>>["server"]) {
   server.stdin.end();
-  const code = await Promise.race([server.exited, Bun.sleep(STOP_MS).then(() => null)]);
+  // Unref'd: once the server stopped, the limit never holds its caller open.
+  const limit = new Promise<null>((done) => setTimeout(done, STOP_MS, null).unref());
+  const code = await Promise.race([server.exited, limit]);
   if (code === null) server.kill();
   return code;
 }
