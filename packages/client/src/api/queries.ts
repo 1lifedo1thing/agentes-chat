@@ -131,7 +131,6 @@ import type {
   CardDelegate,
   Channel,
   ChannelCard,
-  ChannelCategory,
   ChannelEvent,
   ChannelInput,
   ChannelOverride,
@@ -1505,13 +1504,12 @@ export function useSetAgentLines(orgId: string) {
 
 // ── Agent groups (ADR 0083) ─────────────────────────────────────────────────
 
-export const useAgentGroups = (orgId: string) => {
-  const api = useApi();
-  return useQuery({ queryKey: keys.agentGroups(orgId), queryFn: () => api.agentGroups.list(orgId), staleTime: 30_000 });
-};
+export const agentGroupsQuery = (api: ApiClient, orgId: string) =>
+  queryOptions({ queryKey: keys.agentGroups(orgId), queryFn: () => api.agentGroups.list(orgId), staleTime: 30_000 });
+export const useAgentGroups = (orgId: string) => useQuery(agentGroupsQuery(useApi(), orgId));
 
 export type AgentGroupAction =
-  | { type: "create"; name: string; agentIds?: string[]; color?: string; icon?: string }
+  | { type: "create"; name: string; agentIds?: string[]; channelIds?: string[]; color?: string; icon?: string }
   | ({ type: "update"; groupId: string } & AgentGroupPatch)
   | { type: "remove"; groupId: string }
   | {
@@ -1559,6 +1557,7 @@ export function useAgentGroupAction(orgId: string) {
           return api.agentGroups.create(orgId, {
             name: action.name,
             agentIds: action.agentIds,
+            channelIds: action.channelIds,
             color: action.color,
             icon: action.icon,
           });
@@ -1598,6 +1597,9 @@ export function useAgentGroupAction(orgId: string) {
     onSuccess: (groups, action) => {
       qc.setQueryData(key, groups);
       if (action.type === "create") unpin(action.agentIds ?? []);
+      // The channels a new sector took, or the ones a deleted sector let go, show in their place (ADR 0240).
+      if (action.type === "create" ? action.channelIds?.length : action.type === "remove")
+        void qc.invalidateQueries({ queryKey: keys.channels(orgId) });
     },
   });
 }
@@ -1617,15 +1619,6 @@ export const useChannelsPick = <T>(orgId: string, pick: (list: Channel[]) => T) 
 export const useChannelName = (orgId: string, channelId: string | null | undefined) =>
   useChannelsPick(orgId, (list) => (channelId ? list.find((c) => c.id === channelId)?.name : undefined));
 
-/** The sidebar's channel categories, in order (ADR 0080). */
-export const channelCategoriesQuery = (api: ApiClient, orgId: string) =>
-  queryOptions({
-    queryKey: keys.channelCategories(orgId),
-    queryFn: () => api.chat.categories(orgId),
-    staleTime: 30_000,
-  });
-export const useChannelCategories = (orgId: string) => useQuery(channelCategoriesQuery(useApi(), orgId));
-
 /**
  * `list` with the item `id` taken out and put back, changed by `change`, before the item `beforeId` (at the end when
  * that one isn't there, or with null). A list without the item comes back as it was.
@@ -1643,99 +1636,34 @@ function placedBefore<T extends { id: string }>(
   return at < 0 ? [...rest, change(item)] : [...rest.slice(0, at), change(item), ...rest.slice(at)];
 }
 
-/** After any layout change: the channels (their category and order) and the categories refetch. */
+/** After any layout change: the channels (their sector and order) and the sectors, which list the ones holding a channel. */
 function refreshLayout(qc: QueryClient, orgId: string) {
   return Promise.all([
     qc.invalidateQueries({ queryKey: keys.channels(orgId) }),
-    qc.invalidateQueries({ queryKey: keys.channelCategories(orgId) }),
+    qc.invalidateQueries({ queryKey: keys.agentGroups(orgId) }),
   ]);
 }
 
-/** Admins: a new category at the end, optionally taking channels along. */
-export function useCreateChannelCategory(orgId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { name: string; channelIds?: string[] }) => api.chat.createCategory(orgId, input),
-    // The new category and the channels it took show with the answer, before the lists read again.
-    onSuccess: (category, { channelIds }) => {
-      qc.setQueryData<ChannelCategory[]>(keys.channelCategories(orgId), (list) =>
-        list && !list.some((c) => c.id === category.id) ? [...list, category] : list,
-      );
-      if (channelIds?.length)
-        qc.setQueryData<Channel[]>(keys.channels(orgId), (list) =>
-          list?.map((c) => (channelIds.includes(c.id) ? { ...c, categoryId: category.id } : c)),
-        );
-      void refreshLayout(qc, orgId);
-    },
-  });
-}
-
-export function useRenameChannelCategory(orgId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { categoryId: string; name: string }) =>
-      api.chat.renameCategory(orgId, input.categoryId, input.name),
-    ...optimistic(qc, ({ categoryId, name }: { categoryId: string; name: string }) => [
-      edit<ChannelCategory[]>(keys.channelCategories(orgId), patchIn<ChannelCategory>(categoryId, { name })),
-    ]),
-    onSettled: () => void refreshLayout(qc, orgId),
-  });
-}
-
-export function useDeleteChannelCategory(orgId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (categoryId: string) => api.chat.deleteCategory(orgId, categoryId),
-    // It leaves at once and its channels go on top, with no category, as the server does.
-    ...optimistic(qc, (categoryId: string) => [
-      edit<ChannelCategory[]>(keys.channelCategories(orgId), without<ChannelCategory>(categoryId)),
-      edit<Channel[]>(keys.channels(orgId), (list) =>
-        list.map((c) => (c.categoryId === categoryId ? { ...c, categoryId: null } : c)),
-      ),
-    ]),
-    onSettled: () => void refreshLayout(qc, orgId),
-  });
-}
-
-export function usePlaceChannelCategory(orgId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { categoryId: string; beforeCategoryId: string | null }) =>
-      api.chat.placeCategory(orgId, input.categoryId, input.beforeCategoryId),
-    ...optimistic(qc, ({ categoryId, beforeCategoryId }: { categoryId: string; beforeCategoryId: string | null }) => [
-      edit<ChannelCategory[]>(keys.channelCategories(orgId), (list) => {
-        const placed = placedBefore(list, categoryId, beforeCategoryId, (c) => c);
-        return placed.map((c, i) => (c.position === i ? c : { ...c, position: i }));
-      }),
-    ]),
-    onSettled: () => void refreshLayout(qc, orgId),
-  });
-}
-
-type ChannelPlace = { channelId: string; categoryId: string | null; beforeChannelId?: string | null };
+type ChannelPlace = { channelId: string; groupId: string | null; beforeChannelId?: string | null };
 
 /**
- * Puts a channel in a category (null: none), before another channel or at its end. The list moves at once
- * (the channel takes its new category) and refetches for the exact order.
+ * Puts a channel in a sector (null: none, ADR 0240), before another channel or at its end. The list moves at once
+ * (the channel takes its new sector) and refetches for the exact order.
  */
 export function usePlaceChannel(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: ChannelPlace) =>
-      api.chat.place(orgId, input.channelId, { categoryId: input.categoryId, beforeChannelId: input.beforeChannelId }),
-    // The list is drawn in its order: the channel goes before the other one, or after its new category's last.
-    ...optimistic(qc, ({ channelId, categoryId, beforeChannelId }: ChannelPlace) => [
+      api.chat.place(orgId, input.channelId, { groupId: input.groupId, beforeChannelId: input.beforeChannelId }),
+    // The list is drawn in its order: the channel goes before the other one, or after its new sector's last.
+    ...optimistic(qc, ({ channelId, groupId, beforeChannelId }: ChannelPlace) => [
       edit<Channel[]>(keys.channels(orgId), (list) => {
-        const moved = (c: Channel) => ({ ...c, categoryId });
+        const moved = (c: Channel) => ({ ...c, groupId });
         if (beforeChannelId) return placedBefore(list, channelId, beforeChannelId, moved);
-        // At its category's end: right before whatever follows the last channel already in it.
+        // At its sector's end: right before whatever follows the last channel already in it.
         const rest = list.filter((c) => c.id !== channelId);
-        const last = rest.findLastIndex((c) => (c.categoryId ?? null) === categoryId);
+        const last = rest.findLastIndex((c) => (c.groupId ?? null) === groupId);
         return placedBefore(list, channelId, last >= 0 ? (rest[last + 1]?.id ?? null) : null, moved);
       }),
     ]),

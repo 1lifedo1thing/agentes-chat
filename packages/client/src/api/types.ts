@@ -1505,9 +1505,9 @@ export interface Channel {
   createdAt: string;
   /** Who created it: may change it and its members, like admins. */
   createdByUserId?: string | null;
-  /** Its sidebar category (ADR 0080); null or absent: on top, with none. */
-  categoryId?: string | null;
-  /** Order inside its category, from 0. */
+  /** Its sector (ADR 0240); null or absent: under Canais, in none. */
+  groupId?: string | null;
+  /** Order inside its sector (or among the channels in none), from 0. */
   position?: number;
   /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). Regular channels only. */
   replyInThreads?: boolean;
@@ -1609,14 +1609,6 @@ export interface ChannelCard {
   people: number;
   /** Agents in it. */
   agents: number;
-}
-
-/** A named group of channels in the sidebar, the same for everyone in the organization (ADR 0080). */
-export interface ChannelCategory {
-  id: string;
-  name: string;
-  /** Order in the sidebar, from 0. */
-  position: number;
 }
 
 /** A channel's latest top-level message, for the conversation list. */

@@ -4,23 +4,12 @@
     "send": "Envoyer"
   },
   "categories": {
-    "title": "Catégories",
     "where": "Où #{{channel}} apparaît",
     "whereHelp": "Change pour tout le monde. Les participants du canal restent les mêmes.",
-    "create": "Créer",
-    "endOfList": "Va à la fin de la liste pour tout le monde.",
-    "channelCount_one": "{{count}} canal",
-    "channelCount_many": "{{count}} canaux",
-    "channelCount_other": "{{count}} canaux",
-    "none": "Aucune catégorie pour l'instant.",
-    "manageHint": "Ordre, noms et suppression",
-    "deleteTitle": "Supprimer {{name}} ?",
     "order": "Place dans la liste",
     "up": "Monter",
     "down": "Descendre",
-    "position": "{{at}} sur {{count}}.",
-    "channelPosition": "{{at}} sur {{count}}.",
-    "itsChannels": "Canaux"
+    "channelPosition": "{{at}} sur {{count}}."
   },
   "blocks": {
     "send": "Envoyer",

@@ -61,7 +61,7 @@ describe("sidebar: no agent twice", () => {
 
 /** Canais' + → Novo canal. */
 const newChannel = async () => {
-  const plus = within(nav()).getByRole("button", { name: "Novo canal ou categoria" });
+  const plus = within(nav()).getByRole("button", { name: "Novo canal" });
   await act(async () => {
     fireEvent.keyDown(plus, { key: "Enter" });
     fireEvent.keyUp(plus, { key: "Enter" });

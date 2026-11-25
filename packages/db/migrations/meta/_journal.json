@@ -2416,6 +2416,13 @@
       "when": 1795620377850,
       "tag": "0349_devices_first",
       "breakpoints": true
+    },
+    {
+      "idx": 347,
+      "version": "7",
+      "when": 1795620378850,
+      "tag": "0352_channels_in_sectors",
+      "breakpoints": true
     }
   ]
 }

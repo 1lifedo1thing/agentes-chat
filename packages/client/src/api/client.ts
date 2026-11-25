@@ -106,7 +106,6 @@ import type {
   CalendarRange,
   Channel,
   ChannelCard,
-  ChannelCategory,
   ChannelInput,
   ChannelMember,
   ChannelOverride,
@@ -803,10 +802,10 @@ export interface ApiClient {
   /** Groups of agents (ADR 0083): everyone reads them, owners and admins change them; each change answers with all. */
   agentGroups: {
     list(orgId: string): Promise<AgentGroup[]>;
-    /** After the other groups, with `agentIds` in it in that order (out of any group they were in). */
+    /** After the other groups, with `agentIds` in it in that order (out of any group they were in), and `channelIds`. */
     create(
       orgId: string,
-      input: { name: string; agentIds?: string[]; color?: string; icon?: string },
+      input: { name: string; agentIds?: string[]; channelIds?: string[]; color?: string; icon?: string },
     ): Promise<AgentGroup[]>;
     /** Renames it, or moves it among the groups (`index`). */
     update(orgId: string, groupId: string, patch: AgentGroupPatch): Promise<AgentGroup[]>;
@@ -1024,21 +1023,12 @@ export interface ApiClient {
   };
   chat: {
     channels(orgId: string): Promise<Channel[]>;
-    createChannel(orgId: string, input: ChannelInput & { name: string; categoryId?: string | null }): Promise<Channel>;
-    /** The sidebar's categories, in order (ADR 0080). */
-    categories(orgId: string): Promise<ChannelCategory[]>;
-    /** Admins: a category at the end, optionally taking `channelIds` along. */
-    createCategory(orgId: string, input: { name: string; channelIds?: string[] }): Promise<ChannelCategory>;
-    renameCategory(orgId: string, categoryId: string, name: string): Promise<ChannelCategory>;
-    /** Its channels go on top, with no category. */
-    deleteCategory(orgId: string, categoryId: string): Promise<void>;
-    /** Before `beforeCategoryId`, or to the end (null). */
-    placeCategory(orgId: string, categoryId: string, beforeCategoryId: string | null): Promise<void>;
-    /** Into `categoryId` (null: none), before `beforeChannelId` or at the end. */
+    createChannel(orgId: string, input: ChannelInput & { name: string; groupId?: string | null }): Promise<Channel>;
+    /** Into sector `groupId` (null: none, ADR 0240), before `beforeChannelId` or at the end. */
     place(
       orgId: string,
       channelId: string,
-      input: { categoryId: string | null; beforeChannelId?: string | null },
+      input: { groupId: string | null; beforeChannelId?: string | null },
     ): Promise<void>;
     join(orgId: string, channelId: string): Promise<void>;
     /** Out of a channel I'm in. The last person out of a private channel archives it. Never #general. */

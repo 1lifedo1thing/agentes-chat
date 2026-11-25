@@ -1787,10 +1787,20 @@ export function agentRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/agent-groups",
       tags,
       security,
-      summary: "Add a group after the others, with these agents in it in order (owners and admins)",
+      summary: "Add a group after the others, with these agents and channels in it in order (owners and admins)",
       request: {
         params: OrgParams,
-        body: body(z.object({ name: GroupName, agentIds: z.array(z.uuid()).max(200).optional(), ...GroupLook })),
+        body: body(
+          z.object({
+            name: GroupName,
+            agentIds: z.array(z.uuid()).max(200).optional(),
+            channelIds: z.array(z.uuid()).max(200).optional().openapi({
+              description:
+                "Channels it takes (ADR 0240): each one the caller may move (who manages channels, its creator).",
+            }),
+            ...GroupLook,
+          }),
+        ),
       },
       responses: { 201: json(Groups, "Created"), ...errors },
     }),

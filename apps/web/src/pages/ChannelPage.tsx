@@ -43,12 +43,12 @@ import {
   sendHelpers,
   typingIn,
   useAddChannelMember,
+  useAgentGroups,
   useAiStatus,
   useApproval,
   useApprovals,
   useCachedMessages,
   useCardApprovals,
-  useChannelCategories,
   useChannelMembers,
   useChannels,
   useChannelThreads,
@@ -289,7 +289,6 @@ import { BrowserHandoffCard } from "@/components/browser/BrowserHandoffCard";
 import { BrowserTrailCard } from "@/components/browser/BrowserTrailCard";
 import { requestBrowserCard } from "@/components/browser/open";
 import { ScreenPanelContext } from "@/components/browser/screen-panel";
-import { CategorySelect } from "@/components/ChannelCategoryDialogs";
 import { ChannelHeader } from "@/components/ChannelHeader";
 import { ChannelPermissions } from "@/components/ChannelPermissions";
 import { ChannelPinnedBar } from "@/components/ChannelPins";
@@ -393,6 +392,7 @@ import {
   WaitMark,
 } from "@/components/RequestCard";
 import { ReturnLine } from "@/components/ReturnLine";
+import { SectorSelect } from "@/components/SectorSelect";
 import { SidePanel } from "@/components/SidePanel";
 import { ChannelWelcome, colorOf } from "@/components/Sky";
 import { isStoppable, StopButton, useContinueRun, useStopRun, useWasContinued } from "@/components/StopRun";
@@ -5329,15 +5329,14 @@ function ChannelDetails({
   const update = useUpdateChannel(org.id, channel.id);
   const editable = managesChannel(channel, me.user.id, org);
   const toast = useToast();
-  const categories = useChannelCategories(org.id);
+  const sectors = useAgentGroups(org.id).data ?? [];
   const place = usePlaceChannel(org.id);
   const archive = useArchiveChannelWithUndo();
   const leaving = useLeaveChannelWithUndo();
   // Name: saved on blur or Enter, like the description.
   const [name, setName] = useState(channel.name);
   const [nameError, setNameError] = useState<string | undefined>();
-  const categoryName =
-    categories.data?.find((c) => c.id === channel.categoryId)?.name ?? t("channelCategories.noCategory");
+  const sectorName = sectors.find((g) => g.id === channel.groupId)?.name ?? t("agentGroups.none");
   const [q, setQ] = useState("");
   const [topic, setTopic] = useState(channel.topic);
   const [saved, setSaved] = useState(false);
@@ -5428,9 +5427,9 @@ function ChannelDetails({
     setAdding(false);
     onOpenChange(false);
   };
-  const moveTo = (categoryId: string | null) =>
+  const moveTo = (groupId: string | null) =>
     place.mutate(
-      { channelId: channel.id, categoryId },
+      { channelId: channel.id, groupId },
       {
         onSuccess: () => setSaved(true),
         onError: (e) => toast.show(errorText(t, e), "error"),
@@ -5640,7 +5639,7 @@ function ChannelDetails({
         width={editable ? 760 : 600}
         onOpenChange={(o) => (o ? onOpenChange(o) : leave())}
         subtitle={t("channel.detailsSub", {
-          category: categoryName,
+          category: sectorName,
           visibility: t(ACCESS_LABEL[accessOf(channel).mode]),
         })}
         title={
@@ -5753,9 +5752,11 @@ function ChannelDetails({
                       maxLength={250}
                     />
                   </Field>
-                  <Field label={t("channelCategories.category")} id="channel-edit-category">
-                    <CategorySelect value={channel.categoryId ?? null} onChange={moveTo} canCreate={editable} />
-                  </Field>
+                  {sectors.length > 0 && (
+                    <Field label={t("agentGroups.group")} id="channel-edit-sector">
+                      <SectorSelect value={channel.groupId ?? null} onChange={moveTo} />
+                    </Field>
+                  )}
                   <SettingRow
                     title={t("channel.replyInThreads")}
                     hint={{

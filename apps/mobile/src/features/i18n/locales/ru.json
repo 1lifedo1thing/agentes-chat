@@ -4,24 +4,12 @@
     "send": "Отправить"
   },
   "categories": {
-    "title": "Категории",
     "where": "Где показывается #{{channel}}",
     "whereHelp": "Изменится для всех. Участники канала останутся прежними.",
-    "create": "Создать",
-    "endOfList": "Окажется в конце списка у всех.",
-    "channelCount_one": "{{count}} канал",
-    "channelCount_few": "{{count}} канала",
-    "channelCount_many": "{{count}} каналов",
-    "channelCount_other": "{{count}} канала",
-    "none": "Категорий пока нет.",
-    "manageHint": "Порядок, названия и удаление",
-    "deleteTitle": "Удалить {{name}}?",
     "order": "Место в списке",
     "up": "Выше",
     "down": "Ниже",
-    "position": "{{at}} из {{count}}.",
-    "channelPosition": "{{at}} из {{count}}.",
-    "itsChannels": "Каналы"
+    "channelPosition": "{{at}} из {{count}}."
   },
   "blocks": {
     "send": "Отправить",

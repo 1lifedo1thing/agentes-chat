@@ -5439,10 +5439,10 @@
     "value": "New group conversation"
   },
   "shell.sidebarMenu.addToChannels": {
-    "value": "New channel or category"
+    "value": "New channel"
   },
   "shell.sidebarMenu.addToChannelsPersonal": {
-    "value": "New group conversation or category"
+    "value": "New group conversation"
   },
   "shell.sidebarMenu.newMessage": {
     "value": "New message"
@@ -5900,8 +5900,14 @@
   "agentGroups.deleteText": {
     "value": "Its agents go back to Agents."
   },
+  "agentGroups.deleteChannels": {
+    "value": "Its channels go back to Channels."
+  },
   "agentGroups.dropHere": {
     "value": "Drag agents here"
+  },
+  "agentGroups.dropHereAll": {
+    "value": "Drag agents or channels here"
   },
   "agentGroups.moved": {
     "value": "{{name}} moved to {{group}}"
@@ -10388,143 +10394,11 @@
   "newChannel.create": {
     "value": "Create #{{name}}"
   },
-  "channelCategories.newCategory": {
-    "value": "New category"
-  },
-  "channelCategories.newCategoryHelp": {
-    "value": "Goes to the end of the list. You can drag it later."
-  },
-  "channelCategories.newCategoryDesc": {
-    "value": "Groups channels under one name in everyone's sidebar."
-  },
-  "channelCategories.name": {
-    "value": "Name"
-  },
-  "channelCategories.namePlaceholder": {
-    "value": "e.g. Product"
-  },
-  "channelCategories.nameEmpty": {
-    "value": "Give the category a name."
-  },
-  "channelCategories.nameTaken": {
-    "value": "There is already a category {{name}}."
-  },
-  "channelCategories.channels": {
-    "value": "Channels that go into it"
-  },
-  "channelCategories.channelsSearch": {
-    "value": "Search channels"
-  },
-  "channelCategories.channelsEmpty": {
-    "value": "No channel matches “{{q}}”."
-  },
-  "channelCategories.inCategory": {
-    "value": "Now in {{name}}"
-  },
-  "channelCategories.noCategory": {
-    "value": "No category"
-  },
-  "channelCategories.noCategoryDesc": {
-    "value": "On top, with no header"
-  },
-  "channelCategories.create": {
-    "value": "Create category"
-  },
-  "channelCategories.createWith": {
-    "value": {
-      "one": "Create with {{count}} channel",
-      "other": "Create with {{count}} channels"
-    }
-  },
-  "channelCategories.created": {
-    "value": "{{name}} created."
-  },
-  "channelCategories.rename": {
-    "value": "Rename"
-  },
-  "channelCategories.renameTitle": {
-    "value": "Rename category"
-  },
-  "channelCategories.save": {
-    "value": "Save"
-  },
-  "channelCategories.delete": {
-    "value": "Delete category"
-  },
-  "channelCategories.deleteDesc": {
-    "value": "Its channels go to the top"
-  },
-  "channelCategories.deleted": {
-    "value": {
-      "one": "{{name}} deleted. {{count}} channel went to the top.",
-      "other": "{{name}} deleted. {{count}} channels went to the top."
-    }
-  },
-  "channelCategories.deletedEmpty": {
-    "value": "{{name}} deleted."
-  },
   "channelCategories.undo": {
     "value": "Undo"
   },
-  "channelCategories.collapseAll": {
-    "value": "Close all"
-  },
-  "channelCategories.expandAll": {
-    "value": "Open all"
-  },
-  "channelCategories.newChannelHere": {
-    "value": "New channel here"
-  },
-  "channelCategories.newChannelIn": {
-    "value": "New channel in {{name}}"
-  },
-  "channelCategories.options": {
-    "value": "{{name}} options"
-  },
-  "channelCategories.category": {
-    "value": "Category"
-  },
   "channelCategories.categoryHelp": {
     "value": "Where the channel shows in everyone's sidebar."
-  },
-  "channelCategories.newCategoryOption": {
-    "value": "New category…"
-  },
-  "channelCategories.move": {
-    "value": "Move to…"
-  },
-  "channelCategories.moveTitle": {
-    "value": "Move #{{channel}}"
-  },
-  "channelCategories.moveDesc": {
-    "value": "Changes where the channel sits in everyone's sidebar. Who takes part stays the same."
-  },
-  "channelCategories.moveSearch": {
-    "value": "Search categories"
-  },
-  "channelCategories.moveEmpty": {
-    "value": "No category matches “{{q}}”."
-  },
-  "channelCategories.moveTo": {
-    "value": "Move to {{name}}"
-  },
-  "channelCategories.moveSame": {
-    "value": "Move"
-  },
-  "channelCategories.moveNow": {
-    "value": "Now"
-  },
-  "channelCategories.moveEmptyCategory": {
-    "value": "No channels yet"
-  },
-  "channelCategories.moveCreate": {
-    "value": "Create “{{name}}”"
-  },
-  "channelCategories.moved": {
-    "value": "#{{channel}} is now in {{name}}."
-  },
-  "channelCategories.newWithChannel": {
-    "value": "New category with this channel"
   },
   "channelCategories.editChannel": {
     "value": "Edit channel"

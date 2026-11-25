@@ -76,7 +76,6 @@ import type {
   CalendarRange,
   Channel,
   ChannelCard,
-  ChannelCategory,
   ChannelMember,
   ChannelOverride,
   Choices,
@@ -1108,21 +1107,6 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
     chat: {
       channels: async (orgId) => (await request<{ channels: Channel[] }>(`${org(orgId)}/channels`)).channels,
       createChannel: (orgId, input) => request<Channel>(`${org(orgId)}/channels`, { json: input }),
-      categories: async (orgId) =>
-        (await request<{ categories: ChannelCategory[] }>(`${org(orgId)}/channel-categories`)).categories,
-      createCategory: (orgId, input) => request<ChannelCategory>(`${org(orgId)}/channel-categories`, { json: input }),
-      renameCategory: (orgId, categoryId, name) =>
-        request<ChannelCategory>(`${org(orgId)}/channel-categories/${enc(categoryId)}`, {
-          method: "PATCH",
-          json: { name },
-        }),
-      deleteCategory: (orgId, categoryId) =>
-        request<void>(`${org(orgId)}/channel-categories/${enc(categoryId)}`, { method: "DELETE" }),
-      placeCategory: (orgId, categoryId, beforeCategoryId) =>
-        request<void>(`${org(orgId)}/channel-categories/${enc(categoryId)}/place`, {
-          method: "PUT",
-          json: { beforeCategoryId },
-        }),
       place: (orgId, channelId, input) =>
         request<void>(`${org(orgId)}/channels/${enc(channelId)}/place`, { method: "PUT", json: input }),
       join: (orgId, channelId) => request<void>(`${org(orgId)}/channels/${enc(channelId)}/join`, { json: {} }),
