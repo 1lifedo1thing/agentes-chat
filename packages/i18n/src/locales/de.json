@@ -8661,6 +8661,13 @@
     "notFound": "Diese Routine existiert nicht mehr oder du hast keinen Zugriff.",
     "copyWebhook": "Webhook-URL kopieren",
     "webhookCopied": "Webhook-URL kopiert.",
+    "runCalls": {
+      "show": "Aufrufe ({{n}})",
+      "hide": "Aufrufe ausblenden",
+      "cut": "Gekürzt",
+      "binary": "Kein Text, nicht gespeichert",
+      "copied": "Aufruf kopiert."
+    },
     "webhook": {
       "when": "Wenn ihr Webhook aufgerufen wird",
       "waiting": "Wartet auf den nächsten Aufruf",
@@ -8686,8 +8693,11 @@
       "signature": "Signatur",
       "signedOff": "Aus: Der Agent bekommt jeden Aufruf an die Adresse.",
       "signedOn": "An: Nur Aufrufe, die mit dem Secret signiert sind, kommen durch.",
-      "signedHelp": "Sende den HMAC-SHA256 des Bodys (bei einem GET-Aufruf: seines Query-Strings, ohne das ?) in X-Agentes-Signature (sha256=…). GitHubs X-Hub-Signature-256 funktioniert auch.",
+      "signedHelp": "Sende den HMAC-SHA256 des Bodys (bei einem GET-Aufruf: seines Query-Strings, ohne das ?) in X-Agentes-Signature (sha256=…). GitHubs X-Hub-Signature-256 funktioniert auch. Für Linear füge das Signatur-Secret ein, das Linear anzeigt: Seine Linear-Signature wird geprüft, und Aufrufe, die älter als eine Minute sind, werden abgelehnt.",
       "addSecret": "Signatur verlangen",
+      "pasteSecret": "Secret des Dienstes verwenden",
+      "pasteLabel": "Signatur-Secret des Dienstes",
+      "secretPasted": "Secret gespeichert. Nur damit signierte Aufrufe kommen durch.",
       "newSecret": "Neues Secret",
       "newSecretTitle": "Neues Secret erstellen?",
       "newSecretBody": "Das aktuelle Secret funktioniert sofort nicht mehr. Damit signierte Aufrufe werden abgelehnt, bis du die Dienste aktualisierst, die diese Routine aufrufen.",

@@ -20993,6 +20993,21 @@
   "routines.webhookCopied": {
     "value": "Webhook URL copied."
   },
+  "routines.runCalls.show": {
+    "value": "Calls ({{n}})"
+  },
+  "routines.runCalls.hide": {
+    "value": "Hide calls"
+  },
+  "routines.runCalls.cut": {
+    "value": "Shortened"
+  },
+  "routines.runCalls.binary": {
+    "value": "Not text, not kept"
+  },
+  "routines.runCalls.copied": {
+    "value": "Call copied."
+  },
   "routines.webhook.when": {
     "value": "When its webhook is called"
   },
@@ -21066,10 +21081,19 @@
     "value": "On: only calls signed with the secret get through."
   },
   "routines.webhook.signedHelp": {
-    "value": "Send the HMAC-SHA256 of the body (of a GET call: its query string, without the ?) in X-Agentes-Signature (sha256=…). GitHub's X-Hub-Signature-256 works too."
+    "value": "Send the HMAC-SHA256 of the body (of a GET call: its query string, without the ?) in X-Agentes-Signature (sha256=…). GitHub's X-Hub-Signature-256 works too. For Linear, paste the signing secret Linear shows: its Linear-Signature is checked, and calls over a minute old are refused."
   },
   "routines.webhook.addSecret": {
     "value": "Require a signature"
+  },
+  "routines.webhook.pasteSecret": {
+    "value": "Use the service's secret"
+  },
+  "routines.webhook.pasteLabel": {
+    "value": "The service's signing secret"
+  },
+  "routines.webhook.secretPasted": {
+    "value": "Secret saved. Only calls signed with it get through."
   },
   "routines.webhook.newSecret": {
     "value": "New secret"

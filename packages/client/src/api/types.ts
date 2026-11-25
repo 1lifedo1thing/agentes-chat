@@ -4870,7 +4870,26 @@ export interface RoutineRun {
   link: { channelId: string; threadId: string | null; messageId: string } | null;
   /** Waiting for this approval ("Esperando sua aprovação"). */
   approvalId?: string | null;
+  /** A webhook routine's run: how many calls it carried (`routines.runCalls` reads them, for who manages it). */
+  calls?: number;
   finishedAt: string | null;
+}
+
+/** One call a webhook routine's run carried, as it was kept. */
+export interface RoutineRunCall {
+  /** Its number in the run, as its model read it ("call 2 of 5"). */
+  n: number;
+  at: string;
+  method: string;
+  /** The headers kept: its type, sender and event or delivery ids, never a signature. */
+  headers: Record<string, string>;
+  bytes: number;
+  /** Up to 16,000 characters: a longer JSON body has its longest strings shortened, any other is cut (`cut`). */
+  body: string;
+  cut: boolean;
+  /** Not text: nothing of its body was kept. */
+  binary: boolean;
+  test: boolean;
 }
 
 export interface RoutineInput {

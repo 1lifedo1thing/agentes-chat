@@ -455,14 +455,24 @@ describe("routine webhooks", () => {
     expect(await callsOf(routine.id)).toHaveLength(1);
   });
 
-  test("a copy gets an address of its own; old calls go after a day, each routine keeps its last 20", async () => {
+  test("a copy gets an address of its own; calls go after 30 days, each routine keeps its last 20", async () => {
     f = await setup();
     const routine = await webhookRoutine();
     const copy = await duplicateRoutine(deps(), f.owner.id, f.org.id, routine.id);
     const original = await urlOf(routine.id);
     expect(copy.trigger).toMatchObject({ type: "webhook", url: expect.stringContaining("/api/hooks/") });
     expect(copy.trigger.type === "webhook" && copy.trigger.url).not.toBe(original);
-    const old = new Date(Date.now() - 2 * 86_400_000);
+    // Two days old: kept, where they used to go after a day.
+    await f.db.insert(schema.routineHookCalls).values({
+      orgId: f.org.id,
+      routineId: routine.id,
+      outcome: "accepted",
+      status: 202,
+      createdAt: new Date(Date.now() - 2 * 86_400_000),
+    });
+    expect(await pruneRoutineHookCalls(f.db)).toBe(0);
+    await f.db.delete(schema.routineHookCalls);
+    const old = new Date(Date.now() - 31 * 86_400_000);
     await f.db.insert(schema.routineHookCalls).values(
       Array.from({ length: 25 }, (_, i) => ({
         orgId: f.org.id,

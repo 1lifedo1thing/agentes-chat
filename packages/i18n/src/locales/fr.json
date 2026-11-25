@@ -8965,6 +8965,13 @@
     "notFound": "Cette routine n'existe plus ou vous n'y avez pas accès.",
     "copyWebhook": "Copier l'URL du webhook",
     "webhookCopied": "URL du webhook copiée.",
+    "runCalls": {
+      "show": "Appels ({{n}})",
+      "hide": "Masquer les appels",
+      "cut": "Raccourci",
+      "binary": "Pas du texte, non conservé",
+      "copied": "Appel copié."
+    },
     "webhook": {
       "when": "Quand son webhook est appelé",
       "waiting": "Attend le prochain appel",
@@ -8990,8 +8997,11 @@
       "signature": "Signature",
       "signedOff": "Désactivée : l'agent reçoit tout appel à l'adresse.",
       "signedOn": "Activée : seuls les appels signés avec le secret passent.",
-      "signedHelp": "Envoyez le HMAC-SHA256 du corps (pour un appel GET : de sa query string, sans le ?) dans X-Agentes-Signature (sha256=…). Le X-Hub-Signature-256 de GitHub fonctionne aussi.",
+      "signedHelp": "Envoyez le HMAC-SHA256 du corps (pour un appel GET : de sa query string, sans le ?) dans X-Agentes-Signature (sha256=…). Le X-Hub-Signature-256 de GitHub fonctionne aussi. Pour Linear, collez le secret de signature affiché par Linear : son Linear-Signature est vérifié, et les appels de plus d'une minute sont refusés.",
       "addSecret": "Exiger une signature",
+      "pasteSecret": "Utiliser le secret du service",
+      "pasteLabel": "Secret de signature du service",
+      "secretPasted": "Secret enregistré. Seuls les appels signés avec lui passent.",
       "newSecret": "Nouveau secret",
       "newSecretTitle": "Créer un nouveau secret ?",
       "newSecretBody": "Le secret actuel cesse de fonctionner immédiatement. Les appels signés avec lui sont refusés tant que vous n'avez pas mis à jour les services qui appellent cette routine.",

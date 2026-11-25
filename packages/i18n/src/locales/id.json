@@ -8384,6 +8384,13 @@
     "notFound": "Rutinitas ini sudah tidak ada atau kamu tidak punya akses.",
     "copyWebhook": "Salin URL webhook",
     "webhookCopied": "URL webhook disalin.",
+    "runCalls": {
+      "show": "Panggilan ({{n}})",
+      "hide": "Sembunyikan panggilan",
+      "cut": "Dipersingkat",
+      "binary": "Bukan teks, tidak disimpan",
+      "copied": "Panggilan disalin."
+    },
     "webhook": {
       "when": "Saat webhook-nya dipanggil",
       "waiting": "Menunggu panggilan berikutnya",
@@ -8409,8 +8416,11 @@
       "signature": "Tanda tangan",
       "signedOff": "Mati: agen menerima semua panggilan ke alamat ini.",
       "signedOn": "Aktif: hanya panggilan yang ditandatangani dengan rahasia yang diterima.",
-      "signedHelp": "Kirim HMAC-SHA256 dari body (untuk panggilan GET: dari query string-nya, tanpa ?) di X-Agentes-Signature (sha256=…). X-Hub-Signature-256 dari GitHub juga bisa.",
+      "signedHelp": "Kirim HMAC-SHA256 dari body (untuk panggilan GET: dari query string-nya, tanpa ?) di X-Agentes-Signature (sha256=…). X-Hub-Signature-256 dari GitHub juga bisa. Untuk Linear, tempel secret penandatanganan yang ditampilkan Linear: Linear-Signature-nya diperiksa, dan panggilan yang lebih dari satu menit ditolak.",
       "addSecret": "Wajibkan tanda tangan",
+      "pasteSecret": "Pakai secret layanan",
+      "pasteLabel": "Secret penandatanganan layanan",
+      "secretPasted": "Secret disimpan. Hanya panggilan yang ditandatangani dengannya yang lolos.",
       "newSecret": "Rahasia baru",
       "newSecretTitle": "Buat rahasia baru?",
       "newSecretBody": "Rahasia saat ini langsung berhenti berfungsi. Panggilan yang ditandatangani dengannya ditolak sampai kamu memperbarui layanan yang memanggil rutinitas ini.",

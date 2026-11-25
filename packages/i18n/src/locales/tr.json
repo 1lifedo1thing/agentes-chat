@@ -8615,6 +8615,13 @@
     "notFound": "Bu rutin artık yok ya da erişiminiz yok.",
     "copyWebhook": "Webhook URL'sini kopyala",
     "webhookCopied": "Webhook URL'si kopyalandı.",
+    "runCalls": {
+      "show": "Çağrılar ({{n}})",
+      "hide": "Çağrıları gizle",
+      "cut": "Kısaltıldı",
+      "binary": "Metin değil, saklanmadı",
+      "copied": "Çağrı kopyalandı."
+    },
     "webhook": {
       "when": "Webhook'u çağrıldığında",
       "waiting": "Sonraki çağrıyı bekliyor",
@@ -8640,8 +8647,11 @@
       "signature": "İmza",
       "signedOff": "Kapalı: ajan, adrese yapılan her çağrıyı alır.",
       "signedOn": "Açık: yalnızca gizli anahtarla imzalanan çağrılar geçer.",
-      "signedHelp": "Gövdenin (GET çağrısında: ? olmadan sorgu dizesinin) HMAC-SHA256 değerini X-Agentes-Signature başlığında (sha256=…) gönderin. GitHub'ın X-Hub-Signature-256 başlığı da çalışır.",
+      "signedHelp": "Gövdenin (GET çağrısında: ? olmadan sorgu dizesinin) HMAC-SHA256 değerini X-Agentes-Signature başlığında (sha256=…) gönderin. GitHub'ın X-Hub-Signature-256 başlığı da çalışır. Linear için Linear'ın gösterdiği imzalama gizli anahtarını yapıştırın: Linear-Signature başlığı kontrol edilir ve bir dakikadan eski çağrılar reddedilir.",
       "addSecret": "İmza iste",
+      "pasteSecret": "Hizmetin gizli anahtarını kullan",
+      "pasteLabel": "Hizmetin imzalama gizli anahtarı",
+      "secretPasted": "Gizli anahtar kaydedildi. Yalnızca onunla imzalanan çağrılar geçer.",
       "newSecret": "Yeni gizli anahtar",
       "newSecretTitle": "Yeni bir gizli anahtar oluşturulsun mu?",
       "newSecretBody": "Mevcut gizli anahtar hemen çalışmayı bırakır. Bu rutini çağıran hizmetleri güncelleyene kadar onunla imzalanan çağrılar reddedilir.",

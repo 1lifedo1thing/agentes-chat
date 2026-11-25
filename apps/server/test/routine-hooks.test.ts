@@ -89,9 +89,20 @@ test("its address: POST only, 202 with the run; signed calls with a secret; a ne
 
   // The run goes through the outbox, after the answer.
   await t.drain();
-  const runs = (await (await api(`/routines/${routine.id}/runs`)).json()) as { runs: { status: string }[] };
+  const runs = (await (await api(`/routines/${routine.id}/runs`)).json()) as {
+    runs: { id: string; status: string; calls?: number }[];
+  };
   expect(runs.runs.length).toBeGreaterThan(0);
   expect(runs.runs.every((r) => r.status === "silent")).toBe(true);
+
+  // Its Runs tab reads each run's calls, as kept: the calls that came while it was queued joined it.
+  const calls = (await (await api(`/routines/${routine.id}/runs/${runId}/calls`)).json()) as {
+    calls: { body: string; headers: Record<string, string>; method: string }[];
+  };
+  expect(runs.runs.find((r) => r.id === runId)?.calls).toBe(calls.calls.length);
+  expect(calls.calls[0]).toEqual(
+    expect.objectContaining({ body, method: "POST", headers: expect.objectContaining({ "x-github-event": "push" }) }),
+  );
 });
 
 test("Linear's own secret, pasted: its Linear-Signature calls pass, others are refused", async () => {

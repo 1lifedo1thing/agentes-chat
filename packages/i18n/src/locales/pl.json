@@ -9249,6 +9249,13 @@
     "notFound": "Ta rutyna już nie istnieje albo nie masz do niej dostępu.",
     "copyWebhook": "Kopiuj URL webhooka",
     "webhookCopied": "URL webhooka skopiowany.",
+    "runCalls": {
+      "show": "Wywołania ({{n}})",
+      "hide": "Ukryj wywołania",
+      "cut": "Skrócone",
+      "binary": "To nie tekst, nie zachowano",
+      "copied": "Skopiowano wywołanie."
+    },
     "webhook": {
       "when": "Gdy jej webhook zostanie wywołany",
       "waiting": "Czeka na następne wywołanie",
@@ -9274,8 +9281,11 @@
       "signature": "Podpis",
       "signedOff": "Wyłączony: agent dostaje każde wywołanie adresu.",
       "signedOn": "Włączony: przechodzą tylko wywołania podpisane sekretem.",
-      "signedHelp": "Wyślij HMAC-SHA256 treści (przy wywołaniu GET: jego query stringa, bez ?) w nagłówku X-Agentes-Signature (sha256=…). X-Hub-Signature-256 z GitHuba też działa.",
+      "signedHelp": "Wyślij HMAC-SHA256 treści (przy wywołaniu GET: jego query stringa, bez ?) w nagłówku X-Agentes-Signature (sha256=…). X-Hub-Signature-256 z GitHuba też działa. W Linear wklej sekret podpisu, który pokazuje Linear: sprawdzany jest jego nagłówek Linear-Signature, a wywołania starsze niż minuta są odrzucane.",
       "addSecret": "Wymagaj podpisu",
+      "pasteSecret": "Użyj sekretu usługi",
+      "pasteLabel": "Sekret podpisu usługi",
+      "secretPasted": "Zapisano sekret. Przechodzą tylko wywołania nim podpisane.",
       "newSecret": "Nowy sekret",
       "newSecretTitle": "Utworzyć nowy sekret?",
       "newSecretBody": "Obecny sekret od razu przestanie działać. Podpisane nim wywołania będą odrzucane, dopóki nie zaktualizujesz usług, które wywołują tę rutynę.",

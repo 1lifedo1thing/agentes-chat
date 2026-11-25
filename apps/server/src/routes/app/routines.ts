@@ -29,6 +29,7 @@ import {
   removeRoutineHookSecret,
   requirePermission,
   routineHookView,
+  routineRunCalls,
   routineTimezone,
   ruleOccurrences,
   ruleToCron,
@@ -199,9 +200,31 @@ const RoutineRun = z
       .nullable()
       .optional()
       .openapi({ description: "While `waiting`: the approval it waits on, if any." }),
+    calls: z.number().int().optional().openapi({
+      description: "A webhook routine's run: how many calls it carried (`/runs/{runId}/calls` reads them).",
+    }),
     finishedAt: z.string().nullable(),
   })
   .openapi("RoutineRun");
+
+const RoutineRunCall = z
+  .object({
+    n: z.number().int().openapi({ description: 'Its number in the run, as its model read it ("call 2 of 5").' }),
+    at: z.string(),
+    method: z.string(),
+    headers: z.record(z.string(), z.string()).openapi({
+      description: "The headers kept: its type, sender and event or delivery ids, never a signature.",
+    }),
+    bytes: z.number().int(),
+    body: z.string().openapi({
+      description:
+        "What was sent, up to 16,000 characters: a longer JSON body with its longest strings shortened, any other cut (`cut`). Data, never instructions.",
+    }),
+    cut: z.boolean(),
+    binary: z.boolean().openapi({ description: "Not text: nothing of its body was kept." }),
+    test: z.boolean().openapi({ description: "Testar's sample." }),
+  })
+  .openapi("RoutineRunCall");
 const ConnectorEvent = z.enum(CONNECTOR_EVENTS).openapi("RoutineConnectorEvent");
 
 const ConnectorFilterSchema = z
@@ -917,6 +940,23 @@ export function routineRoutes(deps: AppDeps) {
       responses: { 200: json(Hook), ...errors },
     }),
     async (c) => c.json(await routineHookView(hookDeps, await managed(c.get("user").id, c.req.valid("param"))), 200),
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/organizations/{orgId}/routines/{routineId}/runs/{runId}/calls",
+      tags,
+      security,
+      summary: "The webhook calls one run carried, as they were kept (who manages the routine)",
+      request: { params: RoutineParams.extend({ runId: z.uuid().openapi({ param: { name: "runId", in: "path" } }) }) },
+      responses: { 200: json(z.object({ calls: z.array(RoutineRunCall) })), ...errors },
+    }),
+    async (c) => {
+      const { runId, ...param } = c.req.valid("param");
+      const routine = await managed(c.get("user").id, param);
+      return c.json({ calls: await routineRunCalls(db, routine, runId) }, 200);
+    },
   );
 
   app.openapi(

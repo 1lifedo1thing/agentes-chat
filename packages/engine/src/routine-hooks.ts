@@ -18,7 +18,7 @@ import { recordAudit } from "./audit";
 import { routineBriefOfRun } from "./background";
 import { connectorCallPasses, connectorTriggerAllowed, sourceOf } from "./connector-triggers";
 import { openSecret, randomToken, routineHookToken, sealSecret, sha256 } from "./crypto";
-import { ConflictError, TooManyError, ValidationError } from "./errors";
+import { ConflictError, NotFoundError, TooManyError, ValidationError } from "./errors";
 import { publishRoutineRuns } from "./events";
 import { cutText, shortenJson, textOfBytes, valueAtPath } from "./format";
 import { oneLine } from "./mail/text";
@@ -776,9 +776,12 @@ export async function releaseHookCalls(
   return back.length;
 }
 
-/** Calls older than a day go (their idempotency is over), except the last ones each routine's page lists. */
+/** How long a call's line stays in its routine's call log (its body stays with its run, `routineRunCalls`). */
+export const HOOK_CALLS_KEEP_MS = 30 * 86_400_000;
+
+/** Calls older than `HOOK_CALLS_KEEP_MS` go, except the last ones each routine's page lists. */
 export async function pruneRoutineHookCalls(db: Database, now = new Date()) {
-  const before = new Date(now.getTime() - HOOK_IDEMPOTENCY_MS).toISOString();
+  const before = new Date(now.getTime() - HOOK_CALLS_KEEP_MS).toISOString();
   const rows = await db.execute(sql`
     delete from ${routineHookCalls} where ${routineHookCalls.id} in (
       select id from (
@@ -850,3 +853,49 @@ export function createWebhookCallToolSource(): ToolSource {
     tools: async (ctx) => (ctx.background && (await callsOfRun(ctx).catch(() => null)) ? [tool] : []),
   };
 }
+
+/** One call a webhook routine's run carried, as kept: what its Runs tab shows to who manages the routine. */
+export interface RoutineRunCallView {
+  /** Its number in the run, as its model read it ("call 2 of 5"). */
+  n: number;
+  at: string;
+  method: string;
+  headers: Record<string, string>;
+  bytes: number;
+  /** Up to `BODY_CHARS` of it: a longer JSON body with its longest strings shortened (`cut`). */
+  body: string;
+  cut: boolean;
+  /** Not text: nothing of its body was kept. */
+  binary: boolean;
+  test: boolean;
+}
+
+/** The calls one run of this routine carried, oldest first (none for a run that wasn't a webhook's). */
+export async function routineRunCalls(
+  db: Executor,
+  routine: { id: string; orgId: string },
+  runId: string,
+): Promise<RoutineRunCallView[]> {
+  const [run] = await db
+    .select({ event: routineRuns.event })
+    .from(routineRuns)
+    .where(and(eq(routineRuns.id, runId), eq(routineRuns.routineId, routine.id), eq(routineRuns.orgId, routine.orgId)));
+  if (!run) throw new NotFoundError("Run not found", "routine.run_not_found");
+  return run.event?.type === WEBHOOK_EVENT
+    ? callsOf(run.event).map((c, i) => ({
+        n: i + 1,
+        at: c.at,
+        method: c.method ?? "POST",
+        headers: c.headers,
+        bytes: c.bytes,
+        body: c.body,
+        cut: c.cut === true,
+        binary: c.binary === true,
+        test: c.test === true,
+      }))
+    : [];
+}
+
+/** How many calls a run carried; null for a run that wasn't a webhook's. */
+export const callCountOf = (event: Record<string, unknown> | null | undefined) =>
+  event?.type === WEBHOOK_EVENT ? callsOf(event).length : null;

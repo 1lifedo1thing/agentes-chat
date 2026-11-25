@@ -9206,6 +9206,15 @@ export const en = {
     notFound: "This routine no longer exists or you don't have access.",
     copyWebhook: "Copy webhook URL",
     webhookCopied: "Webhook URL copied.",
+    /** On a webhook routine's run in Runs, for who manages it: what each call sent, as kept. */
+    runCalls: {
+      /** `n`: how many calls the run carried. */
+      show: "Calls ({{n}})",
+      hide: "Hide calls",
+      cut: "Shortened",
+      binary: "Not text, not kept",
+      copied: "Call copied.",
+    },
     webhook: {
       when: "When its webhook is called",
       waiting: "Waits for the next call",
@@ -9240,8 +9249,12 @@ export const en = {
       signedOff: "Off: the agent gets any call to the address.",
       signedOn: "On: only calls signed with the secret get through.",
       signedHelp:
-        "Send the HMAC-SHA256 of the body (of a GET call: its query string, without the ?) in X-Agentes-Signature (sha256=…). GitHub's X-Hub-Signature-256 works too.",
+        "Send the HMAC-SHA256 of the body (of a GET call: its query string, without the ?) in X-Agentes-Signature (sha256=…). GitHub's X-Hub-Signature-256 works too. For Linear, paste the signing secret Linear shows: its Linear-Signature is checked, and calls over a minute old are refused.",
       addSecret: "Require a signature",
+      /** For a service that makes its own signing secret (Linear): the person pastes it in place of ours. */
+      pasteSecret: "Use the service's secret",
+      pasteLabel: "The service's signing secret",
+      secretPasted: "Secret saved. Only calls signed with it get through.",
       newSecret: "New secret",
       newSecretTitle: "Make a new secret?",
       newSecretBody:
