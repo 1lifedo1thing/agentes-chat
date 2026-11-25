@@ -2070,18 +2070,16 @@ async function executeRunInner(
     const ai = await agentAiState({ db, gateway: deps.gateway, machines: deps.machines }, agent, run);
     if (ai.state === "no_ai") return failNoAi(ai.reason ?? "no_key", ai.own, undefined, undefined, ai);
     prof.part("ai_state");
-    // Somebody waits on a conversation's run: its CLI starts while the turn is built. Not for a routine's or
-    // background work, which nobody waits on.
-    if (
-      fresh &&
-      !run.background &&
-      !isRightHand(agent) &&
-      brainOf(agent.brain) === "claude_code" &&
-      !runMessageMeta(run, trigger).viaRoutine
-    ) {
-      void warmAtClaim(deps, agent, run, replyThreadId ?? run.channelId, ctx.codeSession ?? null).catch(() => {});
-    }
   }
+  // Somebody waits on a conversation's run: its CLI starts while the turn is built. Not for a routine's or
+  // background work, which nobody waits on.
+  const warmsAtClaim =
+    needsContext &&
+    fresh &&
+    !run.background &&
+    !isRightHand(agent) &&
+    brainOf(agent.brain) === "claude_code" &&
+    !runMessageMeta(run, trigger).viaRoutine;
   if (!askingForRoom) await publishChannelEvent(deps.pubsub, event("running"));
   // Tools on demand (ADR 0043): a new run lists the core tools and the groups the judge expects it to need.
   let toolChoice = null as ToolGroupChoice | null;
@@ -2146,6 +2144,12 @@ async function executeRunInner(
       .then(async (choice) => keptAutoChoice(choice, await previousHere()));
   };
   const autoAsked = autoEarly ? askAuto() : null;
+  if (warmsAtClaim) {
+    const guess = previousHere().then((previous) => keptAutoChoice(fallbackChoice("none"), previous));
+    void warmAtClaim(deps, agent, run, replyThreadId ?? run.channelId, ctx.codeSession ?? null, guess, autoAsked).catch(
+      () => {},
+    );
+  }
   // The judge's answer is awaited where the tools are needed: the context is read meanwhile (`CONTEXT_TOOLS`).
   const judging: Promise<void> | null =
     groupsJudged && judge
@@ -6878,9 +6882,10 @@ async function executeRunInner(
 
 /**
  * A conversation's run that will think with Claude Code: its computer starts the session's CLI now, while the
- * context, the judges and the computer's line run (`Brain.warm`). The plan is the one the run will most likely get:
- * its session picked without the prompt key (nothing kept on the run), "Automático" at the medium tier it falls back
- * to. A different launch at the turn only costs that start.
+ * context, the judges and the computer's line run (`Brain.warm`). Its session is picked without the prompt key
+ * (nothing kept on the run). With "Automático" it starts on `guess` (the conversation's kept choice, else the medium
+ * tier) and, once the run's own choice (`chosen`) gives another model or effort, warms again with that: the runner
+ * replaces a process no turn used yet, so the turn finds the one it would start.
  */
 async function warmAtClaim(
   deps: EngineDeps,
@@ -6888,34 +6893,50 @@ async function warmAtClaim(
   run: AgentRun,
   conversation: string,
   codeSession: CodeSessionContext | null,
+  guess: Promise<AutoChoice>,
+  chosen: Promise<AutoChoice> | null,
 ) {
   const factory = deps.brains?.claude_code;
   if (!factory) return;
-  let plan = await resolveBrain(deps, agent, run, conversation, { peek: true, codeSession });
-  if (plan.kind !== "claude_code" || plan.unavailable || !plan.session) return;
-  if (needsAutoChoice(agent, plan)) {
+  const base = await resolveBrain(deps, agent, run, conversation, { peek: true, codeSession });
+  if (base.kind !== "claude_code" || base.unavailable || !base.session) return;
+  const session = base.session;
+  const brain = factory(agent, run, { mcpToken: () => "" });
+  const planFor = (choice: AutoChoice) => {
+    if (!needsAutoChoice(agent, base)) return base;
     // As the turn does: a pinned model stays, only "Automático" gives way to a held plan model's stand-in.
-    const autoBrain = isAutoModel(plan.model);
-    plan = withAuto(agent, plan, autoApplied(agent, plan, fallbackChoice("none"), "anthropic")).plan;
-    const model = autoBrain ? autoPlanModel(plan.account?.provider, plan.model, plan.usage) : undefined;
-    if (model) plan = { ...plan, model };
-  }
-  await factory(agent, run, { mcpToken: () => "" }).warm?.({
-    runId: run.id,
-    orgId: run.orgId,
-    agentId: run.agentId,
-    channelId: run.channelId,
-    threadRootId: run.threadRootId,
-    system: "",
-    messages: [],
-    tools: [],
-    trigger: "",
-    session: plan.session,
-    ...(plan.model ? { model: plan.model } : {}),
-    ...(plan.account ? { account: plan.account } : {}),
-    ...(plan.effort ? { effort: plan.effort } : {}),
-    ...(agent.contextTokens ? { contextTokens: agent.contextTokens } : {}),
-  });
+    const plan = withAuto(agent, base, autoApplied(agent, base, choice, "anthropic")).plan;
+    const model = isAutoModel(base.model) ? autoPlanModel(plan.account?.provider, plan.model, plan.usage) : undefined;
+    return model ? { ...plan, model } : plan;
+  };
+  const warm = (plan: BrainPlan) =>
+    brain.warm?.({
+      runId: run.id,
+      orgId: run.orgId,
+      agentId: run.agentId,
+      channelId: run.channelId,
+      threadRootId: run.threadRootId,
+      system: "",
+      messages: [],
+      tools: [],
+      trigger: "",
+      session,
+      ...(plan.model ? { model: plan.model } : {}),
+      ...(plan.account ? { account: plan.account } : {}),
+      ...(plan.effort ? { effort: plan.effort } : {}),
+      ...(agent.contextTokens ? { contextTokens: agent.contextTokens } : {}),
+    });
+  const first = planFor(await guess);
+  const again = needsAutoChoice(agent, base) && chosen;
+  await Promise.all([
+    warm(first),
+    again
+      ? again.then((choice) => {
+          const plan = planFor(choice);
+          return plan.model !== first.model || plan.effort !== first.effort ? warm(plan) : undefined;
+        })
+      : undefined,
+  ]);
 }
 
 /** Builds the brain of this kind (`resolveBrain` picks it): a registered factory, else the built-in model brain. */
