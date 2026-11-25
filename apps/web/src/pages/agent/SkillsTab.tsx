@@ -88,7 +88,7 @@ export function SkillsCard() {
         </span>
         <span className="ac-mediarow__meta">{sub}</span>
       </span>
-      <span className="ac-mediarow__end">{end}</span>
+      <span className="ac-mediarow__end ac-mediarow__end--wrap">{end}</span>
     </li>
   );
 

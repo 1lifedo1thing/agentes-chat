@@ -253,7 +253,7 @@ export function SkillPage({ id }: { id: string }) {
         ? messagePath(org.id, { id: u.messageId, channelId: u.channelId, threadId: u.threadId })
         : null;
     return (
-      <li key={`${u.at}-${i}`} className="sk-line">
+      <li key={`${u.at}-${i}`} className="sk-line ac-iconline">
         <AgentAvatar agentId={u.agentId} name={agent} size="sm" />
         <span className="sk-line__text">
           {to ? (
@@ -317,88 +317,93 @@ export function SkillPage({ id }: { id: string }) {
   return (
     <div className="page page--full sk-one">
       {back}
-      <header className="sk-one__head">
+      {/* The title's capitals at the tile's top; the actions on its line while they fit, else under it. */}
+      <header className="sk-one__head ac-faceline">
         <SkillMark skill={s} size="xl" />
-        <div className="sk-one__titles">
-          <h1>{title}</h1>
-          <SkillAbout s={s} title={title} />
-        </div>
-        <div className="sk-one__acts">
-          {(manages || can(org, "manage_agents")) && (
-            <Button onClick={() => setWho(agentIds)}>{t("skills.one.teachOther")}</Button>
-          )}
-          <Menu
-            align="end"
-            label={t("agent.moreActions")}
-            trigger={<Button iconOnly icon="more" aria-label={t("agent.moreActions")} />}
-          >
-            {manages && (
-              <>
-                <MenuItem icon="edit" onSelect={() => setEditing(true)}>
-                  {t("skills.one.editText")}
-                </MenuItem>
-                <MenuItem icon="page" onSelect={() => setNaming(title)}>
-                  {t("skills.one.rename")}
-                </MenuItem>
-                {fromLink && (
-                  <>
-                    <MenuItem icon="refresh" onSelect={updateFromLink}>
-                      {t("skills.refresh")}
-                    </MenuItem>
+        <div className="sk-one__main ac-actline">
+          <div className="sk-one__titles">
+            <h1 className="ac-captop">{title}</h1>
+            <SkillAbout s={s} title={title} />
+          </div>
+          <div className="sk-one__acts ac-captop">
+            {(manages || can(org, "manage_agents")) && (
+              <Button onClick={() => setWho(agentIds)}>{t("skills.one.teachOther")}</Button>
+            )}
+            <Menu
+              align="end"
+              label={t("agent.moreActions")}
+              trigger={<Button iconOnly icon="more" aria-label={t("agent.moreActions")} />}
+            >
+              {manages && (
+                <>
+                  <MenuItem icon="edit" onSelect={() => setEditing(true)}>
+                    {t("skills.one.editText")}
+                  </MenuItem>
+                  <MenuItem icon="page" onSelect={() => setNaming(title)}>
+                    {t("skills.one.rename")}
+                  </MenuItem>
+                  {fromLink && (
+                    <>
+                      <MenuItem icon="refresh" onSelect={updateFromLink}>
+                        {t("skills.refresh")}
+                      </MenuItem>
+                      <MenuCheckboxItem
+                        icon="clock"
+                        checked={s.autoUpdate ?? false}
+                        onCheckedChange={(on) => action.mutate({ type: "update", id: s.id, patch: { autoUpdate: on } })}
+                      >
+                        {t("skills.autoUpdate")}
+                      </MenuCheckboxItem>
+                    </>
+                  )}
+                  {!s.ownerUserId && (
                     <MenuCheckboxItem
-                      icon="clock"
-                      checked={s.autoUpdate ?? false}
-                      onCheckedChange={(on) => action.mutate({ type: "update", id: s.id, patch: { autoUpdate: on } })}
+                      icon="personAdd"
+                      checked={s.defaultForNewAgents}
+                      onCheckedChange={(on) =>
+                        action.mutate({ type: "update", id: s.id, patch: { defaultForNewAgents: on } })
+                      }
                     >
-                      {t("skills.autoUpdate")}
+                      {t("skills.defaultForNew")}
                     </MenuCheckboxItem>
-                  </>
-                )}
-                {!s.ownerUserId && (
-                  <MenuCheckboxItem
-                    icon="personAdd"
-                    checked={s.defaultForNewAgents}
-                    onCheckedChange={(on) =>
-                      action.mutate({ type: "update", id: s.id, patch: { defaultForNewAgents: on } })
-                    }
-                  >
-                    {t("skills.defaultForNew")}
-                  </MenuCheckboxItem>
-                )}
-                {can(org, "manage_agents") && (
-                  <MenuCheckboxItem
-                    icon="bulb"
-                    checked={s.agentsImprove ?? settings.data?.agentsImprove ?? true}
-                    onCheckedChange={(on) => action.mutate({ type: "update", id: s.id, patch: { agentsImprove: on } })}
-                  >
-                    {t("skills.agentsImproveThis")}
-                  </MenuCheckboxItem>
-                )}
-              </>
-            )}
-            {api.skills.zipUrl && (
-              <MenuItem
-                icon="download"
-                onSelect={() => window.location.assign(api.skills.zipUrl?.(org.id, s.id) ?? "")}
-              >
-                {t("skills.one.download")}
-              </MenuItem>
-            )}
-            {manages && (
-              <>
-                <MenuSeparator />
-                <MenuItem icon="trash" danger onSelect={() => setRemoving(true)}>
-                  {t("skills.remove")}
+                  )}
+                  {can(org, "manage_agents") && (
+                    <MenuCheckboxItem
+                      icon="bulb"
+                      checked={s.agentsImprove ?? settings.data?.agentsImprove ?? true}
+                      onCheckedChange={(on) =>
+                        action.mutate({ type: "update", id: s.id, patch: { agentsImprove: on } })
+                      }
+                    >
+                      {t("skills.agentsImproveThis")}
+                    </MenuCheckboxItem>
+                  )}
+                </>
+              )}
+              {api.skills.zipUrl && (
+                <MenuItem
+                  icon="download"
+                  onSelect={() => window.location.assign(api.skills.zipUrl?.(org.id, s.id) ?? "")}
+                >
+                  {t("skills.one.download")}
                 </MenuItem>
-              </>
-            )}
-          </Menu>
+              )}
+              {manages && (
+                <>
+                  <MenuSeparator />
+                  <MenuItem icon="trash" danger onSelect={() => setRemoving(true)}>
+                    {t("skills.remove")}
+                  </MenuItem>
+                </>
+              )}
+            </Menu>
+          </div>
         </div>
       </header>
 
       {manages && waiting && (
         <section className="sk-choice" aria-label={t("skills.waitingChip")}>
-          <div className="sk-choice__line">
+          <div className="sk-choice__line ac-actline">
             <span className="sk-choice__text ac-iconline">
               <Icon name="alert" size={16} />
               <span>
@@ -406,12 +411,14 @@ export function SkillPage({ id }: { id: string }) {
                 <small>{[by && `${by}.`, waiting.lead].filter(Boolean).join(" ")}</small>
               </span>
             </span>
-            <Button disabled={action.isPending} onClick={() => choose(false)}>
-              {waiting.keep}
-            </Button>
-            <Button disabled={action.isPending} onClick={() => choose(true)}>
-              {waiting.apply}
-            </Button>
+            <div className="sk-choice__acts">
+              <Button disabled={action.isPending} onClick={() => choose(false)}>
+                {waiting.keep}
+              </Button>
+              <Button disabled={action.isPending} onClick={() => choose(true)}>
+                {waiting.apply}
+              </Button>
+            </div>
           </div>
           {s.pendingUpdate?.edited && agentsView && linkView ? (
             <div className="sk-choice__two">
@@ -579,7 +586,7 @@ export function SkillPage({ id }: { id: string }) {
             {history.length > 0 ? (
               <ul className="sk-lines">
                 {history.map((e) => (
-                  <li key={e.id} className="sk-line" data-undone={e.undone || undefined}>
+                  <li key={e.id} className="sk-line ac-iconline" data-undone={e.undone || undefined}>
                     {byFace(e)}
                     <span className="sk-line__text">
                       <b>{eventText(e)}</b>

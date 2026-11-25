@@ -262,12 +262,14 @@ export function TeachSkillDialog({
                 <span>{t("skills.teach.wrote")}</span>
               </p>
               <div className="sk-teach__draft">
-                <div className="sk-teach__head">
-                  <SkillMark skill={draft} />
-                  <span>
-                    <h3>{draft.title}</h3>
-                    <p className="muted">{draft.summary}</p>
+                <div className="sk-teach__head ac-mediarow">
+                  <span className="ac-mediarow__face">
+                    <SkillMark skill={draft} />
                   </span>
+                  <span className="ac-mediarow__head">
+                    <h3>{draft.title}</h3>
+                  </span>
+                  <p className="ac-mediarow__body muted">{draft.summary}</p>
                 </div>
                 <h4 className="ac-eyebrow">{t("skills.one.how")}</h4>
                 <div className="sk-teach__body">

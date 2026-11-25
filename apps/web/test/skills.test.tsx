@@ -56,7 +56,7 @@ const list = () => within(skillsPage()).getByRole("list", { name: "Skills" });
 /** The list's lines, by the name each shows (a skill's, or its repository's). */
 const shown = () =>
   [...list().querySelectorAll(":scope > .sk-row:not([data-in-group])")].map(
-    (r) => r.querySelector(".sk-row__link")?.textContent,
+    (r) => r.querySelector(".sk-row__name > :first-child")?.textContent,
   );
 const row = (name: string) => within(list()).getByRole("link", { name }).closest(".sk-row") as HTMLElement;
 /** "Have a skill ready? Bring it from a GitHub link or upload a .zip", under the list. */

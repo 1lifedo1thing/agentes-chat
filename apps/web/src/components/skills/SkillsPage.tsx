@@ -150,7 +150,7 @@ export function SkillsPage({
     if (s.ownerUserId)
       return (
         <span className="sk-by">
-          <Icon name="lock" size={14} />
+          ·{" "}
           {s.ownerUserId === me.user.id
             ? t("skills.page.onlyYours")
             : t("skills.personal.of", { name: personName(s.ownerUserId) })}
@@ -168,7 +168,7 @@ export function SkillsPage({
       <li key={s.id} className="sk-row" data-for={forAgent ? true : undefined} data-in-group={inGroup || undefined}>
         <SkillMark skill={s} />
         <span className="sk-row__text">
-          <span className="sk-row__name">
+          <span className="sk-row__name ac-captop">
             {others ? (
               <b>{skillTitle(s)}</b>
             ) : (
@@ -226,22 +226,8 @@ export function SkillsPage({
           <Icon name="repo" size={20} />
         </span>
         <span className="sk-row__text">
-          <span className="sk-row__name">
-            <button
-              type="button"
-              className="sk-row__link sk-group__toggle"
-              aria-expanded={open}
-              onClick={() =>
-                setOpened((o) => {
-                  const next = new Set(o);
-                  if (open) next.delete(repo);
-                  else next.add(repo);
-                  return next;
-                })
-              }
-            >
-              {repo}
-            </button>
+          <span className="sk-row__name ac-captop">
+            <b>{repo}</b>
             <span className="sk-by">· {t("skills.page.inRepo", { count: skills.length })}</span>
           </span>
           <small>{skills.map(skillTitle).join(", ")}</small>
@@ -252,8 +238,25 @@ export function SkillsPage({
             {uses > 0 ? uses : "—"}
           </span>
         )}
+        {/* Opens the repository's skills: the chevron, and the whole row through it. */}
         <span className="sk-row__end">
-          <Icon name={open ? "chevronUp" : "chevronDown"} size={16} />
+          <Button
+            size="sm"
+            variant="ghost"
+            iconOnly
+            icon={open ? "chevronUp" : "chevronDown"}
+            className="sk-group__toggle"
+            aria-label={repo}
+            aria-expanded={open}
+            onClick={() =>
+              setOpened((o) => {
+                const next = new Set(o);
+                if (open) next.delete(repo);
+                else next.add(repo);
+                return next;
+              })
+            }
+          />
         </span>
       </li>,
       ...(open ? skills.map((s) => row(s, true)) : []),
@@ -318,7 +321,6 @@ export function SkillsPage({
             <span className="sk-for">
               <span className="small muted">{t("skills.page.for")}</span>
               <Select
-                size="sm"
                 aria-label={t("skills.page.for")}
                 value={forAgent?.id ?? ""}
                 onValueChange={(id) =>
@@ -328,7 +330,6 @@ export function SkillsPage({
               />
             </span>
             <SearchField
-              size="sm"
               className="sk-search"
               aria-label={t("skills.search")}
               placeholder={t("skills.search")}
