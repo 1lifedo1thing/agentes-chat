@@ -1228,7 +1228,7 @@
         "fileLead": "Die Datei aus jeder App, die wir kennen. Sie wird von selbst erkannt.",
         "paths": {
           "lead": "Wähle, wie du sie holst. Du prüfst alles, bevor etwas angelegt wird.",
-          "best": "am vollständigsten",
+          "best": "Am vollständigsten",
           "safe": "Schlüssel, Passwörter und Sitzungen aus {{app}} kommen nie mit, egal auf welchem Weg.",
           "command": {
             "title": "Mit einem Befehl",

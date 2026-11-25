@@ -1228,7 +1228,7 @@
         "fileLead": "Het bestand uit elke app die we kennen. Het wordt vanzelf herkend.",
         "paths": {
           "lead": "Kies hoe je ze ophaalt. Je controleert alles voordat er iets wordt aangemaakt.",
-          "best": "het meest volledig",
+          "best": "Het meest volledig",
           "safe": "Sleutels, wachtwoorden en sessies uit {{app}} komen nooit mee, welke weg je ook kiest.",
           "command": {
             "title": "Met een opdracht",

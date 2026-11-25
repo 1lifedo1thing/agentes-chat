@@ -489,10 +489,6 @@
   margin-inline-start: auto;
   font-size: 13.5px;
 }
-/* A plan that asks for one login per agent there: said at its card's end, quietly. */
-.arrival-opts__tag--quiet {
-  color: var(--ink-muted);
-}
 /* Whom of them: one row each, a long name whole (it wraps, never cut; ADR 0160 addendum) with the box and the face on
    its first line. No box of its own: the dialog's body scrolls it, only when the window can't hold it, the foot in
    sight. */
@@ -939,41 +935,6 @@ html:not([data-pointer]) .arrival-have__link:focus-visible {
   font-size: 17px;
   font-weight: 600;
   line-height: 24px;
-}
-/*
- * A tile beside a title and its one line: the two lines as a block on the tile's middle, and what ends the card (the
- * chevron, "No subscription") on the same middle, so the three share one centre. Each card holds only these, never a
- * list ("Another plan" opens into cards of their own).
- */
-.arrival-opts .ac-option {
-  align-items: center;
-  width: 100%;
-}
-.arrival-opts .ac-option > .ac-option__text {
-  flex: 1;
-}
-/* One line under each title, so every card is the same height: a long list of plans ends in an ellipsis. */
-.arrival-opts .ac-option__text {
-  min-width: 0;
-}
-.arrival-opts .ac-option__desc {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-/* What ends a card stays on its middle, beside both lines. */
-.arrival-opts__end {
-  flex: none;
-  align-self: center;
-  color: var(--faint);
-}
-.arrival-opts__tag {
-  flex: none;
-  align-self: center;
-  color: var(--ok);
-  font-size: 12.5px;
-  font-weight: 600;
-  white-space: nowrap;
 }
 .arrival-opts__tile {
   display: grid;

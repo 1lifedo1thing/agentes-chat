@@ -1257,7 +1257,7 @@
         "fileLead": "Il file di qualsiasi app che conosciamo. Viene riconosciuto da solo.",
         "paths": {
           "lead": "Scegli come portarli. Controlli tutto prima che venga creato qualcosa.",
-          "best": "il più completo",
+          "best": "Il più completo",
           "safe": "Chiavi, password e sessioni di {{app}} non arrivano mai, in nessun modo.",
           "command": {
             "title": "Con un comando",

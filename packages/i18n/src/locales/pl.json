@@ -1285,7 +1285,7 @@
         "fileLead": "Plik z dowolnej znanej nam aplikacji. Zostanie rozpoznany automatycznie.",
         "paths": {
           "lead": "Wybierz, jak je przenieść. Sprawdzisz wszystko, zanim cokolwiek powstanie.",
-          "best": "najpełniejszy",
+          "best": "Najpełniejszy",
           "safe": "Klucze, hasła i sesje z {{app}} nigdy nie są przenoszone, żadną drogą.",
           "command": {
             "title": "Poleceniem",
