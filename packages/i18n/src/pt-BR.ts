@@ -730,6 +730,8 @@ export const ptBR = {
       confirmNo: "Não fui eu",
       done: "Tudo certo.",
       doneLead: "Você entrou no app agentes. Pode fechar esta aba.",
+      back: "Voltando para o app.",
+      openApp: "Abrir o app",
       expired: "Esse pedido expirou.",
       expiredLead: "Volte ao app e escolha {{provider}} de novo.",
       handover: "Entrando com a sua conta do outro aparelho…",
@@ -1276,7 +1278,7 @@ export const ptBR = {
         fileLead: "O arquivo de qualquer app que a gente conhece. Ele é reconhecido sozinho.",
         paths: {
           lead: "Escolha como trazer. Você confere tudo antes de criar.",
-          best: "o mais completo",
+          best: "O mais completo",
           safe: "Chaves, senhas e sessões do {{app}} nunca vêm, por nenhum caminho.",
           command: {
             title: "Com um comando",
@@ -4607,6 +4609,8 @@ export const ptBR = {
     available: "Disponível",
     working: "Trabalhando",
     waiting: "Esperando você",
+    /** An agent idle a while (server `away`): never a person's "away", which reads as gone, nor asleep. */
+    idle: "Inativo",
     lower: {
       online: "online",
       away: "ausente",
@@ -4778,6 +4782,7 @@ export const ptBR = {
     limit: "Seguiu na conta <to/> porque a conta <from/> chegou ao limite",
     line: "Seguiu na conta <to/> porque a conta <from/> está perto do limite",
     extra: "Seguiu na conta <to/> porque a conta <from/> entraria no uso extra pago",
+    busy: "Seguiu na conta <to/> porque a conta <from/> já estava respondendo o máximo de conversas ao mesmo tempo",
   },
   channelRefs: {
     list: "Canais",
@@ -13096,7 +13101,7 @@ export const ptBR = {
     /** The viewer's own computers that may take their replies while this one is full (`machines.spill_own`). */
     spill: {
       title: "Seus computadores",
-      text: "Quando este computador estiver cheio, as respostas para você podem começar num computador seu. Trabalhos longos e os arquivos dos agentes continuam aqui.",
+      text: "Quando este computador estiver cheio ou fora, seus agentes podem começar num computador seu. Missões, sessões de código e agentes com repositórios continuam aqui.",
       /** The viewer's own sign-in there, "Claude Max". */
       plan: "seu plano {{plan}}",
     },
@@ -16493,7 +16498,7 @@ export const ptBR = {
     device: {
       notLinkMaker: "Só quem gerou o link pode deixar este computador entrar.",
       widenForbidden: "Admins só podem restringir quem usa o dispositivo de outra pessoa.",
-      spillOwnerOnly: "Só quem conectou este computador pode deixar respostas pensarem nele. Você pode desligar.",
+      spillOwnerOnly: "Só quem conectou este computador pode ligar a ajuda dele. Você pode desligar.",
       shareOwnerOnly:
         "Só quem conectou este computador pode deixar os agentes usarem a internet dele. Você pode desligar.",
       shareConnectedOnly: "Só um computador que alguém conectou pode compartilhar a internet com os agentes.",
@@ -16668,6 +16673,11 @@ export const ptBR = {
       via: "Agentes usam a internet de {{name}}",
       viaBy: "Agentes usam a internet de {{name}} ({{person}})",
       viaHint: "Os sites veem a localização desse computador. Quem o conectou pode desligar na página dele.",
+    },
+    moving: {
+      short: "Mudando de servidor",
+      line: "Mudando de servidor… volta em alguns minutos",
+      named: "{{computer}} está mudando de servidor… volta em alguns minutos",
     },
     online: "Online",
     offline: "Offline",
@@ -16927,11 +16937,15 @@ export const ptBR = {
       "Mais tarefas ao mesmo tempo: só 0,5 GB de memória fica livre e o processador ocupado não as segura. Os seus apps podem ficar lentos.",
     belongs: "Pertence ao workspace",
     belongsHint: "Ele fica quando quem o conectou sai, e todos podem usá-lo enquanto ninguém for dono dele.",
-    spillOwn: "Suas respostas podem pensar aqui",
-    spillOwnHint: "Quando o computador de um agente estiver cheio, as respostas dele para você começam aqui.",
-    spillOthers: "Agentes de outras pessoas podem pensar aqui",
-    spillOthersHint:
-      "Quando o computador de um agente estiver cheio, as respostas dele para outras pessoas também podem começar aqui.",
+    spillOwn: "Ajudar quando o computador da equipe estiver cheio ou fora",
+    spillOwnHint:
+      "Quando o computador dos seus agentes estiver cheio ou fora, as respostas, os pedidos e as rotinas deles podem pensar aqui com o seu login.",
+    spillTeamHint:
+      "Quando o computador de um agente estiver cheio ou fora, as respostas, os pedidos e as rotinas dele podem pensar aqui com o login do dono dele neste computador.",
+    spillWorkspaceOff: "Um admin desativou isso para o workspace.",
+    helpWorkspace: "Computadores ajudam quando o da equipe estiver cheio ou fora",
+    helpWorkspaceHint:
+      "Cada computador só ajuda se o dono permitir. Com isto desativado, nenhum ajuda, seja qual for a escolha do dono.",
     shareInternet: "Agentes usam a internet deste computador",
     shareInternetHint:
       "Os sites que os agentes abrem passam pela conexão deste computador, então veem a sua localização. Só sites, até 5 GB por dia, e nunca nada da sua própria rede. Enquanto este computador estiver offline, os agentes usam a conexão de sempre.",
@@ -18943,6 +18957,11 @@ export const ptBR = {
       cant: "Respondi com {{via}}: {{plan}} não consegue pensar agora.",
       change: "Trocar",
     },
+    spilled: {
+      full: "Pensou em {{to}}: {{from}} estava cheio.",
+      away: "Pensou em {{to}}: {{from}} estava fora.",
+      itsComputer: "o computador dele",
+    },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
       text: "O {{plan}} recusou o {{from}} com esta chave. Respondi com o {{to}}, que funciona nela.",
@@ -18963,6 +18982,13 @@ export const ptBR = {
       held: "Esperando aprovação…",
       /** The agent's own words for its step (what it wrote before the call), quoted. */
       said: "“{{text}}”",
+    },
+    /** Under an agent at work, the last row of the conversation: what it did so far, a few lines, older ones as "+N". */
+    trail: {
+      label: "O que o {{name}} fez até agora",
+      label_female: "O que a {{name}} fez até agora",
+      earlier_one: "{{count}} passo antes",
+      earlier_other: "{{count}} passos antes",
     },
     /** The working line while an agent asks another one (names come in bold). */
     consult: {
@@ -21169,6 +21195,7 @@ export const ptBR = {
       offline: "O {{computer}} está offline",
       offlineHelpPlain: "O {{name}} espera o computador voltar.",
       offlineHelpPlain_female: "A {{name}} espera o computador voltar.",
+      helping: "Enquanto isso, o trabalho novo pode pensar em {{names}}.",
       noRoom: "O {{computer}} já mostra o máximo de telas que consegue. Tente de novo daqui a pouco.",
       unavailable: "A tela do {{name}} não pode ser mostrada agora",
       unavailable_female: "A tela da {{name}} não pode ser mostrada agora",

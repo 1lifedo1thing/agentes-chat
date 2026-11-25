@@ -740,6 +740,10 @@ export const en = {
       confirmNo: "This wasn't me",
       done: "All set.",
       doneLead: "You're signed in to the agentes app. You can close this tab.",
+      /** Under "All set." once the browser hands the person back to the desktop app (and alone after a connector's sign-in). */
+      back: "Going back to the app.",
+      /** The button that opens the desktop app when the browser didn't, or the person dismissed its question. */
+      openApp: "Open the app",
       expired: "This request expired.",
       expiredLead: "Go back to the app and choose {{provider}} again.",
       handover: "Signing in with your account from the other device…",
@@ -1360,7 +1364,7 @@ export const en = {
         fileLead: "The file from any app we know. It is recognized on its own.",
         paths: {
           lead: "Choose how to bring them. You check everything before anything is made.",
-          best: "the most complete",
+          best: "The most complete",
           safe: "{{app}}'s keys, passwords and sessions never come, whichever way you pick.",
           command: {
             title: "With a command",
@@ -4745,6 +4749,8 @@ export const en = {
     available: "Available",
     working: "Working",
     waiting: "Waiting for you",
+    /** An agent idle a while (server `away`): never a person's "away", which reads as gone, nor asleep. */
+    idle: "Idle",
     lower: {
       online: "online",
       away: "away",
@@ -4914,6 +4920,7 @@ export const en = {
     limit: "Went on with the <to/> account because the <from/> account hit its limit",
     line: "Went on with the <to/> account because the <from/> account is near its limit",
     extra: "Went on with the <to/> account because the <from/> account would go into paid extra usage",
+    busy: "Went on with the <to/> account because the <from/> account was already answering as many conversations as it can at once",
   },
   channelRefs: {
     list: "Channels",
@@ -13084,7 +13091,7 @@ export const en = {
     /** The viewer's own computers that may take their replies while this one is full (`machines.spill_own`). */
     spill: {
       title: "Your computers",
-      text: "When this computer is full, replies to you can start on one of yours. Long work and the agents' files stay here.",
+      text: "When this computer is full or away, your agents can start on one of yours. Missions, code sessions and agents with repositories stay here.",
       /** The viewer's own sign-in there, "Claude Max". */
       plan: "your {{plan}} plan",
     },
@@ -16549,7 +16556,7 @@ export const en = {
     device: {
       notLinkMaker: "Only the person who made the link can let this computer join.",
       widenForbidden: "Admins can only narrow who can use someone's own device.",
-      spillOwnerOnly: "Only the person who connected this computer can let replies think on it. You can turn it off.",
+      spillOwnerOnly: "Only the person who connected this computer can turn its help on. You can turn it off.",
       shareOwnerOnly:
         "Only the person who connected this computer can let agents use its internet. You can turn it off.",
       shareConnectedOnly: "Only a computer someone connected can share its internet with the agents.",
@@ -16731,6 +16738,12 @@ export const en = {
       via: "Agents use the internet of {{name}}",
       viaBy: "Agents use the internet of {{name}} ({{person}})",
       viaHint: "Websites see that computer’s location. Its owner can turn it off on its page.",
+    },
+    /** The workspace's own computer, away while it moves to another server: never "offline" or "not answering". */
+    moving: {
+      short: "Moving servers",
+      line: "Moving to a new server… back in a few minutes",
+      named: "{{computer}} is moving to a new server… back in a few minutes",
     },
     online: "Online",
     offline: "Offline",
@@ -16995,10 +17008,18 @@ export const en = {
       "More tasks at once: only 0.5 GB of memory stays free and a busy processor doesn't hold them. Your own apps may slow down.",
     belongs: "Belongs to the workspace",
     belongsHint: "It stays when the person who connected it leaves, and everyone can use it while nobody owns it.",
-    spillOwn: "Your replies can think here",
-    spillOwnHint: "When an agent's computer is full, its replies to you start here.",
-    spillOthers: "Other people's agents can think here",
-    spillOthersHint: "When an agent's computer is full, its replies to other people can start here too.",
+    /** One switch per computer (`machines.spill_own`, ADR 0233): its owner's to turn on. */
+    spillOwn: "Help when the team's computer is full or away",
+    spillOwnHint:
+      "When your agents' computer is full or away, their replies, asks and routines can think here with your sign-in.",
+    /** The same switch on a computer marked the workspace's: anyone's agents, on their owner's sign-in there. */
+    spillTeamHint:
+      "When an agent's computer is full or away, its replies, asks and routines can think here with its owner's sign-in on this computer.",
+    /** Under the switch while an admin turned devices' help off for the whole workspace. */
+    spillWorkspaceOff: "An admin turned this off for the workspace.",
+    /** Settings › Devices, admins: the workspace's switch over every computer's own (`devicesHelp`). */
+    helpWorkspace: "Computers help when the team's is full or away",
+    helpWorkspaceHint: "Each computer helps only if its owner allows it. Off: none helps, whatever its owner chose.",
     /** A person's computer lends its internet to the workspace's own computer (ADR 0237). */
     shareInternet: "Agents use this computer's internet",
     shareInternetHint:
@@ -19108,6 +19129,15 @@ export const en = {
       cant: "Answered with {{via}}: {{plan}} can't think right now.",
       change: "Change",
     },
+    /**
+     * Under a reply that thought on another computer because the agent's own was full or away (`meta.spilled`, ADR
+     * 0233): `to` and `from` are computers' names, `itsComputer` stands in for an unknown `from`.
+     */
+    spilled: {
+      full: "Thought on {{to}}: {{from}} was full.",
+      away: "Thought on {{to}}: {{from}} was away.",
+      itsComputer: "its computer",
+    },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
       text: "{{plan}} refused {{from}} with this key. I answered with {{to}}, which works with it.",
@@ -19127,6 +19157,12 @@ export const en = {
       held: "Waiting for approval…",
       /** The agent's own words for its step (what it wrote before the call), quoted. */
       said: "“{{text}}”",
+    },
+    /** Under an agent at work, the last row of the conversation: what it did so far, a few lines, older ones as "+N". */
+    trail: {
+      label: "What {{name}} did so far",
+      earlier_one: "{{count}} earlier step",
+      earlier_other: "{{count}} earlier steps",
     },
     /** The working line while an agent asks another one (names come in bold). */
     consult: {
@@ -21249,6 +21285,8 @@ export const en = {
       notAnsweringHelp: "It usually comes back within a few minutes. We're on it.",
       offline: "{{computer}} is offline",
       offlineHelpPlain: "{{name}} waits for the computer to come back.",
+      /** Under it while computers that help take its new work (ADR 0233): `names` is a list of computers. */
+      helping: "Meanwhile, its new work can think on {{names}}.",
       noRoom: "{{computer}} is showing as many screens as it can. Try again in a moment.",
       unavailable: "{{name}}'s screen can't be shown right now",
       unavailableHelp: "Try again in a moment.",

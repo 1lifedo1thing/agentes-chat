@@ -33,9 +33,10 @@ export function ComputerSection({ device: d, name }: { device: ComputerDevice; n
   const mark = useDeviceMutation((api, orgId, on: boolean) =>
     api.devices.updateComputer(orgId, d.id, { belongsToWorkspace: on }),
   );
-  const spill = useDeviceMutation((api, orgId, input: { own?: boolean; others?: boolean }) =>
-    api.devices.updateComputer(orgId, d.id, { spill: input }),
+  const spill = useDeviceMutation((api, orgId, own: boolean) =>
+    api.devices.updateComputer(orgId, d.id, { spill: { own } }),
   );
+  const helpOff = useDevices().data?.devicesHelp === false;
   const tasks = useDeviceMutation((api, orgId, maxTasks: number) =>
     api.devices.updateComputer(orgId, d.id, { maxTasks }),
   );
@@ -63,7 +64,7 @@ export function ComputerSection({ device: d, name }: { device: ComputerDevice; n
     );
   // What is being saved shows at once: a switch moves as it is tapped. Each change stays pending until the computers
   // are read again (`useDeviceMutation`), so the saved value takes over with no flicker.
-  const spillOn = (key: "own" | "others") => (spill.isPending ? spill.variables?.[key] : undefined) ?? d.spill[key];
+  const spillOn = (spill.isPending ? spill.variables : undefined) ?? d.spill.own;
   const belongs = (mark.isPending ? mark.variables : undefined) ?? d.belongsToWorkspace;
   const pushing = (push.isPending ? push.variables : undefined) ?? d.taskRoom?.pushHarder ?? false;
   const sharing = (share.isPending ? share.variables : undefined) ?? d.shareInternet?.on ?? false;
@@ -133,32 +134,23 @@ export function ComputerSection({ device: d, name }: { device: ComputerDevice; n
                   : {})}
               />
             ) : null}
-            {/* Spill-over: its owner turns these on; an admin may only turn them off. */}
-            {brought && d.mayManage && !d.systemMode
-              ? (["own", "others"] as const).map((key) => {
-                  const label = t(key === "own" ? "devices.spillOwn" : "devices.spillOthers");
-                  const on = spillOn(key);
-                  return (
-                    <GroupedRow
-                      key={key}
-                      label={label}
-                      labelLines={2}
-                      hint={{
-                        name: t("common.about", { label }),
-                        text: t(key === "own" ? "devices.spillOwnHint" : "devices.spillOthersHint"),
-                      }}
-                      toggle={on}
-                      disabled={d.ownerUserId !== meId && !on}
-                      onPress={() =>
-                        spill.mutate(
-                          { [key]: !on },
-                          { onError: (err) => toast({ title: errorText(t, err), icon: "x" }) },
-                        )
-                      }
-                    />
-                  );
-                })
-              : null}
+            {/* Its help: its owner turns it on, an admin only off, and the workspace's switch off wins. */}
+            {brought && d.mayManage && !d.systemMode ? (
+              <GroupedRow
+                label={t("devices.spillOwn")}
+                labelLines={2}
+                hint={{
+                  name: t("common.about", { label: t("devices.spillOwn") }),
+                  text: t(d.belongsToWorkspace ? "devices.spillTeamHint" : "devices.spillOwnHint"),
+                }}
+                {...(helpOff ? { sub: t("devices.spillWorkspaceOff"), subLines: 0 } : {})}
+                toggle={spillOn && !helpOff}
+                disabled={helpOff || (d.ownerUserId !== meId && !spillOn)}
+                onPress={() =>
+                  spill.mutate(!spillOn, { onError: (err) => toast({ title: errorText(t, err), icon: "x" }) })
+                }
+              />
+            ) : null}
             {/* Its owner lends its internet to the workspace's computer; an admin may only stop it (ADR 0237). */}
             {d.shareInternet && (d.mayManage || sharing) ? (
               <GroupedRow

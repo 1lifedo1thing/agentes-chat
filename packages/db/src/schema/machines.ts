@@ -257,10 +257,12 @@ export const machines = pgTable(
     /** An admin marked it the workspace's: it stays when its pairer leaves (an `owner` rule then reads as everyone). */
     belongsToWorkspace: boolean().notNull().default(false),
     /**
-     * Spill-over: while an agent's own computer is full, a turn a person waits on may think here instead, on a
-     * sign-in the agent may use. `spill_own`: turns for whoever connected it; `spill_others`: anyone else's.
+     * "Help when the team's computer is full or away" (ADR 0233): while an agent's own computer is full or away, a
+     * fresh turn of its owner's agents (anyone's, on a computer marked the workspace's) may think here instead, on a
+     * sign-in of the agent's owner. Only whoever connected it turns it on.
      */
     spillOwn: boolean().notNull().default(true),
+    /** Retired by ADR 0233 (one switch, `spill_own`): nothing reads it. */
     spillOthers: boolean().notNull().default(false),
     /**
      * ADR 0237, a person's computer (`connected`): its owner lets the workspace's own computer's web traffic go out
@@ -297,6 +299,11 @@ export const machines = pgTable(
      * apps show a line; null: they don't wait.
      */
     egressWaitingAt: timestamp({ withTimezone: true }),
+    /**
+     * The operator says the workspace's own computer is moving to another server (`PUT …/moving`): while it is away
+     * the apps say so instead of offline, for at most `MOVING_SHOWN_MS`. Null: not moving.
+     */
+    movingAt: timestamp({ withTimezone: true }),
     /** Last time a run or a person wanted this computer (written at most every 30 s per server process). */
     wantedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

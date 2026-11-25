@@ -92,6 +92,7 @@ import {
   publishMachineAgentsChanged,
   publishMachineStatus,
   publishMachineUpdated,
+  shownMoving,
   shownStandby,
   withTaskLimit,
 } from "./machines";
@@ -192,6 +193,8 @@ export interface MachineStatus {
   access?: RunnerAccess | null;
   /** The operator put the workspace's own computer in standby (ADR 0161): asleep, it is woken when wanted. */
   standby?: boolean;
+  /** The workspace's own computer is away moving to another server (`shownMoving`). */
+  moving?: boolean;
   /** `system`: each agent works as its own OS user there (ADR 0058 §10); absent, all as the runner's user. */
   mode?: "system";
 }
@@ -1793,6 +1796,7 @@ export function createMachineHub(deps: MachineHubDeps) {
         access: row.access ?? null,
         // Still starting after its standby ended counts too: what waits for it waits on (`shownStandby`).
         standby: inStandby(row) || shownStandby(row),
+        ...(shownMoving(row) ? { moving: true } : {}),
         ...(row.executors?.mode === "system" ? { mode: "system" as const } : {}),
       };
     },

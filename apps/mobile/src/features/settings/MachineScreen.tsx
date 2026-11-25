@@ -226,7 +226,9 @@ function MachinePage({ machineId }: { machineId: string }) {
       ? { icon: "pause", label: paused }
       : m.online
         ? { icon: "check", label: t("machines.online") }
-        : { icon: "circle", label: t("machines.offline") };
+        : m.moving
+          ? { icon: "swap", label: t("machines.moving.short") }
+          : { icon: "circle", label: t("machines.offline") };
   // One facts line, and why it's paused while it is.
   const facts = [
     managed

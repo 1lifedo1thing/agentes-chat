@@ -6,7 +6,7 @@
 - Extends: ADR 0025 (connected computers), ADR 0058 §11 (data sockets), ADR 0101 (observed egress)
 - Code: protocol `packages/adapters/src/machine-protocol.ts` (`EGRESS_SHARE_PROTOCOL`, `EGRESS_SHARE`,
   `egress.dial`, `StreamHello.egress`, `welcome.egressRelay`); db `machines.egress_share`, `egress_share_at`,
-  `egress_via` (migration 0345); engine `packages/engine/src/egress-share.ts` (`lendingComputers`,
+  `egress_via` (migration 0347); engine `packages/engine/src/egress-share.ts` (`lendingComputers`,
   `createEgressRelay`), `devices.ts` (`shareInternet`), `machines.ts` (`egressVia`, `egressViaNow`), `streams.ts`
   (`ClaimedStream.readyLater`); runner `apps/server/runner/egress-share.ts` (the lending side),
   `egress-relay.ts` (the workspace computer's SOCKS5 socket); web `DevicePage.tsx`, `computer/Egress.tsx`,

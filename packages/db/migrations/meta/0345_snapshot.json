@@ -1,5 +1,5 @@
 {
-  "id": "3f222238-ca73-460b-a2f1-004bf0d02f41",
+  "id": "3ce8081f-dbd0-4960-914e-eab6670a2eb5",
   "prevId": "d2170596-4686-43bd-ad65-f3e7b4bbfa2f",
   "version": "7",
   "dialect": "postgresql",
@@ -13190,25 +13190,6 @@
           "notNull": true,
           "default": false
         },
-        "egress_share": {
-          "name": "egress_share",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "egress_share_at": {
-          "name": "egress_share_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "egress_via": {
-          "name": "egress_via",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "online": {
           "name": "online",
           "type": "boolean",
@@ -13249,6 +13230,12 @@
         },
         "egress_waiting_at": {
           "name": "egress_waiting_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moving_at": {
+          "name": "moving_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

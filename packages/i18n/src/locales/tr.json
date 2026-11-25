@@ -704,6 +704,8 @@
       "confirmNo": "Bu ben değildim",
       "done": "Her şey hazır.",
       "doneLead": "agentes uygulamasında giriş yaptınız. Bu sekmeyi kapatabilirsiniz.",
+      "back": "Uygulamaya dönülüyor.",
+      "openApp": "Uygulamayı aç",
       "expired": "Bu isteğin süresi doldu.",
       "expiredLead": "Uygulamaya dönüp yeniden {{provider}} seçin.",
       "handover": "Diğer cihazdaki hesabınızla giriş yapılıyor…",
@@ -1228,7 +1230,7 @@
         "fileLead": "Tanıdığımız herhangi bir uygulamanın dosyası. Kendiliğinden tanınır.",
         "paths": {
           "lead": "Nasıl getireceğinizi seçin. Bir şey oluşturulmadan önce her şeyi kontrol edersiniz.",
-          "best": "en eksiksizi",
+          "best": "En eksiksizi",
           "safe": "{{app}} anahtarları, şifreleri ve oturumları hiçbir yolla gelmez.",
           "command": {
             "title": "Bir komutla",
@@ -4344,6 +4346,7 @@
     "available": "Müsait",
     "working": "Çalışıyor",
     "waiting": "Sizi bekliyor",
+    "idle": "Boşta",
     "lower": {
       "online": "çevrimiçi",
       "away": "uzakta",
@@ -4496,7 +4499,8 @@
   "accountSwitch": {
     "limit": "<from/> hesabı sınırına ulaştığı için <to/> hesabıyla devam etti",
     "line": "<from/> hesabı sınırına yaklaştığı için <to/> hesabıyla devam etti",
-    "extra": "<from/> hesabı ücretli ek kullanıma geçeceği için <to/> hesabıyla devam etti"
+    "extra": "<from/> hesabı ücretli ek kullanıma geçeceği için <to/> hesabıyla devam etti",
+    "busy": "<from/> hesabı aynı anda yanıtlayabileceği kadar sohbeti zaten yanıtladığı için <to/> hesabıyla devam etti"
   },
   "channelRefs": {
     "list": "Kanallar",
@@ -12504,7 +12508,7 @@
     "rule": "Yeni iş, bilgisayarda boş bellek olduğunda başlar. Önce insanlar. Birlikte anılan ajanlar tek tek başlar.",
     "spill": {
       "title": "Bilgisayarlarınız",
-      "text": "Bu bilgisayar dolduğunda sana gelen yanıtlar senin bilgisayarlarından birinde başlayabilir. Uzun işler ve ajanların dosyaları burada kalır.",
+      "text": "Bu bilgisayar dolu ya da uzaktayken ajanların senin bilgisayarlarından birinde başlayabilir. Görevler, kod oturumları ve depoları olan ajanlar burada kalır.",
       "plan": "{{plan}} planın"
     },
     "youFirst": "Önce sen",
@@ -16051,7 +16055,7 @@
     "device": {
       "notLinkMaker": "Bu bilgisayarı yalnızca bağlantıyı oluşturan kişi katılmaya izin verebilir.",
       "widenForbidden": "Yöneticiler birinin kendi cihazını kimin kullanabileceğini yalnızca daraltabilir.",
-      "spillOwnerOnly": "Yanıtların bu bilgisayarda düşünmesine yalnızca onu bağlayan kişi izin verebilir. Kapatmak senin elinde.",
+      "spillOwnerOnly": "Bu bilgisayarın yardımını yalnızca onu bağlayan kişi açabilir. Sen kapatabilirsin.",
       "shareOwnerOnly": "Ajanların bu bilgisayarın internetini kullanmasına yalnızca onu bağlayan kişi izin verebilir. Sen kapatabilirsin.",
       "shareConnectedOnly": "İnternetini ajanlarla yalnızca birinin bağladığı bir bilgisayar paylaşabilir.",
       "tasksOwnerOnly": "Bu bilgisayarın aynı anda kaç görev çalıştıracağını yalnızca onu bağlayan kişi değiştirebilir.",
@@ -16210,6 +16214,11 @@
       "via": "Ajanlar {{name}} bilgisayarının internetini kullanıyor",
       "viaBy": "Ajanlar {{name}} ({{person}}) bilgisayarının internetini kullanıyor",
       "viaHint": "Siteler o bilgisayarın konumunu görür. Onu bağlayan kişi bunu sayfasından kapatabilir."
+    },
+    "moving": {
+      "short": "Sunucu değiştiriyor",
+      "line": "Yeni bir sunucuya taşınıyor… birkaç dakika içinde döner",
+      "named": "{{computer}} yeni bir sunucuya taşınıyor… birkaç dakika içinde döner"
     },
     "online": "Çevrimiçi",
     "offline": "Çevrimdışı",
@@ -16484,10 +16493,12 @@
     "pushHarderHint": "Aynı anda daha fazla görev: yalnızca 0,5 GB bellek boş kalır ve meşgul bir işlemci onları durdurmaz. Kendi uygulamaların yavaşlayabilir.",
     "belongs": "Çalışma alanına ait",
     "belongsHint": "Onu bağlayan kişi ayrıldığında burada kalır ve sahibi olmadığı sürece herkes kullanabilir.",
-    "spillOwn": "Sana gelen yanıtlar burada düşünebilir",
-    "spillOwnHint": "Bir ajanın bilgisayarı dolduğunda sana gelen yanıtları burada başlar.",
-    "spillOthers": "Başkalarının ajanları burada düşünebilir",
-    "spillOthersHint": "Bir ajanın bilgisayarı dolduğunda başkalarına gelen yanıtları da burada başlayabilir.",
+    "spillOwn": "Ekibin bilgisayarı dolu ya da uzaktayken yardım et",
+    "spillOwnHint": "Ajanlarının bilgisayarı dolu ya da uzaktayken yanıtları, istekleri ve rutinleri burada senin oturumunla düşünebilir.",
+    "spillTeamHint": "Bir ajanın bilgisayarı dolu ya da uzaktayken yanıtları, istekleri ve rutinleri burada sahibinin bu bilgisayardaki oturumuyla düşünebilir.",
+    "spillWorkspaceOff": "Bir yönetici bunu çalışma alanı için kapattı.",
+    "helpWorkspace": "Ekibin bilgisayarı dolu ya da uzaktayken bilgisayarlar yardım eder",
+    "helpWorkspaceHint": "Her bilgisayar yalnızca sahibi izin verirse yardım eder. Kapalı: sahibi ne seçerse seçsin hiçbiri yardım etmez.",
     "shareInternet": "Ajanlar bu bilgisayarın internetini kullanır",
     "shareInternetHint": "Ajanların açtığı siteler bu bilgisayarın bağlantısından geçer, bu yüzden konumunu görür. Yalnızca web siteleri, günde en fazla 5 GB, ve kendi ağındaki hiçbir şey asla. Bu bilgisayar çevrimdışıyken ajanlar her zamanki bağlantılarını kullanır.",
     "shareInternetInUse": "Şu an kullanılıyor",
@@ -18438,6 +18449,11 @@
       "cant": "{{via}} ile yanıtladım: {{plan}} şu an düşünemiyor.",
       "change": "Değiştir"
     },
+    "spilled": {
+      "full": "{{to}} üzerinde düşündü: {{from}} doluydu.",
+      "away": "{{to}} üzerinde düşündü: {{from}} uzaktaydı.",
+      "itsComputer": "kendi bilgisayarı"
+    },
     "modelStandIn": {
       "text": "{{plan}} bu anahtarla {{from}} modelini reddetti. Onunla çalışan {{to}} ile yanıt verdim.",
       "useAll": "Hepsinde {{model}} kullan",
@@ -18455,6 +18471,11 @@
       "thinking": "Düşünüyor…",
       "held": "Onay bekleniyor…",
       "said": "“{{text}}”"
+    },
+    "trail": {
+      "label": "{{name}} şimdiye kadar ne yaptı",
+      "earlier_one": "{{count}} önceki adım",
+      "earlier_other": "{{count}} önceki adım"
     },
     "consult": {
       "asking": "{{from}}, {{to}} ajanına soruyor",
@@ -20345,6 +20366,7 @@
       "notAnsweringHelp": "Genellikle birkaç dakika içinde geri gelir. İlgileniyoruz.",
       "offline": "{{computer}} çevrimdışı",
       "offlineHelpPlain": "{{name}}, bilgisayarın geri gelmesini bekliyor.",
+      "helping": "Bu arada yeni işler {{names}} üzerinde düşünebilir.",
       "noRoom": "{{computer}} gösterebileceği kadar ekran gösteriyor. Birazdan tekrar deneyin.",
       "unavailable": "{{name}} ajanının ekranı şu anda gösterilemiyor",
       "unavailableHelp": "Birazdan tekrar deneyin.",

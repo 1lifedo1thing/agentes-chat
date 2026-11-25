@@ -719,6 +719,8 @@
       "confirmNo": "Non sono stato io",
       "done": "Tutto pronto.",
       "doneLead": "Hai effettuato l'accesso all'app agentes. Puoi chiudere questa scheda.",
+      "back": "Ritorno all'app.",
+      "openApp": "Apri l'app",
       "expired": "Questa richiesta è scaduta.",
       "expiredLead": "Torna all'app e scegli di nuovo {{provider}}.",
       "handover": "Accesso con il tuo account dall'altro dispositivo…",
@@ -1257,7 +1259,7 @@
         "fileLead": "Il file di qualsiasi app che conosciamo. Viene riconosciuto da solo.",
         "paths": {
           "lead": "Scegli come portarli. Controlli tutto prima che venga creato qualcosa.",
-          "best": "il più completo",
+          "best": "Il più completo",
           "safe": "Chiavi, password e sessioni di {{app}} non arrivano mai, in nessun modo.",
           "command": {
             "title": "Con un comando",
@@ -4521,6 +4523,7 @@
     "available": "Disponibile",
     "working": "Al lavoro",
     "waiting": "Ti aspetta",
+    "idle": "Inattivo",
     "lower": {
       "online": "online",
       "away": "assente",
@@ -4673,7 +4676,8 @@
   "accountSwitch": {
     "limit": "Ha continuato con l’account <to/> perché l’account <from/> ha raggiunto il limite",
     "line": "Ha continuato con l’account <to/> perché l’account <from/> è vicino al limite",
-    "extra": "Ha continuato con l’account <to/> perché l’account <from/> passerebbe all’uso extra a pagamento"
+    "extra": "Ha continuato con l’account <to/> perché l’account <from/> passerebbe all’uso extra a pagamento",
+    "busy": "Ha continuato con l'account <to/> perché l'account <from/> stava già rispondendo a tutte le conversazioni che può gestire insieme"
   },
   "channelRefs": {
     "list": "Canali",
@@ -13061,7 +13065,7 @@
     "rule": "Un nuovo lavoro inizia quando il computer ha memoria libera. Le persone vanno prima. Gli agenti menzionati insieme iniziano uno alla volta.",
     "spill": {
       "title": "I tuoi computer",
-      "text": "Quando questo computer è pieno, le risposte per te possono iniziare su uno dei tuoi. I lavori lunghi e i file degli agenti restano qui.",
+      "text": "Quando questo computer è pieno o assente, i tuoi agenti possono iniziare su uno dei tuoi. Le missioni, le sessioni di codice e gli agenti con repository restano qui.",
       "plan": "il tuo piano {{plan}}"
     },
     "youFirst": "Tu passi per primo",
@@ -16684,7 +16688,7 @@
     "device": {
       "notLinkMaker": "Solo chi ha creato il link può far entrare questo computer.",
       "widenForbidden": "Gli admin possono solo restringere chi usa il dispositivo personale di qualcuno.",
-      "spillOwnerOnly": "Solo chi ha collegato questo computer può lasciare che le risposte pensino qui. Tu puoi disattivarlo.",
+      "spillOwnerOnly": "Solo chi ha collegato questo computer può attivarne l'aiuto. Tu puoi disattivarlo.",
       "shareOwnerOnly": "Solo chi ha collegato questo computer può far usare la sua connessione internet agli agenti. Tu puoi disattivarla.",
       "shareConnectedOnly": "Solo un computer collegato da qualcuno può condividere la sua connessione internet con gli agenti.",
       "tasksOwnerOnly": "Solo chi ha collegato questo computer può cambiare quante attività esegue in contemporanea.",
@@ -16844,6 +16848,11 @@
       "via": "Gli agenti usano la connessione internet di {{name}}",
       "viaBy": "Gli agenti usano la connessione internet di {{name}} ({{person}})",
       "viaHint": "I siti vedono la posizione di quel computer. Chi l’ha collegato può disattivarlo nella sua pagina."
+    },
+    "moving": {
+      "short": "Cambio server",
+      "line": "Si sta spostando su un nuovo server… torna tra pochi minuti",
+      "named": "{{computer}} si sta spostando su un nuovo server… torna tra pochi minuti"
     },
     "online": "Online",
     "offline": "Offline",
@@ -17119,10 +17128,12 @@
     "pushHarderHint": "Più attività in contemporanea: restano liberi solo 0,5 GB di memoria e un processore occupato non le trattiene. Le tue app potrebbero rallentare.",
     "belongs": "Appartiene allo spazio di lavoro",
     "belongsHint": "Resta quando la persona che l'ha collegato se ne va, e tutti possono usarlo finché non ha un proprietario.",
-    "spillOwn": "Le tue risposte possono pensare qui",
-    "spillOwnHint": "Quando il computer di un agente è pieno, le sue risposte per te iniziano qui.",
-    "spillOthers": "Gli agenti di altre persone possono pensare qui",
-    "spillOthersHint": "Quando il computer di un agente è pieno, anche le sue risposte per altre persone possono iniziare qui.",
+    "spillOwn": "Aiuta quando il computer del team è pieno o assente",
+    "spillOwnHint": "Quando il computer dei tuoi agenti è pieno o assente, le loro risposte, richieste e routine possono pensare qui con il tuo accesso.",
+    "spillTeamHint": "Quando il computer di un agente è pieno o assente, le sue risposte, richieste e routine possono pensare qui con l'accesso del suo proprietario su questo computer.",
+    "spillWorkspaceOff": "Un admin l'ha disattivato per il workspace.",
+    "helpWorkspace": "I computer aiutano quando quello del team è pieno o assente",
+    "helpWorkspaceHint": "Ogni computer aiuta solo se il suo proprietario lo permette. Disattivato: nessuno aiuta, qualunque cosa abbia scelto il proprietario.",
     "shareInternet": "Gli agenti usano la connessione internet di questo computer",
     "shareInternetHint": "I siti che gli agenti aprono passano dalla connessione di questo computer, quindi vedono la tua posizione. Solo siti web, fino a 5 GB al giorno, e mai nulla della tua rete. Finché questo computer è offline, gli agenti usano la loro connessione abituale.",
     "shareInternetInUse": "In uso ora",
@@ -19107,6 +19118,11 @@
       "cant": "Ho risposto con {{via}}: {{plan}} non può pensare ora.",
       "change": "Cambia"
     },
+    "spilled": {
+      "full": "Ha pensato su {{to}}: {{from}} era pieno.",
+      "away": "Ha pensato su {{to}}: {{from}} era assente.",
+      "itsComputer": "il suo computer"
+    },
     "modelStandIn": {
       "text": "{{plan}} ha rifiutato {{from}} con questa chiave. Ho risposto con {{to}}, che funziona con essa.",
       "useAll": "Usa {{model}} per tutti",
@@ -19125,6 +19141,12 @@
       "thinking": "Sta pensando…",
       "held": "In attesa di approvazione…",
       "said": "«{{text}}»"
+    },
+    "trail": {
+      "label": "Cosa ha fatto {{name}} finora",
+      "earlier_one": "{{count}} passo precedente",
+      "earlier_many": "{{count}} passi precedenti",
+      "earlier_other": "{{count}} passi precedenti"
     },
     "consult": {
       "asking": "{{from}} sta chiedendo a {{to}}",
@@ -21152,6 +21174,7 @@
       "offline": "{{computer}} è offline",
       "offlineHelpPlain": "{{name}} aspetta che il computer torni disponibile.",
       "offlineHelpPlain_female": "{{name}} aspetta che il computer torni disponibile.",
+      "helping": "Nel frattempo, il nuovo lavoro può pensare su {{names}}.",
       "noRoom": "{{computer}} sta mostrando tutti gli schermi che può. Riprova tra un attimo.",
       "unavailable": "Lo schermo di {{name}} non si può mostrare in questo momento",
       "unavailable_female": "Lo schermo di {{name}} non si può mostrare in questo momento",

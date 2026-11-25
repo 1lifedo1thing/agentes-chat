@@ -689,6 +689,8 @@
       "confirmNo": "不是我",
       "done": "全部就绪。",
       "doneLead": "你已登录 agentes 应用，可以关闭这个标签页了。",
+      "back": "正在返回应用。",
+      "openApp": "打开应用",
       "expired": "这个请求已过期。",
       "expiredLead": "请返回应用，重新选择 {{provider}}。",
       "handover": "正在用另一台设备上的账号登录…",
@@ -4195,6 +4197,7 @@
     "available": "空闲",
     "working": "工作中",
     "waiting": "等你处理",
+    "idle": "无活动",
     "lower": {
       "online": "在线",
       "away": "离开",
@@ -4347,7 +4350,8 @@
   "accountSwitch": {
     "limit": "因 <from/> 账号已达上限，改用 <to/> 账号继续",
     "line": "因 <from/> 账号接近上限，改用 <to/> 账号继续",
-    "extra": "因 <from/> 账号将进入付费额外用量，改用 <to/> 账号继续"
+    "extra": "因 <from/> 账号将进入付费额外用量，改用 <to/> 账号继续",
+    "busy": "<from/> 账号已在同时回复它能承担的最多对话，因此改用 <to/> 账号继续"
   },
   "channelRefs": {
     "list": "频道",
@@ -12141,7 +12145,7 @@
     "rule": "电脑有空闲内存时，新工作才会开始。人优先。一起被提到的智能体逐个开始。",
     "spill": {
       "title": "你的电脑",
-      "text": "这台电脑满了时，给你的回复可以在你的某台电脑上开始。长时间工作和智能体的文件仍留在这里。",
+      "text": "当这台电脑满载或不在线时，你的智能体可以在你的某台电脑上开始。任务、代码会话和有代码仓库的智能体会留在这里。",
       "plan": "你的 {{plan}} 套餐"
     },
     "youFirst": "你优先",
@@ -15605,7 +15609,7 @@
     "device": {
       "notLinkMaker": "只有创建链接的人才能让这台电脑加入。",
       "widenForbidden": "管理员只能缩小可以使用他人个人设备的人员范围。",
-      "spillOwnerOnly": "只有连接这台电脑的人才能让回复在这里思考。你可以把它关掉。",
+      "spillOwnerOnly": "只有连接这台电脑的人可以打开它的帮忙功能。你可以关闭它。",
       "shareOwnerOnly": "只有连接这台电脑的人才能让智能体使用它的网络。你可以关闭它。",
       "shareConnectedOnly": "只有有人连接的电脑才能与智能体共享网络。",
       "tasksOwnerOnly": "只有连接这台电脑的人才能更改它同时运行的任务数。",
@@ -15763,6 +15767,11 @@
       "via": "智能体正在使用 {{name}} 的网络",
       "viaBy": "智能体正在使用 {{name}}（{{person}}）的网络",
       "viaHint": "网站会看到那台电脑的位置。连接它的人可以在它的页面上关闭。"
+    },
+    "moving": {
+      "short": "正在迁移服务器",
+      "line": "正在迁移到新服务器… 几分钟后回来",
+      "named": "{{computer}} 正在迁移到新服务器… 几分钟后回来"
     },
     "online": "在线",
     "offline": "离线",
@@ -16036,10 +16045,12 @@
     "pushHarderHint": "同时运行更多任务：只留 0.5 GB 空闲内存，处理器忙碌时也不再暂停。你自己的应用可能会变慢。",
     "belongs": "归工作区所有",
     "belongsHint": "连接它的人离开后它仍会保留，没有所有者时所有人都可以使用。",
-    "spillOwn": "给你的回复可以在这里思考",
-    "spillOwnHint": "智能体的电脑满了时，它给你的回复会在这里开始。",
-    "spillOthers": "其他人的智能体也可以在这里思考",
-    "spillOthersHint": "智能体的电脑满了时，它给其他人的回复也可以在这里开始。",
+    "spillOwn": "团队的电脑满载或不在线时帮忙",
+    "spillOwnHint": "当你的智能体的电脑满载或不在线时，它们的回复、请求和例行任务可以用你的登录在这里思考。",
+    "spillTeamHint": "当某个智能体的电脑满载或不在线时，它的回复、请求和例行任务可以用其所有者在这台电脑上的登录在这里思考。",
+    "spillWorkspaceOff": "管理员已为整个工作区关闭此功能。",
+    "helpWorkspace": "团队的电脑满载或不在线时，其他电脑来帮忙",
+    "helpWorkspaceHint": "每台电脑只有在其所有者允许时才会帮忙。关闭：无论所有者如何选择，都不会有电脑帮忙。",
     "shareInternet": "智能体使用这台电脑的网络",
     "shareInternetHint": "智能体打开的网站会经过这台电脑的网络连接，所以网站会看到你的位置。仅限网站，每天最多 5 GB，绝不会访问你自己网络中的任何内容。这台电脑离线时，智能体使用平常的连接。",
     "shareInternetInUse": "正在使用",
@@ -17956,6 +17967,11 @@
       "cant": "已用{{via}}回答：{{plan}}现在无法思考。",
       "change": "更改"
     },
+    "spilled": {
+      "full": "在 {{to}} 上思考：{{from}} 已满载。",
+      "away": "在 {{to}} 上思考：{{from}} 不在线。",
+      "itsComputer": "它的电脑"
+    },
     "modelStandIn": {
       "text": "{{plan}} 用此密钥拒绝了 {{from}}。我改用可用的 {{to}} 回复了。",
       "useAll": "全部使用 {{model}}",
@@ -17972,6 +17988,10 @@
       "thinking": "思考中…",
       "held": "等待审批…",
       "said": "“{{text}}”"
+    },
+    "trail": {
+      "label": "{{name}} 目前做了什么",
+      "earlier_other": "之前的 {{count}} 步"
     },
     "consult": {
       "asking": "{{from}} 正在询问 {{to}}",
@@ -19955,6 +19975,7 @@
       "offline": "{{computer}} 已离线",
       "offlineHelpPlain": "{{name}} 正在等待电脑恢复。",
       "offlineHelpPlain_female": "{{name}} 正在等待电脑恢复。",
+      "helping": "在此期间，新工作可以在 {{names}} 上思考。",
       "noRoom": "{{computer}} 显示的屏幕已达上限。请稍后再试。",
       "unavailable": "暂时无法显示 {{name}} 的屏幕",
       "unavailable_female": "暂时无法显示 {{name}} 的屏幕",
