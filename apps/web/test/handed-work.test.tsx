@@ -81,9 +81,9 @@ describe("the handed line under the reply that handed it (F1)", () => {
   test("working: handed to Atlas, the state as a badge in the agent's colour, its step and its time, and Stop", async () => {
     const line = await chat(work());
     expect(line?.dataset.tone).toBe("working");
-    expect(line?.querySelector(".handed-line__state")?.textContent).toBe("working");
+    expect(line?.querySelector(".handed-line__state")?.textContent).toBe("Working");
     expect(line?.querySelector(".handed-line__text")?.textContent).toContain(
-      "Handed to Atlas · working step\u00a03\u00a0of\u00a05 · 2\u00a0min",
+      "Handed to Atlas · Working step\u00a03\u00a0of\u00a05 · 2\u00a0min",
     );
     expect(line?.querySelector(".handed-line__who .ac-avatar")).not.toBeNull();
     // View opens the two agents' talk, as the bar's does.
@@ -99,7 +99,7 @@ describe("the handed line under the reply that handed it (F1)", () => {
     const asked = { text: "5 people or 12?", messageId: "q-1", requestedForUserId: "u-walter" };
     const line = await chat(work({ state: "waiting_input", question: asked, startedAt: ago(1) }));
     expect(line?.dataset.tone).toBe("waiting");
-    expect(line?.querySelector(".handed-line__state")?.textContent).toBe("waiting for your answer");
+    expect(line?.querySelector(".handed-line__state")?.textContent).toBe("Waiting for your answer");
     expect(line?.querySelector(".ac-workline__question")).toBeNull();
   });
 
@@ -107,7 +107,7 @@ describe("the handed line under the reply that handed it (F1)", () => {
     const done = work({ status: "done", state: null, startedAt: ago(10), finishedAt: ago(0), resultMessageId: "r-1" });
     const line = await chat(done);
     expect(line?.dataset.tone).toBe("done");
-    expect(line?.querySelector(".handed-line__text")?.textContent).toContain("Handed to Atlas · done 10\u00a0min");
+    expect(line?.querySelector(".handed-line__text")?.textContent).toContain("Handed to Atlas · Done 10\u00a0min");
     expect([...(line?.querySelectorAll(".ac-workline__action") ?? [])].map((b) => b.textContent)).toEqual([
       "See the result",
     ]);

@@ -1,6 +1,7 @@
 import { type Issue, type Message, useChannels, type WorkView } from "@agenteschat/client";
 import { ownsAgentAs } from "@agenteschat/client/lib/agent-owner";
 import { managesAgent } from "@agenteschat/client/lib/audience";
+import { upperFirst } from "@agenteschat/client/lib/format";
 import { heldBack } from "@agenteschat/client/lib/issues";
 import {
   handedLine,
@@ -98,6 +99,7 @@ function HandedMark({ tone, color }: { tone: string; color?: AgentColor }) {
  * right below. `data-handoff` lets the bar above the composer leave it out while it is on screen.
  */
 export function HandedWorkLine({ work }: { work: WorkView }) {
+  const { i18n } = useTranslation();
   const actions = useChannelActions();
   const { handed, agent, stop, t } = useWorkLine(work, true);
   const h = handed();
@@ -146,7 +148,7 @@ export function HandedWorkLine({ work }: { work: WorkView }) {
         />
         <span className="handed-line__keep">
           {" · "}
-          <span className="handed-line__state">{h.state}</span>
+          <span className="handed-line__state">{upperFirst(h.state, i18n.language)}</span>
           {h.facts.length > 0 && (
             <>
               {" "}

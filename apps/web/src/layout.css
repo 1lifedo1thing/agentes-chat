@@ -7713,9 +7713,11 @@ html:not([data-pointer]) .run-continue:focus-visible {
   width: var(--name-face);
   height: var(--name-face);
 }
+/* The agent at work a step smaller than a message's face (24, the small face), its orbit with it, centred in the
+   faces' column so its words keep the messages' text column. */
 .working-tail__face .ac-avatar:not(.ac-avatar--xs) {
-  width: var(--name-face);
-  height: var(--name-face);
+  width: 24px;
+  height: 24px;
 }
 .working-tail__body {
   display: flex;
@@ -13045,14 +13047,15 @@ html[data-menu-overlay] .shell {
   > :not(.ac-orbit, .sidebar__item-text) {
   align-self: center;
 }
-/* A face larger than a name's (the personal sidebar's 40px): the name's capitals and the line under it sit on the
-   face's middle, as on a 32px face, instead of rising to its top and leaving its lower part bare. */
+/* A face larger than a name's (the personal sidebar's 40px): the name and the line under it take the face's height, as
+   they do beside a 32px face (the name's capitals on its top, the line's baseline at its foot), the room between them
+   growing by what the face grows, instead of leaving the face's lower part bare. */
 .sidebar:not([data-rail="true"])
   :is([data-agent-row] > .sidebar__item, .sidebar__item[data-right-hand]):has(
     > :is(.ac-avatar, .ac-orbit) + .sidebar__item-text > .sidebar__item-role
   )
   > .sidebar__item-text {
-  margin-top: calc((var(--sidebar-agent-face) - var(--name-face)) / 2);
+  gap: calc(2px + var(--sidebar-agent-face) - var(--name-face));
 }
 /* An agent at work: its orbit reaches a few pixels past its face, inside the row's padding; the rings' box would count
    as overflow in the scrolling list. */
@@ -15596,21 +15599,17 @@ html:not([data-pointer]) .rh-set__face-edit:focus-visible {
 .handed-line__keep {
   white-space: nowrap;
 }
+/* Inline, so its words are the sentence's and wrap with it (its first letter is up in the words themselves). */
 .handed-line__state {
-  display: inline-block;
-  height: 18px;
   margin-right: 2px;
-  padding: 0 6px;
+  padding: 2px 6px;
   border-radius: 6px;
   background: var(--plate);
   color: var(--ink2);
   font-size: 11.5px;
   font-weight: 600;
-  line-height: 18px;
-  vertical-align: 1px;
-}
-.handed-line__state::first-letter {
-  text-transform: uppercase;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 .handed-line[data-tone="waiting"] {
   --tone: var(--warn);
