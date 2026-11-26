@@ -13,7 +13,6 @@ import { SwipeReply } from "../SwipeReply";
 import type { MessageActionsContext } from "../sheets";
 import { ENTER, NATIVE_MENU } from "./constants";
 import type { MessageItem } from "./rows";
-import { useChatSheet } from "./sheet-mode";
 
 /** What every message row of the conversation is handed alike: callbacks that keep their identity. */
 export interface RowHands {
@@ -87,8 +86,6 @@ export const ChatMessage = memo(function ChatMessage({
 }) {
   const m = item.message;
   const c = useColors();
-  // In a file's sheet (ADR 0208) a message that arrives is there at once, in place: the sheet over the file stays still.
-  const inSheet = useChatSheet() !== null;
   const dir = useRowDirectory();
   const { onReply, onMission, onRemind } = hands;
   const reply = useCallback(() => onReply(m), [onReply, m]);
@@ -111,6 +108,7 @@ export const ChatMessage = memo(function ChatMessage({
       newTurn={item.newTurn}
       run={runPosition(item.grouped, item.continued ?? false)}
       above={item.above}
+      relay={item.relay}
       aboveThread={aboveThread}
       meId={meId}
       thread={thread}
@@ -126,7 +124,7 @@ export const ChatMessage = memo(function ChatMessage({
   return (
     // My own words are there at once, whole (as every chat app's): only someone else's rise in.
     <Animated.View
-      entering={fresh && !inSheet && m.author.id !== meId ? ENTER : undefined}
+      entering={fresh && m.author.id !== meId ? ENTER : undefined}
       style={lit ? { backgroundColor: c.sunken } : undefined}
     >
       {/* Swipe right to answer it (a quote above the field); hold it for the system's menu (iOS) or the app's sheet. A

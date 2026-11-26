@@ -23,6 +23,7 @@ import {
   agentPlan,
   aiStateOf,
   allAgents,
+  connectsPlanFor,
   defaultChoice,
   defaultTarget,
   type ExistingSignIn,
@@ -35,6 +36,7 @@ import {
   planLabel,
   planMark,
   planOfAccount,
+  planOffSystem,
   planTitle,
   signsInOnce,
   signsInPerAgent,
@@ -328,6 +330,13 @@ export function ConnectAiDialog({
   const askedId = request.agentId ?? sole;
   const askedFor = askedId && (request.chat || !plain) ? dir.agentById.get(askedId) : undefined;
   const asleep = (id: string) => (aiStateOf(status.data, id) ?? "no_ai") === "no_ai";
+  // Past its own screens, Back goes to the dialog it was opened from, when there is one.
+  const leave = request.onBack
+    ? () => {
+        onClose();
+        request.onBack?.();
+      }
+    : undefined;
   // Opened for several agents or none (the channel's notice, Settings › AI accounts, the first-run list, a team just
   // made, a receipt or a card for several agents, the onboarding's AI step): the narrow dialog under the sky, for every
   // agent of the person's that can't think, on the computer of the first of them since a plan signs in on one computer
@@ -424,8 +433,8 @@ export function ConnectAiDialog({
   // In the order asked for: the conversation's agent leads "All agents", so its computer is the one a plan signs in on.
   const pooled = pool
     ? pool.flatMap((id) => {
-        const a = mine.find((x) => x.id === id);
-        return a ? [a] : [];
+        const a = dir.agentById.get(id);
+        return a && connectsPlanFor(a, me.user.id) ? [a] : [];
       })
     : mine;
   const agents = pooled.map((a) => ({
@@ -489,6 +498,7 @@ export function ConnectAiDialog({
   const bareGates = useGatesWithoutAgent(org.id, bare);
   const gateOf = (c: PlanChoice): PlanGate =>
     agents.length > 0 ? gates.gateOf(c) : bare ? bareGates.at(c).gate : { state: "loading" };
+  const offSystem = (c: PlanChoice) => planOffSystem(t, gateOf(c));
   const [used, setUsed] = useState<ExistingUsed | null>(null);
   const [login, setLogin] = useState<ExistingSignIn | null>(null);
   // Where a plain plan panel is (its list of the person's accounts, or another sign-in): the title asks it.
@@ -654,13 +664,14 @@ export function ConnectAiDialog({
     );
   };
 
-  // Someone else's agent, or no agent of theirs among those: who connects a plan instead.
+  // Someone else's agent they don't manage, or no agent of theirs among those: who connects a plan instead.
   const owner = one?.ownerUserId ? dir.memberById.get(one.ownerUserId)?.name : undefined;
-  const locked = theirs
-    ? noAiLockedLine(t, one.name, owner)
-    : named && agents.length === 0
-      ? t("noAi.lockedAdmins")
-      : undefined;
+  const locked =
+    theirs && !mayUseKeys
+      ? noAiLockedLine(t, one.name, owner)
+      : named && agents.length === 0
+        ? t("noAi.lockedAdmins")
+        : undefined;
   // Over a draft a Settings page opens in a new tab: the draft behind this dialog stays.
   const toSettings = (section: "usage") => {
     if (request.forNewAgent || request.overDraft) {
@@ -946,7 +957,7 @@ export function ConnectAiDialog({
                 } else if (listing) setAllOpen(false);
                 else setAdding(false);
               }
-            : undefined
+            : leave
         }
         scene={{
           agents: drawn,
@@ -1125,7 +1136,13 @@ export function ConnectAiDialog({
                 )}
               </>
             ) : (
-              <ConnectChoices mayAddKey={mayAddKey} dims={dims} perAgent={perAgent} onPick={(next) => pick(next)} />
+              <ConnectChoices
+                mayAddKey={mayAddKey}
+                dims={dims}
+                offSystem={offSystem}
+                perAgent={perAgent}
+                onPick={(next) => pick(next)}
+              />
             )}
           </div>
         )}
@@ -1211,7 +1228,7 @@ export function ConnectAiDialog({
                 } else if (listing) setAllOpen(false);
                 else setAdding(false);
               }
-            : undefined
+            : leave
         }
         scene={{
           agents: wide
@@ -1335,7 +1352,7 @@ export function ConnectAiDialog({
                 )}
               </>
             ) : (
-              <ConnectChoices mayAddKey={mayAddKey} dims={dims} onPick={(next) => pick(next)} />
+              <ConnectChoices mayAddKey={mayAddKey} dims={dims} offSystem={offSystem} onPick={(next) => pick(next)} />
             )}
           </div>
         )}
@@ -1438,6 +1455,7 @@ export function ConnectAiDialog({
               <ConnectChoices
                 mayAddKey={mayAddKey}
                 dims={(c) => (agents.length > 0 || bare) && gateDims(gateOf(c))}
+                offSystem={offSystem}
                 onPick={(next) => {
                   setPicked(next);
                   setLogin(null);
@@ -1525,6 +1543,7 @@ export function ConnectAiDialog({
                 setPickedTarget(defaultTarget({ agents: planAgents, hasAi, set: setOf(next) }));
             }}
             dims={(c) => (agents.length > 0 || bare) && gateDims(gateOf(c))}
+            offSystem={offSystem}
             busy={add.isPending}
             keySelect={keySelect}
             panel={panel}

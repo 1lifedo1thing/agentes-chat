@@ -63,8 +63,11 @@ describe("You in a personal workspace", () => {
       "routines",
       "drive",
       "issues",
+      "code",
       "threads",
       "proposals",
+      "connectors",
+      "skills",
       "wiki",
       "dashboards",
       "memory",
@@ -75,6 +78,9 @@ describe("You in a personal workspace", () => {
       "issues",
       "proposals",
       "routines",
+      "connectors",
+      "skills",
+      "code",
       "wiki",
       "drive",
       "dashboards",
@@ -82,6 +88,12 @@ describe("You in a personal workspace", () => {
       "archived",
     ]);
     expect(me).toContain('onPress={() => open("/team")}');
+    // Connectors and Skills in the work too, the screens Settings opens (Skills for who may read the workspace).
+    expect(me).toContain('onPress={() => open("/connectors")}');
+    expect(me).toContain('skills: can(org.org, "read") ? (');
+    expect(me).toContain('onPress={() => open("/settings/skills")}');
+    // Código (ADR 0215): the sessions, pushed as their own screen.
+    expect(me).toContain('onPress={() => open("/coding")}');
   });
 
   test("Agents' Team row stays a team's: a personal workspace has it in You › Work", () => {

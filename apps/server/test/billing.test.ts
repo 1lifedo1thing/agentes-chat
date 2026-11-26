@@ -3,6 +3,7 @@ import { eq, schema } from "@agenteschat/db";
 import {
   createOrganization,
   enableOperatorEvents,
+  openLinkToken,
   scheduleDeletion,
   setBillingHold,
   setOrgLimits,
@@ -44,8 +45,8 @@ describe("the billing link", () => {
     const ok = await link("team");
     expect(ok.status).toBe(200);
     const { url } = (await ok.json()) as { url: string };
-    const payload = new URL(url).searchParams.get("t")?.split(".")[1] ?? "";
-    expect(JSON.parse(Buffer.from(payload, "base64url").toString())).toMatchObject({ plan: "team" });
+    const token = new URL(url).searchParams.get("t") ?? "";
+    expect(openLinkToken(BILLING.BILLING_LINK_SECRET, token)).toMatchObject({ plan: "team" });
     expect((await link("Team plan")).status).toBe(400);
   });
 
@@ -64,7 +65,7 @@ describe("the billing link", () => {
       const res = await link(who);
       expect(res.status).toBe(200);
       const { url, expiresAt } = (await res.json()) as { url: string; expiresAt: string };
-      expect(url).toMatch(/^https:\/\/billing\.example\.com\/link\?t=v1\.[\w-]+\.[\w-]+$/);
+      expect(url).toMatch(/^https:\/\/billing\.example\.com\/link\?t=v2\.[\w-]+\.[\w-]+\.[\w-]+$/);
       expect(Date.parse(expiresAt) - Date.now()).toBeGreaterThan(290_000);
       expect(Date.parse(expiresAt) - Date.now()).toBeLessThanOrEqual(300_000);
     }
@@ -119,6 +120,7 @@ describe("the workspace's limits", () => {
       members: { used: 2, limit: null, max: null, canAddSeats: false, payer: null },
       storage: { usedBytes: 0, limitBytes: null, ownStorage: false },
       uploads: { usedBytes24h: 0, limitBytesPerDay: null },
+      connectors: { usedUsd: 0, limitUsd: null },
     });
     const limits = {
       members: 2,
@@ -133,6 +135,7 @@ describe("the workspace's limits", () => {
       members: { used: 2, limit: 2, max: 3, canAddSeats: true, payer: null },
       storage: { usedBytes: 0, limitBytes: 1000, ownStorage: false },
       uploads: { usedBytes24h: 0, limitBytesPerDay: 500 },
+      connectors: { usedUsd: 0, limitUsd: null },
     });
     const stranger = browser(t);
     await signUp(stranger, "eve@example.com");

@@ -15,9 +15,6 @@ import { videoClock, videoHeight } from "./logic";
  */
 const SURFACE = "textureView";
 
-/** How often the viewer hears the moment a video is at while it listens (`onMoment`), in seconds. */
-const MOMENT_EVERY = 0.25;
-
 /** Only one video plays at a time: starting one pauses the one before. */
 let current: Player | null = null;
 function claim(player: Player) {
@@ -37,6 +34,8 @@ export interface VideoPlayerProps {
   name: string;
   /** Its width in the message (one shape, the video whole in it). */
   width?: number;
+  /** Its height there: 16:9 for `width` unless the caller knows the video's own shape (`videoBox`). */
+  height?: number;
   /** An inline video's tap: opens it in the picture viewer, where it plays. */
   onOpen?: () => void;
   /** It can't play on this device (a format it lacks): the caller shows the file's card instead. */
@@ -49,8 +48,17 @@ export interface VideoPlayerProps {
  * plays it at once with the platform's controls (play, the timeline to drag, full screen and back out of it, AirPlay),
  * so it feels like every other video on the phone, with no controls of ours to get stuck behind.
  */
-export function VideoPlayer({ source, name, width = 300, onOpen, onFailed }: VideoPlayerProps) {
-  return <InlineVideo source={source} name={name} width={width} onOpen={onOpen} onFailed={onFailed} />;
+export function VideoPlayer({ source, name, width = 300, height, onOpen, onFailed }: VideoPlayerProps) {
+  return (
+    <InlineVideo
+      source={source}
+      name={name}
+      width={width}
+      height={height ?? videoHeight(width)}
+      onOpen={onOpen}
+      onFailed={onFailed}
+    />
+  );
 }
 
 /** In a message: the first frame, the play key and the length; nothing plays here. */
@@ -58,12 +66,14 @@ function InlineVideo({
   source,
   name,
   width,
+  height,
   onOpen,
   onFailed,
 }: {
   source: VideoPlayerProps["source"];
   name: string;
   width: number;
+  height: number;
   onOpen?: (() => void) | undefined;
   onFailed?: (() => void) | undefined;
 }) {
@@ -89,11 +99,7 @@ function InlineVideo({
       disabled={!onOpen}
       accessibilityRole="button"
       accessibilityLabel={`${t("mobile.files.video.play")}: ${name}${length ? `, ${length}` : ""}`}
-      style={[
-        styles.inline,
-        { width, height: videoHeight(width), backgroundColor: c.sunken, borderColor: c.line2 },
-        cardCorners,
-      ]}
+      style={[styles.inline, { width, height, backgroundColor: c.sunken, borderColor: c.line2 }, cardCorners]}
     >
       <VideoView
         player={player}
@@ -124,8 +130,7 @@ function InlineVideo({
  * A video in the picture viewer (`ImageViewer`), among the pictures: the system's player with the platform's controls
  * (the timeline, full screen and back out of it, AirPlay), playing while its page is the one in sight and paused when
  * the person swipes on. `onFailed`: this phone can't play it. `startAt`: the moment it starts from (a comment's, ADR
- * 0208); `onPlayer`: its player, for the viewer to read the moment it is at (null once it goes); `onMoment`: the moment
- * as it moves (the person moving it with the controls while the conversation's sheet is up), a few times a second.
+ * 0208); `onPlayer`: its player, for the viewer to read the moment it is at (null once it goes).
  */
 export function ViewerVideo({
   source,
@@ -134,7 +139,6 @@ export function ViewerVideo({
   onFailed,
   startAt,
   onPlayer,
-  onMoment,
 }: {
   source: VideoPlayerProps["source"];
   name: string;
@@ -142,21 +146,10 @@ export function ViewerVideo({
   onFailed: () => void;
   startAt?: number | undefined;
   onPlayer?: ((player: Player | null) => void) | undefined;
-  onMoment?: ((time: number) => void) | undefined;
 }) {
   const player = useVideoPlayer(source, (p) => {
     p.loop = false;
   });
-  // The moment's events only while someone listens (they cost a bridge call each).
-  const listens = onMoment !== undefined;
-  useEffect(() => {
-    try {
-      player.timeUpdateEventInterval = listens ? MOMENT_EVERY : 0;
-    } catch {
-      // Released with its page.
-    }
-  }, [player, listens]);
-  useEventListener(player, "timeUpdate", ({ currentTime }) => onMoment?.(currentTime));
   useEffect(() => {
     onPlayer?.(player);
     return () => onPlayer?.(null);

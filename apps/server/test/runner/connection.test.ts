@@ -308,7 +308,7 @@ test("reconnects when the socket closes, and when no ping arrives for two heartb
   const first = sock(sockets, 0);
   first.handlers.onOpen();
   first.frame({ type: "welcome", machineId: "m1", name: "box", heartbeatMs: 30 });
-  // No ping: the watchdog closes it after 60 ms, then backoff (0.8 s with random 0) dials again.
+  // No ping: the watchdog closes it after 60 ms, then backoff (at once with random 0) dials again.
   await waitFor(() => sockets.length === 2, 4000);
   expect(first.closed).toBe(true);
   expect(lines).toContain("no ping from the server; reconnecting");
@@ -361,12 +361,36 @@ test("a server that says it is stopping is dialed again at a random point within
   const second = sock(sockets, 1);
   second.handlers.onOpen();
   second.frame({ type: "welcome", machineId: "m1", name: "box", heartbeatMs: 25_000 });
-  // Any other drop: the usual backoff.
+  // Any other drop: the usual backoff, a random point within the step (the second: that session was brief).
   second.handlers.onClose(1006, "");
   await waitFor(() => lines.includes("disconnected; reconnecting in 1.0 s"));
   connection.stop();
   expect((await done).reason).toBe("stopped");
 });
+
+test("a session dropped soon after its welcome doesn't start the waits over; a retry-after in the close is waited out", async () => {
+  const { sockets, connection, lines } = setup({ random: () => 0.5 });
+  const done = connection.run();
+  await waitFor(() => sockets.length === 1);
+  // Welcomed, then dropped at once (an overloaded server): the waits keep growing, 0.5 s, then 1 s.
+  const first = sock(sockets, 0);
+  first.handlers.onOpen();
+  first.frame({ type: "welcome", machineId: "m1", name: "box", heartbeatMs: 25_000 });
+  first.handlers.onClose(1006, "");
+  await waitFor(() => lines.includes("disconnected; reconnecting in 0.5 s"));
+  await waitFor(() => sockets.length === 2, 2000);
+  const second = sock(sockets, 1);
+  second.handlers.onOpen();
+  second.frame({ type: "welcome", machineId: "m1", name: "box", heartbeatMs: 25_000 });
+  second.handlers.onClose(1006, "");
+  await waitFor(() => lines.includes("disconnected; reconnecting in 1.0 s"));
+  await waitFor(() => sockets.length === 3, 3000);
+  // The server asks for 5 s: at least that, spread over as long again (random 0.5 → 7.5 s).
+  sock(sockets, 2).handlers.onClose(1011, "try again; retry-after=5");
+  await waitFor(() => lines.includes("disconnected; reconnecting in 7.5 s"));
+  connection.stop();
+  expect((await done).reason).toBe("stopped");
+}, 10_000);
 
 test("reconnect(): drops the welcomed socket and dials again without backoff; while backing off, dials now", async () => {
   const { sockets, connection, lines } = setup({ random: () => 0.99 });
@@ -419,6 +443,27 @@ test("a browser command is logged when it ends, with how long it took and what i
   expect(lines[2]).toBe("list .");
   expect(lines[3]).toMatch(/^\[dev\] browser\.batch open \d+ms \(worker 1\.2 s, install 28\.1 s, launch 1\.4 s\)$/);
   expect(lines[4]).toMatch(/^\[dev\] browser\.warm \(desktop\) \d+ms \(desktop 2\.3 s, launch 1\.4 s\)$/);
+});
+
+test("a refused brain turn is logged with its code and words, whatever the code; a canceled one and another op's expected refusal aren't", async () => {
+  const lines: string[] = [];
+  const ws = tempDir();
+  dirs.push(ws);
+  const runner = new RequestRunner(
+    { workspaceReal: ws, exec: true, token: "agm_x" },
+    () => {},
+    (l) => lines.push(l),
+    async (_ctx, req) => {
+      if (req.op === "brain.turn" && req.runId === "c") throw new RunnerError("internal", "Canceled");
+      throw new RunnerError("not_found", "No such file or folder");
+    },
+    { memAvailable: () => null },
+  );
+  const agent = { id: "01a142cb-489d-7000-87a3-efb5adb382ca", handle: "dev" };
+  await runner.start("t", { op: "brain.turn", runId: "t", agent } as unknown as MachineRequest);
+  await runner.start("c", { op: "brain.turn", runId: "c", agent } as unknown as MachineRequest);
+  await runner.start("l", { op: "list", path: "", depth: 1 });
+  expect(lines.filter((l) => l.includes("failed"))).toEqual(["brain.turn failed (not_found): No such file or folder"]);
 });
 
 test("requests run concurrently up to the ceiling; beyond it the runner answers busy (never to a person's view); cancel aborts", async () => {

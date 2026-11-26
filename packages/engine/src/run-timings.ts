@@ -1,5 +1,6 @@
 import { BRAIN_COLD_CAUSES, BRAIN_TURN_MEASURES } from "@agenteschat/adapters";
 import { type Database, rowsOf, type SQL, type schema, sql } from "@agenteschat/db";
+import { UUID } from "./authority";
 import { BRAIN_KINDS } from "./brain-settings";
 import { ValidationError } from "./errors";
 import { isJsonObject, numberIn, wholeOrNull } from "./format";
@@ -65,6 +66,16 @@ function stageOf(s: unknown, deep: boolean): ClaimStage[] {
       ...(parts.length > 0 ? { parts: parts.slice(0, RUN_CLAIM_STAGES_MAX) } : {}),
     },
   ];
+}
+
+/** The computer a run's latest claim with a computer turn thought on (`profiles` as stored, which may hold anything). */
+export function lastRunComputer(profiles: unknown): string | undefined {
+  if (!Array.isArray(profiles)) return undefined;
+  for (const claim of [...profiles].reverse()) {
+    if (isJsonObject(claim) && typeof claim.machineId === "string" && UUID.test(claim.machineId))
+      return claim.machineId;
+  }
+  return undefined;
 }
 
 /** A run's kept claims as its trace gives them, oldest first: `profiles` as stored, which may hold anything. */
@@ -318,8 +329,8 @@ export const REPLY_TIMES_MAX_DAYS = 31;
 /** A short ask: a person's message under this many characters, which should get the quickest replies. */
 export const SHORT_ASK_CHARS = 40;
 export const REPLY_TIME_BUCKETS = ["hour", "day"] as const;
-/** The brains a reply time is split by: any other, or none yet, is `other`. */
-export const REPLY_BRAINS = ["model", "claude_code", "codex", "other"] as const;
+/** The brains a reply time is split by, each by its own name: none yet (or one no longer known) is `other`. */
+export const REPLY_BRAINS = [...BRAIN_KINDS, "other"] as const;
 export const REPLY_WAIT_CAUSES = ["room", "offline", "other"] as const;
 /**
  * The server's own lines a run posts before (or instead of) its answer, by `bodyCode`: no AI to think with, a plan at
@@ -355,8 +366,9 @@ export async function operatorReplyTimes(db: Database, query: ReplyTimesQuery, n
     `to_char(date_trunc('${bucket}', ar.created_at, 'UTC') at time zone 'UTC', 'YYYY-MM-DD"T"HH24:00:00"Z"')`,
   );
   const runsIn = sql`ar.created_at >= ${from}::timestamptz and ar.created_at < ${to}::timestamptz and not ar.background`;
-  const named = REPLY_BRAINS.filter((b) => b !== "other").map((b) => `'${b}'`);
-  const brain = sql.raw(`case when ar.brain in (${named.join(", ")}) then ar.brain else 'other' end`);
+  const brain = sql.raw(
+    `case when ar.brain in (${BRAIN_KINDS.map((b) => `'${b}'`).join(", ")}) then ar.brain else 'other' end`,
+  );
   const ms = (column: string, filter = "") => [0.5, 0.9, 0.99].map((q) => sql.raw(pct(q, column, filter)));
   const [p50, p90, p99] = ms("ms");
   const [s50, s90, s99] = ms("ms", "short");
@@ -439,9 +451,7 @@ export async function operatorReplyTimes(db: Database, query: ReplyTimesQuery, n
     from,
     to,
     bucket,
-    replies: rowsOf<{ at: string; brain: "all" | (typeof REPLY_BRAINS)[number]; trigger: Trigger } & Measures>(
-      replyRows,
-    ).map((r) => ({
+    replies: rowsOf<{ at: string; brain: string; trigger: Trigger } & Measures>(replyRows).map((r) => ({
       at: r.at,
       brain: r.brain,
       trigger: r.trigger,
@@ -475,5 +485,43 @@ export async function operatorReplyTimes(db: Database, query: ReplyTimesQuery, n
       p50Ms: wholeOrNull(w.p50Ms),
       p90Ms: wholeOrNull(w.p90Ms),
     })),
+  };
+}
+
+/** The longest window of `operatorCliRuns`, and the most CLI builds it lists. */
+export const CLI_RUNS_MAX_DAYS = 7;
+export const CLI_RUNS_ROWS_MAX = 200;
+
+/**
+ * The runs created in a window that ended (`done` or `failed`), by the coding CLI and version they thought with
+ * (`agent_runs.cli`), and how many of them failed: what the Cloud compares a CLI's new build with the one before by.
+ * Every failure counts, whatever its cause. Only values shaped as `recordRunBrain` writes them.
+ */
+export async function operatorCliRuns(db: Database, query: { from: string; to: string }) {
+  const [from, to] = [instantOf(query.from), instantOf(query.to)];
+  const apart = from && to ? Date.parse(to) - Date.parse(from) : 0;
+  if (!from || !to || apart <= 0 || apart > CLI_RUNS_MAX_DAYS * 86_400_000) {
+    throw new ValidationError(
+      `from and to are ISO 8601 instants, from before to, at most ${CLI_RUNS_MAX_DAYS} days apart`,
+      "analytics.range",
+    );
+  }
+  const rows = rowsOf<{ cli: string; runs: number; failed: number }>(
+    await heavyRead(
+      db,
+      sql`select ar.cli, count(*)::int as runs, (count(*) filter (where ar.status = 'failed'))::int as failed
+        from agent_runs ar
+        where ar.created_at >= ${from}::timestamptz and ar.created_at < ${to}::timestamptz
+          and ar.status in ('done', 'failed') and ar.cli ~ '^[a-z]{1,20} [0-9][0-9A-Za-z.+-]{0,63}$'
+        group by ar.cli order by runs desc, ar.cli limit ${CLI_RUNS_ROWS_MAX}`,
+    ),
+  );
+  return {
+    from,
+    to,
+    clis: rows.map(({ cli, runs, failed }) => {
+      const [name = "", version = ""] = cli.split(" ");
+      return { cli: name, version, runs, failed };
+    }),
   };
 }

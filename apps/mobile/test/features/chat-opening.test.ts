@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { PAGE_AHEAD_SCREENS } from "@agenteschat/client";
 import { whenIdle } from "../../src/features/chat/screen/reach";
 import { chatScreenPiece, chatScreenSource } from "./chat-screen-source";
 
@@ -77,7 +78,7 @@ describe("a conversation opening", () => {
 describe("the conversation's pieces", () => {
   test("the routes still open `ChatScreen` from its file, with the same props", () => {
     expect(chatFile).toMatch(
-      /export function ChatScreen\(\{\s*channelId,\s*threadId,\s*handoffId,\s*focusId,\s*sheet,\s*\}: \{\s*channelId: string;\s*threadId\?: string \| null;\s*handoffId\?: string \| null;/,
+      /export function ChatScreen\(\{\s*channelId,\s*threadId,\s*handoffId,\s*focusId,\s*\}: \{\s*channelId: string;\s*threadId\?: string \| null;\s*handoffId\?: string \| null;/,
     );
   });
 
@@ -104,6 +105,13 @@ describe("the conversation's pieces", () => {
     expect(header).toContain("useDmAgentTasks(member && !isThread ? dmAgentId : null)");
     expect(chatFile).not.toContain("setComputerWords");
     expect(chatFile).not.toContain("useAgentsQueue");
+  });
+
+  test("older and newer pages load three screens before the list's edge, as on the web, so a quick scroll never waits there", () => {
+    const list = chatScreenPiece("ChatList.tsx");
+    expect(PAGE_AHEAD_SCREENS).toBe(3);
+    expect(list).toContain("onStartReachedThreshold={PAGE_AHEAD_SCREENS}");
+    expect(list).toContain("onEndReachedThreshold={PAGE_AHEAD_SCREENS}");
   });
 
   test("the list's reach, growing, redraws the list alone", () => {

@@ -59,7 +59,7 @@ describe("the Vault's screens", () => {
   test("New item is the bar's +, so the tabs never move when another tab shows", () => {
     const vault = src("features/vault/VaultScreen.tsx");
     expect(vault).toContain(
-      'actions: [{ icon: "plus", sf: "plus", label: t("mobile.vault.newItem"), onPress: create }]',
+      '[{ icon: "plus" as const, sf: "plus" as const, label: t("mobile.vault.newItem"), onPress: create }]',
     );
     expect(vault).not.toContain("tabEmpty");
     expect(vault.indexOf("<Segmented")).toBeLessThan(vault.indexOf("<Items"));
@@ -231,7 +231,7 @@ describe("the search tab", () => {
     const results = src("features/search/SearchResults.tsx");
     expect(results).toContain("const failed = words && hits.isError && !hits.data;");
     expect(results).toContain("{failed ? <LoadFailed onRetry={() => void hits.refetch()} /> : null}");
-    expect(results).toContain("{words && !failed && isEmpty(r) && !hits.isFetching ? (");
+    expect(results).toContain("{words && !failed && isEmpty(r) && settingItems.length === 0 && !hits.isFetching ? (");
   });
 
   test("taking the filters off is the kit's button, not a press drawn by hand", () => {

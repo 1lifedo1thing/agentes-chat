@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Pressable, Text as RNText, StyleSheet, View } from "react-native";
 import type { Gaze } from "@/agent/AgentAvatar";
 import type { AgentLookInput } from "@/agent/looks";
+import { OrbitFace } from "@/agent/OrbitFace";
 import { type AgentMode, agentLayout, framedByDefault } from "@/agent/poses";
 import { AgentAvatar, type BadgePresence, PersonAvatar, WithPresence } from "@/ui";
 import { router } from "@/ui/navigation";
@@ -113,7 +114,10 @@ export function OpensAgent({ agentId, children }: { agentId: string; children: R
   );
 }
 
-/** An agent by id (its look from the directory); with `presence`, asleep while it is out of office. */
+/**
+ * An agent by id (its look from the directory); with `presence`, asleep while it is out of office. With `orbit` (at work
+ * in a list) it wears the rings (`OrbitFace`, the web's `OrbitGlyph`), and its "working" badge goes: the rings say it.
+ */
 export function AgentFace({
   agentId,
   size,
@@ -126,6 +130,7 @@ export function AgentFace({
   expression,
   bodyless,
   radius,
+  orbit = false,
 }: {
   agentId: string | null | undefined;
   size: number;
@@ -145,6 +150,8 @@ export function AgentFace({
   bodyless?: boolean | undefined;
   /** The tile's corner (default 30% of the side, see AgentAvatar). */
   radius?: number | undefined;
+  /** At work: the rings around it. */
+  orbit?: boolean;
 }) {
   const dir = useRowDirectory();
   const look = agentLook(agentId ? dir.anyAgent(agentId) : undefined);
@@ -160,9 +167,10 @@ export function AgentFace({
         framed={framed}
         ring={ring}
         moment={moment}
+        orbit={orbit}
       />
     );
-  return (
+  const face = (
     <AgentAvatar
       agent={look}
       size={size}
@@ -175,6 +183,13 @@ export function AgentFace({
       radius={radius}
     />
   );
+  return orbit ? (
+    <OrbitFace color={look.color} size={size}>
+      {face}
+    </OrbitFace>
+  ) : (
+    face
+  );
 }
 
 function PresentAgentFace({
@@ -186,6 +201,7 @@ function PresentAgentFace({
   framed,
   ring,
   moment,
+  orbit,
 }: {
   agentId: string;
   look: AgentLookInput;
@@ -194,6 +210,7 @@ function PresentAgentFace({
   live: boolean;
   framed: boolean | undefined;
   ring: string | undefined;
+  orbit: boolean;
   moment: {
     gaze?: Gaze | undefined;
     expression?: Expression | undefined;
@@ -204,19 +221,30 @@ function PresentAgentFace({
   // Its own row of the statuses: the face draws again when this agent changes, not when any other does.
   const shown = useAgentPresence(agentId);
   const asleep = mode === "idle" && isOutOfOffice(shown?.status?.status);
+  const face = (
+    <AgentAvatar
+      agent={look}
+      size={size}
+      mode={asleep ? "sleep" : mode}
+      live={live}
+      framed={framed}
+      {...(moment.gaze ? { gaze: moment.gaze } : {})}
+      {...(moment.expression ? { expression: moment.expression } : {})}
+      {...(moment.bodyless ? { bodyless: true } : {})}
+      radius={moment.radius}
+    />
+  );
+  // Wearing the rings, its "working" badge goes (the web's lists): one sign of work on the face, never two.
+  const presence = orbit && shown?.presence === "working" ? undefined : shown?.presence;
   return (
-    <Badged presence={shown?.presence} size={size} ring={ring} inset={agentBadgeInset(look, size, framed)}>
-      <AgentAvatar
-        agent={look}
-        size={size}
-        mode={asleep ? "sleep" : mode}
-        live={live}
-        framed={framed}
-        {...(moment.gaze ? { gaze: moment.gaze } : {})}
-        {...(moment.expression ? { expression: moment.expression } : {})}
-        {...(moment.bodyless ? { bodyless: true } : {})}
-        radius={moment.radius}
-      />
+    <Badged presence={presence} size={size} ring={ring} inset={agentBadgeInset(look, size, framed)}>
+      {orbit ? (
+        <OrbitFace color={look.color} size={size}>
+          {face}
+        </OrbitFace>
+      ) : (
+        face
+      )}
     </Badged>
   );
 }
@@ -274,11 +302,13 @@ export function AgentWho({
   // A view inside a line of text sits on the baseline and iOS drops its margins, so the face touched the name: the
   // room around it is text (a narrow space before, unless it opens the line, and after), and it is lowered to sit on
   // the words' middle (its bottom on the baseline put it a little high next to lowercase text).
+  // In its sky tile, standing in its middle: bare, the body sits at its box's foot under the room kept for a hat, so
+  // the face read as sunk under the words and smaller than it is.
   return (
     <RNText style={whoStyles.who}>
       {lead ? "" : NARROW}
       <View style={{ width: size, height: size, transform: [{ translateY: Math.round(size * 0.2) }] }}>
-        <AgentFace agentId={agentId} size={size} live={false} />
+        <AgentFace agentId={agentId} size={size} live={false} framed />
       </View>
       {NARROW}
       {name}

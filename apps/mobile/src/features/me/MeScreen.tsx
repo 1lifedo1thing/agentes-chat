@@ -1,6 +1,7 @@
 import { useApi, useArchivedChannels, useAuthConfig, useIssues, useMe, useOverview } from "@agenteschat/client";
 import { showsAbout } from "@agenteschat/client/lib/about";
 import { PHONE_APP_ICON } from "@agenteschat/client/lib/app-icons";
+import { can } from "@agenteschat/client/lib/permissions";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { isAppLocale, localeInfo } from "@agenteschat/i18n/locale";
 import { useMutation } from "@tanstack/react-query";
@@ -12,7 +13,6 @@ import { Platform, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { signOut } from "@/features/account";
-import { type SoundChoice, setSoundChoice, useSoundChoice } from "@/lib/sounds";
 import { useOrg } from "@/providers/org";
 import { WorkspaceSky } from "@/sky/Sky";
 import {
@@ -22,26 +22,25 @@ import {
   GroupedRow,
   Icon,
   PersonAvatar,
-  PixelOrbit,
   PressScale,
   SCREEN_X,
   Text,
-  type ThemePreference,
   useTheme,
   useToast,
   WithPresence,
 } from "@/ui";
 import { CoverBarBackdrop, CoverParallax, useCoverScroll } from "@/ui/cover";
 import { router } from "@/ui/navigation";
+import { useReadableSide } from "@/ui/pane";
 import { openPage } from "../ai/parts";
 import { confirmAction, Uploading } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useMeId, useOwnsAgent } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
-import { pickOne } from "../shared/PickerSheet";
 import { FocusLive, goBack, MentionCount, PushedHeader } from "../shared/parts";
 import { usePersonPhoto } from "../shared/photo";
 import { useTasksUnreadMarks, useUnreadThreads } from "../shared/queries";
+import { RowWorkingLine } from "../shared/RowWorkingLine";
 import { PageSplitScreen, type SplitPages, useLitPage, useOpenPage } from "../shared/SplitPanes";
 import { useMyPerson, usePresenceOf } from "../status/hooks";
 import { personLine } from "../status/logic";
@@ -60,10 +59,10 @@ import {
   NotificationsPage,
   StartPage,
   usePushSwitch,
-  useSoundLabel,
   useStartLabel,
 } from "./PreferencePages";
 import { useChangePhoto } from "./parts";
+import { useMePickers } from "./pickers";
 import { ME_FALLBACK, type MePageHref, meSplit } from "./split";
 import { useWorkspacesAcross, WorkspaceMark } from "./WorkspacesPages";
 
@@ -72,6 +71,9 @@ type WorkRow =
   | "issues"
   | "proposals"
   | "routines"
+  | "connectors"
+  | "skills"
+  | "code"
   | "wiki"
   | "drive"
   | "dashboards"
@@ -80,10 +82,23 @@ type WorkRow =
   | "team"
   | "archived";
 /**
- * A team's workspace: Threads is a tab and Team a row of Agents. Archived channels last, only while there are some (no
- * longer a link at the end of Conversas).
+ * A team's workspace: Threads is a tab and Team a row of Agents. Connectors and Skills sit with the work too, as the
+ * web's workspace menu and sidebar keep them a click away (Settings still lists them). Archived channels last, only
+ * while there are some (no longer a link at the end of Conversas).
  */
-const TEAM_WORK: WorkRow[] = ["issues", "proposals", "routines", "wiki", "drive", "dashboards", "memory", "archived"];
+const TEAM_WORK: WorkRow[] = [
+  "issues",
+  "proposals",
+  "routines",
+  "connectors",
+  "skills",
+  "code",
+  "wiki",
+  "drive",
+  "dashboards",
+  "memory",
+  "archived",
+];
 /**
  * A personal workspace (ADR 0159): what its sidebar keeps in sight first, then the rest of its More; Threads (no tab
  * there) and Team (no row in Agents) live here, Team last.
@@ -92,8 +107,11 @@ const PERSONAL_WORK: WorkRow[] = [
   "routines",
   "drive",
   "issues",
+  "code",
   "threads",
   "proposals",
+  "connectors",
+  "skills",
   "wiki",
   "dashboards",
   "memory",
@@ -151,12 +169,14 @@ const HORIZON_FADE = FadeIn.duration(200);
 let horizonArrived = false;
 
 /**
- * Você, pushed from your avatar, as the phone's own settings: the bar reads "Você" with Editar on the right; the
+ * Você, pushed from your avatar, as the phone's own settings: the bar reads "Você" with Editar on the right, and the
+ * magnifier beside it finds any setting by name, yours or the workspace's (`SettingsSearchScreen`); the
  * workspace's sky as a band with your photo hanging from it (a tap changes it), your name, your @ and workspace; then
  * grouped lists on the grouped gray, one value per row. Status first (ADR 0084). The workspace as one row: where you
  * are, how many more and the unread elsewhere, opening the list by server (ADR 0154), with the workspace's settings
- * under it. Your agents, alive (a working one says what it does), "Ver todos" to the Agentes tab. Your work (Tarefas,
- * Propostas, Rotinas, Wiki, Drive, Painéis, Memória): what belongs to the workspace lives in Configurações, once. The
+ * under it. Your agents, alive (a working one says what it does), "Ver todos" to the Agentes tab. Your work (Issues,
+ * Proposals, Routines, Connectors, Skills, Wiki, Drive, Dashboards, Memory): the rest of the workspace lives in
+ * Settings. The
  * preferences; Sons and Aparência (a few fixed choices) change in their row through the app's short menu, Idioma (one of
  * many) on its own pushed list. Sair alone in red; the version and build at the foot. Opened many times a day,
  * so nothing here animates beyond the presses and the platform's push, but for your agents rising onto the horizon the
@@ -196,6 +216,8 @@ function MePage() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  // On a large screen the lists keep to the readable column under the sky, which runs edge to edge (ADR 0212).
+  const side = useReadableSide();
   // A screen over this page with the platform's push (back comes here); on a large screen (ADR 0212) one of Você's own
   // pages opens beside the list instead, its row lit while it shows.
   const open = useOpenPage();
@@ -205,8 +227,9 @@ function MePage() {
   // The sky's band: from the screen's top (behind the status bar and the clear bar) to the photo's middle. It reaches
   // `PULL_ROOM` higher, out of sight, so a pull down shows more sky (it clips its foot, where the photo hangs).
   const band = insets.top + 62 + PHOTO_OVERLAP;
-  const issues = useIssues(org.orgId);
-  const proposals = useOverview(org.orgId).data?.proposalsWaitingForMe ?? 0;
+  // Only the count of tasks with me: no 10 s look while agents work, which this tab, always mounted, kept going.
+  const issues = useIssues(org.orgId, "", "", { poll: false });
+  const overview = useOverview(org.orgId).data;
   const archived = useArchivedChannels(org.orgId).data?.length ?? 0;
   const push = usePushSwitch().on;
   const server = useAuthConfig().data;
@@ -226,8 +249,6 @@ function MePage() {
   const name = me.data?.user.name ?? "";
   const photo = usePersonPhoto(mine?.avatarUrl ?? mine?.image ?? me.data?.user.image);
   const { changePhoto, uploading } = useChangePhoto();
-  const sounds = useSoundChoice();
-  const styleLabel = useSoundLabel();
   const startLabel = useStartLabel();
   const withMe = openIssuesWithMe(issues.data, meId);
   // Mentions of me not read in a task's conversation: the red badge before the value, as on Conversas.
@@ -266,12 +287,12 @@ function MePage() {
         onPress={() => open("/issues")}
       />
     ),
+    // What agents changed on their own (ADR 0219): a history, nothing waiting, so no count.
     proposals: (
       <GroupedRow
         key="proposals"
         icon="flag"
-        label={t("shell.proposals")}
-        {...(proposals > 0 ? { value: t("mobile.me.proposalsWaiting", { count: proposals }) } : {})}
+        label={t("mobile.proposals.title")}
         chevron
         onPress={() => open("/proposals")}
       />
@@ -279,6 +300,30 @@ function MePage() {
     routines: (
       <GroupedRow key="routines" icon="clock" label={t("routines.title")} chevron onPress={() => open("/routines")} />
     ),
+    // The same screens Settings opens, with Settings' icons.
+    connectors: (
+      <GroupedRow
+        key="connectors"
+        icon="join"
+        label={t("mobile.connectors.title")}
+        chevron
+        onPress={() => open("/connectors")}
+      />
+    ),
+    skills: can(org.org, "read") ? (
+      <GroupedRow
+        key="skills"
+        icon="sparkle"
+        label={t("skills.title")}
+        chevron
+        onPress={() => open("/settings/skills")}
+      />
+    ) : null,
+    // Code (ADR 0215): the sessions where agents program, as the web's sidebar tool; only where it has anything for me
+    // (§12: an agent that programs on a computer, or an open session of mine).
+    code: overview?.code ? (
+      <GroupedRow key="code" icon="code" label={t("shell.code")} chevron onPress={() => open("/coding")} />
+    ) : null,
     wiki: <GroupedRow key="wiki" icon="file" label={t("wiki.title")} chevron onPress={() => open("/wiki")} />,
     drive: <GroupedRow key="drive" icon="drive" label={t("mobile.me.drive")} chevron onPress={() => open("/drive")} />,
     dashboards: (
@@ -317,34 +362,9 @@ function MePage() {
         />
       ) : null,
   };
-  const soundValue = sounds === "off" ? t("mobile.me.soundsOff") : styleLabel(sounds);
-  const themeValue = t(`mobile.theme.${theme.preference}`);
-
   // Sons and Aparência, a few fixed choices, change in their row through the app's picker (the one in use checked);
   // Idioma, one of many, is a pushed list of its own.
-  const pickSound = () => {
-    const choices: SoundChoice[] = ["tactile", "sky", "pixel", "off"];
-    void pickOne({
-      title: t("mobile.me.sounds"),
-      value: sounds,
-      options: choices.map((choice) => ({
-        key: choice,
-        label: choice === "off" ? t("mobile.me.soundsOff") : styleLabel(choice),
-      })),
-    }).then((key) => {
-      if (key) setSoundChoice(key as SoundChoice);
-    });
-  };
-  const pickTheme = () => {
-    const choices: ThemePreference[] = ["system", "light", "dark"];
-    void pickOne({
-      title: t("mobile.me.appearance"),
-      value: theme.preference,
-      options: choices.map((choice) => ({ key: choice, label: t(`mobile.theme.${choice}`) })),
-    }).then((key) => {
-      if (key) theme.setPreference(key as ThemePreference);
-    });
-  };
+  const { pickSound, pickTheme, soundValue, themeValue } = useMePickers();
   const confirmSignOut = () =>
     confirmAction({
       title: t("mobile.me.signOutConfirm"),
@@ -364,7 +384,16 @@ function MePage() {
         plate
         solid={false}
         grouped
-        action={{ label: t("mobile.me.edit"), onPress: () => open("/me/account") }}
+        action={{ label: t("mobile.me.edit"), onPress: () => open("/me/account"), opens: true }}
+        // Your settings and the workspace's, found by name: a screen of its own, pushed in either size.
+        actions={[
+          {
+            icon: "search",
+            sf: "magnifyingglass",
+            label: t("mobile.settingsSearch.open"),
+            onPress: () => pushScreen("/me/search"),
+          },
+        ]}
       />
       <Animated.ScrollView
         style={styles.fill}
@@ -416,7 +445,7 @@ function MePage() {
           ) : null}
         </View>
 
-        <View style={styles.groups}>
+        <View style={[styles.groups, side > 0 ? { paddingHorizontal: SCREEN_X + side } : null]}>
           <GroupedHeader>{t("mobile.me.status")}</GroupedHeader>
           <GroupedList>
             <StatusRow />
@@ -685,22 +714,10 @@ function AgentRow({ agentId, name, role }: { agentId: string; name: string; role
     <GroupedRow
       leading={<AgentFace agentId={agentId} size={36} />}
       label={name}
-      {...(working ? { below: <WorkingLine color={look.color} text={working} /> } : role ? { sub: role } : {})}
+      {...(working ? { below: <RowWorkingLine color={look.color} text={working} /> } : role ? { sub: role } : {})}
       chevron
       onPress={() => pushScreen(`/agent/${agentId}`)}
     />
-  );
-}
-
-/** What a working agent does, in words with its orbit, never a label. */
-function WorkingLine({ color, text }: { color: Parameters<typeof PixelOrbit>[0]["color"]; text: string }) {
-  return (
-    <View style={styles.working}>
-      <PixelOrbit color={color} size={11} />
-      <Text variant="footnote" tone="ink2" numberOfLines={1} style={styles.shrink}>
-        {text}
-      </Text>
-    </View>
   );
 }
 
@@ -740,6 +757,4 @@ const styles = StyleSheet.create({
   center: { textAlign: "center" },
   groups: { paddingHorizontal: SCREEN_X, paddingTop: 4 },
   gapBig: { height: 24 },
-  working: { flexDirection: "row", alignItems: "center", gap: 4 },
-  shrink: { flexShrink: 1, minWidth: 0 },
 });

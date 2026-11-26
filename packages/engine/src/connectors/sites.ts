@@ -16,6 +16,7 @@ export const CONNECTOR_NAMES: Record<string, readonly string[]> = {
     "Business Manager",
   ],
   facebook: ["Facebook Pages"],
+  x: ["Twitter"],
   "microsoft-teams": ["Teams"],
   youtube: ["YouTube Studio"],
   whatsapp: ["WhatsApp Business"],
@@ -50,6 +51,11 @@ export const CONNECTOR_SITES: Record<string, readonly string[]> = {
   vercel: ["vercel.com"],
   railway: ["railway.com"],
   datadog: ["app.datadoghq.com"],
+  "datadog-us3": ["us3.datadoghq.com"],
+  "datadog-us5": ["us5.datadoghq.com"],
+  "datadog-eu": ["app.datadoghq.eu"],
+  "datadog-ap1": ["ap1.datadoghq.com"],
+  "datadog-ap2": ["ap2.datadoghq.com"],
   monday: [".monday.com"],
   clickup: ["app.clickup.com"],
   todoist: ["app.todoist.com"],
@@ -79,6 +85,9 @@ export const CONNECTOR_SITES: Record<string, readonly string[]> = {
   reddit: ["reddit.com"],
   whatsapp: ["web.whatsapp.com"],
   telegram: ["web.telegram.org"],
+  x: ["x.com", "twitter.com"],
+  threads: ["threads.com", "threads.net"],
+  tiktok: ["tiktok.com"],
 };
 
 function matches(site: string, host: string, path: string) {

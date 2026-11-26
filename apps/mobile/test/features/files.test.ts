@@ -20,6 +20,7 @@ import {
   singleImageBox,
   singleImageHeight,
   utf8Bytes,
+  videoBox,
   videoClock,
   videoHeight,
   whereKnown,
@@ -77,6 +78,26 @@ describe("videos", () => {
     expect(videoClock(725)).toBe("12:05");
     expect(videoClock(3729)).toBe("1:02:09");
     expect(videoClock(Number.NaN)).toBe("0:00");
+  });
+
+  test("a video whose size the server read has its own shape from the first frame, an upright one narrowed to fit", () => {
+    expect(videoBox(320, 16 / 9)).toEqual({ width: 320, height: 180 });
+    expect(videoBox(320, 9 / 16)).toEqual({ width: 225, height: 400 });
+    // Not read: the 16:9 box.
+    expect(videoBox(320, undefined)).toEqual({ width: 320, height: 180 });
+  });
+});
+
+describe("audio", () => {
+  test("audio files play in the file screen's player; their tile stays a file card", () => {
+    expect(fileInfo(upload("entrevista.mp3", "audio/mpeg"))).toMatchObject({ view: "audio", type: "file", ext: "MP3" });
+    expect(fileInfo(upload("nota.m4a", "audio/x-m4a")).view).toBe("audio");
+    expect(fileInfo(upload("faixa.wav", "audio/wav")).view).toBe("audio");
+    expect(fileInfo(upload("midi.mid", "audio/midi")).view).toBe("other");
+    // Stored as plain bytes (an agent's recording with no type given): by its name.
+    expect(fileInfo(upload("entrevista.m4a", "application/octet-stream")).view).toBe("audio");
+    expect(fileInfo(upload("nota.opus", "application/octet-stream")).view).toBe("audio");
+    expect(fileInfo(upload("faixa.flac", "application/octet-stream")).view).toBe("audio");
   });
 });
 
@@ -237,8 +258,8 @@ describe("viewer", () => {
     expect(viewer).toContain(
       '<Round icon="right" label={t("mobile.files.next")} plate={SCRIM} onPress={() => turn(next)} />',
     );
-    // Gone while zoomed, and while the conversation's sheet is up (a swipe still turns the page under it).
-    expect(viewer).toContain("visible={chrome && !zoomed && !shownSheet}");
+    // Gone while zoomed.
+    expect(viewer).toContain("visible={chrome && !zoomed}");
     expect(viewer).toContain("else pager.current?.setPage(to);");
     // The count took the dots' place: one place says where you are.
     expect(viewer).not.toContain("styles.dots");
@@ -472,8 +493,7 @@ describe("viewer", () => {
     expect(viewer).toContain("if (leaving.value) return;");
     expect(viewer).toContain("if (closed.current) return;");
     // Only the picture in sight, at 1×, while the pages are still.
-    // With the conversation's sheet up the pull rests: the sheet goes down first (ADR 0208).
-    expect(viewer).toContain("enabled: active && !zoomed && !paging && !marking,");
+    expect(viewer).toContain("enabled: active && !zoomed && !paging,");
     // It shrinks around the spot the finger took, from rest; caught mid-spring, around the one before.
     expect(viewer).toContain("if (resting)");
     expect(viewer).toContain("pulledPlacement(pullX.value, pullY.value, screen, grab.value)");

@@ -186,13 +186,18 @@ describe("Conversas with the strip and one list", () => {
   });
 
   test("the app's faces, the kit's press and badge, the screen's sides, and nothing that moves for show", () => {
-    expect(strip).toContain("<AgentFace agentId={r.with.id} size={FACE - 2} mode={facts.face} live={live} presence />");
+    // At work it wears the orbit, as its row's face does.
+    expect(strip).toContain(
+      "<AgentFace agentId={r.with.id} size={FACE - 2} mode={facts.face} live={live} presence orbit={ringed} />",
+    );
+    expect(strip).toContain('const ringed = r.kind === "dm" && r.with.type === "agent" && facts.face === "run";');
     expect(strip).toContain('<Tile icon="hash" size={FACE} />');
     expect(strip).toMatch(/<PressScale\s+haptic=\{false\}/);
     expect(strip).toContain("<Count");
     expect(strip).toContain("paddingHorizontal: SCREEN_X");
     expect(strip).toContain("if (items.length === 0) return null;");
-    expect(strip).toContain("<ScrollView horizontal showsHorizontalScrollIndicator={false}");
+    // The kit's sideways strip: a fade at the edge where more pinned faces wait.
+    expect(strip).toContain("<SideScroll contentContainerStyle={styles.strip}>");
     expect(strip).not.toMatch(/entering=|withTiming|withSpring|snapToInterval/);
     // Only a pinned agent at work moves, within the home's budget, and none while the strip is closed.
     expect(home).toContain('const moves = !collapsed.includes("pinned") && facts.face === "run" && live < LIVE_ROWS;');

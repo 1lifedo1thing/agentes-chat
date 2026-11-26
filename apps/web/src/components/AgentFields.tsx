@@ -2,6 +2,7 @@ import type { Credential, Member, OrgRole } from "@agenteschat/client";
 import { useRoles } from "@agenteschat/client";
 import { ownerRoles, roleOfOwnerValue, roleOwnerValue } from "@agenteschat/client/lib/agent-owner";
 import { apiPickOptions, type BrainPickOption, brainPickText } from "@agenteschat/client/lib/brain-picker";
+import { formatBudgetUsd } from "@agenteschat/client/lib/format";
 import { keyLine, keySource, type ModelChoice } from "@agenteschat/client/lib/providers";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import {
@@ -53,21 +54,15 @@ import { QUICK_BUDGETS, ROLE_IDS, ROLE_PRESETS, readBudget } from "@/lib/new-age
  */
 
 /**
- * Select value for "No owner" (the API takes `ownerUserId: null` and `ownerRoleId: null`). A person's value is their
+ * Select value for "Admins", an agent with no owner (the API takes `ownerUserId: null` and `ownerRoleId: null`). A person's value is their
  * id, a role's `role:<id>` (`roleOwnerValue`, ADR 0085, addendum of 2026-11-21).
  */
 export const NO_OWNER = "__none__";
 /** Value of the "Chave padrão do workspace" option (the API takes `credentialId: null`). */
 export const DEFAULT_KEY = "__default__";
 
-/** "$10", "US$ 12,50": whole amounts without cents, as the language writes dollars. */
-export const usd = (_t: TFunction, locale: string, n: number) =>
-  new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(n);
+/** `formatBudgetUsd`, as the web's forms call it. */
+export const usd = (_t: TFunction, locale: string, n: number) => formatBudgetUsd(locale, n);
 
 /**
  * The model picker's options: each provider's models under its name, OpenRouter's good picks before the rest of its
@@ -435,8 +430,8 @@ export function LookRows({
 }
 
 /**
- * "Owner": a role (whoever holds it at the time, ADR 0085, addendum of 2026-11-21), a member (you marked) or "No
- * owner". The roles come first under "Roles", the people under "People"; with no role to offer (`ownerRoles`: the
+ * "Owner": a role (whoever holds it at the time, ADR 0085, addendum of 2026-11-21), a member (you marked) or
+ * "Admins" (no owner: the admins answer for it). The roles come first under "Roles", the people under "People"; with no role to offer (`ownerRoles`: the
  * workspace's own, none holding `administrator`) the list has no headings, as before. Each person with their role
  * under the name, which a personal workspace leaves out (ADR 0159): a family knows who is who.
  */
@@ -503,7 +498,7 @@ export function OwnerSelect({
 
 /**
  * "Owner" where it can't be changed: the person and their role (a team's workspace), the role that answers for it and
- * how many hold it (ADR 0085, addendum of 2026-11-21), or "No owner".
+ * how many hold it (ADR 0085, addendum of 2026-11-21), or "Admins" (no owner).
  */
 export function OwnerValue({ member, meId, role }: { member: Member | undefined; meId: string; role?: OrgRole }) {
   const { t } = useTranslation();
