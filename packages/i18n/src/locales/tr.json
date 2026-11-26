@@ -21075,7 +21075,8 @@
     },
     "add": {
       "label": "Widget ekle",
-      "short": "Widget"
+      "short": "Widget",
+      "word": "Ekle"
     },
     "alert": {
       "label": "Bir şeyler ters gidince bana haber ver",

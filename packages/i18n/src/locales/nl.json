@@ -21333,7 +21333,8 @@
     },
     "add": {
       "label": "Widget toevoegen",
-      "short": "Widget"
+      "short": "Widget",
+      "word": "Toevoegen"
     },
     "alert": {
       "label": "Laat het me weten als er iets mis is",

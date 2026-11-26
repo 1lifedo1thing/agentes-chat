@@ -21976,7 +21976,7 @@ export const ptBR = {
       dropped: "Você soltou “{{title}}” na posição {{position}} de {{total}}.",
       canceled: "“{{title}}” voltou para o lugar.",
     },
-    add: { label: "Adicionar widget", short: "Widget" },
+    add: { label: "Adicionar widget", short: "Widget", word: "Adicionar" },
     alert: {
       label: "Me avisar quando algo fugir do normal",
       hint: "O aviso vai para Esperando você, com o que mudou.",

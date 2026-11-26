@@ -21151,7 +21151,8 @@
     },
     "add": {
       "label": "Widget hinzufügen",
-      "short": "Widget"
+      "short": "Widget",
+      "word": "Hinzufügen"
     },
     "alert": {
       "label": "Sag mir Bescheid, wenn etwas nicht stimmt",

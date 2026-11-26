@@ -22090,7 +22090,7 @@ export const en = {
       dropped: "You dropped “{{title}}” at position {{position}} of {{total}}.",
       canceled: "“{{title}}” went back to its place.",
     },
-    add: { label: "Add widget", short: "Widget" },
+    add: { label: "Add widget", short: "Widget", word: "Add" },
     alert: {
       label: "Tell me when something is off",
       hint: "The alert goes to Waiting on you, with what changed.",

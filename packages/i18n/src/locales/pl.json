@@ -22512,7 +22512,8 @@
     },
     "add": {
       "label": "Dodaj widżet",
-      "short": "Widżet"
+      "short": "Widżet",
+      "word": "Dodaj"
     },
     "alert": {
       "label": "Daj znać, gdy coś jest nie tak",
