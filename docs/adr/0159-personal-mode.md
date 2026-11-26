@@ -159,5 +159,12 @@ A personal workspace's group conversations read as conversations with people and
   call an agent instead of the empty state.
 - **Faces at a team's size.** A personal workspace's agents in the sidebar have the message-size face a team's have
   (32px, was 40).
-- The phone app still shows a group conversation by its name with `#`; its face and cover there come later.
-
+- **The phone app** does the same: the group's face in the conversation list and the switcher, in the header's pill
+  (leading, with who is in it under the name), on the greeting of an empty conversation and as a cover above the
+  first message once the start is loaded; the new conversation's field takes the name as written (capitals and
+  corrections on, no `#`).
+- **Servers and apps of any age.** The new fields are optional. An app tells a server that keeps names as written by the
+  channel list carrying `agentIds` (`groupFaceOf`, `takesGroupNames` in `@agenteschat/client/lib/group-conversations`):
+  from an older server a group conversation stays a channel with its `#`, and the phone's field stays lower case with no
+  spaces, as that server requires. An older phone app on a newer server shows the names as written, with a `#` before
+  them, and creates groups as before.
