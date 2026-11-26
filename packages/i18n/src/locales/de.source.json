@@ -19647,8 +19647,8 @@
   "empty.crashText": {
     "value": "Reload the page to carry on."
   },
-  "empty.crashCode": {
-    "value": "If you ask for help, give the code {{id}}."
+  "empty.supportCode": {
+    "value": "Code for support"
   },
   "empty.unreachableTitle": {
     "value": "Can't reach agentes.chat"
@@ -19661,6 +19661,9 @@
   },
   "empty.offlineText": {
     "value": "This page opens by itself when you're back online."
+  },
+  "empty.waitingConnection": {
+    "value": "Waiting for the connection to come back"
   },
   "empty.unknownHostTitle": {
     "value": "This address isn't set up yet"

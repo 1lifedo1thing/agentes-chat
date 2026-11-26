@@ -7989,11 +7989,12 @@
     "noOrgBack": "Çalışma alanlarınıza dönün",
     "crashTitle": "Bir şeyler ters gitti",
     "crashText": "Devam etmek için sayfayı yeniden yükleyin.",
-    "crashCode": "Yardım isterseniz {{id}} kodunu verin.",
+    "supportCode": "Destek kodu",
     "unreachableTitle": "agentes.chat'e ulaşılamıyor",
     "unreachableText": "Yeniden başlatılıyor olabilir. Geri döner dönmez bu sayfa kendiliğinden açılır.",
     "offlineTitle": "Çevrimdışısınız",
     "offlineText": "Yeniden çevrimiçi olduğunuzda bu sayfa kendiliğinden açılır.",
+    "waitingConnection": "Bağlantının geri gelmesi bekleniyor",
     "unknownHostTitle": "Bu adres henüz ayarlanmadı",
     "unknownHostText": "Yeni bağlandıysa birkaç dakika sonra tekrar deneyin.",
     "unknownHostTab": "Adres ayarlanmadı · agentes.chat"
