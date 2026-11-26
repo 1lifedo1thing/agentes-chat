@@ -421,15 +421,25 @@ const wholeToolKey = (tool: ToolDefinition) =>
     ? null
     : `${tool.connectionId ?? ""}|${tool.rememberAs ?? tool.name}`;
 
-/** The agent's whole-tool "Aprovar sempre" rules, by `wholeToolKey`. */
-async function wholeToolRules(ctx: Pick<ToolContext, "db" | "orgId" | "agentId">): Promise<Set<string>> {
-  const rows = await ctx.db
-    .select({ connectionId: approvalRules.connectionId, tool: approvalRules.tool })
-    .from(approvalRules)
-    .where(
-      and(eq(approvalRules.orgId, ctx.orgId), eq(approvalRules.agentId, ctx.agentId), eq(approvalRules.action, "")),
-    );
-  return new Set(rows.map((r) => `${r.connectionId ?? ""}|${r.tool}`));
+/**
+ * The agent's approvals level and, with `withRules`, its whole-tool "Aprovar sempre" rules by `wholeToolKey`, in one
+ * statement: the tool list is read before every model call.
+ */
+async function levelAndWholeToolRules(
+  ctx: Pick<ToolContext, "db" | "orgId" | "agentId">,
+  withRules: boolean,
+): Promise<[ApprovalsLevel, Set<string>]> {
+  if (!withRules) return [await approvalsLevelOf(ctx.db, ctx.orgId, ctx.agentId), new Set()];
+  const [row] = await ctx.db
+    .select({
+      level: agents.approvalsLevel,
+      rules: sql<
+        string[] | null
+      >`(select json_agg(coalesce(${approvalRules.connectionId}::text, '') || '|' || ${approvalRules.tool}) from ${approvalRules} where ${approvalRules.orgId} = ${ctx.orgId} and ${approvalRules.agentId} = ${ctx.agentId} and ${approvalRules.action} = '')`,
+    })
+    .from(agents)
+    .where(and(eq(agents.orgId, ctx.orgId), eq(agents.id, ctx.agentId)));
+  return [row?.level ?? DEFAULT_APPROVALS_LEVEL, new Set(row?.rules ?? [])];
 }
 
 /** Whether a call of this tool waits for a person: an approval, or a built-in question. */
@@ -682,12 +692,11 @@ export function createToolGateway(deps: {
     known?: Map<string, ToolDefinition>,
     heldBack?: string[],
   ): Promise<ToolDefinition[]> {
-    const [keys, all, level, decides, rules] = await Promise.all([
+    const [keys, all, [level, rules], decides] = await Promise.all([
       grantedScopeKeys(ctx.db, ctx.orgId, ctx.agentId),
       known ?? allTools(ctx),
-      approvalsLevelOf(ctx.db, ctx.orgId, ctx.agentId),
+      levelAndWholeToolRules(ctx, Boolean(authority)),
       creatorDecides(ctx, authority),
-      authority ? wholeToolRules(ctx) : new Set<string>(),
     ]);
     // Rules are kept, and read by a call, only at "Só o que é arriscado" (`rememberKinds`).
     const ruled = (t: ToolDefinition) => {
