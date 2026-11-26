@@ -19455,9 +19455,9 @@
   },
   "work": {
     "handed": {
-      "lead": "Passato a <0/>{{name}}",
-      "working": "ci sta lavorando",
-      "done": "fatto in {{duration}}",
+      "lead": "Passato a <0>{{name}}</0>",
+      "working": "al lavoro",
+      "ready": "fatto",
       "waitingYou": "aspetta la tua risposta",
       "waiting": "aspetta una risposta",
       "waitingApprovalYou": "aspetta la tua approvazione",
@@ -19603,6 +19603,8 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}} aspetta la tua approvazione",
       "yourAnswer": "{{name}} aspetta la tua risposta",
+      "helping": "{{to}} aiuta {{from}}",
+      "helping_female": "{{to}} aiuta {{from}}",
       "done": "{{to}} ha finito. {{from}} sta scrivendo",
       "notDone": "{{to}} non ha finito. {{from}} sta scrivendo",
       "handedOff": "{{to}} lavora su ciò che {{from}} gli ha passato"

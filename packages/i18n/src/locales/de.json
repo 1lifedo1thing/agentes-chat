@@ -18838,9 +18838,9 @@
   },
   "work": {
     "handed": {
-      "lead": "Übergeben an <0/>{{name}}",
-      "working": "arbeitet daran",
-      "done": "fertig in {{duration}}",
+      "lead": "Übergeben an <0>{{name}}</0>",
+      "working": "arbeitet",
+      "ready": "fertig",
       "waitingYou": "wartet auf deine Antwort",
       "waiting": "wartet auf eine Antwort",
       "waitingApprovalYou": "wartet auf deine Freigabe",
@@ -18982,6 +18982,7 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}} wartet auf deine Freigabe",
       "yourAnswer": "{{name}} wartet auf deine Antwort",
+      "helping": "{{to}} hilft {{from}}",
       "done": "{{to}} ist fertig. {{from}} schreibt",
       "notDone": "{{to}} ist nicht fertig geworden. {{from}} schreibt",
       "handedOff": "{{to}} arbeitet an dem, was {{from}} übergeben hat"

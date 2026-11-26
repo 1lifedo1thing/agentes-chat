@@ -18250,9 +18250,9 @@
   },
   "work": {
     "handed": {
-      "lead": "Diserahkan ke <0/>{{name}}",
-      "working": "sedang dikerjakan",
-      "done": "selesai dalam {{duration}}",
+      "lead": "Diserahkan ke <0>{{name}}</0>",
+      "working": "sedang bekerja",
+      "ready": "selesai",
       "waitingYou": "menunggu jawabanmu",
       "waiting": "menunggu jawaban",
       "waitingApprovalYou": "menunggu persetujuanmu",
@@ -18390,6 +18390,7 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}} menunggu persetujuanmu",
       "yourAnswer": "{{name}} menunggu jawabanmu",
+      "helping": "{{to}} membantu {{from}}",
       "done": "{{to}} sudah selesai. {{from}} sedang menulis",
       "notDone": "{{to}} tidak selesai. {{from}} sedang menulis",
       "handedOff": "{{to}} mengerjakan yang diserahkan {{from}}"
