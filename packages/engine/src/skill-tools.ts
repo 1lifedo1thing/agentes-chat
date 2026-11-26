@@ -209,7 +209,13 @@ export function createSkillToolSource(
     try {
       zip = await skillZipOfFile(
         { db: ctx.db, blobs: deps.blobs },
-        { type: "agent", agentId: ctx.agentId, channelId: ctx.channelId, threadId: replyThreadOf(ctx), runId: ctx.runId },
+        {
+          type: "agent",
+          agentId: ctx.agentId,
+          channelId: ctx.channelId,
+          threadId: replyThreadOf(ctx),
+          runId: ctx.runId,
+        },
         ctx.orgId,
         fileId,
       );

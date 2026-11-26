@@ -522,13 +522,14 @@ describe("agents installing and updating skills", () => {
     });
     if (!Array.isArray(installed)) throw new Error("not installed");
     const [skill] = installed;
-    expect(skill?.name).toBe("deploy");
-    expect(skill?.files.map((x) => x.path)).toContain("references/steps.md");
+    if (!skill) throw new Error("nothing installed");
+    expect(skill.name).toBe("deploy");
+    expect(skill.files.map((x) => x.path)).toContain("references/steps.md");
     const on = await f.db
       .select()
       .from(schema.agentSkills)
       .where(and(eq(schema.agentSkills.orgId, f.org.id), eq(schema.agentSkills.agentId, f.agent.id)));
-    expect(on.map((r) => [r.skillId, r.enabled])).toEqual([[skill?.id, true]]);
+    expect(on.map((r) => [r.skillId, r.enabled])).toEqual([[skill.id, true]]);
 
     // A member reads the file but doesn't install for the team.
     const member = await addMember(f.db, f.org.id, "member");
