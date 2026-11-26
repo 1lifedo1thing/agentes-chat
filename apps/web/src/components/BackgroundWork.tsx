@@ -104,10 +104,16 @@ export function HandedWorkLine({ work }: { work: WorkView }) {
   const name = agent?.name ?? t("channel.unknownAgent");
   const talk = work.handedBy?.consultationId;
   const seeTalk = talk && !workIsOver(work) && actions?.openConsultation ? actions.openConsultation : undefined;
+  // The report's copy is posted in the thread the work was handed from (`homeThreadId`), never a row of the timeline:
+  // a jump there finds no such row. That thread opens at it, as the phone's line does.
+  const seeResult = (messageId: string) => {
+    if (work.homeThreadId && actions?.openThread) actions.openThread(work.homeThreadId, messageId);
+    else actions?.jumpTo?.(messageId);
+  };
   const color = agent ? colorOf(agent) : undefined;
   const links = [
     h.result && (
-      <WorkLineAction key="result" onClick={() => actions?.jumpTo?.(h.result?.messageId as string)}>
+      <WorkLineAction key="result" onClick={() => seeResult(h.result?.messageId as string)}>
         {h.result.label}
       </WorkLineAction>
     ),

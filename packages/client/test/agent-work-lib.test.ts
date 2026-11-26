@@ -89,7 +89,7 @@ describe("an agent's list line (ADR 0084 addendum)", () => {
     expect(line(work({ state: "approval" }))?.text).toBe("esperando aprovação");
     expect(line(work({ state: "answer" }))?.text).toBe("esperando uma resposta");
     expect(line(work({ state: "computer" }))?.text).toBe("esperando o computador");
-    expect(line(work({ state: "outage" }))?.text).toBe("IA fora do ar");
+    expect(line(work({ state: "outage" }))?.text).toBe("IA não responde");
     expect(line(work({ state: "queued" }))).toMatchObject({ text: "na fila", short: "na fila", tone: "neutral" });
     expect(workLine(en, "en", work({ forAgentId: "ada" }), names, NOW)).toMatchObject({
       text: "working",
