@@ -3,10 +3,17 @@ import {
   CODEX_FOLDER_PROTOCOL,
   CODEX_WINDOWS_PROTOCOL,
   CONTEXT_LIMIT_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
   MACHINE_PROTOCOL_VERSION,
   OPENCODE_ACP_PROTOCOL,
 } from "@agenteschat/adapters";
-import { type BrainTurnRequest, CodexBrain, type ComputerBrainLink, OpencodeBrain } from "../src/brains/codex";
+import {
+  type BrainTurnRequest,
+  CodexBrain,
+  type ComputerBrainLink,
+  GrokBrain,
+  OpencodeBrain,
+} from "../src/brains/codex";
 import { computerPrompt } from "../src/brains/prompt";
 import type { BrainEvent, BrainTurn } from "../src/brains/types";
 import { MachineRequestError } from "../src/machine-hub";
@@ -119,6 +126,33 @@ test("on Windows a runner before OPENCODE_ACP_PROTOCOL refuses every OpenCode tu
   expect(current.sent).toHaveLength(1);
   expect(current.sent[0]).toMatchObject({ kind: "opencode" });
   const mac = opencodeLink("darwin", OPENCODE_ACP_PROTOCOL - 1);
+  await collect(brain(mac).run(turn(), io()));
+  expect(mac.sent).toHaveLength(1);
+});
+
+test("Grok runs on Windows from GROK_WINDOWS_PROTOCOL; an older Windows runner is too old there, nothing sent", async () => {
+  const grokLink = (os: string, protocol: number) => {
+    const l = link({ os, protocol, events: [{ type: "done", text: "ok" }] });
+    l.status = async () => ({
+      online: true,
+      execAllowed: true,
+      protocol,
+      os,
+      executors: { grok: { version: "1.0.45" } },
+    });
+    return l;
+  };
+  const brain = (l: ComputerBrainLink) => new GrokBrain({ link: l, mcp: async () => ({ token: "t" }) });
+  const old = grokLink("windows", GROK_WINDOWS_PROTOCOL - 1);
+  expect(await collect(brain(old).run(turn(), io()))).toMatchObject([
+    { type: "error", code: "runner_outdated", message: expect.stringContaining("Grok Build on Windows") },
+  ]);
+  expect(old.sent).toEqual([]);
+  const current = grokLink("windows", GROK_WINDOWS_PROTOCOL);
+  await collect(brain(current).run(turn(), io()));
+  expect(current.sent).toHaveLength(1);
+  expect(current.sent[0]).toMatchObject({ kind: "grok" });
+  const mac = grokLink("darwin", GROK_WINDOWS_PROTOCOL - 1);
   await collect(brain(mac).run(turn(), io()));
   expect(mac.sent).toHaveLength(1);
 });

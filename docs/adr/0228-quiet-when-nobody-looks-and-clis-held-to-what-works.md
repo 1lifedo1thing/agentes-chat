@@ -107,7 +107,7 @@ The same for Claude Code, Codex, Cursor, OpenCode, Grok Build and the Antigravit
   (macOS, Linux with glibc or musl, Windows; arm64 and x64 where the vendor has them) at the vendor's own https
   address, with the vendor's hash of it (Claude Code's manifest, Codex's and OpenCode's release assets, the
   Antigravity CLI's manifests) or, where the vendor publishes none (Cursor, Grok Build), the hash taken when pinning.
-  The server sends its list after every `welcome` (`clis.pins`, protocol 81); the runner keeps the last one in its home
+  The server sends its list after every `welcome` (`clis.pins`, protocol 85); the runner keeps the last one in its home
   and has the same list built in, so it works with an older server or none. A new pin is a server deploy, never a
   runner release.
 - **The runner.** The person's own copy runs when it is at the pinned version or newer. Otherwise, where the CLI is
@@ -143,12 +143,12 @@ the pin list (a system is refused only where its vendor makes no build), and a W
   runner starts `node.exe index.js` itself (`launch` in the pin), never its `.cmd` launcher, whose cmd.exe and
   PowerShell line is too short for a prompt and requotes it.
 - **Grok Build** keeps it in `auth.json` under `GROK_HOME` everywhere; its Windows build has no keyring code at all.
-- **The Antigravity CLI** keeps it in the Credential Manager unless `AGY_CLI_FORCE_FILE_TOKEN_STORAGE` is set, then in
-  its file under the home (read off the 1.5.16 Windows build: the switch, and a token store that writes the file): the
-  account's env has `USERPROFILE` (Go's home there), `APPDATA` and `LOCALAPPDATA` in its folder and the switch on.
-- **Checked, not trusted.** A Windows sign-in of Cursor or the Antigravity CLI counts only once its file is in the
-  account's folder (`signInFileOnWindows`); one that went to the Credential Manager instead is refused in plain words,
-  so two accounts never become one.
+- **The Antigravity CLI** keeps it in the Windows user's one Credential Manager, whatever its home: a Windows computer
+  has one Gemini account (ADR 0143 §3, protocol 84). The account's folder is still its home (`USERPROFILE`), so its
+  settings and our MCP server come from there.
+- **Checked, not trusted.** A Windows sign-in of Cursor counts only once its file is in the account's folder
+  (`signInFileOnWindows`); one that went to the Credential Manager instead is refused in plain words, so two accounts
+  never become one.
 - **Git for Windows** is Claude Code's shell there (Git Bash). Where the person has none, the runner fetches MinGit,
   Git for Windows' portable build (its release's sha256), as one more pin (`git`, Windows only, wanted where Claude Code
   is) before Claude Code's turn or sign-in, and points `CLAUDE_CODE_GIT_BASH_PATH` at it; MinGit ships GNU bash as
@@ -170,4 +170,4 @@ the pin list (a system is refused only where its vendor makes no build), and a W
 - A computer may hold a CLI twice (the person's older one and the runner's), which takes disk space.
 - Not done here: the loading screen's own avatar loop and minimum time (`apps/desktop`, a desktop release), the
   window's throttling setting (the page now stops its own motion instead), and reading sign-ins through each CLI's
-  protocol beyond Codex. The one-click `cli.install` stays for runners before protocol 81.
+  protocol beyond Codex. The one-click `cli.install` stays for runners before protocol 85.

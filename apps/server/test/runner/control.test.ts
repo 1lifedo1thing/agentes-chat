@@ -12,7 +12,7 @@ import { windowsCodexSandbox } from "../../runner/codex-windows";
 import { configPath, readStoredConfig, type StoredConfig, writeConfig } from "../../runner/config";
 import type { Dial, Socket, SocketHandlers } from "../../runner/connection";
 import { EXIT_LOCKED, type RunControlOptions, runControl } from "../../runner/control";
-import { DEFAULT_LIMITS, RunnerDaemon, sizedTaskLimit } from "../../runner/daemon";
+import { brainLimitsFor, DEFAULT_LIMITS, RunnerDaemon, sizedTaskLimit } from "../../runner/daemon";
 import { RUNNER_VERSION } from "../../runner/errors";
 import { ORG_LOGO_MAX_BYTES, orgLogoPath } from "../../runner/org-logo";
 import type { FetchFn } from "../../runner/pairing";
@@ -828,6 +828,12 @@ test("the task limit is sized to the memory: one per 1.5 GiB past 4, at least 3,
   // A container's limit, not the host's.
   expect(sizedTaskLimit({ memoryGb: 256, limit: { cpus: 4, memoryGb: 8 } })).toBe(3);
   expect(DEFAULT_LIMITS.maxConcurrentTasks).toBeGreaterThanOrEqual(3);
+});
+
+test("an idle Claude Code stays warm half an hour off Linux, an hour on it (memory pressure closes it sooner)", () => {
+  expect(brainLimitsFor("darwin")).toEqual({ brainIdleMinutes: 30, brainMaxProcesses: 1 });
+  expect(brainLimitsFor("win32")).toEqual({ brainIdleMinutes: 30, brainMaxProcesses: 1 });
+  expect(brainLimitsFor("linux")).toEqual({ brainIdleMinutes: 60, brainMaxProcesses: 8 });
 });
 
 test("report: facts and the end of the log, with no paths, names, addresses or token", async () => {

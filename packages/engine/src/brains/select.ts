@@ -5,6 +5,7 @@ import {
   CODEX_WINDOWS_PROTOCOL,
   CURSOR_PROTOCOL,
   GROK_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
   isBrainEffort,
   OPENCODE_ACP_PROTOCOL,
   OPENCODE_PROTOCOL,
@@ -451,8 +452,10 @@ export function computerBrainUnavailable(
         message: `The runner on ${status.name} is too old for ${name} agents. ${runnerUpdateWay(status)}`,
       };
     }
-    // On Windows a runner before `OPENCODE_ACP_PROTOCOL` refuses every OpenCode turn.
-    if (kind === "opencode" && status.os === "windows" && status.protocol < OPENCODE_ACP_PROTOCOL) {
+    // On Windows a runner before `OPENCODE_ACP_PROTOCOL` refuses every OpenCode turn, one before
+    // `GROK_WINDOWS_PROTOCOL` every Grok turn.
+    const windowsProtocol = kind === "opencode" ? OPENCODE_ACP_PROTOCOL : kind === "grok" ? GROK_WINDOWS_PROTOCOL : 0;
+    if (status.os === "windows" && status.protocol < windowsProtocol) {
       return {
         code: "runner_outdated",
         message: `The runner on ${status.name} is too old for ${name} agents on Windows. ${runnerUpdateWay(status)}`,

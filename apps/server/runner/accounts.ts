@@ -83,6 +83,7 @@ import {
   isExecutable,
   OPENCODE_BIN,
   parseAgyModels,
+  parseCursorModels,
   parseGrokModels,
   resolveCommand,
 } from "./executors";
@@ -324,29 +325,22 @@ export function accountEnv(
     delete env.DISPLAY;
     delete env.SSH_AUTH_SOCK;
     Object.assign(env, AGY_QUIET_ENV);
+    // Go reads the home from USERPROFILE on Windows, never HOME: the CLI's settings and config come from this folder.
+    if (platform === "win32") env.USERPROFILE = dir;
     if (platform === "darwin") agyKeychain(dir);
-    if (platform === "win32") {
-      // Windows: Go's home is `USERPROFILE`, and the CLI keeps its sign-in in the computer user's one Credential
-      // Manager unless told to keep it in its file under that home (`AGY_CLI_FORCE_FILE_TOKEN_STORAGE`, read off the
-      // 1.5.16 Windows build), so each account's stays in its folder. The sign-in checks that it did (`keptApart`).
-      env.USERPROFILE = dir;
-      env.APPDATA = path.join(dir, "AppData", "Roaming");
-      env.LOCALAPPDATA = path.join(dir, "AppData", "Local");
-      env.AGY_CLI_FORCE_FILE_TOKEN_STORAGE = "true";
-    }
   }
   return env;
 }
 
 /**
  * Where a sign-in of `kind` must have landed in its account's folder on Windows, or null where nothing needs checking:
- * Cursor's and the Antigravity CLI's go to the computer user's one Credential Manager unless they keep their file,
- * and there every account of that CLI would be one (ADR 0143, ADR 0228 §6).
+ * Cursor's goes to the computer user's one Credential Manager unless it keeps its file, and there every Cursor account
+ * would be one (ADR 0228 §6). The Antigravity CLI's always goes there, so a Windows computer has one Gemini account
+ * (ADR 0143).
  */
 export function signInFileOnWindows(kind: AccountKind, dir: string, platform: NodeJS.Platform = process.platform) {
   if (platform !== "win32") return null;
   if (kind === "cursor") return path.join(dir, "Cursor", "auth.json");
-  if (kind === "antigravity") return path.join(dir, ...AGY_SIGN_IN_FILE.split("/"));
   return null;
 }
 
@@ -595,20 +589,27 @@ export function watchCodexAuth(home: string, granted: string, send: (auth: strin
 
 /**
  * The CLIs whose models are what an account signed in here lists (`AccountManager.listedModels`): the computer's own
- * `grok models` and `agy models` are signed out, so its look finds none.
+ * `grok models`, `agy models` and `agent models` are signed out, so its look finds none.
  */
-export type ListingKind = "grok" | "antigravity";
+export type ListingKind = "grok" | "antigravity" | "cursor";
 
 /** Beside the account folders: what each account signed in here listed, by its id (`AccountManager.listedModels`). */
-const LISTED_MODELS_FILE: Record<ListingKind, string> = { grok: "grok-models.json", antigravity: "agy-models.json" };
+const LISTED_MODELS_FILE: Record<ListingKind, string> = {
+  grok: "grok-models.json",
+  antigravity: "agy-models.json",
+  cursor: "cursor-models.json",
+};
 
-/** A status look's output read as the models the CLI lists to that account. */
-const LISTED_BY: Record<ListingKind, (stdout: string) => CursorModelInfo[]> = {
+/** The CLIs whose status look is their models' listing: its output read as the models it lists to that account. */
+const LISTED_BY: Record<"grok" | "antigravity", (stdout: string) => CursorModelInfo[]> = {
   grok: parseGrokModels,
   antigravity: parseAgyModels,
 };
 
-const isListingKind = (kind: AccountKind): kind is ListingKind => kind === "grok" || kind === "antigravity";
+const listsInStatus = (kind: AccountKind): kind is "grok" | "antigravity" => kind === "grok" || kind === "antigravity";
+
+/** Cursor's `agent status` names no model: `agent models` is asked on its own, at most this often per account. */
+const CURSOR_LISTING_EVERY_MS = 60 * 60_000;
 
 /** Only what reads as models: anything else a file holds is skipped. */
 const modelsIn = (v: unknown): CursorModelInfo[] =>
@@ -1316,10 +1317,23 @@ export function parseGrokStatus(
 
 /**
  * The Antigravity CLI's sign-in (`agy acp --login`): the first https URL on Google's accounts pages. The code Google
- * shows after the sign-in is pasted back (`code`), as with Claude Code.
+ * shows after the sign-in is pasted back (`code`), as with Claude Code. It always asks which Google account
+ * (`prompt=select_account`): the CLI's link doesn't, so a browser signed in to one account took that one without a
+ * question, and a second Gemini account signed in as the first again.
  */
 export function parseAgyLoginUrl(output: string, final = false): string | null {
-  return urlsIn(stripAnsi(output), (h) => hostIs(h, "accounts.google.com"), final)[0]?.url ?? null;
+  const found = urlsIn(stripAnsi(output), (h) => hostIs(h, "accounts.google.com"), final)[0]?.url;
+  if (!found) return null;
+  const url = new URL(found);
+  const prompt = (url.searchParams.get("prompt") ?? "").split(" ").filter(Boolean);
+  if (!prompt.includes("select_account")) url.searchParams.set("prompt", [...prompt, "select_account"].join(" "));
+  return url.toString();
+}
+
+/** The Google account a finished `agy acp --login` names (`Logged in as someone@example.com.`), when it does. */
+export function parseAgyLoginEmail(output: string): string | undefined {
+  const email = /logged in as ([^\s@<>()"']+@[^\s@<>()"']+\.[a-z]{2,})/i.exec(stripAnsi(output))?.[1];
+  return email && email.length <= 254 ? email : undefined;
 }
 
 /** What the Antigravity CLI says when it has no sign-in to think with. */
@@ -1652,6 +1666,21 @@ export class AccountManager {
     return this.authPrefix() !== null;
   }
 
+  /** A Gemini account here, or one signing in now; a sign-in left unfinished isn't one. */
+  private hasAgy(): boolean {
+    let names: string[];
+    try {
+      names = readdirSync(this.kindRoot("antigravity"));
+    } catch {
+      return false;
+    }
+    return names.some(
+      (id) =>
+        isAccountId(id) &&
+        (this.logins.get(id)?.state === "waiting" || !existsSync(path.join(this.dirOf("antigravity", id), SIGNING_IN))),
+    );
+  }
+
   /** Where a kind's account folders are. */
   private kindRoot(kind: AccountKind) {
     return kind === "grok" && this.opts.grokRoot ? this.opts.grokRoot : path.join(this.opts.root, kind);
@@ -1854,6 +1883,14 @@ export class AccountManager {
     }
     if (kind === "opencode" && !cliKey) {
       throw new RunnerError("bad_request", "OpenCode signs in with its API key");
+    }
+    // ADR 0143: Windows keeps the CLI's sign-in in the one Credential Manager of the computer's user, so a second
+    // account would take the first one's place.
+    if (kind === "antigravity" && !again && (this.opts.platform ?? process.platform) === "win32" && this.hasAgy()) {
+      throw new RunnerError(
+        "bad_request",
+        "On Windows a computer uses one Gemini account at a time. Remove the other Gemini account here first.",
+      );
     }
     if (this.logins.get(loginId)?.state === "waiting") {
       throw new RunnerError("bad_request", "This sign-in already exists");
@@ -2338,6 +2375,11 @@ export class AccountManager {
         const status: { said?: string } = {};
         const info = await this.lookUp(login.kind, login.id, status);
         if (login.state !== "waiting") return;
+        // `agy models` never names the account: its sign-in's own words may, which the server then keeps.
+        if (login.kind === "antigravity" && !info.email) {
+          const email = parseAgyLoginEmail(login.output);
+          if (email) info.email = email;
+        }
         const sandbox =
           info.loggedIn && !info.statusUnknown && login.kind === "grok"
             ? (this.opts.grokSandbox?.(login.dir) ?? null)
@@ -2607,6 +2649,7 @@ export class AccountManager {
     if (plan) return { id, kind, loggedIn: !refused, provider: plan.provider, keyHint: plan.key.slice(-4), ...shared };
     const cursorKey = kind === "cursor" ? await cursorKeyOf(dir) : null;
     if (cursorKey) {
+      if (!refused) await this.listCursorModels(id, dir, cursorKey);
       return { id, kind, loggedIn: !refused, provider: CURSOR_KEY_PROVIDER, keyHint: cursorKey.slice(-4), ...shared };
     }
     if (kind === "opencode") {
@@ -2679,10 +2722,32 @@ export class AccountManager {
             : kind === "antigravity"
               ? parseAgyStatus(r.status, `${r.stdout}\n${r.stderr}`, agyAuthOf(dir))
               : parseCodexStatus(r.status, `${r.stdout}\n${r.stderr}`);
-    if (isListingKind(kind) && status.loggedIn) this.keepListed(kind, id, LISTED_BY[kind](r.stdout));
+    if (listsInStatus(kind) && status.loggedIn) this.keepListed(kind, id, LISTED_BY[kind](r.stdout));
+    if (kind === "cursor" && status.loggedIn) await this.listCursorModels(id, dir);
     // Timed out, or didn't start.
     const unknown = r.status === null && kind !== "grok" ? { statusUnknown: true as const } : {};
     return { id, kind, ...status, ...unknown, ...shared };
+  }
+
+  /** When each Cursor account's models were last asked for (`listCursorModels`), by its id. */
+  private readonly cursorListedAt = new Map<string, number>();
+
+  /**
+   * What `agent models` lists to a Cursor account (its folder's sign-in, or its key), kept as Grok's and Gemini's
+   * are. Looked at only while root still holds the folder: one lent to an agent is never run on again.
+   */
+  private async listCursorModels(id: string, dir: string, key?: string) {
+    const now = (this.opts.now ?? Date.now)();
+    if (this.lentTo("cursor", id) !== null) return;
+    if (now - (this.cursorListedAt.get(id) ?? Number.NEGATIVE_INFINITY) < CURSOR_LISTING_EVERY_MS) return;
+    this.cursorListedAt.set(id, now);
+    const env = { ...this.env("cursor", dir), ...(key ? { CURSOR_API_KEY: key } : {}) };
+    const timeout = this.opts.statusTimeoutMs ?? STATUS_TIMEOUT_MS;
+    const r = await this.serial(id, () => runCli(this.command("cursor"), ["models"], env, timeout), this.cliOps).catch(
+      () => null,
+    );
+    if (r?.status === 0) this.keepListed("cursor", id, parseCursorModels(r.stdout));
+    else this.cursorListedAt.delete(id);
   }
 
   /** Per CLI, what each account signed in here last listed, by its id (`""`: an older runner's single list). */
@@ -3067,6 +3132,11 @@ export class AccountManager {
       if (now === uid) return true;
       if (now) await this.reclaimNow(kind, id);
       for (const [d, mode] of this.parents(kind)) await chmod(d, mode);
+      // The models the CLI lists to this account while root still holds the folder: a turn right after the sign-in may
+      // come before any look, and a lent folder is never run on again (Grok's and Gemini's look is their listing).
+      if (kind === "cursor" && !this.listedBy("cursor").has(id))
+        await this.listCursorModels(id, dir, (await cursorKeyOf(dir)) ?? undefined);
+      else if (listsInStatus(kind) && !this.listedBy(kind).has(id)) await this.look(kind, id).catch(() => undefined);
       // Marked before the first chown: a folder an agent's user may have written to never runs as root again.
       await writeFile(this.marker(kind, id, "lent"), String(uid), { mode: 0o600 });
       await chownTree(dir, uid, chown);

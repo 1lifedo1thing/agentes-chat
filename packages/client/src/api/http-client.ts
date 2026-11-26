@@ -4,6 +4,7 @@ import type { ChatPrefs } from "../lib/chat-look";
 import { humanCheckHeaders } from "../lib/human-check";
 import type { OnboardingStepId } from "../lib/onboarding";
 import { type LodiPrefs, lodiPrefsOf } from "../lib/right-hand-prefs";
+import { browserTimezone } from "../lib/routines";
 import { CLOUD_SERVER, withoutTrailingSlashes } from "../lib/server";
 import { createLiveApi } from "../live/api";
 import { consultSeeds } from "../realtime/consults";
@@ -75,7 +76,6 @@ import type {
   CalendarRange,
   Channel,
   ChannelCard,
-  ChannelCategory,
   ChannelMember,
   ChannelOverride,
   Choices,
@@ -250,6 +250,7 @@ import type {
   SurfaceLink,
   SurfaceLinkCode,
   SurfaceLinks,
+  SurfaceNudge,
   SurfacePage,
   TaskManagerView,
   TaskOutput,
@@ -665,6 +666,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       mintCode: (orgId) => request<SurfaceLinkCode>(`${org(orgId)}/surface-link/code`, { json: {} }),
       confirm: (linkId) => request<SurfaceLink>(`/api/app/me/surface-links/${enc(linkId)}/confirm`, { json: {} }),
       remove: (linkId) => request<void>(`/api/app/me/surface-links/${enc(linkId)}`, { method: "DELETE" }),
+      setNudge: (linkId, input) =>
+        request<SurfaceNudge>(`/api/app/me/surface-links/${enc(linkId)}/nudge`, { method: "PATCH", json: input }),
       setPin: (linkId, pin) =>
         request<void>(`/api/app/me/surface-links/${enc(linkId)}/pin`, { method: "PUT", json: { pin } }),
       undo: (token) =>
@@ -791,7 +794,7 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       acceptInvitation: (token, mail) =>
         request<{ orgId: string }>(
           `/api/app/invitations/${enc(token)}/accept${mail ? `?${new URLSearchParams({ mail })}` : ""}`,
-          { json: {} },
+          { json: { timeZone: browserTimezone() ?? undefined } },
         ),
       settings: (orgId) => request<OrgSettings>(`${org(orgId)}/settings`),
       updateSettings: (orgId, input) =>
@@ -1108,21 +1111,6 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
     chat: {
       channels: async (orgId) => (await request<{ channels: Channel[] }>(`${org(orgId)}/channels`)).channels,
       createChannel: (orgId, input) => request<Channel>(`${org(orgId)}/channels`, { json: input }),
-      categories: async (orgId) =>
-        (await request<{ categories: ChannelCategory[] }>(`${org(orgId)}/channel-categories`)).categories,
-      createCategory: (orgId, input) => request<ChannelCategory>(`${org(orgId)}/channel-categories`, { json: input }),
-      renameCategory: (orgId, categoryId, name) =>
-        request<ChannelCategory>(`${org(orgId)}/channel-categories/${enc(categoryId)}`, {
-          method: "PATCH",
-          json: { name },
-        }),
-      deleteCategory: (orgId, categoryId) =>
-        request<void>(`${org(orgId)}/channel-categories/${enc(categoryId)}`, { method: "DELETE" }),
-      placeCategory: (orgId, categoryId, beforeCategoryId) =>
-        request<void>(`${org(orgId)}/channel-categories/${enc(categoryId)}/place`, {
-          method: "PUT",
-          json: { beforeCategoryId },
-        }),
       place: (orgId, channelId, input) =>
         request<void>(`${org(orgId)}/channels/${enc(channelId)}/place`, { method: "PUT", json: input }),
       join: (orgId, channelId) => request<void>(`${org(orgId)}/channels/${enc(channelId)}/join`, { json: {} }),
@@ -1225,6 +1213,7 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
           json: { ...(reason ? { reason } : {}), ...(via ? { via } : {}) },
         }),
       cancel: (orgId, id) => request<Approval>(`${org(orgId)}/approvals/${enc(id)}/cancel`, { json: {} }),
+      runNow: (orgId, id) => request<Approval>(`${org(orgId)}/approvals/${enc(id)}/run-now`, { json: {} }),
       decideMany: (orgId, input) =>
         request<{ approvals: Approval[]; skipped: string[] }>(`${org(orgId)}/approvals/decide`, { json: input }),
       rules: async (orgId, agentId) =>

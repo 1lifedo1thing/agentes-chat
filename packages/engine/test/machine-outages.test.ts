@@ -29,18 +29,13 @@ let f: Fixture;
 afterEach(() => f?.close());
 
 const CLAUDE = { claude: { version: "2.1.300", loggedIn: true }, detectedAt: new Date().toISOString() };
-/** A Mac's runner (protocol 81) also says it fetches the Antigravity CLI itself (ADR 0228 §6); Windows has no build. */
-const MAC = { ...CLAUDE, copies: { fetchable: ["antigravity"] } };
+/** A runner (`CLI_COPIES_PROTOCOL`) that also says it fetches the Antigravity CLI itself (ADR 0228 §6). */
+const FETCHES = { ...CLAUDE, copies: { fetchable: ["antigravity"] } };
 
 async function scene() {
   f = await setup();
   const deps = { db: f.db, pubsub: f.pubsub };
-  const pair = async (
-    name: string,
-    os: string,
-    online: boolean,
-    executors: Record<string, unknown> = os === "darwin" ? MAC : CLAUDE,
-  ) => {
+  const pair = async (name: string, os: string, online: boolean, executors: Record<string, unknown> = FETCHES) => {
     const { machineId } = await pairMachine(deps, f.owner.id, f.org.id, {
       name,
       os,
@@ -156,8 +151,8 @@ test("outages: offline computers with computer-brain agents, waiting routines vs
     ],
   });
   expect(Date.parse(outages[0]?.offlineSince ?? "")).toBeLessThan(Date.now() - 3000_000);
-  // The PC is offline too, but nobody thinks on it: no outage; it is a target (offline). The Mac's runner fetches the
-  // Antigravity CLI itself, so Gemini thinks there once an account signs in; Windows runs no Gemini.
+  // The PC is offline too, but nobody thinks on it: no outage; it is a target (offline). Each runner fetches the
+  // Antigravity CLI itself (ADR 0228 §6), so Gemini thinks there once an account signs in.
   expect(targets).toEqual([
     {
       kind: "machine",
@@ -176,7 +171,7 @@ test("outages: offline computers with computer-brain agents, waiting routines vs
       platform: "windows",
       managed: false,
       online: false,
-      brains: ["claude_code"],
+      brains: ["claude_code", "antigravity"],
       reasonOff: "offline",
     },
   ]);

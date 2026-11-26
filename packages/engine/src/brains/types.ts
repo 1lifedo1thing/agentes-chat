@@ -167,6 +167,11 @@ export interface BrainTurn {
   contextTokens?: number;
   /** Computer brains: a person waits on this turn (the line's first rank); the runner holds a slot for one. */
   personWaiting?: boolean;
+  /**
+   * Computer brains: the IANA zone of "Now" in the context (the person's, else the workspace's, a routine's own), which
+   * the CLI's clock reads too, so the date it sees is the one the person lives.
+   */
+  timeZone?: string;
   /** The text the person/system sent that starts this turn (also the last user message). */
   trigger: string;
   /**
@@ -219,6 +224,11 @@ export interface BrainIO {
 
 export type BrainEvent =
   | { type: "text_delta"; text: string }
+  /**
+   * A note the model wrote between its calls that its API keeps apart from the reply's text (Claude's progress update,
+   * a reasoning summary): the work's narration, never the reply. An older server drops it.
+   */
+  | { type: "note"; text: string }
   /** `executed` present = already executed elsewhere (computer brains via the MCP bridge): the engine only records/displays it. */
   | { type: "tool_call"; id: string; name: string; input: unknown; executed?: ToolResult }
   | {

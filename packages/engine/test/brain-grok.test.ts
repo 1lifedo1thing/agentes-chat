@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test";
-import { CLI_COPIES_PROTOCOL, GROK_PROTOCOL, LOCKED_BRAIN_PROTOCOL, SHARED_GROK_PROTOCOL } from "@agenteschat/adapters";
+import {
+  GROK_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
+  LOCKED_BRAIN_PROTOCOL,
+  SHARED_GROK_PROTOCOL,
+} from "@agenteschat/adapters";
 import { GROK_BUILD_MODELS, loginPerAgent, sharedSignIn } from "@agenteschat/providers/plans";
 import { brainOptions, defaultBrainModel, grokModels, isBrainKind } from "../src/brain-settings";
 import { type BrainTurnRequest, type ComputerBrainLink, GrokBrain } from "../src/brains/codex";
@@ -181,19 +186,23 @@ test("the right hand's reply never carries an xAI key", () => {
   expect(out.found).toBeGreaterThan(0);
 });
 
-test("a Grok turn goes to its runner on Windows too (xAI builds it there, ADR 0228 §6), as on Linux and macOS", async () => {
+test("a Grok turn on a Windows computer reaches its runner from `GROK_WINDOWS_PROTOCOL` on, like Linux and macOS", async () => {
+  // Every vendor builds its CLI for Windows (ADR 0228 §7): the system never refuses it, an older runner does.
   expect(brainRunsOn("grok", "windows")).toBe(true);
   expect(brainRunsOn("cursor", "windows")).toBe(true);
   expect(brainRunsOn("antigravity", "windows")).toBe(true);
-  // A Windows runner before the one that keeps each account's sign-in in its folder there is too old for it.
-  const old = link({ os: "windows" });
+  const old = link({ os: "windows", protocol: GROK_WINDOWS_PROTOCOL - 1 });
   expect((await collect(brain(old).run(turn(), io()))).at(-1)).toMatchObject({ code: "runner_outdated" });
   expect(old.sent).toEqual([]);
-  // Every computer, and one that never said its system, gets the turn.
-  for (const os of ["windows", "linux", "darwin", undefined]) {
+  for (const [os, protocol] of [
+    ["windows", GROK_WINDOWS_PROTOCOL],
+    ["linux", undefined],
+    ["darwin", undefined],
+    [undefined, undefined],
+  ] as const) {
     const l = link({
       ...(os ? { os } : {}),
-      protocol: CLI_COPIES_PROTOCOL,
+      ...(protocol ? { protocol } : {}),
       events: [{ type: "done", text: "ok", session: { id: "s" } }],
     });
     await collect(brain(l).run(turn(), io()));

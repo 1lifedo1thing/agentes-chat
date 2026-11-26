@@ -117,6 +117,8 @@ import { type ConnectionOutcome, type Dial, RunnerConnection } from "./connectio
 import { DesktopManager } from "./desktop";
 import { DesktopSessions, type DesktopUser, runnerUser, systemDesktopUser } from "./desktop-session";
 import { EgressObservation, probeEgress } from "./egress";
+import { EGRESS_RELAY_SOCKET, startEgressRelay } from "./egress-relay";
+import { EGRESS_SHARE_FILE, EgressShare } from "./egress-share";
 import { NetworkChangingError, RUNNER_VERSION, RunnerError } from "./errors";
 import { cachedExecutors, EXECUTORS_TTL_MS, type ExecutorRun, inHomeDirs } from "./executors";
 import { systemGitCache } from "./git";
@@ -196,7 +198,8 @@ import { XcodeFixer, type XcodeFixOptions } from "./xcode-fix";
  * Where the runner reads free memory (Linux), an idle Claude Code closes when memory runs short (a turn that needs its
  * room, `reclaim`, or `closeIdleUnderPressure`), so keeping it warm costs no admission: follow-ups skip a cold start
  * and keep the prompt cache. The idle limit there is only a backstop, as long as a session is picked up again
- * (`SESSION_IDLE_MS` on the server). Elsewhere a count of turns decides room, so idle CLIs close soon.
+ * (`SESSION_IDLE_MS` on the server). Elsewhere a count of turns decides room and one process per agent stays open,
+ * for half an hour: `closeIdleUnderPressure` reads macOS's and Windows's memory too.
  */
 const MEMORY_READ = process.platform === "linux";
 /** How often the tasks' room is read for the server (sent only when it changed). */
@@ -214,11 +217,16 @@ export function sizedTaskLimit(size: Pick<MachineSize, "memoryGb" | "limit">): n
   return Math.min(TASK_LIMIT_BOUNDS[1], Math.max(3, Math.floor(((memoryGb - 4) * 2) / 3)));
 }
 
+/** Claude Code's keep-warm limits by platform (the desktop app's Preferences show the same, `defaultLimits`). */
+export const brainLimitsFor = (platform: NodeJS.Platform) =>
+  platform === "linux"
+    ? { brainIdleMinutes: 60, brainMaxProcesses: 8 }
+    : { brainIdleMinutes: 30, brainMaxProcesses: 1 };
+
 export const DEFAULT_LIMITS = {
   maxConcurrentTasks: sizedTaskLimit(machineSize(os.homedir())),
   taskMaxSeconds: 4 * 3600,
-  brainIdleMinutes: MEMORY_READ ? 60 : 3,
-  brainMaxProcesses: MEMORY_READ ? 8 : 1,
+  ...brainLimitsFor(process.platform),
 } as const;
 
 /** Codex app-servers aren't closed for memory (`reclaimIdle` is Claude Code's): they keep the shorter limits. */
@@ -478,6 +486,9 @@ export class RunnerDaemon implements RequestObserver {
   private egress = new EgressObservation();
   private probingEgress = false;
   private observeEgress = false;
+  /** ADR 0237: what this computer lends (a person's), and the socket the workspace's own computer offers its guard. */
+  private egressShare: EgressShare | undefined;
+  private egressRelay: { close(): void } | null = null;
   private refusedNetworkKey: string | null = null;
   private networkWriteFailed = false;
   private egressGeneration = 0;
@@ -620,14 +631,15 @@ export class RunnerDaemon implements RequestObserver {
         onChange: () => this.executorsChanged(),
         ...(windows.chooseCodexSandbox ? { choose: windows.chooseCodexSandbox } : {}),
       });
-    // Grok Build's and Antigravity's models as the accounts signed in here list them: the computer's own
-    // `grok models` and `agy models` are signed out.
+    // Grok Build's, Antigravity's and Cursor's models as the accounts signed in here list them: the computer's own
+    // `grok models`, `agy models` and `agent models` are signed out.
     this.executors = () => {
       const found: NonNullable<RunnerInfo["executors"]> = { ...exec() };
-      const grok = this.accounts?.listedModels("grok");
-      if (found.grok && grok) found.grok = { ...found.grok, models: grok };
-      const agy = this.accounts?.listedModels("antigravity");
-      if (found.antigravity && agy) found.antigravity = { ...found.antigravity, models: agy };
+      for (const kind of ["grok", "antigravity", "cursor"] as const) {
+        const models = this.accounts?.listedModels(kind);
+        const entry = found[kind];
+        if (entry && models) found[kind] = { ...entry, models };
+      }
       if (found.codex && codexSandbox) found.codex = codexSandbox(found.codex, this.access().tools.codex);
       return found;
     };
@@ -641,7 +653,6 @@ export class RunnerDaemon implements RequestObserver {
           authEgress: () => authEgressPrefix(),
         })
       : null;
-    // Outside system mode, where the person's own CLI runs: the root's are the computer's setup's (the Cloud's image).
     // Every CLI the runner starts, the person's own or its copy, stays the version it was checked at (ADR 0228 §6).
     holdCliSelfUpdates();
     // Outside system mode, where the person's own CLI runs: the root's are the computer's setup's (the Cloud's image).
@@ -703,6 +714,7 @@ export class RunnerDaemon implements RequestObserver {
       // System mode: the agents' Chromes are their workers'.
       inUse: (agentId) => (this.session?.supervisor ?? this.session?.browser)?.onDesktopInUse(agentId) ?? false,
       onViewers: () => this.session?.supervisor?.stateChanged(),
+      onStarted: (agent, start) => void this.send({ type: "desktop.started", agentId: agent.id, ...start }),
       openBrowser: (agent, installing) => this.openBrowser(agent, installing),
       runner: this.self.command,
       shared: () => this.shared,
@@ -969,7 +981,7 @@ export class RunnerDaemon implements RequestObserver {
     }, 60_000);
     relayed.unref?.();
     this.timers.push(relayed);
-    if (MEMORY_READ) this.timers.push(closeIdleUnderPressure(() => this.reclaimIdleBrains()));
+    this.timers.push(closeIdleUnderPressure(() => this.reclaimIdleBrains()));
     this.expireRequests();
   }
 
@@ -1464,6 +1476,7 @@ export class RunnerDaemon implements RequestObserver {
       numbered: this.desktopRefsGiven,
       log,
     });
+    this.egressShare ??= new EgressShare({ file: path.join(home, EGRESS_SHARE_FILE) });
     const streams = new DataSockets({
       url: connectUrl(config.server, "stream"),
       token: config.token,
@@ -1738,6 +1751,8 @@ export class RunnerDaemon implements RequestObserver {
       cliEnsure: async (kind) => this.cliReady(kind),
       xcodeOpen: () => this.iphoneSetup().open("xcode"),
       reportParts: () => this.reportParts(),
+      egressShare: this.egressShare,
+      streamStarting: (streamId) => void this.send({ type: "stream.starting", streamId }),
     };
     // `hello` lists the accounts it already knows; a fresh look (each runs its CLI) never delays connecting:
     // it lands in `hello` if it finishes first, else comes after as `accounts.changed`. Nothing reaches the
@@ -1797,6 +1812,13 @@ export class RunnerDaemon implements RequestObserver {
       },
       onWelcome: (welcome) => {
         this.observeEgress = welcome.observeEgress;
+        this.egressRelay?.close();
+        this.egressRelay = welcome.egressRelay
+          ? startEgressRelay({
+              path: path.join(home, EGRESS_RELAY_SOCKET),
+              dial: (streamId, target) => streams.dial(streamId, "egress", undefined, target),
+            })
+          : null;
         this.sentNetworkTransition = "";
         this.observeNetwork();
         this.egressGeneration++;
@@ -2089,6 +2111,8 @@ export class RunnerDaemon implements RequestObserver {
   }
 
   private async closeSession(s: Session) {
+    this.egressRelay?.close();
+    this.egressRelay = null;
     this.egressGeneration++;
     this.egress.reset();
     s.connection.stop();

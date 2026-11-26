@@ -1,6 +1,7 @@
 import {
   type AgentScope,
   ANTIGRAVITY_PROTOCOL,
+  ANTIGRAVITY_WINDOWS_PROTOCOL,
   BRAIN_PROFILES_PROTOCOL,
   BRAIN_PROTOCOL,
   type BrainTurnRequest,
@@ -10,6 +11,7 @@ import {
   CODEX_WINDOWS_PROTOCOL,
   CURSOR_PROTOCOL,
   GROK_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
   LOCKED_BRAIN_PROTOCOL,
   OPENCODE_ACP_PROTOCOL,
   OPENCODE_PROTOCOL,
@@ -249,8 +251,7 @@ const GROK_CLI: CliBrainSpec = {
   kind: "grok",
   name: "Grok Build",
   protocol: GROK_PROTOCOL,
-  // Windows from the runner that keeps each account's sign-in in its folder there (ADR 0228 §6).
-  windowsProtocol: CLI_COPIES_PROTOCOL,
+  windowsProtocol: GROK_WINDOWS_PROTOCOL,
   check: ({ grok }) =>
     grok
       ? null
@@ -266,8 +267,7 @@ const ANTIGRAVITY_CLI: CliBrainSpec = {
   kind: "antigravity",
   name: "Antigravity CLI",
   protocol: ANTIGRAVITY_PROTOCOL,
-  // Windows from the runner that keeps each account's sign-in in its folder there (ADR 0228 §6).
-  windowsProtocol: CLI_COPIES_PROTOCOL,
+  windowsProtocol: ANTIGRAVITY_WINDOWS_PROTOCOL,
   check: ({ antigravity }) =>
     antigravity
       ? null
@@ -437,6 +437,7 @@ export class CodexBrain implements Brain {
       ...(this.deps.keepAlive === false ? { keepAlive: false } : {}),
       ...(freeTier ? { freeTier } : {}),
       ...(turn.personWaiting ? { personWaiting: true } : {}),
+      ...(turn.timeZone ? { timeZone: turn.timeZone } : {}),
       // Each answer the turn finishes before it goes on is its own message (ADR 0112).
       answers: "each",
     };

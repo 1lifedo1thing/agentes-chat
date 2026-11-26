@@ -1,5 +1,12 @@
 import { afterEach, expect, test } from "bun:test";
-import { AGY_COPY_PROTOCOL, CLI_COPIES_PROTOCOL, orgTopic, type RealtimeEvent } from "@agenteschat/adapters";
+import {
+  AGY_COPY_PROTOCOL,
+  ANTIGRAVITY_WINDOWS_PROTOCOL,
+  CLI_COPIES_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
+  orgTopic,
+  type RealtimeEvent,
+} from "@agenteschat/adapters";
 import { eq, schema } from "@agenteschat/db";
 import { brainOptions } from "../src/brain-settings";
 import { cliOutdated } from "../src/brains/claude-code";
@@ -94,11 +101,16 @@ test("Windows: Cursor, Grok Build and Gemini can be chosen on a runner that keep
   for (const kind of ["cursor", "grok", "antigravity"] as const) {
     expect(brainOptions(win as never).find((o) => o.kind === kind)).toMatchObject({ available: true });
   }
-  // An older Windows runner refuses their turns there: too old, never "not on this system".
-  const older = computer({ os: "windows", protocol: CLI_COPIES_PROTOCOL - 1, executors: {} });
+  // An older Windows runner refuses their turns there: too old, never "not on this system". Grok Build runs there
+  // from `GROK_WINDOWS_PROTOCOL`, Gemini from `ANTIGRAVITY_WINDOWS_PROTOCOL`, Cursor from `CLI_COPIES_PROTOCOL`.
+  const reason = (protocol: number, kind: string) =>
+    brainOptions(computer({ os: "windows", protocol, executors: {} }) as never).find((o) => o.kind === kind)?.reason;
   for (const kind of ["cursor", "grok", "antigravity"] as const) {
-    expect(brainOptions(older as never).find((o) => o.kind === kind)).toMatchObject({ reason: "runner_old" });
+    expect(reason(GROK_WINDOWS_PROTOCOL - 1, kind)).toBe("runner_old");
   }
+  expect(reason(ANTIGRAVITY_WINDOWS_PROTOCOL, "antigravity")).not.toBe("runner_old");
+  expect(reason(ANTIGRAVITY_WINDOWS_PROTOCOL, "grok")).not.toBe("runner_old");
+  expect(reason(CLI_COPIES_PROTOCOL - 1, "cursor")).toBe("runner_old");
   // Git for Windows comes by itself too, as the CLIs do.
   expect(fetchesCli(win as never, "git")).toBe(true);
 });

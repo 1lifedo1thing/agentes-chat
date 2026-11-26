@@ -134,7 +134,14 @@ export interface ConnectionOptions {
   browserTraffic?: () => BrowserTraffic | null;
   egress?: () => MachineEgress | null;
   /** Called after each `welcome` (frames sent from here on reach the server). */
-  onWelcome?: (welcome: { machineId: string; name: string; heartbeatMs: number; observeEgress: boolean }) => void;
+  onWelcome?: (welcome: {
+    machineId: string;
+    name: string;
+    heartbeatMs: number;
+    observeEgress: boolean;
+    /** `EGRESS_SHARE_PROTOCOL`: the workspace's own computer offers its guard the lent connections' socket. */
+    egressRelay: boolean;
+  }) => void;
   /** Protocol 9: the server's `agents` frame (the agents that use this machine). */
   onAgents?: (agents: unknown, deleted: unknown) => void;
   /** Protocol 12: a person's turn in an agent's browser started, changed or ended (`browser.handoff`). */
@@ -367,7 +374,13 @@ export class RunnerConnection {
             log(`connected as ${frame.name}`);
             this.live = send;
             opts.onState?.("online");
-            opts.onWelcome?.({ machineId: frame.machineId, name: frame.name, heartbeatMs, observeEgress });
+            opts.onWelcome?.({
+              machineId: frame.machineId,
+              name: frame.name,
+              heartbeatMs,
+              observeEgress,
+              egressRelay: frame.egressRelay === true,
+            });
             // First: a supervisor passes what this server does with a repeated call on to its workers' welcome.
             opts.mcp?.attach(send, { mcpOnce: frame.mcpOnce === true });
             tasks?.attach(send);

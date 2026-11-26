@@ -811,7 +811,7 @@ export function agentRoutes(deps: AppDeps) {
       security,
       summary: "Each agent's presence (online, busy, away, out of office, offline) and what it says it is doing",
       description:
-        "From its work (ADR 0084): `busy` on a routine, a task, a run going for over 2 minutes or one rated heavy, or when it said so; `online` while answering, waiting on an answer or active in the last 30 minutes (one never active, in the 30 minutes since it was made; the right hand always); `away` after that; `out` (out of office, §12) while its plan is at its limit or its monthly budget is spent, with an `out_of_plan`/`out_of_budget` line whose `until` says when it is back, and the router leaves it out of messages nobody mentioned it in; `offline` when held. An agent with no AI is drawn offline by the apps (`ai-status`). `status`: its own words (`set_status`), a line picked for its run (`kind` + `subject`), or what its run waits on; gone when the run ends unless it set `until`. Refreshed on `agent.status` events and every 30 seconds while open.",
+        'From its work (ADR 0084): `busy` on a routine, a task, a run going for over 2 minutes or one rated heavy, or when it said so; `online` while answering, or active in the last 10 minutes (a run waiting on an answer or an approval counts from its last change; one never active, from when it was made); `away` after that, the right hand too (the apps say "Inativo"); `out` (out of office, §12) while its plan is at its limit or its monthly budget is spent, with an `out_of_plan`/`out_of_budget` line whose `until` says when it is back, and the router leaves it out of messages nobody mentioned it in; `offline` when held. An agent with no AI is drawn offline by the apps (`ai-status`). `status`: its own words (`set_status`), a line picked for its run (`kind` + `subject`), or what its run waits on; gone when the run ends unless it set `until`. Refreshed on `agent.status` events and every 30 seconds while open.',
       request: { params: OrgParams },
       responses: {
         200: json(
@@ -901,6 +901,10 @@ export function agentRoutes(deps: AppDeps) {
                     routine: z.boolean().openapi({ description: "A routine's work: no conversation holds it." }),
                     count: z.number().int().openapi({ description: "How many runs it has on." }),
                     at: z.string().optional().openapi({ description: "With `later`: when it comes back (ISO)." }),
+                    private: z.literal(true).optional().openapi({
+                      description:
+                        "Its conversation is one you don't read (someone else's DM, a private channel you're not in): no place to open.",
+                    }),
                   })
                   .nullable()
                   .openapi({
@@ -1787,10 +1791,20 @@ export function agentRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/agent-groups",
       tags,
       security,
-      summary: "Add a group after the others, with these agents in it in order (owners and admins)",
+      summary: "Add a group after the others, with these agents and channels in it in order (owners and admins)",
       request: {
         params: OrgParams,
-        body: body(z.object({ name: GroupName, agentIds: z.array(z.uuid()).max(200).optional(), ...GroupLook })),
+        body: body(
+          z.object({
+            name: GroupName,
+            agentIds: z.array(z.uuid()).max(200).optional(),
+            channelIds: z.array(z.uuid()).max(200).optional().openapi({
+              description:
+                "Channels it takes (ADR 0240): each one the caller may move (who manages channels, its creator).",
+            }),
+            ...GroupLook,
+          }),
+        ),
       },
       responses: { 201: json(Groups, "Created"), ...errors },
     }),

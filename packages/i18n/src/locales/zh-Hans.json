@@ -689,6 +689,8 @@
       "confirmNo": "不是我",
       "done": "全部就绪。",
       "doneLead": "你已登录 agentes 应用，可以关闭这个标签页了。",
+      "back": "正在返回应用。",
+      "openApp": "打开应用",
       "expired": "这个请求已过期。",
       "expiredLead": "请返回应用，重新选择 {{provider}}。",
       "handover": "正在用另一台设备上的账号登录…",
@@ -2072,7 +2074,7 @@
       },
       "computers": {
         "title": "电脑",
-        "help": "有新电脑加入，或工作区的电脑已就绪"
+        "help": "有电脑加入、就绪或无响应时"
       },
       "reactions": {
         "title": "表情回应",
@@ -2136,8 +2138,8 @@
       "title": "侧边栏",
       "newChannel": "新建频道",
       "newChannelPersonal": "新建群组对话",
-      "addToChannels": "新建频道或分类",
-      "addToChannelsPersonal": "新建群组对话或分类",
+      "addToChannels": "新建频道",
+      "addToChannelsPersonal": "新建群组对话",
       "newMessage": "新消息",
       "addMembers": "添加成员或智能体",
       "channelSettings": "频道设置",
@@ -2290,7 +2292,9 @@
     "delete": "删除部门",
     "deleteTitle": "删除部门“{{name}}”？",
     "deleteText": "其中的智能体会回到“智能体”。",
+    "deleteChannels": "其中的频道会回到“频道”。",
     "dropHere": "把智能体拖到这里",
+    "dropHereAll": "把智能体或频道拖到这里",
     "moved": "{{name}} 已移到 {{group}}",
     "movedOut": "{{name}} 已离开 {{group}}",
     "undo": "撤销"
@@ -2388,6 +2392,17 @@
       "unlinkText": "{{assistant}}将不再在那里回复你。你随时可以重新关联。",
       "unlinked": "已取消关联{{surface}}"
     },
+    "nudge": {
+      "title": "未读提醒",
+      "hint": "当应用中有未读内容时，{{assistant}} 会在 {{surface}} 上提醒你，每天最多一次。如果你的手机能收到推送通知，则不会提醒。",
+      "after": "提醒间隔",
+      "hours": "{{hours}} 小时",
+      "quiet": "免打扰时段",
+      "quietHint": "在这些时段内不发送提醒，按你的时区计算。",
+      "quietFrom": "开始",
+      "quietTo": "结束",
+      "quietRange": "{{from}} 至 {{to}}"
+    },
     "undo": {
       "title": "要取消关联聊天应用吗？",
       "lead": "你的账号刚刚关联了一个聊天应用。如果不是你，请在这里取消关联。",
@@ -2440,6 +2455,7 @@
       "set": "设置 PIN",
       "change": "更改 PIN",
       "title": "你的 {{surface}} PIN",
+      "row": "你的 PIN",
       "text": "你在 {{surface}} 中请求的操作需要输入这六位数字来批准。它永远不会在聊天中发送。",
       "save": "保存 PIN"
     }
@@ -2721,6 +2737,7 @@
     "nameLabel": "名称",
     "nameHelp": "对所有人生效。旧链接仍然有效。",
     "replyInThreads": "智能体在话题中回复",
+    "replyInChannel": "智能体在频道中回复",
     "replyInThreadsHelp": "在频道中被叫到的智能体会在该消息下的话题中回答，频道只为它显示一行。已在进行的工作保持原处。",
     "nameTaken": "已存在 #{{name}}。",
     "generalName": "#general 的名称不能更改。",
@@ -3101,6 +3118,9 @@
       "set_notifications_off": "关闭你的 <b>{{category}}</b> 通知",
       "set_my_timezone": "把你的时区设为 <b>{{timezone}}</b>",
       "set_my_timezone_workspace": "重新跟随工作区的时区",
+      "set_computer_help": "当智能体的电脑已满或不在线时，让 <b>{{computer}}</b> 帮忙",
+      "set_computer_help_first": "把 <b>{{computer}}</b> 用于你的智能体的工作",
+      "set_computer_help_off": "不再把 <b>{{computer}}</b> 用于你的智能体",
       "set_invitation_roles": "更改 <b>{{email}}</b> 的邀请所给的角色：{{change}}",
       "update_channel": "更改频道 <b>#{{channel}}</b>",
       "archive_channel": "归档 <b>#{{channel}}</b>",
@@ -3456,6 +3476,9 @@
       "plan": "用套餐",
       "key": "用 API 密钥"
     },
+    "offSystem": "暂不支持 {{system}}",
+    "offSystemGroup": "暂不支持 {{system}}",
+    "offSystemSome_other": "{{names}} 暂不支持 {{system}}",
     "pick": {
       "plan": "套餐",
       "placeholder": "选择套餐",
@@ -3484,7 +3507,8 @@
       "gemini": {
         "title": "你的 Gemini 套餐",
         "tiers": "Google AI Pro、Google AI Ultra 或 Gemini Enterprise",
-        "warning": "Google 表示，在其他应用中使用个人 Gemini 套餐可能导致账号被停用。为避免这一风险，请使用 Gemini API 密钥或 Gemini Enterprise。"
+        "warning": "Google 表示，在其他应用中使用个人 Gemini 套餐可能导致账号被停用。为避免这一风险，请使用 Gemini API 密钥或 Gemini Enterprise。",
+        "windowsOne": "在 Windows 上，一台电脑一次只能使用一个 Gemini 账号。"
       },
       "zen": {
         "title": "OpenCode",
@@ -3899,6 +3923,9 @@
     },
     "channel": {
       "agent_added": "将 {{agentName}} 加入了 <b>#{{channel}}</b>",
+      "lead_changed": "让 {{agentName}} 负责 <b>#{{channel}}</b>",
+      "lead_changed_self": "成为了 <b>#{{channel}}</b> 的负责人",
+      "lead_changed_none": "让 <b>#{{channel}}</b> 不再有负责的智能体",
       "created": "创建了频道 <b>#{{name}}</b>"
     },
     "wiki": {
@@ -3940,6 +3967,9 @@
       "changed_set_notifications_off": "关闭了你的 <b>{{category}}</b> 通知",
       "changed_set_my_timezone": "把你的时区设为 <b>{{timezone}}</b>",
       "changed_set_my_timezone_workspace": "你的时区重新跟随工作区",
+      "changed_set_computer_help": "<b>{{computer}}</b> 现在会在智能体的电脑已满或不在线时帮忙",
+      "changed_set_computer_help_first": "你的智能体的工作现在从 <b>{{computer}}</b> 开始",
+      "changed_set_computer_help_off": "<b>{{computer}}</b> 不再帮助你的智能体",
       "changed_set_invitation_roles": "更改了 <b>{{email}}</b> 的邀请所给的角色：{{change}}",
       "changed_update_channel": "更改了频道 <b>#{{channel}}</b>",
       "changed_archive_channel": "归档了 <b>#{{channel}}</b>",
@@ -4084,50 +4114,8 @@
     "create": "创建 #{{name}}"
   },
   "channelCategories": {
-    "newCategory": "新建分类",
-    "newCategoryHelp": "会放在列表末尾，之后可以拖动调整。",
-    "newCategoryDesc": "在所有人的侧边栏中把频道归到一个名称下。",
-    "name": "名称",
-    "namePlaceholder": "例如：产品",
-    "nameEmpty": "请为分类命名。",
-    "nameTaken": "已存在分类 {{name}}。",
-    "channels": "归入其中的频道",
-    "channelsSearch": "搜索频道",
-    "channelsEmpty": "没有与“{{q}}”匹配的频道。",
-    "inCategory": "当前在 {{name}} 中",
-    "noCategory": "无分类",
-    "noCategoryDesc": "位于顶部，没有标题",
-    "create": "创建分类",
-    "createWith_other": "创建并包含 {{count}} 个频道",
-    "created": "已创建 {{name}}。",
-    "rename": "重命名",
-    "renameTitle": "重命名分类",
-    "save": "保存",
-    "delete": "删除分类",
-    "deleteDesc": "其中的频道会移到顶部",
-    "deleted_other": "已删除 {{name}}。{{count}} 个频道已移到顶部。",
-    "deletedEmpty": "已删除 {{name}}。",
     "undo": "撤销",
-    "collapseAll": "全部收起",
-    "expandAll": "全部展开",
-    "newChannelHere": "在这里新建频道",
-    "newChannelIn": "在 {{name}} 中新建频道",
-    "options": "{{name}} 选项",
-    "category": "分类",
     "categoryHelp": "频道在所有人侧边栏中的位置。",
-    "newCategoryOption": "新建分类…",
-    "move": "移动到…",
-    "moveTitle": "移动 #{{channel}}",
-    "moveDesc": "更改频道在所有人侧边栏中的位置。参与者保持不变。",
-    "moveSearch": "搜索分类",
-    "moveEmpty": "没有与“{{q}}”匹配的分类。",
-    "moveTo": "移动到 {{name}}",
-    "moveSame": "移动",
-    "moveNow": "当前",
-    "moveEmptyCategory": "还没有频道",
-    "moveCreate": "创建“{{name}}”",
-    "moved": "#{{channel}} 现在在 {{name}} 中。",
-    "newWithChannel": "用这个频道新建分类",
     "editChannel": "编辑频道"
   },
   "channelMembers": {
@@ -4207,6 +4195,7 @@
     "available": "空闲",
     "working": "工作中",
     "waiting": "等你处理",
+    "idle": "无活动",
     "lower": {
       "online": "在线",
       "away": "离开",
@@ -4293,7 +4282,9 @@
       "noAi": "未连接 AI"
     },
     "bySelf": "由 {{name}} 设置 · 完成后自动清除",
-    "byAuto": "它现在正在做的事"
+    "byAuto": "它现在正在做的事",
+    "byPrivate": "在私人对话中 · 只有对话里的人能看到详情",
+    "openWork": "打开对话"
   },
   "agentWork": {
     "working": "工作中",
@@ -4302,6 +4293,7 @@
     "queued": "排队中",
     "here": "这里",
     "routine": "在执行例行任务",
+    "private": "在私人对话中",
     "yourApproval": "你的批准",
     "yourAnswer": "你的回答",
     "later": "跟进 {{when}}",
@@ -4901,8 +4893,16 @@
     "expiredChip": "已过期 · {{when}}",
     "canceledChip": "已取消 · {{when}}",
     "line": {
-      "after": "在“{{title}}”之后执行",
       "notRun": "未执行：前一个请求没有获批"
+    },
+    "held": {
+      "waiting": "正在等待 <link/>",
+      "runNow": "立即运行"
+    },
+    "byAgent": {
+      "head_other": "{{name}} 的 {{count}} 个请求",
+      "approve": "全部批准",
+      "refuse": "全部拒绝"
     },
     "waitingFor": "等待 {{name}}",
     "waitingAdmin": "等待管理员",
@@ -5469,7 +5469,6 @@
       "queued": "排队中",
       "notRun": "未执行"
     },
-    "queuedLine": "已批准。会在先前请求的“{{title}}”之后执行。",
     "notRunRefused": "先前请求的“{{title}}”在这一项获批后被拒绝，所以这一项没有执行。",
     "notRunExpired": "先前请求的“{{title}}”在这一项获批后无人决定而过期，所以这一项没有执行。",
     "notRunEarlier": "在这一项获批后，先前的请求被拒绝或已过期，所以这一项没有执行。",
@@ -8722,6 +8721,11 @@
         "text": "收到邮件时，智能体准备回复。",
         "prompt": "阅读收到的邮件，说明内容和紧急程度。写一份回复建议，但不要发送。"
       },
+      "inbox": {
+        "name": "需要回复的邮件",
+        "text": "工作日 9 点和 14 点，需要回复的邮件，附草稿。",
+        "prompt": "查看上次之后收到的邮件。列出需要回复的邮件，从最紧急的开始，并为每封写一份回复草稿，不要发送。"
+      },
       "tickets": {
         "name": "未回复的工单",
         "text": "工作日 9 点和 14 点，还有谁在等。",
@@ -8806,6 +8810,11 @@
         "name": "审查新 PR",
         "text": "有 PR 创建时，智能体会阅读并发表评论。",
         "prompt": "阅读新 PR 的 diff，指出风险，并说明需要手动测试什么。"
+      },
+      "openPrs": {
+        "name": "等待审查的 PR",
+        "text": "工作日 10 点，还没人审查的未关闭 PR。",
+        "prompt": "查看仍在等待审查的未关闭 PR。逐个说明它改了什么、已经等了多久，以及应该先看什么。"
       },
       "week": {
         "name": "每周总结",
@@ -12157,7 +12166,13 @@
     "rule": "电脑有空闲内存时，新工作才会开始。人优先。一起被提到的智能体逐个开始。",
     "spill": {
       "title": "你的电脑",
-      "text": "当这台电脑满载或不在线时，你的智能体可以在你的某台电脑上开始。任务、代码会话和有代码仓库的智能体会留在这里。",
+      "text": "当这台电脑满载或不在线时，你的智能体可以在你的某台电脑上开始。你用于它们工作的电脑会先接到它们的请求、例行任务和长时间工作。任务、代码会话和有代码仓库的智能体会留在这里。",
+      "use": {
+        "label": "{{name}} 如何帮忙",
+        "off": "不帮忙",
+        "help": "这台已满或不在线时",
+        "first": "用于我的智能体的工作"
+      },
       "plan": "你的 {{plan}} 套餐"
     },
     "youFirst": "你优先",
@@ -12191,6 +12206,7 @@
       "private": "私密对话"
     },
     "waiting": "排队中 · 即将开始",
+    "waitingAfter": "排队中 · 在 {{name}} 之后",
     "nth": {
       "one": "{{n}}",
       "two": "{{n}}",
@@ -14314,6 +14330,7 @@
       "send_dm": "发送私信",
       "read_conversation": "读取对话",
       "add_agent_to_channel": "向频道添加智能体",
+      "set_channel_lead": "选择频道的负责智能体",
       "ask_agent": "询问其他智能体",
       "tell_agent": "通知其他智能体",
       "find_agent": "查找智能体",
@@ -14524,7 +14541,15 @@
     "see": "查看",
     "seeAsks": "查看需要审批的操作",
     "agentTitle": "{{name}} 可以使用的内容",
-    "agentSub": "按连接器和主题分类。默认情况下，敏感操作需要审批。"
+    "agentSub": "按连接器和主题分类。默认情况下，敏感操作需要审批。",
+    "instructions": {
+      "title": "服务器指令",
+      "hint": "使用这些工具的智能体会在自己的指令之后收到这段文字。",
+      "chars": "{{used}} / {{max}} 个字符",
+      "cut": "已在 {{max}} 个字符处截断",
+      "off": "智能体不会收到这段文字。",
+      "none": "服务器没有发送指令。"
+    }
   },
   "connectFlow": {
     "steps": "步骤",
@@ -14572,6 +14597,7 @@
     "serverSaid": "服务器返回：{{detail}}",
     "ownClient": {
       "title": "使用你自己的 OAuth 应用",
+      "addressFirst": "请先输入服务器的 https 地址。",
       "notApproved": "{{name}} 只允许它批准过的应用登录，而 agentes.chat 还不在其中。你可以用自己的应用来连接它。",
       "askAdmin": "管理员可以用工作区自己的应用来连接它。",
       "help": "在服务提供方创建一个应用，在其中登记这个重定向 URI，然后粘贴它的客户端 ID。之后，工作区在那里的每次登录都会使用你的应用。",
@@ -14637,6 +14663,27 @@
       "asks_other": "{{count}} 项操作会在聊天中请求审批。",
       "adjust": "调整",
       "ok": "完成"
+    },
+    "routine": {
+      "inbox": "{{name}} 会阅读你的邮件，把需要回复的内容连同草稿私信给你。",
+      "dayPlan": "{{name}} 会查看你的日历，把今天的会议和需要准备的事项私信给你。",
+      "failed": "{{name}} 会检查拒付、退款和争议，并私信告诉你。",
+      "leads": "{{name}} 会查看谁进入了 CRM，并私信告诉你先从谁开始。",
+      "tickets": "{{name}} 会找出等待回复的工单，连同建议回复私信给你。",
+      "late": "{{name}} 会找出逾期任务，并私信告诉你每项由谁负责。",
+      "openPrs": "{{name}} 会查看等待审查的 PR，并私信告诉你先看什么。",
+      "errors": "{{name}} 会检查新错误，并私信告诉你哪些需要关注。",
+      "noAgent": "在上方给一个智能体访问权限，它就会替你处理这件事。",
+      "preparing": "正在准备例行工作…",
+      "who": "谁来做",
+      "when": "时间",
+      "on": "创建例行工作「{{name}}」",
+      "created": "已创建例行工作：{{name}}",
+      "createdDetail": "{{agent}} 已经开始：第一份摘要会发到你的私信。",
+      "undo": "撤销",
+      "undone": "已撤销例行工作",
+      "notCreated": "无法创建例行工作。你可以在“例行工作”中创建。",
+      "mailboxOnly": "仅限邮箱 {{address}}。"
     },
     "git": {
       "token": "访问令牌",
@@ -15396,6 +15443,7 @@
       "headersWithSignIn": "此服务器要求登录，而登录暂时无法携带标头。请移除标头后登录，或用 API 密钥连接。",
       "headersUnreadable": "无法读取已保存的标头。请重新输入，或将其移除。",
       "noOAuth": "该 MCP 服务器不通过 OAuth 登录，所以不接受你自己的应用。请用 API 密钥连接。",
+      "oauthDiscovery": "该 MCP 服务器通过 OAuth 登录，但无法读取它在 {{host}} 上的登录信息。请几分钟后再试。",
       "ownClientInUse": "仍有账号在用之前保存的应用登录。请先断开它们，再进行更改。",
       "ownClientId": "请检查客户端 ID：一个词，与服务提供方显示的一致。"
     },
@@ -15623,6 +15671,8 @@
       "notLinkMaker": "只有创建链接的人才能让这台电脑加入。",
       "widenForbidden": "管理员只能缩小可以使用他人个人设备的人员范围。",
       "spillOwnerOnly": "只有连接这台电脑的人可以打开它的帮忙功能。你可以关闭它。",
+      "shareOwnerOnly": "只有连接这台电脑的人才能让智能体使用它的网络。你可以关闭它。",
+      "shareConnectedOnly": "只有有人连接的电脑才能与智能体共享网络。",
       "tasksOwnerOnly": "只有连接这台电脑的人才能更改它同时运行的任务数。",
       "tasksCloud": "这台电脑用于任务的余量由 Cloud 自己决定。",
       "notHome": "智能体住在工作区的电脑上，点名时才使用这台电脑。"
@@ -15642,6 +15692,7 @@
       "askSelf": "这是你的电脑：用按钮打开它。",
       "adminAskSelf": "你可以在这里自己完成。",
       "accountMethodUnsupported": "这台电脑暂时无法用这种方式连接 Claude。请更新电脑上的 agentes.chat 程序，或使用 API 密钥。",
+      "windowsOneGemini": "在 Windows 上，一台电脑一次只能使用一个 Gemini 账号。要用这个账号登录，请先从这台电脑移除另一个 Gemini 账号。",
       "brainUnavailable": "{{computer}} 上还没有设置这个 AI。请在那里设置，或选择另一个。",
       "offline": "{{name}} 现在离线，等它恢复后再试。",
       "paused": "{{name}} 已暂停：恢复之前不会在上面开始新的工作。",
@@ -15774,7 +15825,10 @@
       "restart": "电脑会话正在重启以应用网络设置。新工作会等到完成后再开始。",
       "line": "出口 IP {{ip}}",
       "hint": "智能体浏览网页时网站看到的地址。电脑的网络变化时会随之更新。",
-      "waiting": "正在重新连接智能体的网络。网络恢复前，它们的连接会等待。"
+      "waiting": "正在重新连接智能体的网络。网络恢复前，它们的连接会等待。",
+      "via": "智能体正在使用 {{name}} 的网络",
+      "viaBy": "智能体正在使用 {{name}}（{{person}}）的网络",
+      "viaHint": "网站会看到那台电脑的位置。连接它的人可以在它的页面上关闭。"
     },
     "moving": {
       "short": "正在迁移服务器",
@@ -15926,6 +15980,16 @@
       "diskFullNotice": "{{name}} 的磁盘快满了"
     },
     "chromeMissingNotice": "{{name}} 需要 Google Chrome 才能运行代理的浏览器。请在 google.com/chrome 下载",
+    "outage": {
+      "down": "{{name}} 没有响应",
+      "back": "{{name}} 已恢复",
+      "since": "自 {{time}} 起",
+      "backAfter": "{{away}}后恢复",
+      "waiting": "等待中：{{what}}",
+      "waited": "曾等待：{{what}}",
+      "runs_other": "{{count}} 个给智能体的请求",
+      "calls_other": "{{count}} 次 Webhook 调用"
+    },
     "access": {
       "folders": "允许的文件夹",
       "ownFolder": "每个智能体的文件夹",
@@ -16057,8 +16121,16 @@
     "spillOwnHint": "当你的智能体的电脑满载或不在线时，它们的回复、请求和例行任务可以用你的登录在这里思考。",
     "spillTeamHint": "当某个智能体的电脑满载或不在线时，它的回复、请求和例行任务可以用其所有者在这台电脑上的登录在这里思考。",
     "spillWorkspaceOff": "管理员已为整个工作区关闭此功能。",
+    "spillFirst": "把这台电脑用于我的智能体的工作",
+    "spillFirstHint": "只要这台电脑空闲，智能体的请求、例行任务和长时间工作就会在这里开始，使用你在这里连接的 AI。给人的回复只有在团队的电脑已满或不在线时才会在这里开始。",
     "helpWorkspace": "团队的电脑满载或不在线时，其他电脑来帮忙",
     "helpWorkspaceHint": "每台电脑只有在其所有者允许时才会帮忙。关闭：无论所有者如何选择，都不会有电脑帮忙。",
+    "shareInternet": "智能体使用这台电脑的网络",
+    "shareInternetHint": "智能体打开的网站会经过这台电脑的网络连接，所以网站会看到你的位置。仅限网站，每天最多 5 GB，绝不会访问你自己网络中的任何内容。这台电脑离线时，智能体使用平常的连接。",
+    "shareInternetInUse": "正在使用",
+    "shareInternetOther": "智能体正在使用 {{name}}",
+    "shareInternetPick": "使用这台",
+    "shareInternetJoin": "智能体也会通过这台电脑的网络打开网站，所以网站会看到你的位置。你可以在它的页面上关闭。",
     "connectedBy": "由 {{name}} 连接",
     "downloadFor": "下载 {{system}} 版",
     "downloadApp": "下载应用",
@@ -16587,6 +16659,10 @@
       "toolRequest": "<b>{{who}}</b> 请你在你的 <b>{{deviceName}}</b> 上打开{{tool}}",
       "cliRequest": "<b>{{who}}</b> 请你在 <b>{{deviceName}}</b> 上安装 {{tool}}",
       "folderRequest": "<b>{{who}}</b> 请你在你的 <b>{{deviceName}}</b> 上开放文件夹 {{path}}",
+      "internetShared": "智能体现在通过 <b>{{deviceName}}</b> 的网络打开网站",
+      "internetSharedLine": "仅限此工作区的智能体，仅限网站，每天最多 5 GB，绝不访问它所在网络中的任何内容。它离线时，智能体会使用平常的连接。",
+      "internetOff": "关闭",
+      "internetOffDone": "智能体不再使用 {{deviceName}} 的网络。",
       "once": "允许一次",
       "always": "始终允许",
       "no": "不允许",
@@ -17972,7 +18048,8 @@
     "spilled": {
       "full": "在 {{to}} 上思考：{{from}} 已满载。",
       "away": "在 {{to}} 上思考：{{from}} 不在线。",
-      "itsComputer": "它的电脑"
+      "itsComputer": "它的电脑",
+      "chosen": "在 {{to}} 上思考，这是其主人用于自己智能体工作的电脑。"
     },
     "modelStandIn": {
       "text": "{{plan}} 用此密钥拒绝了 {{from}}。我改用可用的 {{to}} 回复了。",
@@ -17990,6 +18067,10 @@
       "thinking": "思考中…",
       "held": "等待审批…",
       "said": "“{{text}}”"
+    },
+    "trail": {
+      "label": "{{name}} 目前做了什么",
+      "earlier_other": "之前的 {{count}} 步"
     },
     "consult": {
       "asking": "{{from}} 正在询问 {{to}}",
@@ -18268,6 +18349,7 @@
         "workingOnWorkspace": "在工作区中操作了",
         "updatingThread": "更新了一个话题",
         "addingAgent": "把智能体添加到频道",
+        "settingChannelLead": "选择了频道的负责智能体",
         "readingConversation": "读了对话",
         "usingTool": "使用了 {{tool}} 工具",
         "thinking": "思考了",
@@ -18392,6 +18474,7 @@
       "workingOnWorkspace": "在工作区中操作",
       "updatingThread": "更新话题",
       "addingAgent": "把智能体添加到频道",
+      "settingChannelLead": "正在选择频道的负责智能体",
       "readingConversation": "阅读对话",
       "usingTool": "使用工具"
     },
@@ -19765,6 +19848,14 @@
       "busy": "现在观看的人太多了。",
       "ended": "屏幕已关闭。",
       "retrying": "正在重试…"
+    },
+    "open": {
+      "gaveUp": "无法打开 {{name}} 的屏幕。",
+      "slow": "比平时花的时间更长。",
+      "late": "{{computer}} 响应太慢。",
+      "dropped": "连接已断开。",
+      "offline": "{{computer}} 没有响应。",
+      "refused": "{{computer}} 无法打开屏幕。"
     },
     "retry": "重试",
     "takeover": "接管控制",
@@ -21240,6 +21331,92 @@
     "settingsText": "将技术详细信息发送给 agentes.chat 团队。"
   },
   "live": {
+    "type": {
+      "font": "字体",
+      "search": "搜索字体",
+      "noResults": "没有这个名称的字体",
+      "list": "字体",
+      "groups": {
+        "slides": "此演示文稿中",
+        "canvas": "此白板中",
+        "document": "此文档中",
+        "company": "公司字体",
+        "sans": "无衬线",
+        "serif": "衬线",
+        "display": "用于标题",
+        "mono": "等宽",
+        "handwriting": "手写"
+      },
+      "headings": "标题",
+      "body": "正文",
+      "fromDrive": "来自 Drive",
+      "ownFont": "文件字体",
+      "fileFonts": {
+        "slides": "演示文稿字体",
+        "document": "文档字体"
+      },
+      "fileFontsNote": "适用于整个文件。有自己字体的文字保持不变。",
+      "headingFont": "标题字体",
+      "bodyFont": "正文字体",
+      "bring": "从 Drive 导入字体…",
+      "bringButton": "从 Drive 导入",
+      "bringTitle": "从 Drive 导入字体",
+      "bringSearch": "在 Drive 中搜索字体",
+      "bringEmpty": "Drive 中没有字体。请先把 .ttf、.otf 或 .woff 文件上传到 Drive。",
+      "brought": "{{name}} 已加入文件",
+      "notFont": "这个文件不是字体。请选择 .ttf、.otf 或 .woff 文件。",
+      "done": "完成",
+      "text": "文字样式",
+      "glyph": "Aa",
+      "weight": "粗细",
+      "weights": {
+        "w300": "细",
+        "w400": "常规",
+        "w500": "中等",
+        "w600": "半粗",
+        "w700": "粗",
+        "w800": "特粗"
+      },
+      "tracking": "字间距",
+      "trackings": {
+        "tight": "更紧",
+        "normal": "常规",
+        "open": "宽松",
+        "wide": "很宽"
+      },
+      "lineHeight": "行高",
+      "caps": "全部大写",
+      "highlight": "高亮",
+      "highlights": {
+        "none": "无",
+        "yellow": "黄色",
+        "green": "绿色",
+        "blue": "蓝色",
+        "pink": "粉色",
+        "orange": "橙色"
+      },
+      "effects": "效果",
+      "shadow": "阴影",
+      "shadows": {
+        "none": "无",
+        "soft": "柔和",
+        "strong": "强烈"
+      },
+      "border": "边框",
+      "dashes": {
+        "solid": "实线",
+        "dashed": "虚线",
+        "dotted": "点线"
+      },
+      "gradient": "渐变",
+      "gradients": {
+        "none": "无",
+        "ocean": "海洋",
+        "graphite": "石墨",
+        "sunset": "日落",
+        "violet": "紫罗兰"
+      }
+    },
     "slides": {
       "rail": {
         "label": "幻灯片",

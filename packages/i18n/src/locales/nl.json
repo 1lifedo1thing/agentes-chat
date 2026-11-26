@@ -704,6 +704,8 @@
       "confirmNo": "Dit was ik niet",
       "done": "Helemaal klaar.",
       "doneLead": "Je bent ingelogd in de agentes-app. Je kunt dit tabblad sluiten.",
+      "back": "Terug naar de app.",
+      "openApp": "App openen",
       "expired": "Dit verzoek is verlopen.",
       "expiredLead": "Ga terug naar de app en kies opnieuw {{provider}}.",
       "handover": "Inloggen met je account van het andere apparaat…",
@@ -1228,7 +1230,7 @@
         "fileLead": "Het bestand uit elke app die we kennen. Het wordt vanzelf herkend.",
         "paths": {
           "lead": "Kies hoe je ze ophaalt. Je controleert alles voordat er iets wordt aangemaakt.",
-          "best": "het meest volledig",
+          "best": "Het meest volledig",
           "safe": "Sleutels, wachtwoorden en sessies uit {{app}} komen nooit mee, welke weg je ook kiest.",
           "command": {
             "title": "Met een opdracht",
@@ -2144,7 +2146,7 @@
       },
       "computers": {
         "title": "Computers",
-        "help": "Er is een nieuwe computer bijgekomen of die van de werkruimte is klaar"
+        "help": "Een computer is bijgekomen, is klaar of reageert niet meer"
       },
       "reactions": {
         "title": "Reacties",
@@ -2208,8 +2210,8 @@
       "title": "Zijbalk",
       "newChannel": "Nieuw kanaal",
       "newChannelPersonal": "Nieuw groepsgesprek",
-      "addToChannels": "Nieuw kanaal of nieuwe categorie",
-      "addToChannelsPersonal": "Nieuw groepsgesprek of nieuwe categorie",
+      "addToChannels": "Nieuw kanaal",
+      "addToChannelsPersonal": "Nieuw groepsgesprek",
       "newMessage": "Nieuw bericht",
       "addMembers": "Mensen of agents toevoegen",
       "channelSettings": "Kanaalinstellingen",
@@ -2369,7 +2371,9 @@
     "delete": "Afdeling verwijderen",
     "deleteTitle": "De afdeling {{name}} verwijderen?",
     "deleteText": "De agents gaan terug naar Agents.",
+    "deleteChannels": "De kanalen gaan terug naar Kanalen.",
     "dropHere": "Sleep agents hierheen",
+    "dropHereAll": "Sleep agents of kanalen hierheen",
     "moved": "{{name}} zit nu in {{group}}",
     "movedOut": "{{name}} heeft {{group}} verlaten",
     "undo": "Ongedaan maken"
@@ -2471,6 +2475,17 @@
       "unlinkText": "{{assistant}} antwoordt je daar niet meer. Je kunt het altijd opnieuw koppelen.",
       "unlinked": "{{surface}} ontkoppeld"
     },
+    "nudge": {
+      "title": "Herinnering aan ongelezen",
+      "hint": "Als er iets ongelezen in de app wacht, herinnert {{assistant}} je eraan op {{surface}}, hooguit één keer per dag. Niet als je telefoon meldingen krijgt.",
+      "after": "Herinneren na",
+      "hours": "{{hours}} u",
+      "quiet": "Stille uren",
+      "quietHint": "Geen herinneringen tussen deze tijden, in jouw tijdzone.",
+      "quietFrom": "Van",
+      "quietTo": "Tot",
+      "quietRange": "{{from}} tot {{to}}"
+    },
     "undo": {
       "title": "De chatapp ontkoppelen?",
       "lead": "Je account is net gekoppeld aan een chatapp. Was jij dat niet, ontkoppel hem dan hier.",
@@ -2523,6 +2538,7 @@
       "set": "Pincode instellen",
       "change": "Pincode wijzigen",
       "title": "Je {{surface}}-pincode",
+      "row": "Je pincode",
       "text": "Zes cijfers die je typt om acties goed te keuren die je via {{surface}} vraagt. Hij wordt nooit in de chat verstuurd.",
       "save": "Pincode opslaan"
     }
@@ -2818,6 +2834,7 @@
     "nameLabel": "Naam",
     "nameHelp": "Verandert voor iedereen. Oude links blijven werken.",
     "replyInThreads": "Agents antwoorden in threads",
+    "replyInChannel": "Agents antwoorden in het kanaal",
     "replyInThreadsHelp": "Een agent die in het kanaal wordt aangeroepen, antwoordt in de thread onder dat bericht, en het kanaal toont er één regel voor. Werk dat al loopt, blijft waar het is.",
     "nameTaken": "Er is al een #{{name}}.",
     "generalName": "#general houdt zijn naam.",
@@ -3222,6 +3239,9 @@
       "set_notifications_off": "Je meldingen voor <b>{{category}}</b> uitzetten",
       "set_my_timezone": "Je tijdzone op <b>{{timezone}}</b> zetten",
       "set_my_timezone_workspace": "Weer de tijdzone van de werkruimte volgen",
+      "set_computer_help": "<b>{{computer}}</b> laten helpen als de computer van je agents vol of weg is",
+      "set_computer_help_first": "<b>{{computer}}</b> gebruiken voor het werk van je agents",
+      "set_computer_help_off": "<b>{{computer}}</b> niet meer gebruiken voor je agents",
       "set_invitation_roles": "Rollen die de uitnodiging van <b>{{email}}</b> geeft wijzigen: {{change}}",
       "update_channel": "Kanaal <b>#{{channel}}</b> wijzigen",
       "archive_channel": "<b>#{{channel}}</b> archiveren",
@@ -3611,6 +3631,10 @@
       "plan": "Met abonnement",
       "key": "Met API-sleutel"
     },
+    "offSystem": "Werkt nog niet op {{system}}",
+    "offSystemGroup": "Werken nog niet op {{system}}",
+    "offSystemSome_one": "{{names}} werkt nog niet op {{system}}",
+    "offSystemSome_other": "{{names}} werken nog niet op {{system}}",
     "pick": {
       "plan": "Abonnement",
       "placeholder": "Kies een abonnement",
@@ -3639,7 +3663,8 @@
       "gemini": {
         "title": "Je Gemini-abonnement",
         "tiers": "Google AI Pro, Google AI Ultra of Gemini Enterprise",
-        "warning": "Volgens Google kan het gebruik van een persoonlijk Gemini-abonnement in andere apps ertoe leiden dat het account wordt geschorst. Gebruik een Gemini-API-sleutel of Gemini Enterprise om dat risico te vermijden."
+        "warning": "Volgens Google kan het gebruik van een persoonlijk Gemini-abonnement in andere apps ertoe leiden dat het account wordt geschorst. Gebruik een Gemini-API-sleutel of Gemini Enterprise om dat risico te vermijden.",
+        "windowsOne": "Op Windows gebruikt een computer één Gemini-account tegelijk."
       },
       "zen": {
         "title": "OpenCode",
@@ -4063,6 +4088,9 @@
     },
     "channel": {
       "agent_added": "{{agentName}} toegevoegd aan <b>#{{channel}}</b>",
+      "lead_changed": "{{agentName}} verantwoordelijk gemaakt voor <b>#{{channel}}</b>",
+      "lead_changed_self": "Verantwoordelijk geworden voor <b>#{{channel}}</b>",
+      "lead_changed_none": "<b>#{{channel}}</b> zonder verantwoordelijke agent gelaten",
       "created": "Kanaal <b>#{{name}}</b> aangemaakt"
     },
     "wiki": {
@@ -4104,6 +4132,9 @@
       "changed_set_notifications_off": "Je meldingen voor <b>{{category}}</b> uitgezet",
       "changed_set_my_timezone": "Je tijdzone op <b>{{timezone}}</b> gezet",
       "changed_set_my_timezone_workspace": "Je tijdzone volgt weer die van de werkruimte",
+      "changed_set_computer_help": "<b>{{computer}}</b> helpt nu als de computer van je agents vol of weg is",
+      "changed_set_computer_help_first": "Het werk van je agents start nu op <b>{{computer}}</b>",
+      "changed_set_computer_help_off": "<b>{{computer}}</b> helpt je agents niet meer",
       "changed_set_invitation_roles": "Rollen die de uitnodiging van <b>{{email}}</b> geeft gewijzigd: {{change}}",
       "changed_update_channel": "Kanaal <b>#{{channel}}</b> gewijzigd",
       "changed_archive_channel": "<b>#{{channel}}</b> gearchiveerd",
@@ -4250,52 +4281,8 @@
     "create": "#{{name}} maken"
   },
   "channelCategories": {
-    "newCategory": "Nieuwe categorie",
-    "newCategoryHelp": "Komt onderaan de lijst. Je kunt hem later verslepen.",
-    "newCategoryDesc": "Groepeert kanalen onder één naam in ieders zijbalk.",
-    "name": "Naam",
-    "namePlaceholder": "bijv. Product",
-    "nameEmpty": "Geef de categorie een naam.",
-    "nameTaken": "Er is al een categorie {{name}}.",
-    "channels": "Kanalen die erin gaan",
-    "channelsSearch": "Kanalen zoeken",
-    "channelsEmpty": "Geen kanaal gevonden voor “{{q}}”.",
-    "inCategory": "Nu in {{name}}",
-    "noCategory": "Geen categorie",
-    "noCategoryDesc": "Bovenaan, zonder kop",
-    "create": "Categorie maken",
-    "createWith_one": "Maken met {{count}} kanaal",
-    "createWith_other": "Maken met {{count}} kanalen",
-    "created": "{{name}} gemaakt.",
-    "rename": "Hernoemen",
-    "renameTitle": "Categorie hernoemen",
-    "save": "Opslaan",
-    "delete": "Categorie verwijderen",
-    "deleteDesc": "De kanalen gaan naar boven",
-    "deleted_one": "{{name}} verwijderd. {{count}} kanaal ging naar boven.",
-    "deleted_other": "{{name}} verwijderd. {{count}} kanalen gingen naar boven.",
-    "deletedEmpty": "{{name}} verwijderd.",
     "undo": "Ongedaan maken",
-    "collapseAll": "Alles sluiten",
-    "expandAll": "Alles openen",
-    "newChannelHere": "Nieuw kanaal hier",
-    "newChannelIn": "Nieuw kanaal in {{name}}",
-    "options": "Opties voor {{name}}",
-    "category": "Categorie",
     "categoryHelp": "Waar het kanaal in ieders zijbalk staat.",
-    "newCategoryOption": "Nieuwe categorie…",
-    "move": "Verplaatsen naar…",
-    "moveTitle": "#{{channel}} verplaatsen",
-    "moveDesc": "Verandert waar het kanaal in ieders zijbalk staat. Wie meedoet, blijft hetzelfde.",
-    "moveSearch": "Categorieën zoeken",
-    "moveEmpty": "Geen categorie gevonden voor “{{q}}”.",
-    "moveTo": "Verplaatsen naar {{name}}",
-    "moveSame": "Verplaatsen",
-    "moveNow": "Nu",
-    "moveEmptyCategory": "Nog geen kanalen",
-    "moveCreate": "“{{name}}” maken",
-    "moved": "#{{channel}} staat nu in {{name}}.",
-    "newWithChannel": "Nieuwe categorie met dit kanaal",
     "editChannel": "Kanaal bewerken"
   },
   "channelMembers": {
@@ -4377,6 +4364,7 @@
     "available": "Beschikbaar",
     "working": "Bezig",
     "waiting": "Wacht op jou",
+    "idle": "Inactief",
     "lower": {
       "online": "online",
       "away": "afwezig",
@@ -4463,7 +4451,9 @@
       "noAi": "Geen AI gekoppeld"
     },
     "bySelf": "Geschreven door {{name}} · verdwijnt als het klaar is",
-    "byAuto": "Waar hij nu mee bezig is"
+    "byAuto": "Waar hij nu mee bezig is",
+    "byPrivate": "In een privégesprek · alleen de mensen in dat gesprek zien de details",
+    "openWork": "Gesprek openen"
   },
   "agentWork": {
     "working": "bezig",
@@ -4472,6 +4462,7 @@
     "queued": "in de rij",
     "here": "hier",
     "routine": "bij een routine",
+    "private": "in een privégesprek",
     "yourApproval": "je goedkeuring",
     "yourAnswer": "je antwoord",
     "later": "opvolging {{when}}",
@@ -5092,8 +5083,17 @@
     "expiredChip": "Verlopen · {{when}}",
     "canceledChip": "Geannuleerd · {{when}}",
     "line": {
-      "after": "wordt uitgevoerd na ‘{{title}}’",
       "notRun": "niet uitgevoerd: het verzoek ervoor is niet goedgekeurd"
+    },
+    "held": {
+      "waiting": "Wacht op <link/>",
+      "runNow": "Nu uitvoeren"
+    },
+    "byAgent": {
+      "head_one": "{{count}} verzoek van {{name}}",
+      "head_other": "{{count}} verzoeken van {{name}}",
+      "approve": "Alles goedkeuren",
+      "refuse": "Alles weigeren"
     },
     "waitingFor": "Wacht op {{name}}",
     "waitingAdmin": "Wacht op een beheerder",
@@ -5699,7 +5699,6 @@
       "queued": "In de wachtrij",
       "notRun": "Niet uitgevoerd"
     },
-    "queuedLine": "Goedgekeurd. Wordt uitgevoerd na ‘{{title}}’, dat eerder is gevraagd.",
     "notRunRefused": "‘{{title}}’, eerder gevraagd, is geweigerd nadat dit verzoek was goedgekeurd. Daarom is dit niet uitgevoerd.",
     "notRunExpired": "‘{{title}}’, eerder gevraagd, is zonder beslissing verlopen nadat dit verzoek was goedgekeurd. Daarom is dit niet uitgevoerd.",
     "notRunEarlier": "Een eerder verzoek is geweigerd of verlopen nadat dit was goedgekeurd. Daarom is dit niet uitgevoerd.",
@@ -9047,6 +9046,11 @@
         "text": "Als er een e-mail binnenkomt, maakt de agent een antwoord klaar.",
         "prompt": "Lees de binnengekomen e-mail en zeg waar die over gaat en hoe dringend die is. Schrijf een voorstel voor een antwoord, zonder het te versturen."
       },
+      "inbox": {
+        "name": "E-mails die een antwoord nodig hebben",
+        "text": "Werkdagen om 9:00 en 14:00, wat een antwoord nodig heeft, met concept.",
+        "prompt": "Bekijk de e-mails die sinds de vorige keer zijn binnengekomen. Zet de mails die een antwoord nodig hebben op een rij, de dringendste eerst, en schrijf voor elke mail een conceptantwoord, zonder het te versturen."
+      },
       "tickets": {
         "name": "Onbeantwoorde tickets",
         "text": "Werkdagen om 9:00 en 14:00, wie nog wacht.",
@@ -9131,6 +9135,11 @@
         "name": "Nieuwe PR's reviewen",
         "text": "Als er een PR opent, leest de agent hem en geeft commentaar.",
         "prompt": "Lees de diff van de nieuwe PR, wijs op risico's en zeg wat je met de hand moet testen."
+      },
+      "openPrs": {
+        "name": "PR's die op een review wachten",
+        "text": "Werkdagen om 10:00, de open PR's die nog niemand heeft gereviewd.",
+        "prompt": "Bekijk de open PR's die nog op een review wachten. Zeg bij elke PR wat hij verandert, hoe lang hij al wacht en waar je eerst naar moet kijken."
       },
       "week": {
         "name": "Weekafsluiting",
@@ -12658,7 +12667,13 @@
     "rule": "Nieuw werk start als de computer vrij geheugen heeft. Mensen gaan voor. Samen genoemde agenten starten een voor een.",
     "spill": {
       "title": "Je computers",
-      "text": "Als deze computer vol of weg is, kunnen je agents op een van jouw computers beginnen. Missies, codesessies en agents met repository's blijven hier.",
+      "text": "Als deze computer vol of weg is, kunnen je agents op een van jouw computers beginnen. Een computer die je voor hun werk gebruikt, krijgt hun verzoeken, routines en lang werk als eerste. Missies, codesessies en agents met repository's blijven hier.",
+      "use": {
+        "label": "Hoe {{name}} helpt",
+        "off": "Helpt niet",
+        "help": "Als deze vol of weg is",
+        "first": "Voor het werk van mijn agents"
+      },
       "plan": "je {{plan}}-abonnement"
     },
     "youFirst": "Jij bent eerst",
@@ -12696,6 +12711,7 @@
       "private": "een privégesprek"
     },
     "waiting": "In de wachtrij · begint zo",
+    "waitingAfter": "In de wachtrij, na {{name}}",
     "nth": {
       "one": "{{n}}e",
       "two": "{{n}}e",
@@ -14860,6 +14876,7 @@
       "send_dm": "Direct bericht sturen",
       "read_conversation": "Gesprek lezen",
       "add_agent_to_channel": "Agent aan een kanaal toevoegen",
+      "set_channel_lead": "De verantwoordelijke agent voor een kanaal kiezen",
       "ask_agent": "Een andere agent vragen",
       "tell_agent": "Een andere agent informeren",
       "find_agent": "Agent vinden",
@@ -15085,7 +15102,15 @@
     "see": "Bekijken",
     "seeAsks": "Bekijk wat om goedkeuring vraagt",
     "agentTitle": "Wat {{name}} kan gebruiken",
-    "agentSub": "Per connector en onderwerp. Standaard vragen gevoelige acties om goedkeuring."
+    "agentSub": "Per connector en onderwerp. Standaard vragen gevoelige acties om goedkeuring.",
+    "instructions": {
+      "title": "Serverinstructies",
+      "hint": "Agents die deze tools gebruiken, krijgen deze tekst na hun eigen instructies.",
+      "chars": "{{used}} van {{max}} tekens",
+      "cut": "Ingekort op {{max}} tekens",
+      "off": "Agents krijgen deze tekst niet.",
+      "none": "De server stuurt geen instructies."
+    }
   },
   "connectFlow": {
     "steps": "Stappen",
@@ -15133,6 +15158,7 @@
     "serverSaid": "De server antwoordde: {{detail}}",
     "ownClient": {
       "title": "Je eigen OAuth-app gebruiken",
+      "addressFirst": "Vul eerst het https-adres van de server in.",
       "notApproved": "{{name}} laat alleen apps toe die het heeft goedgekeurd, en agentes.chat hoort daar nog niet bij. Je kunt het verbinden met je eigen app daar.",
       "askAdmin": "Een beheerder kan het verbinden met de eigen app van de workspace.",
       "help": "Maak een app bij de aanbieder, registreer daar deze redirect-URI en plak de client-ID hier. Elke aanmelding daar vanuit de workspace gebruikt dan jouw app.",
@@ -15204,6 +15230,27 @@
       "asks_other": "{{count}} acties vragen om goedkeuring in de chat.",
       "adjust": "Aanpassen",
       "ok": "Klaar"
+    },
+    "routine": {
+      "inbox": "{{name}} leest je e-mails en stuurt je in een DM wat een antwoord nodig heeft, al met een concept.",
+      "dayPlan": "{{name}} kijkt in je agenda en stuurt je in een DM de afspraken van vandaag en wat je moet voorbereiden.",
+      "failed": "{{name}} controleert weigeringen, terugbetalingen en geschillen en stuurt je een DM.",
+      "leads": "{{name}} ziet wie er in het CRM is binnengekomen en zegt je in een DM met wie je begint.",
+      "tickets": "{{name}} zoekt tickets die op een antwoord wachten en stuurt ze je in een DM, met een voorgesteld antwoord.",
+      "late": "{{name}} zoekt achterstallige taken en zegt je in een DM wie elke taak oppakt.",
+      "openPrs": "{{name}} bekijkt de PR's die op een review wachten en zegt je in een DM waar je eerst naar moet kijken.",
+      "errors": "{{name}} controleert de nieuwe fouten en zegt je in een DM wat aandacht nodig heeft.",
+      "noAgent": "Geef hierboven een agent toegang en die regelt dit voor je.",
+      "preparing": "Routine wordt klaargezet…",
+      "who": "Wie het doet",
+      "when": "Wanneer",
+      "on": "De routine {{name}} maken",
+      "created": "Routine gemaakt: {{name}}",
+      "createdDetail": "{{agent}} is begonnen: de eerste samenvatting komt in je DM.",
+      "undo": "Ongedaan maken",
+      "undone": "Routine ongedaan gemaakt",
+      "notCreated": "De routine kon niet worden gemaakt. Je kunt hem maken bij Routines.",
+      "mailboxOnly": "Alleen de mailbox {{address}}."
     },
     "git": {
       "token": "Toegangstoken",
@@ -15980,6 +16027,7 @@
       "headersWithSignIn": "Deze server vraagt om in te loggen, en een login kan nog geen headers meesturen. Verwijder de headers om in te loggen, of koppel met een API-sleutel.",
       "headersUnreadable": "De opgeslagen headers konden niet worden gelezen. Vul ze opnieuw in of verwijder ze.",
       "noOAuth": "De MCP-server meldt niet aan met OAuth en neemt dus geen eigen app aan. Verbind hem met een API-sleutel.",
+      "oauthDiscovery": "De MCP-server meldt aan met OAuth, maar de aanmeldgegevens op {{host}} konden niet worden gelezen. Probeer het over een paar minuten opnieuw.",
       "ownClientInUse": "Er melden nog accounts aan met de eerder opgeslagen app. Verbreek die eerst en wijzig hem dan.",
       "ownClientId": "Controleer de client-ID: één woord, zoals de aanbieder hem toont."
     },
@@ -16207,6 +16255,8 @@
       "notLinkMaker": "Alleen wie de link heeft gemaakt, kan deze computer laten deelnemen.",
       "widenForbidden": "Admins kunnen alleen beperken wie iemands eigen apparaat mag gebruiken.",
       "spillOwnerOnly": "Alleen wie deze computer heeft gekoppeld kan zijn hulp aanzetten. Jij kunt hem uitzetten.",
+      "shareOwnerOnly": "Alleen wie deze computer heeft verbonden, kan agents het internet ervan laten gebruiken. Jij kunt het uitzetten.",
+      "shareConnectedOnly": "Alleen een computer die iemand heeft verbonden, kan zijn internet met de agents delen.",
       "tasksOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan wijzigen hoeveel taken hij tegelijk uitvoert.",
       "tasksCloud": "De Cloud bepaalt zelf hoeveel ruimte deze computer heeft voor taken.",
       "notHome": "Agents wonen op de computer van de workspace en gebruiken deze als ze hem bij naam noemen."
@@ -16226,6 +16276,7 @@
       "askSelf": "Het is jouw computer: zet het aan met de knop.",
       "adminAskSelf": "Dat kun je hier zelf doen.",
       "accountMethodUnsupported": "Deze computer kan Claude nog niet op deze manier koppelen. Werk het agentes.chat-programma erop bij, of gebruik een API-sleutel.",
+      "windowsOneGemini": "Op Windows gebruikt een computer één Gemini-account tegelijk. Verwijder het andere Gemini-account van deze computer om met dit account in te loggen.",
       "brainUnavailable": "Deze AI is nog niet ingesteld op {{computer}}. Stel hem daar in, of kies een andere.",
       "offline": "{{name}} is nu offline. Probeer het opnieuw zodra hij terug is.",
       "paused": "{{name}} is gepauzeerd: er start niets nieuws op tot hij wordt hervat.",
@@ -16359,7 +16410,10 @@
       "restart": "De sessies van de computer starten opnieuw om het netwerk toe te passen. Nieuw werk wacht tot dit klaar is.",
       "line": "Uitgaand IP {{ip}}",
       "hint": "Het adres dat websites zien als de agents browsen. Het verandert mee met het netwerk van de computer.",
-      "waiting": "Het internet van de agents wordt opnieuw verbonden. Hun verbindingen wachten tot het terug is."
+      "waiting": "Het internet van de agents wordt opnieuw verbonden. Hun verbindingen wachten tot het terug is.",
+      "via": "Agents gebruiken het internet van {{name}}",
+      "viaBy": "Agents gebruiken het internet van {{name}} ({{person}})",
+      "viaHint": "Websites zien de locatie van die computer. Wie hem heeft verbonden, kan het op zijn pagina uitzetten."
     },
     "moving": {
       "short": "Verhuist van server",
@@ -16511,6 +16565,18 @@
       "diskFullNotice": "De schijf van {{name}} is bijna vol"
     },
     "chromeMissingNotice": "{{name}} heeft Google Chrome nodig voor de browser van de agents. Download het op google.com/chrome",
+    "outage": {
+      "down": "{{name}} reageert niet",
+      "back": "{{name}} is terug",
+      "since": "Sinds {{time}}",
+      "backAfter": "Terug na {{away}}",
+      "waiting": "Wachten: {{what}}",
+      "waited": "Hebben gewacht: {{what}}",
+      "runs_one": "{{count}} verzoek aan agents",
+      "runs_other": "{{count}} verzoeken aan agents",
+      "calls_one": "{{count}} webhook-aanroep",
+      "calls_other": "{{count}} webhook-aanroepen"
+    },
     "access": {
       "folders": "Toegestane mappen",
       "ownFolder": "De map van elke agent",
@@ -16643,8 +16709,16 @@
     "spillOwnHint": "Als de computer van je agents vol of weg is, kunnen hun antwoorden, vragen en routines hier denken met jouw aanmelding.",
     "spillTeamHint": "Als de computer van een agent vol of weg is, kunnen zijn antwoorden, vragen en routines hier denken met de aanmelding van zijn eigenaar op deze computer.",
     "spillWorkspaceOff": "Een admin heeft dit voor de workspace uitgezet.",
+    "spillFirst": "Deze computer gebruiken voor het werk van mijn agents",
+    "spillFirstHint": "Verzoeken, routines en lang werk van je agents starten hier zodra hij vrij is, met de AI die je hier hebt verbonden. Antwoorden aan mensen starten hier alleen als de computer van het team vol of weg is.",
     "helpWorkspace": "Computers helpen als die van het team vol of weg is",
     "helpWorkspaceHint": "Elke computer helpt alleen als zijn eigenaar het toestaat. Uit: geen enkele helpt, wat de eigenaar ook koos.",
+    "shareInternet": "Agents gebruiken het internet van deze computer",
+    "shareInternetHint": "Websites die de agents openen, gaan via de verbinding van deze computer en zien dus jouw locatie. Alleen websites, tot 5 GB per dag, en nooit iets op je eigen netwerk. Zolang deze computer offline is, gebruiken de agents hun gewone verbinding.",
+    "shareInternetInUse": "Nu in gebruik",
+    "shareInternetOther": "Agents gebruiken nu {{name}}",
+    "shareInternetPick": "Deze gebruiken",
+    "shareInternetJoin": "De agents openen ook websites via het internet van deze computer, dus websites zien jouw locatie. Je kunt het op zijn pagina uitzetten.",
     "connectedBy": "Gekoppeld door {{name}}",
     "downloadFor": "Downloaden voor {{system}}",
     "downloadApp": "De app downloaden",
@@ -17176,6 +17250,10 @@
       "toolRequest": "<b>{{who}}</b> vraagt je {{tool}} aan te zetten op je <b>{{deviceName}}</b>",
       "cliRequest": "<b>{{who}}</b> vraagt je {{tool}} te installeren op je <b>{{deviceName}}</b>",
       "folderRequest": "<b>{{who}}</b> vraagt je om de map {{path}} op je <b>{{deviceName}}</b>",
+      "internetShared": "Agents openen websites nu via het internet van <b>{{deviceName}}</b>",
+      "internetSharedLine": "Alleen de agents van deze workspace, alleen websites, tot 5 GB per dag, nooit iets op het eigen netwerk van de computer. Zolang hij offline is, gebruiken ze hun gewone verbinding.",
+      "internetOff": "Uitzetten",
+      "internetOffDone": "Agents gebruiken het internet van {{deviceName}} niet meer.",
       "once": "Eén keer toestaan",
       "always": "Altijd",
       "no": "Nee",
@@ -18592,7 +18670,8 @@
     "spilled": {
       "full": "Dacht op {{to}}: {{from}} was vol.",
       "away": "Dacht op {{to}}: {{from}} was weg.",
-      "itsComputer": "zijn computer"
+      "itsComputer": "zijn computer",
+      "chosen": "Dacht op {{to}}, die de eigenaar gebruikt voor het werk van zijn agents."
     },
     "modelStandIn": {
       "text": "{{plan}} heeft {{from}} met deze sleutel geweigerd. Ik heb geantwoord met {{to}}, dat er wel mee werkt.",
@@ -18611,6 +18690,11 @@
       "thinking": "Denkt na…",
       "held": "Wacht op goedkeuring…",
       "said": "‘{{text}}’"
+    },
+    "trail": {
+      "label": "Wat {{name}} tot nu toe deed",
+      "earlier_one": "{{count}} eerdere stap",
+      "earlier_other": "{{count}} eerdere stappen"
     },
     "consult": {
       "asking": "{{from}} vraagt {{to}} iets",
@@ -18892,6 +18976,7 @@
         "workingOnWorkspace": "In de werkruimte gewerkt",
         "updatingThread": "Een thread bijgewerkt",
         "addingAgent": "Een agent aan een kanaal toegevoegd",
+        "settingChannelLead": "De verantwoordelijke agent voor een kanaal gekozen",
         "readingConversation": "Het gesprek gelezen",
         "usingTool": "De tool {{tool}} gebruikt",
         "thinking": "Nagedacht",
@@ -19016,6 +19101,7 @@
       "workingOnWorkspace": "in de werkruimte aan het werken",
       "updatingThread": "een thread aan het bijwerken",
       "addingAgent": "een agent aan een kanaal aan het toevoegen",
+      "settingChannelLead": "de verantwoordelijke agent voor een kanaal aan het kiezen",
       "readingConversation": "het gesprek aan het lezen",
       "usingTool": "een tool aan het gebruiken"
     },
@@ -20402,6 +20488,14 @@
       "busy": "Er kijken nu te veel mensen mee.",
       "ended": "Het scherm is gesloten.",
       "retrying": "Opnieuw proberen…"
+    },
+    "open": {
+      "gaveUp": "Het scherm van {{name}} kon niet worden geopend.",
+      "slow": "Dit duurt langer dan normaal.",
+      "late": "{{computer}} deed er te lang over om te antwoorden.",
+      "dropped": "De verbinding is verbroken.",
+      "offline": "{{computer}} reageert niet.",
+      "refused": "{{computer}} kon het scherm niet openen."
     },
     "retry": "Opnieuw proberen",
     "takeover": "Controle overnemen",
@@ -21911,6 +22005,92 @@
     "settingsText": "Stuur de technische details naar het agentes.chat-team."
   },
   "live": {
+    "type": {
+      "font": "Lettertype",
+      "search": "Lettertype zoeken",
+      "noResults": "Geen lettertype met die naam",
+      "list": "Lettertypen",
+      "groups": {
+        "slides": "In deze presentatie",
+        "canvas": "Op dit whiteboard",
+        "document": "In dit document",
+        "company": "Van je bedrijf",
+        "sans": "Schreefloos",
+        "serif": "Met schreef",
+        "display": "Voor koppen",
+        "mono": "Monospace",
+        "handwriting": "Handschrift"
+      },
+      "headings": "Koppen",
+      "body": "Tekst",
+      "fromDrive": "Uit de Drive",
+      "ownFont": "Lettertype van het bestand",
+      "fileFonts": {
+        "slides": "Lettertypen van de presentatie",
+        "document": "Lettertypen van het document"
+      },
+      "fileFontsNote": "Ze gelden voor het hele bestand. Tekst met een eigen lettertype houdt dat.",
+      "headingFont": "Lettertype van de koppen",
+      "bodyFont": "Lettertype van de tekst",
+      "bring": "Lettertype uit de Drive halen…",
+      "bringButton": "Uit de Drive halen",
+      "bringTitle": "Lettertype uit de Drive halen",
+      "bringSearch": "Lettertypen in de Drive zoeken",
+      "bringEmpty": "Geen lettertypen in de Drive. Zet eerst een .ttf-, .otf- of .woff-bestand in de Drive.",
+      "brought": "{{name}} staat nu in het bestand",
+      "notFont": "Dit bestand is geen lettertype. Kies een .ttf, .otf of .woff.",
+      "done": "Klaar",
+      "text": "Tekststijl",
+      "glyph": "Aa",
+      "weight": "Dikte",
+      "weights": {
+        "w300": "Licht",
+        "w400": "Normaal",
+        "w500": "Medium",
+        "w600": "Halfvet",
+        "w700": "Vet",
+        "w800": "Extra vet"
+      },
+      "tracking": "Letterafstand",
+      "trackings": {
+        "tight": "Krapper",
+        "normal": "Normaal",
+        "open": "Ruim",
+        "wide": "Heel ruim"
+      },
+      "lineHeight": "Regelhoogte",
+      "caps": "Alles in hoofdletters",
+      "highlight": "Markering",
+      "highlights": {
+        "none": "Geen",
+        "yellow": "Geel",
+        "green": "Groen",
+        "blue": "Blauw",
+        "pink": "Roze",
+        "orange": "Oranje"
+      },
+      "effects": "Effecten",
+      "shadow": "Schaduw",
+      "shadows": {
+        "none": "Geen",
+        "soft": "Zacht",
+        "strong": "Sterk"
+      },
+      "border": "Rand",
+      "dashes": {
+        "solid": "Doorgetrokken",
+        "dashed": "Gestreept",
+        "dotted": "Gestippeld"
+      },
+      "gradient": "Verloop",
+      "gradients": {
+        "none": "Geen",
+        "ocean": "Oceaan",
+        "graphite": "Grafiet",
+        "sunset": "Zonsondergang",
+        "violet": "Violet"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Dia's",

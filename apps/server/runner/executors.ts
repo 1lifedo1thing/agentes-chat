@@ -31,12 +31,14 @@ export const EXECUTORS_RETRY_MS = 30_000;
 export const EXECUTORS_EXIT_STRIKES = 3;
 
 type Executors = NonNullable<RunnerInfo["executors"]>;
-type RunResult = { status: number | null; stdout: string; stderr?: string; error?: unknown };
+export type RunResult = { status: number | null; stdout: string; stderr?: string; error?: unknown };
 export type ExecutorRun = (command: string, args: string[]) => RunResult | Promise<RunResult>;
 type Run = ExecutorRun;
 
 /** Shells' "command not found" (127), "not executable" (126) and cmd.exe's (9009). */
 const NOT_FOUND_EXITS = new Set([126, 127, 9009]);
+/** cmd.exe's words for a program it can't find: the CLI, or the `node` an npm launcher runs. */
+const CMD_NOT_FOUND = /is not recognized as an internal or external command/i;
 
 /**
  * Only a binary that isn't there is missing: not found, or a shell saying so (Windows runs CLIs through cmd.exe, an
@@ -46,9 +48,14 @@ const NOT_FOUND_EXITS = new Set([126, 127, 9009]);
 const missing = (r: RunResult) =>
   (r.error as { code?: unknown } | undefined)?.code === "ENOENT" ||
   (r.status !== null && NOT_FOUND_EXITS.has(r.status)) ||
-  (process.platform === "win32" &&
-    r.status !== 0 &&
-    /is not recognized as an internal or external command/i.test(r.stderr ?? ""));
+  (process.platform === "win32" && r.status !== 0 && CMD_NOT_FOUND.test(r.stderr ?? ""));
+
+/**
+ * A CLI process that ended because it isn't there: the spawn's `ENOENT` (the runner's own prefix on its stderr), or
+ * cmd.exe's not found (exit 9009, its words), which a CLI started through cmd.exe on Windows ends with instead.
+ */
+export const endedNotFound = (stderr: string, exitCode: number | null) =>
+  stderr.startsWith("ENOENT") || exitCode === 9009 || CMD_NOT_FOUND.test(stderr);
 
 export const isExecutable = (file: string) => {
   try {
@@ -68,12 +75,16 @@ export function resolveCommand(
   command: string,
   pathList = process.env.PATH ?? "",
   sharedBin = process.env[SHARED_BIN_ENV],
+  platform: NodeJS.Platform = process.platform,
 ): string {
   const picked = command.includes("/")
     ? undefined
     : (pickedCli(command) ?? (command === "codex" ? pickedCodex() : undefined));
   if (picked) return picked;
-  if (process.platform === "win32" || command.includes("/")) return command;
+  // On Windows a program by its full path, so a spawn never looks in the current folder first (`findOnWindowsPath`);
+  // a launcher (`.cmd`) stays a bare name for `cliSpawn`'s cmd.exe.
+  if (platform === "win32") return windowsExe(command, pathList) ?? command;
+  if (command.includes("/")) return command;
   const dirs = pathList.split(delimiter).filter((dir) => dir && dir !== sharedBin);
   const found = onPath(command, dirs);
   if (found) return found;
@@ -89,8 +100,9 @@ export function ownCommand(
   command: string,
   pathList = process.env.PATH ?? "",
   sharedBin = process.env[SHARED_BIN_ENV],
+  platform: NodeJS.Platform = process.platform,
 ): string | null {
-  if (process.platform === "win32") {
+  if (platform === "win32") {
     return findOnWindowsPath(command, envValue(process.env, "PATH") ?? "", envValue(process.env, "PATHEXT"));
   }
   return (
@@ -152,6 +164,12 @@ export function envValue(
   const upper = name.toUpperCase();
   const key = Object.keys(env).find((k) => k.toUpperCase() === upper);
   return key === undefined ? undefined : env[key];
+}
+
+/** `name` on the Windows PATH when it is a program that starts by itself (`.exe`, `.com`); null: none, or a launcher. */
+function windowsExe(name: string, pathList: string): string | null {
+  const found = findOnWindowsPath(name, pathList, envValue(process.env, "PATHEXT", "win32"));
+  return found && /\.(?:exe|com)$/i.test(found) ? found : null;
 }
 
 /** The extensions of a program the runner starts on Windows, in PATHEXT's order (never a script host's `.js` or `.vbs`). */
@@ -316,19 +334,22 @@ const defaultRun: Run = (command, args) =>
         env: run.env ? { ...process.env, ...run.env } : process.env,
         windowsVerbatimArguments: run.windowsVerbatimArguments,
       },
-      (err, stdout, stderr) => {
-        const code = (err as { code?: unknown } | null)?.code;
-        const out = `${stdout ?? ""}`;
-        resolve(
-          typeof code === "number"
-            ? { status: code, stdout: out, stderr: `${stderr ?? ""}` }
-            : err
-              ? { status: null, stdout: out, error: err }
-              : { status: 0, stdout: out },
-        );
-      },
+      (err, stdout, stderr) => resolve(execResult(err, stdout, stderr)),
     );
   });
+
+/**
+ * `execFile`'s answer as a look reads it. One killed past its time limit couldn't tell: on Windows the runtime reports
+ * the killed process's exit code (1, from `TerminateProcess`) where elsewhere there is none, which read as a CLI that
+ * can't start, when it was only slow (a large binary's first start under the antivirus' scan).
+ */
+export function execResult(err: unknown, stdout: unknown, stderr: unknown): RunResult {
+  const e = err as { code?: unknown; killed?: unknown } | null;
+  const out = `${stdout ?? ""}`;
+  if (e && typeof e.code === "number" && e.killed !== true)
+    return { status: e.code, stdout: out, stderr: `${stderr ?? ""}` };
+  return e ? { status: null, stdout: out, error: e } : { status: 0, stdout: out };
+}
 
 const word = (v: unknown) => (typeof v === "string" && /^[\w.-]{1,40}$/.test(v) ? v : undefined);
 

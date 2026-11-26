@@ -18,7 +18,7 @@ import { agentsByHandle, getAgentCached } from "./agents";
 import type { AiStatusDeps } from "./ai-status";
 import { AGENT_LOOK } from "./appearance";
 import { listApprovals } from "./approvals";
-import { addChannelMember, createChannel, listChannels } from "./channels";
+import { createChannel, listChannels } from "./channels";
 import { findMember } from "./chat-tools";
 import { CONNECTOR_CATALOG } from "./connectors/catalog";
 import { connectorListing, type ServerCatalog } from "./connectors/listing";
@@ -532,22 +532,23 @@ export function createSetupToolSource(deps: {
           const channel = await actWithUndo(
             ctx,
             async (db) => {
-              const created = await createChannel(
+              // Agents first: only they can be refused (their owner or an admin adds them), and a refusal
+              // undoes the whole channel before anyone was told they're in it. The people it starts with decide
+              // whether its agents answer in threads (ADR 0214).
+              return await createChannel(
                 db,
                 requester,
                 ctx.orgId,
-                { name: str(input.name).trim().replace(/^#/, ""), topic: str(input.topic).trim() },
+                {
+                  name: str(input.name).trim().replace(/^#/, ""),
+                  topic: str(input.topic).trim(),
+                  members: [
+                    ...agents.rows.map((a) => ({ agentId: a.id })),
+                    ...[...people.keys()].map((userId) => ({ userId })),
+                  ],
+                },
                 events,
               );
-              // Agents first: only they can be refused (their owner or an admin adds them), and a refusal
-              // undoes the whole channel before anyone was told they're in it.
-              for (const a of agents.rows) {
-                await addChannelMember(db, requester, ctx.orgId, created.id, { agentId: a.id }, events);
-              }
-              for (const userId of people.keys()) {
-                await addChannelMember(db, requester, ctx.orgId, created.id, { userId }, events);
-              }
-              return created;
             },
             (created) => ({
               kind: "channel.created",

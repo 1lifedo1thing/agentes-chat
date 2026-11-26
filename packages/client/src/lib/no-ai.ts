@@ -19,7 +19,7 @@ import { answersOthers, audienceOf, managesAgent } from "./audience";
 import { type BillingHold, billingHoldOf } from "./billing";
 import { type SetupView, setupPending } from "./computer";
 import { firstName } from "./format";
-import { CLI_HOME_ONLY } from "./machines";
+import { brainTool, CLI_GIT_MISSING, CLI_HOME_ONLY, osName } from "./machines";
 import { can } from "./permissions";
 import { CODING_PLANS, isPlanId, loginPerAgent, PLAN_IDS, type PlanId } from "./plans";
 import { isRightHand } from "./right-hand";
@@ -442,6 +442,8 @@ export type PlanGate =
       state: "unsupported";
       reason: BrainUnavailable | "keys";
       overdue?: boolean;
+      /** `reason` "system": the computer's system, which the picker names before a plan is picked. */
+      os?: string;
     }
   /** `owner`: the viewer doesn't own the agent; `computer`: only whoever connected it adds a sign-in there. */
   | { state: "locked"; who: "owner" | "computer" }
@@ -473,6 +475,17 @@ export const unsupportedGate = (
   reason,
   ...(edition === "cloud" && reason !== "tool_off" && installOverdue(setup, now) ? { overdue: true } : {}),
 });
+
+/** A plan that doesn't run on the computer's system carries that system (`os`), for the picker to name it. */
+const withSystem = (gate: PlanGate, os: string | undefined): PlanGate =>
+  gate.state === "unsupported" && gate.reason === "system" && os ? { ...gate, os } : gate;
+
+/**
+ * The system a plan doesn't run on, as a picker names it before the plan is picked ("Windows",
+ * `connectAi.offSystem`); null for any other gate.
+ */
+export const planOffSystem = (t: TFunction, gate: PlanGate) =>
+  gate.state === "unsupported" && gate.reason === "system" && gate.os ? osName(t, gate.os) : null;
 
 /**
  * The gate, first match wins. `brain` is the chosen agent's view (undefined while it loads); `computer` is that
@@ -508,7 +521,8 @@ export function planGate({
     return edition === "cloud" && !caughtUp ? { state: "preparing", view: null } : { state: "missing" };
   if (!brain.computer.online) return { state: "offline" };
   const option = brain.options.find((o) => o.kind === kindOf(choice));
-  if (!option?.available) return unsupportedGate(option?.reason ?? "not_reported", edition, setup, now);
+  if (!option?.available)
+    return withSystem(unsupportedGate(option?.reason ?? "not_reported", edition, setup, now), brain.computer.os);
   if (!brain.accountsSupported) return unsupportedGate("runner_old", edition, setup, now);
   if (isPlanId(choice) && !computer?.keys) return unsupportedGate("keys", edition, setup, now);
   if (!brain.canManageAccounts) return { state: "locked", who: "computer" };
@@ -562,7 +576,7 @@ export function planGateWithoutAgent({
   if (!computer.online) return { gate: { state: "offline" }, computer };
   if (computer.brains[kind] !== true)
     return {
-      gate: unsupportedGate(computer.off?.[kind] ?? "not_reported", edition, setup, now),
+      gate: withSystem(unsupportedGate(computer.off?.[kind] ?? "not_reported", edition, setup, now), computer.os),
       computer,
     };
   if (isPlanId(choice) && !computer.keys) return { gate: unsupportedGate("keys", edition, setup, now), computer };
@@ -688,8 +702,14 @@ export function gateLine(
     };
   if (gate.reason === "keys") return { text: t("aiAccounts.connect.needs.keys"), rechecks };
   if (gate.reason === "tool_off") return { text: t("brain.reasons.tool_offOne", { computer, program }), rechecks };
-  if (gate.reason === "cant_start" && machine?.cliErrors?.[kind] === CLI_HOME_ONLY)
-    return { text: t("brain.reasons.home_only", { computer, program }), rechecks };
+  if (gate.reason === "cant_start") {
+    // The runner's error line for it, by the CLI's own name (Claude Code's is `claude`), or one of its codes.
+    const said = machine?.cliErrors?.[brainTool(kind)] ?? machine?.cliErrors?.[kind];
+    const words = { computer, program };
+    if (said === CLI_HOME_ONLY) return { text: t("brain.reasons.home_only", words), rechecks };
+    if (said === CLI_GIT_MISSING) return { text: t("connectAi.cli.gitMissing", words), rechecks };
+    if (said) return { text: t("connectAi.cli.cantStart", { ...words, message: said }), rechecks };
+  }
   // Too old for agentes.chat, or a blocked version: with the command that updates it where its own updater is the way.
   if (gate.reason === "cli_outdated") {
     const command = CLI_UPDATE_COMMAND[kind === "claude_code" ? "claude" : kind];

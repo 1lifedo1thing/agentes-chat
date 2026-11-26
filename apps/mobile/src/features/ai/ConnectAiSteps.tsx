@@ -58,6 +58,7 @@ import {
   planLabel,
   planMark,
   planOfAccount,
+  planOffSystem,
   planPickText,
 } from "@agenteschat/client/lib/no-ai";
 import { can } from "@agenteschat/client/lib/permissions";
@@ -500,7 +501,8 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
         onHave={pickHave}
       />
     );
-  if (view.page === "plans") return <Plans onPlan={toPlan} dims={dims} />;
+  if (view.page === "plans")
+    return <Plans onPlan={toPlan} dims={dims} offSystem={(choice) => planOffSystem(t, gateAt(choice))} />;
   // The makers are a choice for the key's page under them: picking one goes back to it.
   if (view.page === "makers") return <Makers form={props.keyForm} onDone={() => goBack()} />;
   if (view.page === "plan")
@@ -686,14 +688,23 @@ function AllHave({
 }
 
 /** The plans, the most used first, with a search: what each is sold as under its name. Picking one pushes its page. */
-function Plans({ onPlan, dims }: { onPlan: (choice: PlanChoice) => void; dims: (choice: PlanChoice) => boolean }) {
+function Plans({
+  onPlan,
+  dims,
+  offSystem,
+}: {
+  onPlan: (choice: PlanChoice) => void;
+  dims: (choice: PlanChoice) => boolean;
+  /** The computer's system where a plan doesn't run there (`planOffSystem`): its row says so before it is picked. */
+  offSystem: (choice: PlanChoice) => string | null;
+}) {
   const { t } = useTranslation();
   return (
     <PickList
       options={PLAN_CHOICES.map((c) => ({
         value: c,
         label: planLabel(t, c),
-        description: t(`connectAi.plan.${c}.tiers`),
+        description: offSystem(c) ? t("connectAi.offSystem", { system: offSystem(c) }) : t(`connectAi.plan.${c}.tiers`),
         mark: planMark(c),
         off: dims(c),
         keywords: planPickText(t, c),
@@ -931,6 +942,24 @@ function CliCommandCard({
       </InfoCard>
       <CommandBlock command={way.command} />
     </View>
+  );
+}
+
+/** Looks for the computer's programs again, once one that wouldn't start was fixed there by hand. */
+function CliCheckAgain({ machine }: { machine: Machine }) {
+  const { t } = useTranslation();
+  const { orgId } = useAiOrg();
+  const toast = useToast();
+  const check = useCheckMachineClis(orgId);
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      label={t("connectAi.cli.check")}
+      disabled={check.isPending || !machine.online}
+      loading={check.isPending}
+      onPress={() => check.mutate(machine.id, { onError: (err) => toast({ title: errorText(t, err), icon: "x" }) })}
+    />
   );
 }
 
@@ -1557,7 +1586,21 @@ function GateWait({
   ) {
     wait = <CliCommandCard machine={row} kind={kind} computer={computer} reason={gate.reason} />;
   } else if (why && !(gate.state === "offline" && signingIn)) {
-    wait = <InfoCard icon={why.rechecks ? "clock" : "laptop"}>{why.text}</InfoCard>;
+    // A program there that won't start, on a computer someone connected: its own words, then a look once it's fixed.
+    const recheck =
+      gate.state === "unsupported" &&
+      gate.reason === "cant_start" &&
+      !hold &&
+      row?.kind !== "managed" &&
+      row?.cliInstall;
+    wait = (
+      <InfoCard
+        icon={why.rechecks ? "clock" : "laptop"}
+        action={recheck && row ? <CliCheckAgain machine={row} /> : undefined}
+      >
+        {why.text}
+      </InfoCard>
+    );
   } else if (gate.state === "missing") {
     wait = (
       <>

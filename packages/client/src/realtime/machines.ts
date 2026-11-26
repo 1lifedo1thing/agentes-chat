@@ -462,7 +462,7 @@ function prefetchCard(
  * computer, and one active again waits for one. `org.deleting` (an owner deleted it) sets its deletion there, so the
  * line on top shows at once and the workspace turns read-only. `org.limits` (a new plan, ADR 0079) asks for the
  * limits again, so a full workspace's invitations open by themselves. `agent.groups` (ADR 0083) says the groups of
- * agents changed: they are read again.
+ * agents changed, and `channels.layout` that a channel moved between sectors (ADR 0240): both lists are read again.
  * `member.status` and `agent.status` (ADR 0084) refetch the people and the agents' presence. `org.members` (someone
  * joined or left, a role changed, ADR 0085, or a person's name, handle or photo) refetches the people, Members, each
  * channel's roster, the roles, `me`, the agents, the
@@ -524,8 +524,10 @@ export function applyWorkspaceEvent(qc: QueryClient, orgId: string, event: { typ
     }
     return true;
   }
-  if (event.type === "agent.groups") {
+  // A sector's channels (ADR 0240) are the channel list's `groupId`: a deleted sector lets them go, a new one takes some.
+  if (event.type === "agent.groups" || event.type === "channels.layout") {
     void qc.invalidateQueries({ queryKey: keys.agentGroups(orgId) });
+    void qc.invalidateQueries({ queryKey: keys.channels(orgId) });
     return true;
   }
   if (event.type === "machine.provisioning") {

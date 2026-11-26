@@ -545,9 +545,8 @@ const ReplyTimes = z
       .array(
         z.object({
           at: At,
-          brain: z.enum(["all", ...REPLY_BRAINS]).openapi({
-            description:
-              "`model` (a provider's API), `claude_code`, `codex`, `other` (another CLI, or no turn yet). `all`: every brain.",
+          brain: z.string().openapi({
+            description: `The brain by its name (${REPLY_BRAINS.map((b) => `\`${b}\``).join(", ")}; \`model\` is a provider's API, \`other\` no turn yet). \`all\`: every brain.`,
           }),
           trigger: z.enum(["all", ...schema.agentRunTriggerEnum.enumValues]).openapi({
             description: "`dm`, `mention` or `router` (nobody was named). `all`: every trigger.",

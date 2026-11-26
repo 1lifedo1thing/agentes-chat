@@ -8,8 +8,8 @@ import { setCliPick } from "../../runner/executors";
 import { removeDirs, tempDir } from "./helpers";
 
 /*
- * The coding CLIs on Windows (ADR 0228 §6): each account's sign-in in its own folder, Claude Code's Git Bash the
- * person's or the runner's own, and a prompt that fits Windows' command line.
+ * The coding CLIs on Windows (ADR 0228 §6): each Cursor and Grok Build account's sign-in in its own folder, Claude
+ * Code's Git Bash the person's or the runner's own, and a prompt that fits Windows' command line.
  */
 
 const dirs: string[] = [];
@@ -29,34 +29,19 @@ test("Cursor on Windows keeps its sign-in in a file in the account's folder, nev
   expect(accountEnv("cursor", "/acc/c1", { APPDATA: "x" }, "linux").APPDATA).toBe("x");
 });
 
-test("the Antigravity CLI on Windows: the account's folder is its home, its sign-in forced into its file there", () => {
+test("the Antigravity CLI on Windows: the account's folder is its home (its sign-in is the computer user's, ADR 0143)", () => {
   const dir = tempDir("agy-win-");
   dirs.push(dir);
-  const env = accountEnv(
-    "antigravity",
-    dir,
-    { USERPROFILE: "C:\\Users\\ana", LOCALAPPDATA: "C:\\Users\\ana\\L" },
-    "win32",
-  );
-  expect(env).toMatchObject({
-    HOME: dir,
-    USERPROFILE: dir,
-    APPDATA: path.join(dir, "AppData", "Roaming"),
-    LOCALAPPDATA: path.join(dir, "AppData", "Local"),
-    AGY_CLI_FORCE_FILE_TOKEN_STORAGE: "true",
-  });
-  const mac = accountEnv("antigravity", dir, { USERPROFILE: "x" }, "linux");
-  expect(mac.USERPROFILE).toBe("x");
-  expect(mac.AGY_CLI_FORCE_FILE_TOKEN_STORAGE).toBeUndefined();
+  const env = accountEnv("antigravity", dir, { USERPROFILE: "C:\\Users\\ana" }, "win32");
+  expect(env).toMatchObject({ HOME: dir, USERPROFILE: dir });
+  expect(accountEnv("antigravity", dir, { USERPROFILE: "x" }, "linux").USERPROFILE).toBe("x");
 });
 
 test("a Windows sign-in counts only once its file is in the account's folder; elsewhere nothing is checked", () => {
   expect(signInFileOnWindows("cursor", "C:\\acc\\c1", "win32")).toBe(path.join("C:\\acc\\c1", "Cursor", "auth.json"));
-  expect(signInFileOnWindows("antigravity", "/acc/a1", "win32")).toBe(
-    path.join("/acc/a1", ".gemini", "antigravity-cli", "antigravity-oauth-token"),
-  );
-  // Grok Build keeps its `auth.json` in `GROK_HOME` everywhere; Claude Code and Codex their own config folders.
-  for (const kind of ["grok", "claude_code", "codex", "opencode"] as const) {
+  // Grok Build keeps its `auth.json` in `GROK_HOME` everywhere; Claude Code and Codex their own config folders; the
+  // Antigravity CLI the computer user's Credential Manager, one Gemini account a Windows computer (ADR 0143).
+  for (const kind of ["grok", "claude_code", "codex", "opencode", "antigravity"] as const) {
     expect(signInFileOnWindows(kind, "C:\\acc\\x", "win32")).toBeNull();
   }
   expect(signInFileOnWindows("cursor", "/acc/c1", "darwin")).toBeNull();
