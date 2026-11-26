@@ -215,7 +215,7 @@ export function describeCapabilities(
     const make = names.has("create_skill") ? "Asked to make one: `create_skill`. " : "";
     if (names.has("offer_install_skill")) {
       lines.push(
-        `- To install a skill: \`offer_install_skill\`. ${make}Never a repository or your CLI's own skills folder (~/.claude/skills…). To update installed ones from their links: \`update_skill_from_source\`.`,
+        `- To install a skill (a link or a .zip sent here): \`offer_install_skill\`. ${make}Never a repository or your CLI's own skills folder (~/.claude/skills…). To update installed ones from their links: \`update_skill_from_source\`.`,
       );
     } else if (make) lines.push(`- ${make}Never a repository or your CLI's own skills folder (~/.claude/skills…).`);
     if (names.has("request_settings_change")) {
