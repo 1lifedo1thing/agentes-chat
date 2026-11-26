@@ -107,7 +107,7 @@ The same for Claude Code, Codex, Cursor, OpenCode, Grok Build and the Antigravit
   (macOS, Linux with glibc or musl, Windows; arm64 and x64 where the vendor has them) at the vendor's own https
   address, with the vendor's hash of it (Claude Code's manifest, Codex's and OpenCode's release assets, the
   Antigravity CLI's manifests) or, where the vendor publishes none (Cursor, Grok Build), the hash taken when pinning.
-  The server sends its list after every `welcome` (`clis.pins`, protocol 85); the runner keeps the last one in its home
+  The server sends its list after every `welcome` (`clis.pins`, protocol 86); the runner keeps the last one in its home
   and has the same list built in, so it works with an older server or none. A new pin is a server deploy, never a
   runner release.
 - **The runner.** The person's own copy runs when it is at the pinned version or newer. Otherwise, where the CLI is
@@ -133,9 +133,10 @@ The same for Claude Code, Codex, Cursor, OpenCode, Grok Build and the Antigravit
 ### 7. Windows, like the others
 
 Every one of the six vendors makes a Windows build (x64 and arm64), so all six think on Windows: `brainRunsOn` follows
-the pin list (a system is refused only where its vendor makes no build), and a Windows runner before
-`CLI_COPIES_PROTOCOL` is too old for Cursor, Grok Build and the Antigravity CLI there (`runner_old`, the specs'
-`windowsProtocol`). Each account's sign-in stays in its own folder, as on macOS and Linux:
+the pin list (a system is refused only where its vendor makes no build). A Windows runner older than each CLI needs
+there is too old for it (`runner_old`, `WINDOWS_FROM` and the specs' `windowsProtocol`): Grok Build from
+`GROK_WINDOWS_PROTOCOL` (ADR 0142), the Antigravity CLI from `ANTIGRAVITY_WINDOWS_PROTOCOL` (ADR 0143), Cursor from
+`CLI_COPIES_PROTOCOL`, its sign-in too. Each account's sign-in stays in its own folder where the CLI allows it:
 
 - **Cursor** keeps it in the Windows Credential Manager unless told to use a file, then in `%APPDATA%\Cursor\auth.json`
   (its CLI's own credentials module, read in its 2026.11.22 Windows package): the account's env has
@@ -170,4 +171,4 @@ the pin list (a system is refused only where its vendor makes no build), and a W
 - A computer may hold a CLI twice (the person's older one and the runner's), which takes disk space.
 - Not done here: the loading screen's own avatar loop and minimum time (`apps/desktop`, a desktop release), the
   window's throttling setting (the page now stops its own motion instead), and reading sign-ins through each CLI's
-  protocol beyond Codex. The one-click `cli.install` stays for runners before protocol 85.
+  protocol beyond Codex. The one-click `cli.install` stays for runners before protocol 86.

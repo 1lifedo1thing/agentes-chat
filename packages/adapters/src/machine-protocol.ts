@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 85;
+export const MACHINE_PROTOCOL_VERSION = 86;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -2643,6 +2643,12 @@ export const isEgressTarget = (v: unknown): v is { host: string; port: number } 
  */
 export const ANTIGRAVITY_WINDOWS_PROTOCOL = 84;
 
+/**
+ * Protocol 85 (ADR 0156): `AgentScope.coAuthors` lines are written `Co-Authored-By`. An older runner takes only
+ * `Co-authored-by` and would drop them, so the server sends it the old capitals (git and GitHub read either).
+ */
+export const CO_AUTHOR_CASE_PROTOCOL = 85;
+
 /** About how many more background tasks fit on the computer now, and what decides it. */
 export interface TaskRoomReport {
   more: number;
@@ -2660,14 +2666,14 @@ export function parseTaskRoom(v: unknown): TaskRoomReport | null {
 }
 
 /**
- * Protocol 85 (ADR 0228 §6): one way to every coding CLI. The server sends its pin list after `welcome`
+ * Protocol 86 (ADR 0228 §6): one way to every coding CLI. The server sends its pin list after `welcome`
  * (`clis.pins`, `@agenteschat/providers/cli-pins`); outside system mode the runner runs the person's own copy at the
  * pinned version or newer, else fetches the pinned build on demand, checks its hash and runs that one, never touching
  * the person's. `hello.clis` says which CLIs it can fetch on its system and where each fetch stands; `cli.fetch`
  * frames report a fetch as it goes (at most once a second or every 5%); the `cli.fetch` op starts one again at once
  * (the apps' "Try again"). An older runner brings only its Antigravity copy (`AGY_COPY_PROTOCOL`).
  */
-export const CLI_COPIES_PROTOCOL = 85;
+export const CLI_COPIES_PROTOCOL = 86;
 
 /** Why a fetch failed: no network, a download that isn't the vendor's build, no build for this system, a full disk. */
 export type CliFetchFailure = "offline" | "hash_mismatch" | "no_build" | "disk_full" | "failed";
@@ -3009,7 +3015,7 @@ export interface AgentScope {
   /** Protocol 9: the agent's display name, for the machine's activity log. */
   name?: string;
   /**
-   * Protocol 63 (ADR 0156): on the work the server starts (`exec`, `brain.turn`, `task.start`), the `Co-authored-by`
+   * Protocol 63 (ADR 0156): on the work the server starts (`exec`, `brain.turn`, `task.start`), the `Co-Authored-By`
    * lines its commits end with. The runner hands them to git in the agent's own processes alone (`co-authors.ts`).
    */
   coAuthors?: string[];
