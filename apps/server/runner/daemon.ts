@@ -1,3 +1,5 @@
+import { spawn } from "node:child_process";
+import type { EventEmitter } from "node:events";
 import { mkdirSync, realpathSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -75,11 +77,13 @@ import {
   type AgentUser,
   AgentUsers,
   agentGid,
+  agentTmpMemoryBytes,
   authEgressPrefix,
   denySchedulers,
   ensureGitCacheUser,
   GIT_CACHE_DIR,
   grantGitCache,
+  idleTmpLines,
   keepContainers,
   readAgentUsers,
   rootlessContainers,
@@ -203,6 +207,7 @@ import { XcodeFixer, type XcodeFixOptions } from "./xcode-fix";
 const MEMORY_READ = process.platform === "linux";
 /** How often the tasks' room is read for the server (sent only when it changed). */
 const TASK_ROOM_REPORT_MS = 15_000;
+const IDLE_TMP_SWEEP_MS = 60 * 60_000;
 
 /**
  * Background tasks at once, sized to the computer's memory: one per 1.5 GiB left after 4 GiB for the system and the
@@ -968,6 +973,9 @@ export class RunnerDaemon implements RequestObserver {
             this.load.add(l && oomKills !== undefined ? { ...l, oomKills } : l, undefined, {
               ...diskFigures(d),
               ...(this.sharedGb === undefined ? {} : { sharedGb: this.sharedGb }),
+              ...(this.stored?.mode === "system" && process.platform === "linux"
+                ? { agentTmpRamGb: Math.round((agentTmpMemoryBytes() / 2 ** 30) * 10) / 10 }
+                : {}),
             }),
           );
         })
@@ -993,6 +1001,9 @@ export class RunnerDaemon implements RequestObserver {
     const sizes = setInterval(() => this.measureShared(), SHARED_SIZE_MS);
     sizes.unref?.();
     this.timers.push(sizes);
+    const idleTmp = setInterval(() => this.cleanIdleTmp(), IDLE_TMP_SWEEP_MS);
+    idleTmp.unref?.();
+    this.timers.push(idleTmp);
     const sharing = setInterval(() => this.shareFiles(), SHARED_FIX_MS);
     sharing.unref?.();
     this.timers.push(sharing);
@@ -2186,6 +2197,21 @@ export class RunnerDaemon implements RequestObserver {
     void sharedSizeGb(dir).then((gb) => {
       if (gb !== null && this.shared === dir) this.sharedGb = gb;
     });
+  }
+
+  /** System mode, as root: what agents with nothing running but their worker left in /tmp goes (`idleTmpLines`). */
+  private cleanIdleTmp() {
+    const supervisor = this.session?.supervisor;
+    if (!supervisor || process.platform !== "linux" || process.getuid?.() !== 0 || this.opts.workers) return;
+    const procs = readNetworkProcesses();
+    const idle = readAgentUsers(this.opts.home)
+      .filter((u) => !uidHasOtherProcesses(procs, u.uid, supervisor.runningPid(u.id)))
+      .map((u) => u.uid);
+    if (idle.length === 0) return;
+    const clean = spawn("/usr/bin/systemd-tmpfiles", ["--clean", "-"], { stdio: ["pipe", "ignore", "ignore"] });
+    (clean as unknown as EventEmitter).on("error", () => undefined);
+    clean.stdin?.on("error", () => undefined);
+    clean.stdin?.end(idleTmpLines(idle));
   }
 
   /** System mode: what agents moved or copied into the shared folder becomes the others' to change too. */
