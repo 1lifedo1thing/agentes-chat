@@ -813,6 +813,7 @@
   },
   "agent": {
     "talk": "聊天",
+    "responsible": "负责人",
     "task": "任务",
     "owner": "所有者：{{name}}",
     "cantTalk": "此智能体不和你一起工作。",

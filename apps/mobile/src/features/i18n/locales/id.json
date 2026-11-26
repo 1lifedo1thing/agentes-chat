@@ -813,6 +813,7 @@
   },
   "agent": {
     "talk": "Obrolan",
+    "responsible": "Penanggung jawab",
     "task": "Tugas",
     "owner": "pemilik: {{name}}",
     "cantTalk": "Agen ini tidak bekerja denganmu.",

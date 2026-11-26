@@ -878,6 +878,8 @@ export const featureKeysPtBR = {
   },
   agent: {
     talk: "Conversar",
+    /** Who answers for it, a row of its profile's card. */
+    responsible: "Responsável",
     task: "Tarefa",
     owner: "responsável: {{name}}",
     cantTalk: "Este agente não atende você.",

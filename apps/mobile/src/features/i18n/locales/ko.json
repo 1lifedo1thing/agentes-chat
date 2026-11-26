@@ -813,6 +813,7 @@
   },
   "agent": {
     "talk": "채팅",
+    "responsible": "담당자",
     "task": "작업",
     "owner": "소유자: {{name}}",
     "cantTalk": "이 에이전트는 나와 함께 일하지 않아요.",

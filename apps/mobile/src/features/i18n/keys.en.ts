@@ -907,6 +907,8 @@ export const featureKeysEn = {
   },
   agent: {
     talk: "Chat",
+    /** Who answers for it, a row of its profile's card. */
+    responsible: "Owner",
     task: "Task",
     owner: "owner: {{name}}",
     cantTalk: "This agent doesn't work with you.",

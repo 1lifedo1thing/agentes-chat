@@ -861,6 +861,7 @@
   },
   "agent": {
     "talk": "Chatear",
+    "responsible": "Responsable",
     "task": "Tarea",
     "owner": "responsable: {{name}}",
     "cantTalk": "Este agente no trabaja contigo.",

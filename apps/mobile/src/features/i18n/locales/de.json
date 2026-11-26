@@ -837,6 +837,7 @@
   },
   "agent": {
     "talk": "Chat",
+    "responsible": "Verantwortlich",
     "task": "Aufgabe",
     "owner": "Verantwortlich: {{name}}",
     "cantTalk": "Dieser Agent arbeitet nicht mit dir.",

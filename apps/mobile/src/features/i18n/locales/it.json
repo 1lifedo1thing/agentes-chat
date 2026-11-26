@@ -861,6 +861,7 @@
   },
   "agent": {
     "talk": "Chatta",
+    "responsible": "Responsabile",
     "task": "Attività",
     "owner": "proprietario: {{name}}",
     "cantTalk": "Questo agente non lavora con te.",

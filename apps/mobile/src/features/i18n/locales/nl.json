@@ -837,6 +837,7 @@
   },
   "agent": {
     "talk": "Gesprek",
+    "responsible": "Verantwoordelijke",
     "task": "Taak",
     "owner": "eigenaar: {{name}}",
     "cantTalk": "Deze agent werkt niet met jou.",

@@ -837,6 +837,7 @@
   },
   "agent": {
     "talk": "Sohbet et",
+    "responsible": "Sorumlu",
     "task": "Görev",
     "owner": "sorumlu: {{name}}",
     "cantTalk": "Bu ajan sizinle çalışmıyor.",
