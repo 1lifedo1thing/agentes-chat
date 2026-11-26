@@ -17048,6 +17048,12 @@ export const ptBR = {
       paused: "{{name}} está pausado",
       resumed: "{{name}} voltou a trabalhar",
     },
+    runnerBehind: {
+      command:
+        "O programa do agentes.chat em {{computer}} está desatualizado, então algumas coisas não funcionam lá. Para atualizar, rode isto lá:",
+      installer:
+        "O programa do agentes.chat em {{computer}} está desatualizado, então algumas coisas não funcionam lá. Para atualizar, rode de novo o comando de instalação lá, como root.",
+    },
     seenNow: "conectado agora",
     seen: "visto {{when}}",
     neverSeen: "ainda não conectou",
