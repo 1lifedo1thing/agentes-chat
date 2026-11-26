@@ -350,6 +350,7 @@
       "shell.skills",
       "skills.page.colSkill",
       "skills.page.inRepo",
+      "integrations.badge",
       "connectors.names.datadog_us3",
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
@@ -651,6 +652,9 @@
       "live.type.trackings.normal",
       "live.type.glyph",
       "billing.plan",
+      "integrations.badge",
+      "integrations.color",
+      "integrations.colorOf",
       "connectors.names.datadog_us3",
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
@@ -1190,6 +1194,7 @@
       "live.type.gradients.graphite",
       "live.type.gradients.violet",
       "live.type.glyph",
+      "integrations.badge",
       "connectors.names.datadog_us3",
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
@@ -1709,7 +1714,9 @@
       "shell.skills",
       "skills.page.colSkill",
       "skills.one.name",
-      "skills.one.inChannel"
+      "skills.one.inChannel",
+      "integrations.badge",
+      "integrations.name"
     ],
     "it": [
       "agentPage.facts.budget",
@@ -2120,6 +2127,7 @@
       "skills.page.colSkill",
       "skills.one.inChannel",
       "skills.page.inRepo",
+      "integrations.badge",
       "connectors.names.datadog_us3",
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
@@ -2821,7 +2829,8 @@
       "shell.skills",
       "skills.page.colSkill",
       "skills.one.inChannel",
-      "skills.page.inRepo"
+      "skills.page.inRepo",
+      "integrations.badge"
     ],
     "ja": [
       "live.sheet.args.k",
@@ -3707,6 +3716,8 @@
       "live.type.trackings.normal",
       "live.type.glyph",
       "skills.page.colSkill",
+      "integrations.badge",
+      "integrations.edit",
       "connectors.names.datadog_us3",
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
