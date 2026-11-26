@@ -23,6 +23,7 @@ import type { IconName } from "./icons.data";
 import { HeaderSlot, type HeaderSlotStore, useHeaderSlot } from "./navigation";
 import { withAlpha } from "./palette";
 import { PANE_BAR_HEIGHT, PANE_BAR_SIDE, PANE_BUTTON, PANE_CAPSULE_PAD, paneTitleRoom } from "./pane-bar";
+import { readableSide } from "./readable";
 import { Text } from "./Text";
 import { useTheme } from "./theme";
 
@@ -170,6 +171,20 @@ export function useContentWidth(): number {
   const pane = usePane();
   const { width } = useWindowDimensions();
   return pane ? pane.width : width;
+}
+
+/** The margin each side of a screen's content gets on a large screen (`readableSide` of its width): 0 on a phone. */
+export function useReadableSide(): number {
+  return readableSide(useContentWidth());
+}
+
+/**
+ * A screen's content in the readable column: its own paddings inside, the margins of a large screen around it (none on
+ * a phone). Art that runs edge to edge (a cover's sky) stays outside it.
+ */
+export function ReadableColumn({ children }: { children?: ReactNode }) {
+  const side = useReadableSide();
+  return <View style={{ paddingHorizontal: side }}>{children}</View>;
 }
 
 /**

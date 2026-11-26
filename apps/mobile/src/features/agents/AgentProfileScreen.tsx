@@ -93,6 +93,7 @@ import {
 } from "@/ui";
 import { CoverBarBackdrop, CoverParallax, useCoverScroll, useScrollFade } from "@/ui/cover";
 import { router } from "@/ui/navigation";
+import { useReadableSide } from "@/ui/pane";
 import { openAgentAi } from "../ai/AgentAiScreen";
 import { openConnectAi } from "../ai/NoAiCard";
 import { usePlanHold } from "../ai/parts";
@@ -238,6 +239,9 @@ function Profile({ id, view }: { id: string; view?: ProfileView | undefined }) {
   // The cover's sky lags behind the scroll and stretches on pull; the agent fades as it nears the bar.
   const { y, onScroll } = useCoverScroll();
   const underBar = AVATAR_TOP - (insets.top + BAR_HEIGHT);
+  // On a large screen the card keeps to the readable column under its sky, which runs edge to edge (ADR 0212).
+  const side = useReadableSide();
+  const sides = side > 0 ? { paddingHorizontal: SCREEN_X + side } : null;
   // The bar's title is the system's own words: none while the cover shows the name, the name once it has gone under
   // the bar (a view of our own there sat in a glass capsule of its own on iOS 26, the page showing through it). Set
   // when the scroll crosses that line, never per frame.
@@ -912,7 +916,7 @@ function Profile({ id, view }: { id: string; view?: ProfileView | undefined }) {
             />
           </LivePause>
         </View>
-        <View style={styles.prof}>
+        <View style={[styles.prof, sides]}>
           <Text variant="display2" style={styles.center}>
             {name}
           </Text>
@@ -950,7 +954,7 @@ function Profile({ id, view }: { id: string; view?: ProfileView | undefined }) {
         </View>
 
         {rightHand && agent ? (
-          <View style={styles.page}>
+          <View style={[styles.page, sides]}>
             {/* Its computer as any agent's: the viewer's own seat there. */}
             {details ? <AgentComputerCard agentId={id} style={styles.computer} /> : null}
             {nowBlock}
@@ -980,7 +984,7 @@ function Profile({ id, view }: { id: string; view?: ProfileView | undefined }) {
         ) : details ? (
           // The web's card as the screen: what it is on, its computer, who may talk to it and who answers for it, then
           // Details as rows that open their own screens.
-          <View style={styles.page}>
+          <View style={[styles.page, sides]}>
             {nowBlock}
             {/* Its computer right under what it is on, and what it keeps running there (ADR 0176); both only for
                 whoever may watch its computer. */}
@@ -1029,7 +1033,7 @@ function Profile({ id, view }: { id: string; view?: ProfileView | undefined }) {
             </GroupedList>
           </View>
         ) : facts && agent ? (
-          <View style={styles.page}>
+          <View style={[styles.page, sides]}>
             <AgentFacts
               agent={agent}
               detail={detail.data}
@@ -1038,11 +1042,12 @@ function Profile({ id, view }: { id: string; view?: ProfileView | undefined }) {
             />
           </View>
         ) : (
-          <View style={styles.page}>{nowBlock}</View>
+          <View style={[styles.page, sides]}>{nowBlock}</View>
         )}
       </Animated.ScrollView>
       {docked ? (
         <MessageDock
+          side={side}
           label={t("home.ask.label", agentGrammar(name))}
           busy={opening}
           bottom={insets.bottom}
@@ -1508,11 +1513,14 @@ function AudienceGroup({ agent }: { agent: Agent }) {
 
 /** The web card's message field at the screen's foot: a tap opens the conversation, where it is written and sent. */
 function MessageDock({
+  side,
   label,
   busy,
   bottom,
   onPress,
 }: {
+  /** The readable column's margin on a large screen, as the page's. */
+  side: number;
   label: string;
   busy: boolean;
   bottom: number;
@@ -1520,7 +1528,13 @@ function MessageDock({
 }) {
   const c = useColors();
   return (
-    <View style={[styles.dock, { paddingBottom: bottom + 8, backgroundColor: c.grouped }]}>
+    <View
+      style={[
+        styles.dock,
+        { paddingBottom: bottom + 8, backgroundColor: c.grouped },
+        side > 0 ? { paddingHorizontal: SCREEN_X + side } : null,
+      ]}
+    >
       <Pressable
         onPress={onPress}
         disabled={busy}

@@ -31,6 +31,7 @@ import {
 } from "@/ui";
 import { CoverBarBackdrop, CoverParallax, useCoverScroll } from "@/ui/cover";
 import { router } from "@/ui/navigation";
+import { useReadableSide } from "@/ui/pane";
 import { openPage } from "../ai/parts";
 import { confirmAction, Uploading } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
@@ -215,6 +216,8 @@ function MePage() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  // On a large screen the lists keep to the readable column under the sky, which runs edge to edge (ADR 0212).
+  const side = useReadableSide();
   // A screen over this page with the platform's push (back comes here); on a large screen (ADR 0212) one of Você's own
   // pages opens beside the list instead, its row lit while it shows.
   const open = useOpenPage();
@@ -442,7 +445,7 @@ function MePage() {
           ) : null}
         </View>
 
-        <View style={styles.groups}>
+        <View style={[styles.groups, side > 0 ? { paddingHorizontal: SCREEN_X + side } : null]}>
           <GroupedHeader>{t("mobile.me.status")}</GroupedHeader>
           <GroupedList>
             <StatusRow />

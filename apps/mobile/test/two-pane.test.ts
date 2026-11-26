@@ -1,18 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  activeFold,
-  clampList,
-  foldInside,
-  LIST_DRAG_MAX,
-  LIST_DRAG_MIN,
-  LIST_MAX,
-  LIST_MIN,
-  LIST_SHARE,
-  paneFrames,
-  WIDE_MIN,
-} from "../src/ui/two-pane";
+import { activeFold, foldInside, LIST_MAX, LIST_MIN, LIST_SHARE, paneFrames, WIDE_MIN } from "../src/ui/two-pane";
 
 const ROOT = join(import.meta.dir, "..");
 const src = (file: string) => readFileSync(join(ROOT, file), "utf8");
@@ -174,16 +163,13 @@ describe("the panes in the app (ADR 0212)", () => {
 
   test("TwoPane lays the panes out by paneFrames in its own measured width, with its own fold", () => {
     const pane = src("src/ui/TwoPane.tsx");
-    expect(pane).toContain("const frames = paneFrames(width, fold, chosen);");
+    expect(pane).toContain("const frames = paneFrames(width, fold);");
     expect(pane).toContain("setMeasured(event.nativeEvent.layout.width)");
     expect(pane).toContain("const next = activeFold(event.nativeEvent.fold);");
-    // The list's width follows the drag on the UI thread, or the fold's frame when the Duo is folded.
-    expect(pane).toContain(
-      "<Animated.View style={[styles.pane, folded ? { width: frames.list.width } : listStyle]}>{list}</Animated.View>",
-    );
-    expect(pane).toContain("{ width: frames.gap }");
+    expect(pane).toContain("<View style={[styles.pane, { width: frames.list.width }]}>{list}</View>");
+    expect(pane).toContain("{ width: frames.gap },");
     // The hairline in the theme's separator color, unless the fold's gap stands between the panes.
-    expect(pane).toContain("folded ? null : [styles.divider, { borderLeftColor: colors.separator }]");
+    expect(pane).toContain("foldInside(width, fold) ? null : [styles.divider, { borderLeftColor: colors.separator }],");
     expect(pane).toContain("divider: { borderLeftWidth: StyleSheet.hairlineWidth },");
     // Both panes clip and fill the row's height.
     expect(pane).toContain('row: { flex: 1, flexDirection: "row", overflow: "hidden" },');
@@ -210,24 +196,18 @@ describe("the panes in the app (ADR 0212)", () => {
   });
 });
 
-describe("dragging the divider", () => {
-  test("the list takes the width it was dragged to, inside what the window allows", () => {
-    expect(paneFrames(1200, null, 480)).toEqual({ list: { x: 0, width: 480 }, gap: 1, detail: { x: 481, width: 719 } });
-    expect(clampList(100, 1200)).toBe(LIST_DRAG_MIN);
-    expect(clampList(2000, 1200)).toBe(LIST_DRAG_MAX);
-    // The detail keeps room: at most 60% of a narrow window.
-    expect(clampList(500, 700)).toBe(420);
-    expect(paneFrames(700, null, 500).list.width).toBe(420);
-  });
-
-  test("a fold still decides, whatever was dragged", () => {
-    expect(paneFrames(800, { x: 390, width: 20 }, 520).list).toEqual({ x: 0, width: 390 });
-  });
-
-  test("the divider's grip drags and the width is kept on the device", async () => {
-    const pane = await Bun.file(new URL("../src/ui/TwoPane.tsx", import.meta.url).pathname).text();
-    expect(pane).toContain("<GestureDetector gesture={drag}>");
-    expect(pane).toContain("listWidth.value = clampList(start.value + e.translationX, width);");
-    expect(pane).toContain("void writeValue(STORED.paneListWidth, String(next));");
+describe("the readable column on a large screen", () => {
+  test("content stays at most READABLE_MAX wide, centred; nothing changes on a phone or a narrow pane", async () => {
+    const { READABLE_MAX, readableSide } = await import("../src/ui/readable");
+    expect(readableSide(430)).toBe(0);
+    expect(readableSide(READABLE_MAX)).toBe(0);
+    expect(readableSide(1024)).toBe(152);
+    expect(readableSide(1366)).toBe(323);
+    // The page components keep their content in it; covers stay edge to edge.
+    const read = (f: string) => readFileSync(join(import.meta.dir, "../src", f), "utf8");
+    expect(read("features/shared/PushedLargeTitle.tsx")).toContain("<ReadableColumn>{children}</ReadableColumn>");
+    expect(read("ui/LargeTitleScreen.tsx")).toContain("<ReadableColumn>{children}</ReadableColumn>");
+    expect(read("features/settings/parts.tsx")).toContain("paddingHorizontal: BODY_SIDE + side");
+    expect(read("features/agents/AgentProfileScreen.tsx")).toContain("<View style={[styles.prof, sides]}>");
   });
 });

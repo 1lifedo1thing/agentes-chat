@@ -33,7 +33,7 @@ import {
   useTheme,
 } from "@/ui";
 import { withAlpha } from "@/ui/palette";
-import { usePane, usePaneHeader } from "@/ui/pane";
+import { usePane, usePaneHeader, useReadableSide } from "@/ui/pane";
 import { usePaneBack } from "@/ui/pane-back";
 import { useFontScale } from "@/ui/text-scale";
 import { leadBox } from "@/ui/type-scale";
@@ -623,8 +623,20 @@ export function Loaded({ children }: { children: ReactNode }) {
 /** A screen's one action, pinned under its scroll over the home indicator: always at hand, however long the list. */
 export function BottomBar({ bottom, children }: { bottom: number; children: ReactNode }) {
   const c = useColors();
+  // On a large screen its action keeps to the page's readable column (ADR 0212).
+  const side = useReadableSide();
   return (
-    <View style={[styles.bar, { paddingBottom: bottom + 10, backgroundColor: c.grouped, borderTopColor: c.line2 }]}>
+    <View
+      style={[
+        styles.bar,
+        {
+          paddingHorizontal: 16 + side,
+          paddingBottom: bottom + 10,
+          backgroundColor: c.grouped,
+          borderTopColor: c.line2,
+        },
+      ]}
+    >
       {children}
     </View>
   );
