@@ -1,7 +1,8 @@
 import type { AgentBrain, BrainScope, MachineAccount } from "@agenteschat/client";
-import { useAgentBrain, useAiAccounts, useApi, useMachines, useModels } from "@agenteschat/client";
+import { keys, useAgentBrain, useAiAccounts, useApi, useMachines, useModels } from "@agenteschat/client";
 import {
   accountChoices,
+  accountInLine,
   offersSignInAgain,
   ownSignInListed,
   ownSignInName,
@@ -11,8 +12,10 @@ import { managesAgent } from "@agenteschat/client/lib/audience";
 import { brainLine, thinksWith } from "@agenteschat/client/lib/brain";
 import { advancedContents, viewSpeedFits } from "@agenteschat/client/lib/brain-advanced";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
+import { namesText } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { aiChoiceOf, planOfKind } from "@agenteschat/client/lib/no-ai";
+import { can } from "@agenteschat/client/lib/permissions";
 import { modelLimitText } from "@agenteschat/client/lib/plan-usage";
 import {
   brainMissingHint,
@@ -25,13 +28,15 @@ import {
 import { apiProviderOf, isAuto, providerLabel } from "@agenteschat/client/lib/providers";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { limitOffers, planState } from "@agenteschat/ui/plan-state";
-import { Fragment, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import {
+  Button,
   Glass,
   GROUPED_ROW,
   GroupedFooter,
@@ -50,11 +55,13 @@ import {
 } from "@/ui";
 import { router } from "@/ui/navigation";
 import { Gap } from "../settings/parts";
+import { AgentFace } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId, usePullRefresh } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { PushedHeader } from "../shared/parts";
 import { PlanMeter, PlanModels } from "../usage/parts";
+import { openAgentAddAccount } from "./AgentAddAccountScreen";
 import { advancedOf, openAgentAdvanced } from "./AgentAdvancedScreen";
 import { openAgentSetup } from "./AgentSetupScreen";
 import { AiChoiceFields } from "./AiChoice";
@@ -87,9 +94,36 @@ import { useSaveBrain } from "./useSaveBrain";
  * owner picks an account or lets other people talk to it on the plan (`canUsePlans`).
  */
 
-/** The "Conta" list's own options: the computer's own sign-in, and adding an account. */
+/** The "Conta" list's own options: the computer's own sign-in, adding an account, the accounts' own screen. */
 const OWN = "own";
 const ADD = "add";
+const MANAGE = "manage";
+
+/** What an agent thought with, to put back ("Undo"). */
+interface Had {
+  brain: AgentBrain["brain"];
+  account: string | null;
+  model: string | null;
+}
+
+/**
+ * A switch made here, said under the account as the web says it: what changed, with "Undo"; the others of its
+ * owner's agents still on the account it left, with "Switch them too"; who that left on the old one.
+ */
+interface Switched {
+  line: string;
+  /** The account it thinks with now, in a sentence ("Conta da Ana"). */
+  said: string;
+  before: Had;
+  /** The others "Switch them too" offers: its owner's agents still on the account it left (one that thinks for all). */
+  team: { id: string; name: string }[];
+  /** The account it left, in a sentence. */
+  from: string;
+  /** The ones "Switch them too" moved, with what each had. */
+  others: (Had & { id: string; name: string })[];
+  /** The ones the server kept on the old account. */
+  missed: string[];
+}
 
 /** Opens an agent's AI. */
 export const openAgentAi = (agentId: string) => router.push(`/agent-ai/${agentId}` as never);
@@ -115,6 +149,10 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
   const allowed = (meId !== null && agent?.ownerUserId === meId) || managesAgent(agent);
   const brain = useAgentBrain(orgId, agentId, allowed);
   const { pending, save } = useSaveBrain(agentId);
+  const qc = useQueryClient();
+  const [switched, setSwitched] = useState<Switched | null>(null);
+  // "Add account" opened: what it had and the account it left, so the one a sign-in brings is said on coming back.
+  const adding = useRef<{ before: Had; left: MachineAccount | undefined } | null>(null);
   // Looking at the plan: its usage is looked up again (it comes back as `machine.updated`).
   useEffect(() => {
     void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
@@ -149,17 +187,111 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
   const computer = computerNameOf(t, org?.name ?? "", view?.computer?.name ?? "", isPersonal(org));
   // The account picked while its save is on its way, else the saved one: its row is checked on the tap.
   const account = pending.account !== undefined ? pending.account : view?.account;
-  const choose = (a: MachineAccount | null) => {
-    if (!view || (a?.id ?? null) === account) return;
+  // The others of its owner's agents on `left` when it thinks for all of them, for "Switch them too" (as the web's).
+  const teamOn = (left: MachineAccount | undefined, next: MachineAccount | null | undefined) =>
+    left?.shared === true && (next == null || next.shared === true)
+      ? (left.usedByIds ?? []).flatMap((id) => {
+          const other = id === agentId ? undefined : dir.agentById.get(id);
+          return other && other.ownerUserId === agent?.ownerUserId ? [{ id: other.id, name: other.name }] : [];
+        })
+      : [];
+  const hadNow = (): Had | null => (view ? { brain: view.brain, account: view.account, model: view.model } : null);
+  // Another account picked: switched at once, said under it with "Undo", never asked first. A login made for one
+  // agent thinks for one: picking another agent's takes it from that one, as the web does.
+  const choose = async (a: MachineAccount | null) => {
+    const before = hadNow();
+    if (!view || !before || (a?.id ?? null) === account) return;
     const input = accountInput(view, a);
-    const done = (saved: AgentBrain) => accountSaved(t, i18n.language, name, a, input, saved);
-    const others = a ? takenFrom(a, name) : [];
-    if (!a || others.length === 0) return void save(input, done);
-    // A login made for one agent thinks for one: picking another agent's takes it from that one.
-    Alert.alert(a.label, t("agentPage.work.brain.accountMove", { agents: others.join(", ") }), [
-      { text: t("common.cancel"), style: "cancel" },
-      { text: t("mobile.ai.moveHere"), onPress: () => void save({ ...input, moveAccount: true }, done) },
-    ]);
+    const left = current;
+    const takes = a ? takenFrom(a, name).length > 0 : false;
+    const saved = await save(takes ? { ...input, moveAccount: true } : input, null);
+    if (!saved) return;
+    setSwitched({
+      line: accountSaved(t, i18n.language, name, a, input, saved),
+      said: a ? accountInLine(t, a) : "",
+      before,
+      team: teamOn(left, a),
+      from: left ? accountInLine(t, left) : "",
+      others: [],
+      missed: [],
+    });
+  };
+  // "Add account": its own screen; coming back with the account a sign-in brought, the change is said here.
+  const startAdd = () => {
+    const before = hadNow();
+    if (!before) return;
+    adding.current = { before, left: current };
+    openAgentAddAccount(agentId);
+  };
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only when the account it thinks with changes
+  useEffect(() => {
+    const was = adding.current;
+    if (!was || !view || view.account === was.before.account) return;
+    adding.current = null;
+    const now = view.accounts.find((x) => x.id === view.account);
+    const said = now ? accountInLine(t, now) : "";
+    setSwitched({
+      line: t("agentPage.work.brain.v2.added", { ...g, account: said }),
+      said,
+      before: was.before,
+      team: teamOn(was.left, now),
+      from: was.left ? accountInLine(t, was.left) : "",
+      others: [],
+      missed: [],
+    });
+  }, [view?.account]);
+  const refreshAgents = () => {
+    for (const key of [keys.agents(orgId), keys.aiAccounts(orgId), keys.aiStatus(orgId)])
+      void qc.invalidateQueries({ queryKey: key });
+  };
+  /** "Switch them too": the others left on the old account onto this one, each by the server's own rules. */
+  const switchTeam = async () => {
+    if (!switched || switched.team.length === 0 || !view) return;
+    // Its row goes on the tap (nothing to press twice); the sentence says what came of it once the server answers.
+    const asked = switched;
+    setSwitched({ ...asked, team: [] });
+    const others = [...asked.others];
+    const missed: string[] = [];
+    for (const a of asked.team) {
+      // What it had, read before anything changes ("Undo" puts it back); one the server refuses keeps its own.
+      const was = await api.agents.brain(orgId, a.id).catch(() => null);
+      const ok =
+        was !== null &&
+        (await api.agents.setBrain(orgId, a.id, { brain: view.brain, account: view.account }).then(
+          () => true,
+          () => false,
+        ));
+      if (ok && was) others.push({ id: a.id, name: a.name, brain: was.brain, account: was.account, model: was.model });
+      else missed.push(a.name);
+    }
+    refreshAgents();
+    const names = [name, ...others.map((o) => o.name)];
+    setSwitched({
+      ...asked,
+      others,
+      missed,
+      team: [],
+      line:
+        names.length > 1 ? t("connectAi.doneAll", { names: namesText(t, names, 2), label: asked.said }) : asked.line,
+    });
+  };
+  /** "Undo": each agent the switch changed back to what it had. */
+  const undo = async () => {
+    if (!switched) return;
+    const { before, others } = switched;
+    // The card goes on the tap; the toast says it's back once the server has it.
+    setSwitched(null);
+    await save(
+      before.brain === "model"
+        ? { brain: "model" }
+        : { brain: before.brain, account: before.account, model: before.model },
+      t("agentPage.work.brain.v2.undone"),
+    );
+    for (const o of others)
+      await api.agents
+        .setBrain(orgId, o.id, { brain: o.brain, account: o.account, model: o.model })
+        .catch(() => undefined);
+    if (others.length > 0) refreshAgents();
   };
 
   const usage = view && kind ? thinkingUsage(view, kind) : undefined;
@@ -189,6 +321,9 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
   const ownRow = view !== undefined && kind !== null && ownSignInListed(view, row, kind);
   const choices = view ? accountChoices(accounts, [view.account]) : [];
   const adds = view?.canUsePlans === true && view.canManageAccounts;
+  // "Add account" and "Manage accounts" at the list's foot, as on the web: a plan for who may use plans (signing
+  // in on another computer when this one is someone else's), a key for who adds the workspace's keys.
+  const mayAdd = view !== undefined && !hold && (view.canUsePlans || can(org, "manage_credentials"));
   // On someone else's computer only whoever connected it adds a sign-in: with nothing of the owner's there, why, in
   // place of the list.
   const lockedHere = view !== undefined && kind !== null && !ownRow && choices.length === 0 && !adds;
@@ -230,7 +365,7 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                 const id = r.account?.sameAs ?? r.account?.id;
                 const logins = view.accounts.filter((a) => (a.sameAs ?? a.id) === id);
                 const login = logins.find((a) => a.usedByIds?.includes(agentId)) ?? logins[0];
-                if (login) choose(login);
+                if (login) void choose(login);
               }}
               extras={[
                 ...(ownRow && kind
@@ -251,11 +386,11 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                           usable: true,
                           selected: true,
                         },
-                        onPick: () => choose(null),
+                        onPick: () => void choose(null),
                       },
                     ]
                   : []),
-                ...(adds
+                ...(mayAdd
                   ? [
                       {
                         option: {
@@ -268,12 +403,66 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                           leading: { kind: "icon" as const, name: "plus" as const },
                           section: " ",
                         },
-                        onPick: () => (refused ? openConnectAi({ agentId, plan: refused }) : connect(current)),
+                        onPick: () =>
+                          refused
+                            ? openConnectAi({ agentId, plan: refused })
+                            : signInAgain
+                              ? connect(current)
+                              : startAdd(),
+                      },
+                      {
+                        option: {
+                          key: MANAGE,
+                          label: t("aiHub.choice.manage"),
+                          leading: { kind: "icon" as const, name: "key" as const },
+                          section: " ",
+                        },
+                        onPick: () => router.push("/ai-accounts" as never),
                       },
                     ]
                   : []),
               ]}
             />
+            {switched ? (
+              <View style={styles.notes}>
+                <GroupedList>
+                  <ChangeRow
+                    key="switched"
+                    agents={[agentId]}
+                    text={switched.line}
+                    action={t("agentPage.work.brain.v2.undo")}
+                    onPress={() => void undo()}
+                  />
+                  {switched.missed.length > 0 ? (
+                    <ChangeRow
+                      key="missed"
+                      agents={[]}
+                      text={t("agentPage.work.brain.v2.missed", {
+                        count: switched.missed.length,
+                        names: namesText(t, switched.missed, 2),
+                      })}
+                    />
+                  ) : null}
+                  {switched.team.length > 0 ? (
+                    <ChangeRow
+                      key="team"
+                      agents={switched.team.map((a) => a.id)}
+                      text={t("agentPage.work.brain.v2.alsoUses", {
+                        count: switched.team.length,
+                        names: namesText(
+                          t,
+                          switched.team.map((a) => a.name),
+                          2,
+                        ),
+                        account: switched.from,
+                      })}
+                      action={t("agentPage.work.brain.v2.alsoSwitch")}
+                      onPress={() => void switchTeam()}
+                    />
+                  ) : null}
+                </GroupedList>
+              </View>
+            ) : null}
             {kind === "antigravity" && geminiPersonal(current) ? (
               <Note icon="info" inset>
                 {t("connectAi.plan.gemini.warning")}
@@ -367,6 +556,47 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
     </View>
   );
 }
+
+/**
+ * One change said under the account, a row of its own card: the agents it is about on top, the sentence, then its
+ * button ("Undo", "Switch them too") at a finger's size, never a link inside the words.
+ */
+function ChangeRow({
+  agents,
+  text,
+  action,
+  onPress,
+}: {
+  agents: string[];
+  text: string;
+  action?: string;
+  onPress?: () => void;
+}) {
+  return (
+    <View style={styles.change}>
+      {agents.length > 0 ? (
+        <View style={styles.faces}>
+          {agents.map((id, i) => (
+            <View key={id} style={i > 0 ? styles.faceOver : null}>
+              <AgentFace agentId={id} size={CHANGE_FACE} live={false} />
+            </View>
+          ))}
+        </View>
+      ) : null}
+      <Text variant="subhead" tone="muted">
+        {text}
+      </Text>
+      {action && onPress ? (
+        <View style={styles.changeAct}>
+          <Button size="sm" variant="secondary" label={action} onPress={onPress} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** The faces over a change's sentence. */
+const CHANGE_FACE = 28;
 
 /** How far the dock travels to leave the screen, past its own height. */
 const DOCK_OUT = 28;
@@ -531,6 +761,12 @@ const styles = StyleSheet.create({
   center: { textAlign: "center" },
   // On a grouped row's edges, as the rows under it.
   meter: { paddingHorizontal: GROUPED_ROW.padX, paddingVertical: 12, gap: 10 },
+  notes: { marginTop: 12 },
+  // A change's row: its faces, its sentence and its button one under the other, on the rows' edges.
+  change: { paddingHorizontal: GROUPED_ROW.padX, paddingTop: 14, paddingBottom: 16, gap: 8, alignItems: "flex-start" },
+  faces: { flexDirection: "row" },
+  faceOver: { marginLeft: -6 },
+  changeAct: { marginTop: 4 },
   // Floating over the list on the screen's own sides, as everything else on it.
   dock: { position: "absolute", left: SCREEN_X, right: SCREEN_X, borderRadius: 28 },
   dockGlass: {

@@ -31,14 +31,21 @@ export function useSaveBrain(agentId: string, scope?: BrainScope) {
   };
   // Every field this change set is still the newest of its field.
   const newest = (input: AgentBrainInput) => fieldsOf(input).every((k) => live.current[k] === input[k]);
-  const save = async (input: AgentBrainInput, done: string | ((saved: AgentBrain) => string)) => {
+  /** `done`: what the toast says once saved; null says nothing (the screen says it in place). The saved view, or null. */
+  const save = async (
+    input: AgentBrainInput,
+    done: string | ((saved: AgentBrain) => string) | null,
+  ): Promise<AgentBrain | null> => {
     put({ ...live.current, ...input });
     try {
       const saved = await api.agents.setBrain(orgId, agentId, { ...(scope ? { scope } : {}), ...input });
       qc.setQueryData(scope ? [...keys.agentBrain(orgId, agentId), scope] : keys.agentBrain(orgId, agentId), saved);
-      if (newest(input)) toast({ title: typeof done === "string" ? done : done(saved), icon: "check" });
+      if (newest(input) && done !== null)
+        toast({ title: typeof done === "string" ? done : done(saved), icon: "check" });
+      return saved;
     } catch {
       if (newest(input)) toast({ title: t("agentPage.work.failed"), icon: "x" });
+      return null;
     } finally {
       // Its fields show what the server says now, unless a newer change of the same field is still on its way.
       put(
