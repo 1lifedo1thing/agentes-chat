@@ -180,6 +180,9 @@ if (args[0] === "-p") {
     process.exit(3);
   }
   step({ step_index: 1, state: "ACTIVE", step_type: "agent_response", text_delta: "Let me check. " });
+  if (prompt.includes("SUBAGENT")) {
+    step({ step_index: 2, state: "ACTIVE", step_type: "agent_response", subagent_info: { subagents: [] } });
+  }
   if (!prompt.includes("BRIDGE_ONLY")) {
     step({
       step_index: 2,

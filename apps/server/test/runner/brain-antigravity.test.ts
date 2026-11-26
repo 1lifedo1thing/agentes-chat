@@ -590,6 +590,17 @@ test.skipIf(!posix)(
       code: "tools_not_locked",
       message: expect.stringContaining("call_mcp_tool"),
     });
+    // With the locked agent confirmed at init, a built-in tool or a subagent is still stopped at its step.
+    const lazyOwn = await run(ctx, turn({ ...chat, runId: RUN.replace(/1$/, "c"), prompt: "LAZY_MCP" }));
+    expect(lazyOwn.at(-1)).toMatchObject({ code: "tools_not_locked", message: expect.stringContaining("run_command") });
+    const lazySub = await run(
+      ctx,
+      turn({ ...chat, runId: RUN.replace(/1$/, "d"), prompt: "BRIDGE_ONLY LAZY_MCP SUBAGENT" }),
+    );
+    expect(lazySub.at(-1)).toMatchObject({
+      code: "tools_not_locked",
+      message: expect.stringContaining("another agent"),
+    });
     // Work turn: our lazy MCP call is skipped as our bridge tool (not double-emitted as native tool_call).
     const lazyWork = await run(ctx, turn({ runId: RUN.replace(/1$/, "b"), prompt: "LAZY_MCP" }));
     expect(lazyWork.at(-1)).toMatchObject({ type: "done" });
