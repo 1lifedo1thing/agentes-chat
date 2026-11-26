@@ -5913,6 +5913,18 @@ export const useRoutineRuns = (orgId: string, id: string | null) => {
   });
 };
 
+/** The calls one webhook routine run carried, as kept: read when its line on the Runs tab is opened. */
+export const useRoutineRunCalls = (orgId: string, id: string, runId: string | null) => {
+  const api = useApi();
+  return useQuery({
+    queryKey: keys.routineRunCalls(orgId, id, runId ?? ""),
+    queryFn: () => api.routines.runCalls(orgId, id, runId ?? ""),
+    enabled: Boolean(runId),
+    // What a run carried never changes.
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+};
+
 /** A webhook routine's address and latest calls (ADR 0106), for who manages it. */
 export const useRoutineHook = (orgId: string, id: string | null) => {
   const api = useApi();
@@ -5932,8 +5944,10 @@ export function useRoutineHookAction(orgId: string, id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (
-      action: "address" | "secret" | "unsign" | "test" | "onAndTest",
+      action: "address" | "secret" | "unsign" | "test" | "onAndTest" | { paste: string },
     ): Promise<{ hook: RoutineHook; secret?: string; runId?: string | null }> => {
+      // The service's own secret: the person has it, so nothing is shown back.
+      if (typeof action === "object") return { hook: (await api.routines.newHookSecret(orgId, id, action.paste)).hook };
       if (action === "address") return { hook: await api.routines.newHookAddress(orgId, id) };
       if (action === "secret") return api.routines.newHookSecret(orgId, id);
       if (action === "unsign") return { hook: await api.routines.removeHookSecret(orgId, id) };
@@ -6874,6 +6888,26 @@ export function useCheckMachineClis(orgId: string) {
     mutationFn: (machineId: string) => api.machines.checkClis(orgId, machineId),
     meta: { silent: true },
     onSettled: () => invalidateClis(qc, orgId),
+  });
+}
+
+/**
+ * "Try again" on a coding CLI the computer fetches by itself (ADR 0228 §6): its runner fetches the pinned build now;
+ * where it stands comes back and then live (`machine.updated` with `cliFetch`).
+ */
+export function useRetryCliFetch(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ machineId, cli }: { machineId: string; cli: string }) =>
+      api.machines.fetchCli(orgId, machineId, cli),
+    onSuccess: (r, { machineId, cli }) => {
+      if (!r.fetch) return;
+      const fetch = r.fetch;
+      qc.setQueryData<Machine[]>(keys.machines(orgId), (old) =>
+        old?.map((m) => (m.id === machineId ? { ...m, cliFetch: { ...m.cliFetch, [cli]: fetch } } : m)),
+      );
+    },
   });
 }
 

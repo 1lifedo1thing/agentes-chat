@@ -41,6 +41,7 @@ import {
   noAiCardOf,
   noAiCardShown,
   noAiLineKey,
+  noAiReceiptLine,
   noAiStatusKey,
   onlyOwnerReplies,
   ownSignInFor,
@@ -320,6 +321,17 @@ describe("the Cloud's plan gate tells the truth", () => {
     );
     expect(dimmedLine(enT, { state: "unsupported", reason: "not_installed" }, where)).toBe(
       gateLine(enT, { gate: { state: "unsupported", reason: "not_installed" }, ...where })?.text ?? "",
+    );
+  });
+
+  test("a CLI at a version agentes.chat holds back: needs an update there, with its command where it has one", () => {
+    const where = { edition: "selfhost", computer: "Acme" } as const;
+    const gate = { state: "unsupported", reason: "cli_outdated" } as const;
+    expect(gateLine(enT, { gate, kind: "claude_code", ...where })?.text).toBe(
+      "Claude Code on Acme needs an update before agents can use it. Run claude update there.",
+    );
+    expect(gateLine(enT, { gate, kind: "codex", ...where })?.text).toBe(
+      "Codex on Acme needs an update before agents can use it.",
     );
   });
 
@@ -1057,7 +1069,8 @@ describe("a card says the real cause, not that the agent has no AI", () => {
       expect(serverBody(pt, "…", wait(code))).toBe(
         "O Codex está desligado no meu computador. Respondo quando quem cuida dele ligar.",
       );
-    for (const code of ["runner_outdated", "codex_too_old"])
+    // Its CLI at a version agentes.chat holds back reads the same: a program there to update.
+    for (const code of ["runner_outdated", "codex_too_old", "cli_outdated"])
       expect(serverBody(pt, "…", wait(code))).toBe(
         "O programa no meu computador precisa ser atualizado para o Codex responder. Respondo assim que ele for atualizado.",
       );
@@ -1166,5 +1179,36 @@ describe("a plan that doesn't run on the computer's system says so before it is 
     };
     const { gate: g } = planGateWithoutAgent({ choice: "gemini", edition: "selfhost", setup: null, computers: [pc] });
     expect(planOffSystem(enT, g)).toBe("Windows");
+  });
+});
+
+describe("noAiReceiptLine", () => {
+  const say = (why: Parameters<typeof noAiReceiptLine>[0]) => {
+    const line = noAiReceiptLine(why);
+    return line ? { text: enT(line.key, { name: "Lodi", model: line.model }), connect: line.connect } : null;
+  };
+
+  test("a plan it has that can't think there says why, with no Connect: another account wouldn't start it", () => {
+    expect(say({ code: "cli_failed" })).toEqual({
+      text: "Lodi can't answer now: the plan's AI stopped with an error.",
+      connect: false,
+    });
+    expect(say({ code: "plan_limit" })?.connect).toBe(false);
+    expect(say({ code: "model_limit", params: { model: "GPT-5.5" } })?.text).toContain("GPT-5.5");
+  });
+
+  test("a missing piece says which and keeps Connect; a plan that isn't this person's keeps Connect too", () => {
+    expect(say({ code: "cli_missing" })).toEqual({
+      text: enT("noAi.cliMissing", { name: "Lodi" }),
+      connect: true,
+    });
+    expect(say({ code: "plan_not_shared" })?.connect).toBe(true);
+  });
+
+  test("no AI at all, no reason, or one it can't word: the plain line", () => {
+    expect(noAiReceiptLine(undefined)).toBeNull();
+    expect(noAiReceiptLine({ code: "no_key" })).toBeNull();
+    expect(noAiReceiptLine({ code: "plans_not_yours" })).toBeNull();
+    expect(noAiReceiptLine({ code: "model_limit" })).toBeNull();
   });
 });

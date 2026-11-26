@@ -79,6 +79,7 @@ import type {
   ChannelMember,
   ChannelOverride,
   Choices,
+  CliFetch,
   CliInstall,
   CodeSent,
   CommandApproval,
@@ -219,6 +220,7 @@ import type {
   Routine,
   RoutineHook,
   RoutineRun,
+  RoutineRunCall,
   RuleInfo,
   Run,
   RunConsultation,
@@ -1414,6 +1416,10 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       checkClis: async (orgId, machineId) => {
         await request<unknown>(`${org(orgId)}/machines/${enc(machineId)}/clis/check`, { json: {} });
       },
+      fetchCli: (orgId, machineId, cli) =>
+        request<{ fetch: CliFetch | null }>(`${org(orgId)}/machines/${enc(machineId)}/clis/${enc(cli)}/fetch`, {
+          json: {},
+        }),
       cliInstall: (orgId, machineId, tool, action) => {
         const path = `${org(orgId)}/machines/${enc(machineId)}/cli-install`;
         if (action === "start") return request<{ install: CliInstall | null }>(path, { json: { tool } });
@@ -1914,6 +1920,9 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       takeOver: (orgId, id) => request<Routine>(`${org(orgId)}/routines/${enc(id)}/take-over`, { json: {} }),
       continueUsage: (orgId, id) => request<Routine>(`${org(orgId)}/routines/${enc(id)}/continue`, { json: {} }),
       runs: async (orgId, id) => (await request<{ runs: RoutineRun[] }>(`${org(orgId)}/routines/${enc(id)}/runs`)).runs,
+      runCalls: async (orgId, id, runId) =>
+        (await request<{ calls: RoutineRunCall[] }>(`${org(orgId)}/routines/${enc(id)}/runs/${enc(runId)}/calls`))
+          .calls,
       parseRule: (orgId, phrase, timezone) =>
         request<RuleInfo>(`${org(orgId)}/routines/parse-rule`, { json: { phrase, ...(timezone ? { timezone } : {}) } }),
       describeRule: (orgId, rule) => request<RuleInfo>(`${org(orgId)}/routines/describe-rule`, { json: { rule } }),
@@ -1925,8 +1934,10 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       hook: (orgId, id) => request<RoutineHook>(`${org(orgId)}/routines/${enc(id)}/hook`),
       newHookAddress: (orgId, id) =>
         request<RoutineHook>(`${org(orgId)}/routines/${enc(id)}/hook/address`, { json: {} }),
-      newHookSecret: (orgId, id) =>
-        request<{ secret: string; hook: RoutineHook }>(`${org(orgId)}/routines/${enc(id)}/hook/secret`, { json: {} }),
+      newHookSecret: (orgId, id, pasted) =>
+        request<{ secret: string; hook: RoutineHook }>(`${org(orgId)}/routines/${enc(id)}/hook/secret`, {
+          json: pasted === undefined ? {} : { secret: pasted },
+        }),
       removeHookSecret: (orgId, id) =>
         request<RoutineHook>(`${org(orgId)}/routines/${enc(id)}/hook/secret`, { method: "DELETE" }),
       testHook: (orgId, id) =>

@@ -934,8 +934,14 @@ describe("the agent's AI", () => {
     const save = await Bun.file(new URL("../../src/features/ai/useSaveBrain.ts", import.meta.url).pathname).text();
     // A switch is said under the account, with Undo (no toast for it); other saves keep their toast.
     expect(screen).toContain("line: accountSaved(t, i18n.language, name, a, input, saved),");
-    // Said once the server answers, unless a newer pick of the same is on its way (its own toast speaks).
-    expect(save).toContain('toast({ title: typeof done === "string" ? done : done(saved), icon: "check" });');
+    // Said once the server answers, unless a newer pick of the same is on its way (its own toast speaks), with
+    // Desfazer where the caller says what goes back.
+    expect(save).toContain(
+      'if (newest(input) && done !== null)\n        toast({\n          title: typeof done === "string" ? done : done(saved),',
+    );
+    expect(save).toContain(
+      'onPress: () => void save(undo, t("agentPage.work.brain.v2.undone"), undefined, undefined, giveBack),',
+    );
   });
 
   test("a pick on the agent's AI shows on the tap, and only its own row waits for the server", async () => {
@@ -988,9 +994,11 @@ describe("the agent's AI", () => {
     expect(accountAt).toBeGreaterThan(0);
     expect(screen.indexOf('target={{ kind: "agent", agentId }}')).toBeGreaterThan(accountAt);
     expect(screen).toContain("const input = accountInput(view, a);");
-    // Taking a login another agent thinks with is done at once, as on the web: never asked in an alert first.
-    expect(screen).toContain("save(takes ? { ...input, moveAccount: true } : input, null)");
-    expect(screen).not.toContain("Alert.alert(");
+    // Another agent's login, someone else's plan or one at its limit asks first in a line under the list; its button
+    // takes it at once, said under the account with Undo, never in an alert.
+    expect(screen).toContain("if (a && !asked && (others.length > 0 || lentTo(a) || full(a))) return setAsking(a);");
+    expect(screen).toContain("save(others.length > 0 ? { ...input, moveAccount: true } : input, null)");
+    expect(screen).not.toContain("Alert.alert");
     expect(screen).toMatch(/model\?\.needs \? t\(`brain\.modelHow\.\$\{model\.needs\}`\)/);
     // "Add account" at the list's foot opens its own screen; a refused key and signing in again keep theirs.
     expect(screen).toMatch(
@@ -1582,4 +1590,61 @@ describe("Add account for an agent (the web's add screen on the phone)", () => {
     // Each change is a row with its button, never a link inside the sentence.
     expect(screen).toContain('<Button size="sm" variant="secondary" label={action} onPress={onPress} />');
   });
+});
+
+test("the effort shows the levels the model takes: the ramp up to four, a list past that; the one choice saves with Desfazer and asks first inline", async () => {
+  const read = (file: string) => Bun.file(new URL(`../../src/features/ai/${file}`, import.meta.url).pathname).text();
+  const ramp = await read("EffortRamp.tsx");
+  expect(ramp).toContain("props.levels.length > RAMP_MAX ? <EffortPick {...shown} /> : <Ramp {...shown} />");
+  expect(ramp).toContain("value: props.value && shownEffort(props.value, props.levels)");
+  // A stored level above the model's shows as the one under it, and picking that one saves it.
+  expect(ramp).toContain("if (level !== props.value) props.onChange(level);");
+  expect(ramp).not.toContain("level !== value");
+  for (const file of ["AgentAiScreen.tsx", "AgentAdvancedScreen.tsx"])
+    expect(await read(file)).toContain("effortLevelsFor(");
+  const choice = await read("AiChoice.tsx");
+  expect(choice).toContain("state.efforts(active, isAuto(model?.value) ? null : (model?.value ?? null))");
+  expect(choice).toContain('label: t("agentPage.work.brain.v2.undo"),');
+  expect(choice).toContain("if (picked === null || picked === current.effort) return;");
+  expect(choice).toContain("if (!controlled && aiChoiceAsks(row, agentId)) return setAsking(row);");
+});
+
+test("Desfazer after taking a login from another agent gives it back to that agent; an account at its limit asks first", async () => {
+  const read = (file: string) => Bun.file(new URL(`../../src/features/ai/${file}`, import.meta.url).pathname).text();
+  const screen = await read("AgentAiScreen.tsx");
+  // What the agents losing it thought with is read before the move; Undo under the account puts it back after this one.
+  expect(screen).toContain(
+    "a && others.length > 0 ? await giveBackLogin(api.agents, orgId, loginHolders(a, agentId)) : undefined;",
+  );
+  expect(screen).toContain("...(giveBack ? { giveBack } : {}),");
+  expect(screen).toMatch(/t\("agentPage\.work\.brain\.v2\.undone"\),\s*undefined,\s*undefined,\s*giveBack,/);
+  const hook = await read("useSaveBrain.ts");
+  expect(hook).toContain(
+    'onPress: () => void save(undo, t("agentPage.work.brain.v2.undone"), undefined, undefined, giveBack),',
+  );
+  // Given back once this agent let go of it, before "Desfeito" is said; a failure says it failed.
+  expect(hook.indexOf("await then?.();")).toBeGreaterThan(hook.indexOf("qc.setQueryData("));
+  expect(hook.indexOf("await then?.();")).toBeLessThan(hook.indexOf("if (newest(input) && done !== null)"));
+  // The other pickers (Lodi's) take it the same way.
+  const choice = await read("AiChoice.tsx");
+  expect(choice).toContain(
+    "const giveBack = await giveBackLogin(api.agents, orgId, loginHolders(row.account, agentId));",
+  );
+  expect(choice).toMatch(/\.save\(before\)\s*\.then\(\(\) => giveBack\?\.\(\)\)\s*\.then\(\(\) => toast\(/);
+  // Its button goes at once: a second tap while the agents losing it are read doesn't take it twice.
+  const take = choice.slice(choice.indexOf("const take = async (row: AiChoiceRow, moves: boolean) => {"));
+  expect(take.indexOf("setAsking(null);")).toBeGreaterThan(-1);
+  expect(take.indexOf("setAsking(null);")).toBeLessThan(take.indexOf("await giveBackLogin("));
+  // At its limit the agent would wait there: it asks, as the web's Quem pensa, with the usage a tap away.
+  expect(screen).toContain(
+    'const full = (a: MachineAccount) => a.usage != null && planState(a.usage).state === "limited";',
+  );
+  expect(screen).toContain('full(asking) ? t("agentPage.work.brain.v2.fullWait", g) : null,');
+  expect(screen).toContain('icon={lentTo(asking) ? "mail" : full(asking) ? "clock" : "info"}');
+  expect(screen).toContain(
+    'link: { label: t("agentPage.work.brain.v2.seeUsage"), onPress: () => router.push("/usage" as never) }',
+  );
+  expect(choice).toContain(
+    '<Text variant="small" accessibilityRole="link" style={styles.link} onPress={link.onPress}>',
+  );
 });

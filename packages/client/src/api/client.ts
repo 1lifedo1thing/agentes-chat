@@ -111,6 +111,7 @@ import type {
   ChannelOverride,
   Choices,
   ClientVitalsReport,
+  CliFetch,
   CliInstall,
   CodeSent,
   CommandApproval,
@@ -298,6 +299,7 @@ import type {
   RoutineInput,
   RoutinePatch,
   RoutineRun,
+  RoutineRunCall,
   RowHolders,
   RuleInfo,
   Run,
@@ -1335,6 +1337,8 @@ export interface ApiClient {
     askTool(orgId: string, machineId: string, tool: MachineTool): Promise<void>;
     /** Its PATH read again and its coding CLIs looked for now ("Já instalei, verificar de novo"). */
     checkClis(orgId: string, machineId: string): Promise<void>;
+    /** ADR 0228 §6: "Try again" on a CLI's fetch; where it stands now. */
+    fetchCli(orgId: string, machineId: string, cli: string): Promise<{ fetch: CliFetch | null }>;
     /** Only the person who paired it: installs `tool` there, or where that install stands, or stops it. */
     cliInstall(
       orgId: string,
@@ -1850,6 +1854,8 @@ export interface ApiClient {
     /** Continuar agora on a run paused near its plan's or budget's limit (`usagePause`): it goes on now. */
     continueUsage(orgId: string, id: string): Promise<Routine>;
     runs(orgId: string, id: string): Promise<RoutineRun[]>;
+    /** The calls a webhook routine's run carried, as kept (who manages it). */
+    runCalls(orgId: string, id: string, runId: string): Promise<RoutineRunCall[]>;
     /** A phrase → rule, its description, cron and next 5 runs. */
     parseRule(orgId: string, phrase: string, timezone?: string): Promise<RuleInfo>;
     /** A rule → its description, cron and next 5 runs (the picker's sentence). */
@@ -1864,8 +1870,8 @@ export interface ApiClient {
     hook(orgId: string, id: string): Promise<RoutineHook>;
     /** A new address: the old one stops at once. */
     newHookAddress(orgId: string, id: string): Promise<RoutineHook>;
-    /** A new signing secret, shown this once. */
-    newHookSecret(orgId: string, id: string): Promise<{ secret: string; hook: RoutineHook }>;
+    /** A new signing secret, shown this once; `pasted`: the service's own (Linear's) instead. */
+    newHookSecret(orgId: string, id: string, pasted?: string): Promise<{ secret: string; hook: RoutineHook }>;
     removeHookSecret(orgId: string, id: string): Promise<RoutineHook>;
     /** "Testar": a sample call; the agent is told it is a test. */
     testHook(orgId: string, id: string): Promise<{ runId: string | null; hook: RoutineHook }>;

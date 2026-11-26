@@ -25,6 +25,7 @@ import { type BrakeReport, brakeWakes, callableAgents, LATER_JOB, notCallableWhy
 import { HANDOFF_REMIND_JOB, remindBrowserHandoff } from "./browser/handoff";
 import { typingLogFor } from "./burst";
 import { CHANNEL_DELETE_JOB, purgeChannel } from "./channel-deletion";
+import { announceJoins, CHANNEL_JOINED_JOB } from "./channel-joins";
 import { tellChannelLead } from "./channel-lead";
 import { COMPUTER_DOWN_JOB, noticeComputerDown } from "./computer-down";
 import { crowdedAgents, publishQueueChanged } from "./computer-queue";
@@ -55,6 +56,7 @@ import {
 } from "./dispatch";
 import { isAgentOnlyDm } from "./dms";
 import {
+  deliverQueuedEmail,
   type EmailArt,
   PLAN_WAITING_JOB,
   queueAccountOpenedEmail,
@@ -62,7 +64,6 @@ import {
   queuePlanOpenedEmail,
   queuePlanWaiting,
   sendPlanWaitingEmail,
-  sendQueuedEmail,
 } from "./email";
 import { forgetCodeEmail } from "./email-codes";
 import { type DecidedBy, publishAgentsChanged, publishListChanged, publishRouted } from "./events";
@@ -967,7 +968,11 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     },
     [LEARN_JOB]: async (job) => {
       if (!deps.context) return;
-      const res = await learnRun(deps.context, { orgId: orgOf(job), runId: String(job.payload.runId) });
+      const res = await learnRun(deps.context, {
+        orgId: orgOf(job),
+        runId: String(job.payload.runId),
+        signal: String(job.payload.signal ?? ""),
+      });
       // Its run went on after the turn that queued it: the outbox's backoff brings it back once the run ends.
       if (res.skipped === "running") throw Object.assign(new Error("its run is still going"), { retryable: true });
       if (res.saved.length > 0) await publishListChanged(deps.pubsub, orgOf(job), "memory");
@@ -1102,12 +1107,17 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       };
       try {
         if (!deps.email) throw new PermanentJobError("no email sender configured");
-        await sendQueuedEmail(deps.email, job.payload, deps.emailArt);
+        await deliverQueuedEmail(deps.db, deps.email, job, deps.emailArt, deps.log);
       } catch (error) {
         if (ctx.finalAttempt || error instanceof PermanentJobError) await forget();
         throw error;
       }
       await forget();
+    },
+    // Who joined a channel, in one line there, and at most one welcome with room (ADR 0090, "Joining says so").
+    [CHANNEL_JOINED_JOB]: async (job) => {
+      const by = job.payload.byUserId;
+      await announceJoins(deps, orgOf(job), String(job.payload.channelId), typeof by === "string" ? by : null);
     },
     // The team says hi in #general once it can work (ADR 0162).
     [TEAM_HELLO_JOB]: async (job) => {

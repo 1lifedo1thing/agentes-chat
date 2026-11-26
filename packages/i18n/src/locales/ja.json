@@ -611,7 +611,11 @@
       "wrongAddress": "アドレスが違いますか？変更する",
       "banner": "メールアドレスを確認してください",
       "bannerSub": "{{email}}に送信したリンクを開いてください。",
-      "change": "アドレスを変更"
+      "change": "アドレスを変更",
+      "undelivered": {
+        "suppressed": "メールが届きませんでした：以前の不達により、メールプロバイダーが {{email}} への送信を止めています。アドレスが正しいか確認して、新しいリンクを依頼してください。",
+        "rejected": "メールが届きませんでした：{{email}} は受け取りを拒否されました。アドレスが正しいか確認するか、別のアドレスに変更してください。"
+      }
     },
     "unconfirmed": "このメールアドレスには、まだ確認されていないパスワード付きのアカウントがあります。そのパスワードでログインするか、メールで新しいパスワードを作成してください。",
     "unconfirmedReset": "新しいパスワードを作成",
@@ -1414,6 +1418,7 @@
         "secret_other": "{{who}}は{{label}}を使います。これはファイルに含まれないため、エージェントがチャットで尋ねます。",
         "model_other": "{{who}}は{{label}}を使いますが、ここでは利用できません。",
         "file_other": "{{who}}は{{label}}を使います。",
+        "path_other": "{{who}}の指示は{{label}}を参照していますが、インポートに含まれていないため、エージェントは開けません。そのファイルをDriveに置くか、指示からそのパスを削除してください。",
         "webhook_other": "{{who}}のルーティン{{label}}には、ここで新しいアドレスが割り当てられます。古いアドレスを呼び出していたサイトやアプリで、アドレスを変更してください。"
       },
       "say": {
@@ -1511,6 +1516,7 @@
         "app": "接続",
         "model": "モデルを選ぶ",
         "file": "Driveを開く",
+        "path": "Driveを開く",
         "webhook": "ルーティンを開く"
       },
       "linkSkipped_other": "リンクの上限を超えたファイル{{count}}件",
@@ -2345,6 +2351,10 @@
     "phoneText": "通知をポケットに。どこからでも返信できます。",
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
+  },
+  "lodiCursor": {
+    "skip": "スキップ",
+    "inMenu_other": "メニューに新着 {{count}} 件"
   },
   "openOnPhone": {
     "qr": "agentesアプリにログインするためのQRコード",
@@ -3376,10 +3386,22 @@
       "zen": "OpenCodeを接続",
       "api_key": "APIキーを追加"
     },
+    "cliFetch": {
+      "preparing": "{{computer}}で{{program}}を準備しています…",
+      "preparingPct": "{{computer}}で{{program}}を準備しています… {{percent}}%",
+      "failed": {
+        "offline": "{{computer}}で{{program}}を準備できませんでした。コンピューターがダウンロード先に接続できません。",
+        "hash_mismatch": "{{computer}}で{{program}}を準備できませんでした。ダウンロードしたファイルが元のファイルではなかったため、使用していません。",
+        "no_build": "{{program}}には{{computer}}のシステム向けのバージョンがありません。",
+        "disk_full": "{{computer}}で{{program}}を準備できませんでした。ディスクがいっぱいです。",
+        "failed": "{{computer}}で{{program}}を準備できませんでした。ダウンロードが完了しませんでした。"
+      }
+    },
     "cli": {
       "missing": "{{program}} はまだ {{computer}} にありません。",
       "claudeApp": "Claude アプリだけでは足りません。エージェントはコンピューターで動く Claude Code を使います。",
       "install": "{{program}} をインストールする",
+      "update": "{{program}} を更新する",
       "check": "インストールした。もう一度確認",
       "checked": "確認しました。{{program}} はまだ {{computer}} にありません。",
       "installing": "{{computer}} に {{program}} をインストールしています。1 分ほどかかります。",
@@ -3664,7 +3686,7 @@
     "nowEveryAgent": "すべてのエージェントは今後：{{level}}。",
     "undo": "元に戻す",
     "everyAgent": "ワークスペースのすべてのエージェントに適用",
-    "follows": "ワークスペースに従う",
+    "follows": "{{level}} · ワークスペースの設定",
     "edit": "変更",
     "workspaceLead": "エージェントが動く前に人へ確認するタイミング。",
     "workspaceHelp": "各エージェントは、誰かがエージェントのページで個別に変更するまでこの設定に従います。",
@@ -5675,6 +5697,7 @@
           "low": "低",
           "medium": "中",
           "high": "高",
+          "xhigh": "さらに高い",
           "max": "最大"
         },
         "effortsLower": {
@@ -5682,6 +5705,7 @@
           "low": "低",
           "medium": "中",
           "high": "高",
+          "xhigh": "さらに高い",
           "max": "最大"
         },
         "effortText": {
@@ -5691,6 +5715,7 @@
           "mediumKey": "たいていは十分に考えます。",
           "none": "モデルはいつもどおりに考えます。レベルを選ぶと固定できます。",
           "high": "難しいタスクでより深く考えます。時間とコストがかかります。",
+          "xhigh": "最も難しいタスクで「高」より長く考えます。さらに遅く、費用もかかります。",
           "max": "できる限り深く考えます。かなり時間とコストがかかります。"
         },
         "speed": "速度",
@@ -5864,6 +5889,8 @@
           "limitSoon": "{{account}}はプランが更新されたら戻ります",
           "limitHelp": "それまでの間、{{name}}は接続済みの別のアカウントで考えられます。",
           "fullWait": "このアカウントでは、{{name}}はプランが更新されるまで待ちます。",
+          "switchTo": "{{label}}に切り替え",
+          "seeUsage": "使用量を見る",
           "modelTitle": "{{name}}のモデル",
           "moreTitle": "{{name}}のその他のオプション",
           "computer": "コンピューター",
@@ -6244,6 +6271,7 @@
         "cli_failed": "エラーで{{brain}}が停止しました: {{detail}}",
         "cli_stopped": "エラーで{{brain}}が停止しました。",
         "cli_closed": "突然{{brain}}が終了しました。",
+        "cli_empty": "{{brain}}が回答せずにターンを終えました。もう一度聞いてください。繰り返す場合は、コンピューターの{{brain}}を更新するか、エージェントの設定で別のAIを選んでください。",
         "cli_sandbox": "{{brain}}がこのコンピューターでサンドボックスを起動できません。エージェントの設定で別のAIを選んでください。",
         "cli_system": "{{brain}}はこのコンピューターのシステムではまだ動きません。エージェントの設定で別のAIを選んでください。",
         "account_missing": "このエージェント用に選んだアカウントが、もうコンピューターにありません。エージェントの設定で別のアカウントを選ぶか、もう一度追加してください。",
@@ -7418,6 +7446,10 @@
       "expires": "あと{{left}}で期限切れ",
       "expired": "{{when}}に期限切れ",
       "resentState": "再送信済み · {{date}}まで有効",
+      "undelivered": {
+        "suppressed": "届いていません：以前の不達により、メールプロバイダーがこのアドレスへの送信を止めています。正しいか確認して再送するか、リンクをコピーしてください。",
+        "rejected": "届いていません：このアドレスは拒否されました。正しいか確認するか、リンクをコピーして別の方法で送ってください。"
+      },
       "copied": "{{email}}への招待リンクをコピーしました。メールに記載されたものと同じです。",
       "copiedNoEmail": "{{email}}への招待リンクをコピーしました。",
       "resent": "{{email}}にもう一度送信しました。リンクは同じで、{{date}}まで有効です。",
@@ -8345,6 +8377,13 @@
     "notFound": "このルーティンは存在しないか、アクセス権がありません。",
     "copyWebhook": "Webhook URLをコピー",
     "webhookCopied": "Webhook URLをコピーしました。",
+    "runCalls": {
+      "show": "呼び出し（{{n}}）",
+      "hide": "呼び出しを隠す",
+      "cut": "短縮済み",
+      "binary": "テキストではないため保存されていません",
+      "copied": "呼び出しをコピーしました。"
+    },
     "webhook": {
       "when": "Webhookが呼ばれたとき",
       "waiting": "次の呼び出しを待機中",
@@ -8370,8 +8409,11 @@
       "signature": "署名",
       "signedOff": "オフ: アドレスへのすべての呼び出しがエージェントに届きます。",
       "signedOn": "オン: シークレットで署名された呼び出しだけが届きます。",
-      "signedHelp": "本文（GETの呼び出しではクエリ文字列、?を除く）のHMAC-SHA256をX-Agentes-Signature（sha256=…）で送ってください。GitHubのX-Hub-Signature-256も使えます。",
+      "signedHelp": "本文（GETの呼び出しではクエリ文字列、?を除く）のHMAC-SHA256をX-Agentes-Signature（sha256=…）で送ってください。GitHubのX-Hub-Signature-256も使えます。Linearの場合は、Linearが表示する署名シークレットを貼り付けてください。Linear-Signatureが確認され、1分以上前の呼び出しは拒否されます。",
       "addSecret": "署名を必須にする",
+      "pasteSecret": "サービスのシークレットを使う",
+      "pasteLabel": "サービスの署名シークレット",
+      "secretPasted": "シークレットを保存しました。これで署名された呼び出しだけが通ります。",
       "newSecret": "新しいシークレット",
       "newSecretTitle": "新しいシークレットを作成しますか？",
       "newSecretBody": "現在のシークレットはすぐに使えなくなります。このルーティンを呼び出すサービスを更新するまで、古いシークレットで署名された呼び出しは拒否されます。",
@@ -8894,6 +8936,7 @@
     "busyAnyComputer_other": "コンピューターで1日{{count}}回実行されるため、電源を入れたままにする必要があります。",
     "outcome": {
       "queued": "順番待ち",
+      "queuedBehind": "順番待ち: ルーティン「{{name}}」の終了を待っています",
       "running": "作業中",
       "waiting": "誰かの回答を待機中",
       "waitingApproval": "あなたの承認待ち",
@@ -11290,7 +11333,7 @@
   },
   "code": {
     "ranSummary_other": "{{language}}を{{count}}行実行 · 出力 {{size}}",
-    "show": "{{name}}のコードを見る",
+    "see": "コードを見る",
     "hide": "コードを隠す",
     "running": "{{name}}が実行中",
     "source": "コード（{{language}}）",
@@ -12151,6 +12194,8 @@
       "tool_offOne": "{{computer}} では {{program}} がオフです。",
       "not_installed": "{{computer}}に{{program}}がインストールされていません。",
       "cant_start": "{{program}} は {{computer}} にありますが、起動しません。",
+      "cli_outdated": "{{computer}}の{{program}}は、エージェントが使う前に更新が必要です。",
+      "cli_outdatedRun": "{{computer}}の{{program}}は、エージェントが使う前に更新が必要です。そこで {{command}} を実行してください。",
       "home_only": "{{computer}} の {{program}} は root 専用にインストールされていて、エージェントからは届きません。",
       "not_reported": "{{computer}}は、入っているプログラムをまだ確認しています。終わりしだい自動で切り替わります。",
       "system": "{{program}}は{{computer}}のシステムではまだ動きません。",
@@ -15424,6 +15469,7 @@
       "privateNetwork": "このアドレスはプライベートネットワーク上にあります。公開アドレスを使うか、セルフホストのサーバーでは `OUTBOUND_ALLOW_CIDRS` で許可してください。",
       "tooLong": "長すぎます。短くして、もう一度お試しください。",
       "updateComputerApp": "コンピューターのアプリが古すぎます。更新して、もう一度お試しください。",
+      "cliNotFetched": "このコンピューターはそのプログラムを自分で取得しません。",
       "computerUpdatesItself": "ワークスペースのコンピューターはこのために自動で更新されます。少ししてからもう一度お試しください。",
       "notInvited": "この予定には招待されていません。",
       "offHere": "ここではオフになっています。",
@@ -18203,7 +18249,10 @@
       "noAnswer": "回答なし",
       "notFinished": "完了せず",
       "someAnswered": "{{total}}件中{{done}}件回答",
-      "labelMany": "{{from}}と{{to}}の会話"
+      "labelMany": "{{from}}と{{to}}の会話",
+      "askedHere": "→",
+      "forYou": "あなたの代わりに",
+      "askedIn": "{{channel}} で"
     },
     "consultPanel": {
       "label": "{{from}}と{{to}}の会話",
@@ -18216,7 +18265,8 @@
       "talk": "{{name}}と話す",
       "missing": "この会話はもうありません。",
       "helping": "{{name}}を手伝っています",
-      "see": "会話を見る"
+      "see": "会話を見る",
+      "relay": "{{name}}の回答：{{excerpt}}。会話を見る"
     },
     "unshown": "このメッセージを表示できませんでした",
     "unshownPart": "このメッセージの一部を表示できませんでした",
@@ -18227,8 +18277,12 @@
       "consultReplyAnon": "別のエージェントが回答しました",
       "agentNote": "{{from}}からのメモ",
       "agentNoteAnon": "別のエージェントからのメモ",
+      "handOff": "{{from}} から {{to}} への依頼",
       "waitResult": "{{name}}が待っていたものが届きました",
       "other": "{{name}}へのお知らせ",
+      "joined_other": "{{who}}がチャンネルに参加しました",
+      "joinedBy_other": "{{who}}がチャンネルに参加しました · {{by}}が追加",
+      "left": "{{who}}がチャンネルを退出しました",
       "wakeSkipped": "{{name}}のメンションは{{agents}}に届きませんでした",
       "wakeSkippedAnon": "{{name}} のメンションはほかのエージェントに届きませんでした",
       "wakeSkippedAudience": "{{agents}} を呼べるのは一部の人だけで、{{name}} のこの作業はその誰からの依頼でもありません。{{agents}} を呼べる人が依頼を引き継げます。",
@@ -18381,6 +18435,7 @@
         "usingScreen": "画面を使いました",
         "cloningRepo": "リポジトリをクローンしました",
         "listingRepos": "リポジトリを一覧表示しました",
+        "preparingCli": "{{app}}を準備しました",
         "openingPullRequest": "プルリクエストを作成しました",
         "handingOff": "レポートを届けました",
         "recordingFindings": "調査結果を記録しました",
@@ -18504,6 +18559,8 @@
       "usingScreen": "画面を使用中",
       "cloningRepo": "リポジトリをクローン中",
       "listingRepos": "リポジトリを一覧表示中",
+      "preparingCli": "{{computer}}で{{app}}を準備中",
+      "preparingCliPct": "{{computer}}で{{app}}を準備中（{{percent}}%）",
       "openingPullRequest": "プルリクエストを作成中",
       "handingOff": "レポートを届けています",
       "recordingFindings": "調査結果を記録中",
@@ -18949,7 +19006,7 @@
     },
     "offer_connect_app": {
       "label": "アプリやMCPの接続を提案",
-      "description": "アプリやMCPサーバーをアドレスで接続するダイアログを開くボタン付きのカードを投稿します。"
+      "description": "アプリやMCPサーバーを接続するダイアログを開くボタン付きのカードを投稿します。カタログにあるものは名前で、それ以外はアドレスで接続します。"
     },
     "offer_invites": {
       "label": "メンバーの招待を提案",
@@ -19657,6 +19714,9 @@
     "failed": "今は開けませんでした。少し待ってからもう一度お試しください。",
     "adminsOnly": "ワークスペースのagentes.chatプランを管理できるのは、オーナーと管理者だけです。",
     "seeOptions": "オプションを見る",
+    "plan": "プラン",
+    "planMonth": "{{plan}}（月払い）",
+    "planYear": "{{plan}}（年払い）",
     "people": "人",
     "files": "ファイル",
     "usedOf": "{{used}} / {{limit}}",
@@ -21175,6 +21235,34 @@
     },
     "approvals": "顧客に送るものはあなたの承認を待ちます。信頼できるようになったら、あとで任せられます。",
     "approvalsPersonal": "あなたの名前で送るもの、支払うもの、予約するものはすべて、あなたの承認を待ちます。信頼できるようになったら、あとで任せられます。"
+  },
+  "paidMoment": {
+    "on": "プランが有効になりました",
+    "onPlan": "{{plan}}プランをご利用中です",
+    "onMonth": "{{plan}}プラン（月払い）をご利用中です",
+    "onYear": "{{plan}}プラン（年払い）をご利用中です",
+    "room": {
+      "both_other": "{{people}}人分の席と{{files}}のファイル容量があります。",
+      "people_other": "{{people}}人分の席があり、ファイル容量は無制限です。",
+      "files": "{{files}}のファイル容量があり、人数は無制限です。",
+      "none": "人数もファイル容量も無制限です。"
+    },
+    "computer": {
+      "on": "コンピューターは起動しています。",
+      "starting": "コンピューターを準備しています。",
+      "startingTold": "コンピューターを準備しています。起動したらお知らせします。"
+    },
+    "hello": "こんにちは、{{first}}さん",
+    "hi": "こんにちは",
+    "say": "みんなそろいました。さあ、始めましょう。",
+    "sayOn": "みんなそろって、コンピューターも起動しています。さあ、始めましょう。",
+    "sayStarting": "みんなそろいました。コンピューターが起動したらお知らせします。",
+    "next": {
+      "ai": "AIを接続",
+      "people": "メンバーを招待",
+      "open": "ワークスペースへ",
+      "talk": "{{name}}と話す"
+    }
   },
   "arrival": {
     "beta": {

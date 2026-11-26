@@ -1,5 +1,6 @@
 import type { AgentBrain, BrainScope, MachineAccount } from "@agenteschat/client";
 import { keys, useAgentBrain, useAiAccounts, useApi, useMachines, useModels } from "@agenteschat/client";
+import { CLI_OF_BRAIN } from "@agenteschat/client/lib/activity";
 import {
   accountChoices,
   accountInLine,
@@ -8,9 +9,10 @@ import {
   ownSignInName,
   signInOf,
 } from "@agenteschat/client/lib/ai-accounts";
+import { giveBackLogin, loginHolders } from "@agenteschat/client/lib/ai-choice";
 import { managesAgent } from "@agenteschat/client/lib/audience";
 import { brainLine, thinksWith } from "@agenteschat/client/lib/brain";
-import { advancedContents, viewSpeedFits } from "@agenteschat/client/lib/brain-advanced";
+import { advancedContents, effortLevelsFor, viewSpeedFits } from "@agenteschat/client/lib/brain-advanced";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
 import { namesText } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
@@ -64,7 +66,8 @@ import { PlanMeter, PlanModels } from "../usage/parts";
 import { openAgentAddAccount } from "./AgentAddAccountScreen";
 import { advancedOf, openAgentAdvanced } from "./AgentAdvancedScreen";
 import { openAgentSetup } from "./AgentSetupScreen";
-import { AiChoiceFields } from "./AiChoice";
+import { AiChoiceFields, AskLine } from "./AiChoice";
+import { CliFetchNote } from "./CliFetchNote";
 import { EffortRamp, useEffortChoice } from "./EffortRamp";
 import {
   accountInput,
@@ -123,6 +126,8 @@ interface Switched {
   others: (Had & { id: string; name: string })[];
   /** The ones the server kept on the old account. */
   missed: string[];
+  /** A login taken from other agents: "Undo" gives it back to them once this one lets go of it. */
+  giveBack?: () => Promise<void>;
 }
 
 /** Opens an agent's AI. */
@@ -196,20 +201,32 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
         })
       : [];
   const hadNow = (): Had | null => (view ? { brain: view.brain, account: view.account, model: view.model } : null);
-  // Another account picked: switched at once, said under it with "Undo", never asked first. A login made for one
-  // agent thinks for one: picking another agent's takes it from that one, as the web does.
-  const choose = async (a: MachineAccount | null) => {
+  // Someone else's plan, a login another agent thinks with or one at its limit: it asks first, in a line under the
+  // list (as the web's Quem pensa).
+  const [asking, setAsking] = useState<MachineAccount | null>(null);
+  const lentTo = (a: MachineAccount) => !a.mine && a.ownerId !== agent?.ownerUserId;
+  // At its limit: the agent would wait there until the plan renews (the web's Quem pensa asks it too).
+  const full = (a: MachineAccount) => a.usage != null && planState(a.usage).state === "limited";
+  // Another account picked (or taken from the ask line): switched at once and said under it with "Undo", no toast.
+  // A login made for one agent thinks for one: picking another agent's takes it from that one, and "Undo" gives it
+  // back to them.
+  const choose = async (a: MachineAccount | null, asked = false) => {
     const before = hadNow();
-    if (!view || !before || (a?.id ?? null) === account) return;
+    if (!view || !before || (a?.id ?? null) === account) return setAsking(null);
+    const others = a ? takenFrom(a, name) : [];
+    if (a && !asked && (others.length > 0 || lentTo(a) || full(a))) return setAsking(a);
+    setAsking(null);
     const input = accountInput(view, a);
     const left = current;
-    const takes = a ? takenFrom(a, name).length > 0 : false;
-    const saved = await save(takes ? { ...input, moveAccount: true } : input, null);
+    const giveBack =
+      a && others.length > 0 ? await giveBackLogin(api.agents, orgId, loginHolders(a, agentId)) : undefined;
+    const saved = await save(others.length > 0 ? { ...input, moveAccount: true } : input, null);
     if (!saved) return;
     setSwitched({
       line: accountSaved(t, i18n.language, name, a, input, saved),
       said: a ? accountInLine(t, a) : "",
       before,
+      ...(giveBack ? { giveBack } : {}),
       team: teamOn(left, a),
       from: left ? accountInLine(t, left) : "",
       others: [],
@@ -248,11 +265,11 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
   const switchTeam = async () => {
     if (!switched || switched.team.length === 0 || !view) return;
     // Its row goes on the tap (nothing to press twice); the sentence says what came of it once the server answers.
-    const asked = switched;
-    setSwitched({ ...asked, team: [] });
-    const others = [...asked.others];
+    const shown = switched;
+    setSwitched({ ...shown, team: [] });
+    const others = [...shown.others];
     const missed: string[] = [];
-    for (const a of asked.team) {
+    for (const a of shown.team) {
       // What it had, read before anything changes ("Undo" puts it back); one the server refuses keeps its own.
       const was = await api.agents.brain(orgId, a.id).catch(() => null);
       const ok =
@@ -267,25 +284,28 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
     refreshAgents();
     const names = [name, ...others.map((o) => o.name)];
     setSwitched({
-      ...asked,
+      ...shown,
       others,
       missed,
       team: [],
       line:
-        names.length > 1 ? t("connectAi.doneAll", { names: namesText(t, names, 2), label: asked.said }) : asked.line,
+        names.length > 1 ? t("connectAi.doneAll", { names: namesText(t, names, 2), label: shown.said }) : shown.line,
     });
   };
-  /** "Undo": each agent the switch changed back to what it had. */
+  /** "Undo": each agent the switch changed back to what it had, and a login it took back to the agents it left. */
   const undo = async () => {
     if (!switched) return;
-    const { before, others } = switched;
-    // The card goes on the tap; the toast says it's back once the server has it.
+    const { before, others, giveBack } = switched;
+    // The card goes on the tap; the toast says it's back once the server has it (and the login is given back).
     setSwitched(null);
     await save(
       before.brain === "model"
         ? { brain: "model" }
         : { brain: before.brain, account: before.account, model: before.model },
       t("agentPage.work.brain.v2.undone"),
+      undefined,
+      undefined,
+      giveBack,
     );
     for (const o of others)
       await api.agents
@@ -293,6 +313,25 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
         .catch(() => undefined);
     if (others.length > 0) refreshAgents();
   };
+  const asked = asking ? takenFrom(asking, name) : [];
+  const askLine = asking ? (
+    <AskLine
+      icon={lentTo(asking) ? "mail" : full(asking) ? "clock" : "info"}
+      text={[
+        lentTo(asking) ? t("connectAi.chat.told", { name: asking.ownerName?.split(" ")[0] ?? "" }) : null,
+        asked[0] ? t("mobile.aiHub.choice.asksMove", { agent: asked[0] }) : null,
+        full(asking) ? t("agentPage.work.brain.v2.fullWait", g) : null,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...(full(asking)
+        ? { link: { label: t("agentPage.work.brain.v2.seeUsage"), onPress: () => router.push("/usage" as never) } }
+        : {})}
+      action={t("agentPage.work.brain.v2.switchTo", { label: accountInLine(t, asking) })}
+      disabled={pending.account !== undefined}
+      onPress={() => void choose(asking, true)}
+    />
+  ) : null;
 
   const usage = view && kind ? thinkingUsage(view, kind) : undefined;
   const limited = usage ? planState(usage).state === "limited" : false;
@@ -346,6 +385,9 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
           </Text>
         </View>
         {hold ? <PlanHoldNote org={org} inset /> : null}
+        {view?.computer?.machineId && view.brain !== "model" ? (
+          <CliFetchNote machineId={view.computer.machineId} cli={CLI_OF_BRAIN[view.brain]} />
+        ) : null}
         {!allowed ? (
           <Note icon="lock" inset>
             {t("agentPage.lock.admins")}
@@ -361,6 +403,7 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
             <AiChoiceFields
               target={{ kind: "agent", agentId }}
               disabled={pending.account !== undefined}
+              ask={askLine}
               onAccount={(r) => {
                 const id = r.account?.sameAs ?? r.account?.id;
                 const logins = view.accounts.filter((a) => (a.sameAs ?? a.id) === id);
@@ -502,7 +545,7 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                           : t("aiAccounts.usage.offer.use", { label: a.label, pct: used })
                       }
                       checked={a.id === account}
-                      onPress={() => choose(a)}
+                      onPress={() => void choose(a)}
                     />
                   ))}
                   {waits && view.canUsePlans && view.canManageAccounts ? (
@@ -654,6 +697,16 @@ function EffortDock({
         <EffortRamp
           value={effort.value}
           onChange={effort.change}
+          levels={
+            view
+              ? effortLevelsFor(
+                  view.brain,
+                  view.brain === "model" ? dir.agentById.get(agentId)?.model : view.effectiveModel,
+                  view.options,
+                )
+              : []
+          }
+          kind={view?.brain}
           color={agentLook(dir.agentById.get(agentId)).color}
           disabled={view?.canEdit !== true}
         />

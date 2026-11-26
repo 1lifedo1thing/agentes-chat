@@ -306,6 +306,7 @@ Adding, switching and signing in to an AI account again were three different pat
   it) ends with "Add account" and "Manage accounts" for whoever may use plans or add the workspace's keys, also when
   the agent's computer is someone else's (Connect then signs in elsewhere or takes a key); "Add account" is a pushed
   screen with the same lines (`AgentAddAccountScreen`), each opening that AI's sign-in in Connect for the agent.
-  Picking switches at once, never asked in an alert; what changed is said under the account in rows of their own, the
-  agents on top, the sentence, then the button: "Undo", and "Switch them too" for the owner's other agents on the
-  account it left (`AgentAiScreen`).
+  Picking switches at once, never asked in an alert (someone else's plan, another agent's login or one at its limit
+  ask first in the line under the list); what changed is said under the account in rows of their own, the agents on
+  top, the sentence, then the button: "Undo" (which also gives a taken login back), and "Switch them too" for the
+  owner's other agents on the account it left (`AgentAiScreen`).

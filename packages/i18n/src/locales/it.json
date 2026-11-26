@@ -641,7 +641,11 @@
       "wrongAddress": "Indirizzo sbagliato? Cambialo",
       "banner": "Conferma la tua email",
       "bannerSub": "Apri il link che abbiamo inviato a {{email}}.",
-      "change": "Cambia indirizzo"
+      "change": "Cambia indirizzo",
+      "undelivered": {
+        "suppressed": "L'email non è arrivata: il provider email ha bloccato {{email}} dopo un rimbalzo. Controlla che l'indirizzo sia giusto e chiedi un nuovo link.",
+        "rejected": "L'email non è arrivata: {{email}} è stato rifiutato. Controlla che l'indirizzo sia giusto, o cambialo."
+      }
     },
     "unconfirmed": "Questa email ha già un account con una password non ancora confermata. Accedi con la password, oppure creane una nuova via email.",
     "unconfirmedReset": "Crea una nuova password",
@@ -1504,6 +1508,9 @@
         "file_one": "{{who}} usa {{label}}.",
         "file_many": "{{who}} usano {{label}}.",
         "file_other": "{{who}} usano {{label}}.",
+        "path_one": "{{who}} cita {{label}} nelle istruzioni, ma non è arrivato con l'importazione, quindi l'agente non può aprirlo. Metti quei file nel Drive o togli quel percorso dalle istruzioni.",
+        "path_many": "{{who}} citano {{label}} nelle istruzioni, ma non è arrivato con l'importazione, quindi gli agenti non possono aprirlo. Metti quei file nel Drive o togli quel percorso dalle istruzioni.",
+        "path_other": "{{who}} citano {{label}} nelle istruzioni, ma non è arrivato con l'importazione, quindi gli agenti non possono aprirlo. Metti quei file nel Drive o togli quel percorso dalle istruzioni.",
         "webhook_one": "La routine {{label}}, di {{who}}, riceve qui un nuovo indirizzo: cambialo nel sito o nell'app che chiamava quello vecchio.",
         "webhook_many": "La routine {{label}}, di {{who}}, riceve qui un nuovo indirizzo: cambialo nel sito o nell'app che chiamava quello vecchio.",
         "webhook_other": "La routine {{label}}, di {{who}}, riceve qui un nuovo indirizzo: cambialo nel sito o nell'app che chiamava quello vecchio."
@@ -1621,6 +1628,7 @@
         "app": "Collega",
         "model": "Scegli un modello",
         "file": "Apri il Drive",
+        "path": "Apri il Drive",
         "webhook": "Apri le routine"
       },
       "linkSkipped_one": "{{count}} file oltre il limite del link",
@@ -2513,6 +2521,12 @@
     "phoneText": "Le notifiche in tasca, per rispondere da ovunque.",
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
+  },
+  "lodiCursor": {
+    "skip": "Salta",
+    "inMenu_one": "{{count}} nuovo nel menu",
+    "inMenu_many": "{{count}} nuovi nel menu",
+    "inMenu_other": "{{count}} nuovi nel menu"
   },
   "openOnPhone": {
     "qr": "Codice QR per accedere all'app agentes",
@@ -3662,10 +3676,22 @@
       "zen": "Collega OpenCode",
       "api_key": "Aggiungi una chiave API"
     },
+    "cliFetch": {
+      "preparing": "Preparazione di {{program}} su {{computer}}…",
+      "preparingPct": "Preparazione di {{program}} su {{computer}}… {{percent}}%",
+      "failed": {
+        "offline": "Impossibile preparare {{program}} su {{computer}}: il computer non riesce a scaricarlo.",
+        "hash_mismatch": "Impossibile preparare {{program}} su {{computer}}: il file scaricato non era quello originale, quindi non è stato usato.",
+        "no_build": "{{program}} non ha una versione per il sistema di {{computer}}.",
+        "disk_full": "Impossibile preparare {{program}} su {{computer}}: il disco è pieno.",
+        "failed": "Impossibile preparare {{program}} su {{computer}}: il download non è terminato."
+      }
+    },
     "cli": {
       "missing": "{{program}} non è ancora su {{computer}}.",
       "claudeApp": "L'app di Claude non basta: gli agenti usano Claude Code, che gira sul computer.",
       "install": "Installa {{program}} per me",
+      "update": "Aggiorna {{program}} per me",
       "check": "L'ho installato, controlla di nuovo",
       "checked": "Controllato ora: {{program}} non è ancora su {{computer}}.",
       "installing": "Installazione di {{program}} su {{computer}}. Ci vuole circa un minuto.",
@@ -3966,7 +3992,7 @@
     "nowEveryAgent": "Tutti gli agenti ora: {{level}}.",
     "undo": "Annulla",
     "everyAgent": "Per tutti gli agenti del workspace",
-    "follows": "Segue il workspace",
+    "follows": "{{level}} · del workspace",
     "edit": "Cambia",
     "workspaceLead": "Quando gli agenti chiedono a una persona prima di agire.",
     "workspaceHelp": "Ogni agente segue questa scelta finché qualcuno non cambia la sua nella pagina dell’agente.",
@@ -6124,6 +6150,7 @@
           "low": "Basso",
           "medium": "Medio",
           "high": "Alto",
+          "xhigh": "Molto alto",
           "max": "Massimo"
         },
         "effortsLower": {
@@ -6131,6 +6158,7 @@
           "low": "basso",
           "medium": "medio",
           "high": "alto",
+          "xhigh": "molto alto",
           "max": "massimo"
         },
         "effortText": {
@@ -6140,6 +6168,7 @@
           "mediumKey": "Ragiona abbastanza quasi sempre.",
           "none": "Il modello ragiona quanto fa di solito. Scegli un livello per fissare l'impegno.",
           "high": "Ragiona di più sulle attività difficili. Più lento e costa di più.",
+          "xhigh": "Ragiona più che con alto sui compiti più difficili. Ancora più lento e costoso.",
           "max": "Ragiona il più possibile. Molto più lento e più caro."
         },
         "speed": "Velocità",
@@ -6325,6 +6354,8 @@
           "limitSoon": "{{account}} torna quando il piano si rinnova",
           "limitHelp": "Nel frattempo {{name}} può pensare con un altro account già collegato.",
           "fullWait": "Con questo account {{name}} aspetta che il piano si rinnovi.",
+          "switchTo": "Passa a {{label}}",
+          "seeUsage": "Vedi utilizzo",
           "modelTitle": "Modello di {{name}}",
           "moreTitle": "Altre opzioni per {{name}}",
           "computer": "Computer",
@@ -6752,6 +6783,7 @@
         "cli_failed": "Il programma {{brain}} si è fermato con un errore: {{detail}}",
         "cli_stopped": "Il programma {{brain}} si è fermato con un errore.",
         "cli_closed": "Il programma {{brain}} si è chiuso all'improvviso.",
+        "cli_empty": "Il programma {{brain}} ha finito il suo turno senza rispondere. Chiedi di nuovo. Se continua, aggiorna {{brain}} sul computer o scegli un'altra IA nelle impostazioni dell'agente.",
         "cli_sandbox": "Il programma {{brain}} non riesce ad avviare la sua sandbox su questo computer. Scegli un'altra IA nelle impostazioni dell'agente.",
         "cli_system": "Il programma {{brain}} non funziona ancora sul sistema di questo computer. Scegli un'altra IA nelle impostazioni dell'agente.",
         "account_missing": "L'account scelto per questo agente non è più sul suo computer. Scegline un altro nelle impostazioni dell'agente o aggiungilo di nuovo.",
@@ -8000,6 +8032,10 @@
       "expires": "Scade tra {{left}}",
       "expired": "Scaduto {{when}}",
       "resentState": "Inviato di nuovo · valido fino al {{date}}",
+      "undelivered": {
+        "suppressed": "Non arrivato: il provider email ha bloccato questo indirizzo dopo un rimbalzo. Controlla che sia giusto e invia di nuovo, o copia il link.",
+        "rejected": "Non arrivato: l'indirizzo è stato rifiutato. Controlla che sia giusto, o copia il link e mandalo in un altro modo."
+      },
       "copied": "Link dell'invito di {{email}} copiato. È lo stesso dell'email.",
       "copiedNoEmail": "Link dell'invito di {{email}} copiato.",
       "resent": "Inviato di nuovo a {{email}}. Il link è lo stesso e vale fino al {{date}}.",
@@ -8986,6 +9022,13 @@
     "notFound": "Questa routine non esiste più o non hai accesso.",
     "copyWebhook": "Copia URL del webhook",
     "webhookCopied": "URL del webhook copiato.",
+    "runCalls": {
+      "show": "Chiamate ({{n}})",
+      "hide": "Nascondi chiamate",
+      "cut": "Accorciata",
+      "binary": "Non è testo, non conservata",
+      "copied": "Chiamata copiata."
+    },
     "webhook": {
       "when": "Quando viene chiamato il suo webhook",
       "waiting": "Aspetta la prossima chiamata",
@@ -9011,8 +9054,11 @@
       "signature": "Firma",
       "signedOff": "Disattivata: l'agente riceve qualsiasi chiamata all'indirizzo.",
       "signedOn": "Attivata: passano solo le chiamate firmate con il segreto.",
-      "signedHelp": "Invia l'HMAC-SHA256 del corpo (per una chiamata GET: della sua query string, senza il ?) in X-Agentes-Signature (sha256=…). Funziona anche X-Hub-Signature-256 di GitHub.",
+      "signedHelp": "Invia l'HMAC-SHA256 del corpo (per una chiamata GET: della sua query string, senza il ?) in X-Agentes-Signature (sha256=…). Funziona anche X-Hub-Signature-256 di GitHub. Per Linear, incolla il segreto di firma che mostra Linear: viene controllata la sua Linear-Signature e le chiamate di oltre un minuto prima sono rifiutate.",
       "addSecret": "Richiedi una firma",
+      "pasteSecret": "Usa il segreto del servizio",
+      "pasteLabel": "Segreto di firma del servizio",
+      "secretPasted": "Segreto salvato. Passano solo le chiamate firmate con esso.",
       "newSecret": "Nuovo segreto",
       "newSecretTitle": "Creare un nuovo segreto?",
       "newSecretBody": "Il segreto attuale smette subito di funzionare. Le chiamate firmate con quello vengono rifiutate finché non aggiorni i servizi che chiamano questa routine.",
@@ -9554,6 +9600,7 @@
     "busyAnyComputer_other": "Parte {{count}} volte al giorno sul computer, che deve restare acceso.",
     "outcome": {
       "queued": "In coda",
+      "queuedBehind": "In coda: aspetta che finisca la routine {{name}}",
       "running": "Al lavoro ora",
       "waiting": "In attesa che qualcuno risponda",
       "waitingApproval": "In attesa della tua approvazione",
@@ -12232,8 +12279,7 @@
     "ranSummary_one": "Eseguita {{count}} riga di {{language}} · output {{size}}",
     "ranSummary_many": "Eseguite {{count}} righe di {{language}} · output {{size}}",
     "ranSummary_other": "Eseguite {{count}} righe di {{language}} · output {{size}}",
-    "show": "Vedi il codice di {{name}}",
-    "show_female": "Vedi il codice di {{name}}",
+    "see": "Vedi codice",
     "hide": "Nascondi codice",
     "running": "{{name}} sta eseguendo",
     "source": "Codice ({{language}})",
@@ -13164,6 +13210,8 @@
       "tool_offOne": "{{program}} è disattivato su {{computer}}.",
       "not_installed": "{{program}} non è installato su {{computer}}.",
       "cant_start": "{{program}} è su {{computer}}, ma non si avvia.",
+      "cli_outdated": "{{program}} su {{computer}} va aggiornato prima che gli agenti possano usarlo.",
+      "cli_outdatedRun": "{{program}} su {{computer}} va aggiornato prima che gli agenti possano usarlo. Esegui {{command}} lì.",
       "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano.",
       "not_reported": "{{computer}} sta ancora controllando quali programmi ha. Questo cambia da solo quando ha finito.",
       "system": "{{program}} non funziona ancora sul sistema di {{computer}}.",
@@ -16594,6 +16642,7 @@
       "privateNetwork": "Questo indirizzo è su una rete privata. Usa un indirizzo pubblico oppure, su un server self-hosted, consentilo con `OUTBOUND_ALLOW_CIDRS`.",
       "tooLong": "È troppo lungo. Accorcialo e riprova.",
       "updateComputerApp": "L'app del computer è troppo vecchia per questo. Aggiornala e riprova.",
+      "cliNotFetched": "Questo computer non scarica quel programma da solo.",
       "computerUpdatesItself": "Il computer dello spazio di lavoro si aggiorna da solo per questo. Riprova tra poco.",
       "notInvited": "Non sei tra gli invitati a questo evento.",
       "offHere": "Questo è disattivato qui.",
@@ -19455,7 +19504,10 @@
       "noAnswer": "non ha risposto",
       "notFinished": "non ha finito",
       "someAnswered": "{{done}} su {{total}} hanno risposto",
-      "labelMany": "Conversazioni di {{from}} con {{to}}"
+      "labelMany": "Conversazioni di {{from}} con {{to}}",
+      "askedHere": "ha chiesto a",
+      "forYou": "per te",
+      "askedIn": "in {{channel}}"
     },
     "consultPanel": {
       "label": "Conversazione tra {{from}} e {{to}}",
@@ -19473,7 +19525,8 @@
       "missing": "Questa conversazione non c'è più.",
       "helping": "aiuta {{name}}",
       "helping_female": "aiuta {{name}}",
-      "see": "Vedi conversazione"
+      "see": "Vedi conversazione",
+      "relay": "Risposta di {{name}}: {{excerpt}}. Vedi la conversazione"
     },
     "unshown": "Questo messaggio non si può mostrare",
     "unshownPart": "Una parte di questo messaggio non si può mostrare",
@@ -19484,8 +19537,16 @@
       "consultReplyAnon": "Un altro agente ha risposto",
       "agentNote": "Nota di {{from}}",
       "agentNoteAnon": "Nota di un altro agente",
+      "handOff": "{{from}} ha fatto una richiesta a {{to}}",
       "waitResult": "È arrivato ciò che {{name}} aspettava",
       "other": "Avviso per {{name}}",
+      "joined_one": "{{who}} è entrato nel canale",
+      "joined_many": "{{who}} sono entrati nel canale",
+      "joined_other": "{{who}} sono entrati nel canale",
+      "joinedBy_one": "{{who}} è entrato nel canale · aggiunto da {{by}}",
+      "joinedBy_many": "{{who}} sono entrati nel canale · aggiunti da {{by}}",
+      "joinedBy_other": "{{who}} sono entrati nel canale · aggiunti da {{by}}",
+      "left": "{{who}} ha lasciato il canale",
       "wakeSkipped": "La menzione di {{name}} non ha raggiunto {{agents}}",
       "wakeSkippedAnon": "La menzione di {{name}} non ha raggiunto un altro agente",
       "wakeSkippedAudience": "Solo alcune persone possono chiamare {{agents}}, e questo lavoro di {{name}} non è partito da nessuna di loro. Qualcuno che può chiamare {{agents}} può passargli la richiesta.",
@@ -19642,6 +19703,7 @@
         "usingScreen": "Ha usato lo schermo",
         "cloningRepo": "Ha clonato un repository",
         "listingRepos": "Ha elencato i repository",
+        "preparingCli": "Ha preparato {{app}}",
         "openingPullRequest": "Ha aperto una pull request",
         "handingOff": "Ha consegnato un report",
         "recordingFindings": "Ha annotato i risultati",
@@ -19765,6 +19827,8 @@
       "usingScreen": "usando lo schermo",
       "cloningRepo": "clonando un repository",
       "listingRepos": "elenca i repository",
+      "preparingCli": "preparando {{app}} su {{computer}}",
+      "preparingCliPct": "preparando {{app}} su {{computer}} ({{percent}}%)",
       "openingPullRequest": "aprendo una pull request",
       "handingOff": "consegnando un report",
       "recordingFindings": "annotando i risultati",
@@ -20219,7 +20283,7 @@
     },
     "offer_connect_app": {
       "label": "Proponi di collegare un'app o un MCP",
-      "description": "Pubblica una scheda il cui pulsante apre la finestra per collegare un'app o un server MCP dal suo indirizzo."
+      "description": "Pubblica una scheda il cui pulsante apre la finestra per collegare un'app o un server MCP: quelli del catalogo dal nome, qualsiasi altro dal suo indirizzo."
     },
     "offer_invites": {
       "label": "Proponi di invitare persone",
@@ -20988,6 +21052,9 @@
     "failed": "Impossibile aprirlo ora. Riprova tra un attimo.",
     "adminsOnly": "Solo i proprietari e gli admin dello spazio di lavoro gestiscono il suo piano agentes.chat.",
     "seeOptions": "Vedi le opzioni",
+    "plan": "Piano",
+    "planMonth": "{{plan}}, mensile",
+    "planYear": "{{plan}}, annuale",
     "people": "Persone",
     "files": "File",
     "usedOf": "{{used}} su {{limit}}",
@@ -22637,6 +22704,36 @@
     },
     "approvals": "Ciò che va ai clienti aspetta la tua approvazione. Puoi lasciarlo andare più avanti, quando ti fiderai di loro.",
     "approvalsPersonal": "Tutto ciò che viene inviato, pagato o prenotato a tuo nome aspetta la tua approvazione. Puoi lasciarlo andare più avanti, quando ti fiderai di loro."
+  },
+  "paidMoment": {
+    "on": "Il tuo piano è attivo",
+    "onPlan": "Hai il piano {{plan}}",
+    "onMonth": "Hai il piano {{plan}}, mensile",
+    "onYear": "Hai il piano {{plan}}, annuale",
+    "room": {
+      "both_one": "Spazio per {{people}} persona e {{files}} di file.",
+      "both_other": "Spazio per {{people}} persone e {{files}} di file.",
+      "people_one": "Spazio per {{people}} persona, senza limiti per i file.",
+      "people_other": "Spazio per {{people}} persone, senza limiti per i file.",
+      "files": "Spazio per {{files}} di file, senza limiti per le persone.",
+      "none": "Nessun limite per persone o file."
+    },
+    "computer": {
+      "on": "Il tuo computer è acceso.",
+      "starting": "Il tuo computer è in preparazione.",
+      "startingTold": "Il tuo computer è in preparazione. Ti avvisiamo quando è acceso."
+    },
+    "hello": "Ciao, {{first}}",
+    "hi": "Ciao",
+    "say": "Ci siamo tutti. Al lavoro.",
+    "sayOn": "Ci siamo tutti e il computer è acceso. Al lavoro.",
+    "sayStarting": "Ci siamo tutti. Ti avvisiamo quando il computer è acceso.",
+    "next": {
+      "ai": "Collega un'IA",
+      "people": "Invita persone",
+      "open": "Entra nello spazio di lavoro",
+      "talk": "Parla con {{name}}"
+    }
   },
   "arrival": {
     "beta": {

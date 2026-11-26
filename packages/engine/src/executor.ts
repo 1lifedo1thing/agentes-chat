@@ -74,7 +74,7 @@ import type { BlockSpecReader } from "./block-state";
 import { ASK_CHOICES_TOOL, SHOW_BLOCK_TOOL, someoneAnswers } from "./blocks";
 import { brainOf } from "./brain-settings";
 import { brainSessionId, missingTurnFolder, recordPlanUsage } from "./brains/claude-code";
-import { codexModelRefused } from "./brains/codex";
+import { modelUnavailable } from "./brains/failure-causes";
 import { ModelBrain, turnEffort } from "./brains/model";
 import type { ComputerTurn } from "./brains/prompt";
 import {
@@ -392,6 +392,7 @@ import {
   isTerminal,
   keyRefused,
   NO_AI,
+  noAiDetail,
   OUR_ERROR,
   PERSON_LIMIT,
   personStopOf,
@@ -1611,6 +1612,8 @@ async function executeRunInner(
   let turnEnd: TurnEndDecision | null = null;
   /** A failure's own code when the run error's prefix is too broad (`brain_unavailable: …`), and the plan it names. */
   let failCause: { code?: string; plan?: string } | undefined;
+  /** With `no_ai`: why (`failNoAi`), for the receipt of the message it was for (`noAiDetail`). */
+  let noAiWhy: { errorCode: string; errorParams?: Record<string, string> } | undefined;
   /** The last turn's brain failure, for `run.finished` when the run fails after it. */
   let brainFailure: { code: string; cause: ProviderFailureCause | null } | undefined;
   /** Tells the channel the run stopped: idle, finished, and the receipt for the trigger message. */
@@ -1700,7 +1703,7 @@ async function executeRunInner(
       agentId: run.agentId,
       runId: run.id,
       status,
-      ...(error === NO_AI ? { reason: NO_AI } : {}),
+      ...(error === NO_AI ? { reason: NO_AI, ...noAiWhy } : {}),
       ...(status === "failed" && error !== NO_AI ? runErrorDetail(error) : {}),
       ...(outage ? { outage } : {}),
       ...(computer ? { computer } : {}),
@@ -1802,12 +1805,14 @@ async function executeRunInner(
   let learned: LearnSignal | undefined;
   /**
    * A turn ended done: its reused how-tos count, and learning is queued when the turn taught something (the judge's
-   * `learn` answer, or code signals with no judge). Never on a turn that wasn't judged done.
+   * `learn` answer, or code signals with no judge). Not on a turn that wasn't judged done, but for a person's
+   * correction ("don't… again"): a turn that ends asking them something, or waiting, still keeps it.
    */
   const learnLater = (d: TurnEndDecision) => {
     const context = deps.context;
-    if (!context || (d.verdict !== "done" && d.rule !== "no_judge")) return;
-    const judged = d.verdict === "done";
+    const correction = learned === "correction";
+    if (!context || (d.verdict !== "done" && d.rule !== "no_judge" && !correction)) return;
+    const judged = d.verdict === "done" || correction;
     const signal = learned;
     later(() => afterTurnDone(context, run, { judged, signal }));
   };
@@ -1838,7 +1843,7 @@ async function executeRunInner(
   /** Set once the run can post (`closeWith`): it ends the run on the reply it held back (`held`). */
   let endWithHeld: (() => Promise<void>) | null = null;
   /** `ledger`: the routine run's coded reason when the run error's own code isn't the right one. */
-  const fail = async (reason: string, ledger?: { code: string; detail?: string }) => {
+  const fail = async (reason: string, ledger?: { code: string; detail?: string }, model?: string) => {
     // The turn after a held reply failed (its provider, its plan): that reply is still the answer, and it goes out.
     if (
       endWithHeld &&
@@ -1853,7 +1858,7 @@ async function executeRunInner(
     // With `no_ai`, why (`failNoAi`): the run's own error says only that, and the card that says more may not be posted.
     await addRunStep(db, run, "error", {
       reason,
-      ...(reason === NO_AI && ledger?.detail ? { code: ledger.detail } : {}),
+      ...(reason === NO_AI && ledger?.detail ? { code: ledger.detail, ...(model ? { model } : {}) } : {}),
     });
     const failed = await transitionRun(db, run.id, "running", "failed", {
       error: reason,
@@ -1883,7 +1888,8 @@ async function executeRunInner(
         .catch((error) => addRunStep(db, run, "error", { reason: "no_ai_card", message: String(error) }))
         .catch(() => {});
     }
-    await fail(NO_AI, { code: NO_AI, detail: why });
+    noAiWhy = noAiDetail(why, model);
+    await fail(NO_AI, { code: NO_AI, detail: why }, model);
   };
 
   /**
@@ -2065,9 +2071,14 @@ async function executeRunInner(
     if (!listsEveryTool(ctx)) return;
     ctx.loadedGroups = [];
     t.toolGroups = [];
-    tools = presentTools(granted, isSensitive, ctx.loadedGroups);
+    tools = welcomeOnly(presentTools(granted, isSensitive, ctx.loadedGroups));
   };
   const trigger = triggerRows[0];
+  // A welcome to a newcomer (`member_joined`): a light turn, words or a pass, no tools.
+  const welcoming =
+    (trigger?.meta as { notice?: { kind?: unknown } } | null | undefined)?.notice?.kind === "member_joined";
+  const welcomeOnly = (list: typeof tools) => (welcoming ? list.filter((t) => t.name === PASS_TOOL) : list);
+  tools = welcomeOnly(tools);
   if (fresh && trigger)
     deps.onTiming?.("trigger_to_claim_ms", claimedAt - trigger.createdAt.getTime(), { runId: run.id });
   if (!agent || agent.archivedAt) return fail("agent_archived");
@@ -2201,7 +2212,7 @@ async function executeRunInner(
           });
           toolChoice = choice;
           ctx.loadedGroups = choice.groups;
-          tools = presentTools(granted, isSensitive, ctx.loadedGroups);
+          tools = welcomeOnly(presentTools(granted, isSensitive, ctx.loadedGroups));
           // Listed only to keep the prompt cache: nothing says this message needs the browser.
           const browser = toolGroupKey({ scope: BROWSER_SCOPE });
           if (choice.groups.includes(browser) && !kept.listed.includes(browser)) {
@@ -3690,6 +3701,7 @@ async function executeRunInner(
         resultNotice: wokenByResult,
         personal: await isPersonalWorkspace(db, run.orgId),
         backgroundWork: await backgroundWorkHere(),
+        recent: await recentMessages(),
       }).catch(() => null);
       if (verdict === "secret" || verdict === "unbacked" || verdict === "untried") return false;
     }
@@ -4433,7 +4445,7 @@ async function executeRunInner(
     ctx.loadedGroups = standIn.loadedGroups;
     if (standIn.toolGroups) t.toolGroups = standIn.toolGroups;
     else delete t.toolGroups;
-    tools = presentTools(granted, isSensitive, ctx.loadedGroups);
+    tools = welcomeOnly(presentTools(granted, isSensitive, ctx.loadedGroups));
     standIn = null;
     delete t.fallback;
     t.standInRefused = true;
@@ -5889,11 +5901,12 @@ async function executeRunInner(
               return waitForDroppedComputer(turnPlan.kind, machineId, prompt, labels, error.serverStop, early);
             }
           }
-          // Codex's sign-in refused the agent's model before anything ran: the rest of the run goes on the sign-in's
-          // default, in a fresh session, the conversation so far in its first prompt (`codexModelRefused`).
+          // The sign-in or its endpoint refused the agent's model before anything ran (Codex's ChatGPT list, a model
+          // the account can't use, one that doesn't exist there): the rest of the run goes on the CLI's default, once,
+          // in a fresh session, the conversation so far in its first prompt (`modelUnavailable`).
           if (
             error instanceof BrainFailure &&
-            codexModelRefused(error.message) &&
+            modelUnavailable({ message: error.message, cause: error.provider.cause }) &&
             executed.length === 0 &&
             plan.model &&
             plan.session &&
@@ -6053,8 +6066,11 @@ async function executeRunInner(
           };
           later(() => noteAccountFailure(db, failure));
         }
+        // A model refused even on the CLI's default (or a mission's, which keeps its model) is refused again on any retry.
+        const modelRefused =
+          error instanceof BrainFailure && modelUnavailable({ message: error.message, cause: error.provider.cause });
         const cli =
-          error instanceof BrainFailure && (!error.retryable || cliRefusedStart(error) || neverWorked)
+          error instanceof BrainFailure && (!error.retryable || cliRefusedStart(error) || neverWorked || modelRefused)
             ? (cliFailureText(error, turnPlan.account) ??
               (!error.retryable && isComputerBrain(turnPlan.kind) ? brainFailureText(error, turnPlan.kind) : null))
             : null;
@@ -6685,10 +6701,11 @@ async function executeRunInner(
         prepare: () => void judging.gather().catch(() => {}),
         verdict: checker
           ? async () => {
-              const [gathered, personal, backgroundWork] = await Promise.all([
+              const [gathered, personal, backgroundWork, recent] = await Promise.all([
                 judging.gather(),
                 isPersonalWorkspace(db, run.orgId),
                 backgroundWorkHere(),
+                recentMessages(),
               ]);
               return continuationVerdict(checker, {
                 orgId: run.orgId,
@@ -6702,6 +6719,7 @@ async function executeRunInner(
                 unreached,
                 personal,
                 backgroundWork,
+                recent,
                 onLearn: (signal) => {
                   learned = signal;
                 },
@@ -6765,7 +6783,7 @@ async function executeRunInner(
             : {}),
         }),
       );
-      if (decision.outcome === "done") learnLater(decision);
+      if (decision.outcome !== "continue") learnLater(decision);
       if (decision.outcome === "ask_card") return askWithCard(text || judged);
       let keep: string | null = null;
       let addsTo = false;
@@ -6817,9 +6835,16 @@ async function executeRunInner(
         keep = decision.nudge;
         if (shown) addsTo = true;
       }
-      // No words after being asked for them: the run fails saying how the model's last call ended.
+      // No words after being asked for them: a computer brain's CLI answered nothing (`cli_empty`, whose line says to
+      // ask again and check that program there); the API's model fails saying how its last call ended.
       if (!text && !anythingPosted && !silent)
-        return fail(result.stopReason === "max_tokens" ? "empty_reply_limit" : "empty_reply");
+        return fail(
+          isComputerBrain(plan.kind)
+            ? `cli_empty: ${BRAIN_NAMES[plan.kind]}`
+            : result.stopReason === "max_tokens"
+              ? "empty_reply_limit"
+              : "empty_reply",
+        );
       // Its first short reply, and the person is typing the rest of what they want: it waits for that, so the reply is
       // rewritten with it (overtaken, below) rather than greeting a conversation that has moved on.
       if (deps.quietMs && text && !anythingPosted && text.length <= OVERTAKEN_MAX_CHARS && !run.background)

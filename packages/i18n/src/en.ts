@@ -656,6 +656,12 @@ export const en = {
       banner: "Confirm your email",
       bannerSub: "Open the link we sent to {{email}}.",
       change: "Change address",
+      // The last link to the address could never be delivered: why, said where the person waits for it.
+      undelivered: {
+        suppressed:
+          "The email wasn't delivered: the mail provider blocked {{email}} after an earlier bounce. Check the address is right and ask for a new link.",
+        rejected: "The email wasn't delivered: {{email}} was refused. Check the address is right, or change it.",
+      },
     },
     unconfirmed:
       "This email already has an account with a password that isn't confirmed yet. Sign in with the password, or create a new one by email.",
@@ -1593,6 +1599,11 @@ export const en = {
         model_other: "{{who}} use {{label}}, which isn't available here.",
         file_one: "{{who}} uses {{label}}.",
         file_other: "{{who}} use {{label}}.",
+        /** A file or folder (`label`, a path on the old computer) an agent's instructions name that the import didn't bring. */
+        path_one:
+          "{{who}} points to {{label}} in its instructions, but it didn't come in the import, so the agent can't open it. Add those files to the Drive, or take that path out of the instructions.",
+        path_other:
+          "{{who}} point to {{label}} in their instructions, but it didn't come in the import, so the agents can't open it. Add those files to the Drive, or take that path out of the instructions.",
         webhook_one:
           "The routine {{label}}, of {{who}}, gets a new address here: change it in the site or app that called the old one.",
         webhook_other:
@@ -1702,6 +1713,7 @@ export const en = {
         app: "Connect",
         model: "Pick a model",
         file: "Open the Drive",
+        path: "Open the Drive",
         webhook: "Open routines",
       },
       linkSkipped_one: "{{count}} file past the link's limit",
@@ -2589,6 +2601,12 @@ export const en = {
     /** The iPhone app's public beta, only on agentes.chat's own servers. */
     testFlight: "TestFlight",
     googlePlay: "Google Play",
+  },
+  /** Lodi's cursor building the sidebar after a team is made: Skip on the receipt and the count on the closed menu. */
+  lodiCursor: {
+    skip: "Skip",
+    inMenu_one: "{{count}} new in the menu",
+    inMenu_other: "{{count}} new in the menu",
   },
   openOnPhone: {
     qr: "QR code to sign in to the agentes app",
@@ -3836,10 +3854,25 @@ export const en = {
      * A coding CLI that isn't on a computer someone connected (`program`: "Claude Code" or "Codex"), and installing it
      * from here. `claudeApp` sits behind an ⓘ on Windows and macOS, where a Claude chat app is likely.
      */
+    /** A coding CLI its computer fetches by itself (ADR 0228 §6): while it comes, and why it failed. */
+    cliFetch: {
+      preparing: "Preparing {{program}} on {{computer}}…",
+      preparingPct: "Preparing {{program}} on {{computer}}… {{percent}}%",
+      failed: {
+        offline: "Couldn't prepare {{program}} on {{computer}}: the computer can't reach the download.",
+        hash_mismatch:
+          "Couldn't prepare {{program}} on {{computer}}: the download wasn't the original file, so it wasn't used.",
+        no_build: "{{program}} has no version for {{computer}}'s system.",
+        disk_full: "Couldn't prepare {{program}} on {{computer}}: its disk is full.",
+        failed: "Couldn't prepare {{program}} on {{computer}}: the download didn't finish.",
+      },
+    },
     cli: {
       missing: "{{program}} isn't on {{computer}} yet.",
       claudeApp: "The Claude app isn't enough: agents use Claude Code, which runs on the computer.",
       install: "Install {{program}} for me",
+      /** Too old for agentes.chat: the same installer brings the newest. */
+      update: "Update {{program}} for me",
       check: "I installed it, check again",
       checked: "Checked just now: {{program}} still isn't on {{computer}}.",
       installing: "Installing {{program}} on {{computer}}. It takes about a minute.",
@@ -4171,8 +4204,8 @@ export const en = {
     undo: "Undo",
     /** In that dialog, for who may set the workspace's level: it also clears each agent's own choice. */
     everyAgent: "For every agent in the workspace",
-    /** An agent's row value while it has no choice of its own. */
-    follows: "Follows the workspace",
+    /** An agent's row value while it has no choice of its own. {{level}}: the workspace's level, as its title. */
+    follows: "{{level}} · from the workspace",
     /** Settings → Approvals: the button that opens the three choices. */
     edit: "Change",
     /** Settings → Approvals: the workspace's level. */
@@ -6395,9 +6428,17 @@ export const en = {
           low: "Low",
           medium: "Medium",
           high: "High",
+          xhigh: "Extra high",
           max: "Maximum",
         },
-        effortsLower: { auto: "automatic", low: "low", medium: "medium", high: "high", max: "maximum" },
+        effortsLower: {
+          auto: "automatic",
+          low: "low",
+          medium: "medium",
+          high: "high",
+          xhigh: "extra high",
+          max: "maximum",
+        },
         effortText: {
           auto: "The Automatic model picks each task's effort. Pick a model to set the effort yourself.",
           low: "Answers fast. Good for simple questions.",
@@ -6406,6 +6447,7 @@ export const en = {
           mediumKey: "Thinks enough most of the time.",
           none: "The model thinks as much as it usually does. Pick a level to set the effort.",
           high: "Thinks more on hard tasks. Slower and costs more.",
+          xhigh: "Thinks longer than high on the hardest tasks. Slower and costs more again.",
           max: "Thinks as much as possible. Much slower and pricier.",
         },
         speed: "Speed",
@@ -6613,6 +6655,8 @@ export const en = {
           limitHelp: "Meanwhile {{name}} can think with another account that's already connected.",
           /** Under the list, with an account at its limit picked: the row above says until when. */
           fullWait: "On this account {{name}} waits until the plan renews.",
+          switchTo: "Switch to {{label}}",
+          seeUsage: "See usage",
           modelTitle: "{{name}}'s model",
           moreTitle: "More options for {{name}}",
           /** A line under More options where several computers can run it. */
@@ -7050,13 +7094,16 @@ export const en = {
         cli_stopped: "The {{brain}} program stopped with an error.",
         /** The agent's CLI ended without its answer and without a word (it crashed or was killed). */
         cli_closed: "The {{brain}} program closed unexpectedly.",
+        /** The agent's CLI ended its turn with nothing in it (no answer, no step), even after being asked again. */
+        cli_empty:
+          "The {{brain}} program ended its turn without an answer. Ask again. If it keeps happening, update {{brain}} on the computer or choose another AI in the agent's settings.",
         /**
          * The agent's CLI couldn't start its sandbox on its computer (bubblewrap refused), before the model was asked.
          * No "update the computer": on Cloud nobody in the workspace can.
          */
         cli_sandbox:
           "The {{brain}} program can't start its sandbox on this computer. Choose another AI in the agent's settings.",
-        /** The agent's CLI doesn't run on its computer's system (Grok Build on Windows), so no turn was sent there. */
+        /** Its vendor makes no build of the agent's CLI for its computer's system, so no turn was sent there. */
         cli_system:
           "The {{brain}} program doesn't run on this computer's system yet. Choose another AI in the agent's settings.",
         account_missing:
@@ -8279,6 +8326,12 @@ export const en = {
       expires: "Expires in {{left}}",
       expired: "Expired {{when}}",
       resentState: "Sent again · works until {{date}}",
+      // Its last email could never be delivered: why, on its row, beside Copy link and Resend.
+      undelivered: {
+        suppressed:
+          "Not delivered: the mail provider blocked this address after an earlier bounce. Check it's right and resend, or copy the link.",
+        rejected: "Not delivered: the address was refused. Check it's right, or copy the link and send it another way.",
+      },
       copied: "Link to {{email}}'s invitation copied. It's the same as in the email.",
       copiedNoEmail: "Link to {{email}}'s invitation copied.",
       resent: "Sent to {{email}} again. The link is the same and works until {{date}}.",
@@ -9209,6 +9262,15 @@ export const en = {
     notFound: "This routine no longer exists or you don't have access.",
     copyWebhook: "Copy webhook URL",
     webhookCopied: "Webhook URL copied.",
+    /** On a webhook routine's run in Runs, for who manages it: what each call sent, as kept. */
+    runCalls: {
+      /** `n`: how many calls the run carried. */
+      show: "Calls ({{n}})",
+      hide: "Hide calls",
+      cut: "Shortened",
+      binary: "Not text, not kept",
+      copied: "Call copied.",
+    },
     webhook: {
       when: "When its webhook is called",
       waiting: "Waits for the next call",
@@ -9243,8 +9305,12 @@ export const en = {
       signedOff: "Off: the agent gets any call to the address.",
       signedOn: "On: only calls signed with the secret get through.",
       signedHelp:
-        "Send the HMAC-SHA256 of the body (of a GET call: its query string, without the ?) in X-Agentes-Signature (sha256=…). GitHub's X-Hub-Signature-256 works too.",
+        "Send the HMAC-SHA256 of the body (of a GET call: its query string, without the ?) in X-Agentes-Signature (sha256=…). GitHub's X-Hub-Signature-256 works too. For Linear, paste the signing secret Linear shows: its Linear-Signature is checked, and calls over a minute old are refused.",
       addSecret: "Require a signature",
+      /** For a service that makes its own signing secret (Linear): the person pastes it in place of ours. */
+      pasteSecret: "Use the service's secret",
+      pasteLabel: "The service's signing secret",
+      secretPasted: "Secret saved. Only calls signed with it get through.",
       newSecret: "New secret",
       newSecretTitle: "Make a new secret?",
       newSecretBody:
@@ -9770,6 +9836,8 @@ export const en = {
     busyAnyComputer_other: "Runs {{count}} times a day on the computer, which has to stay on.",
     outcome: {
       queued: "Queued",
+      /** A scheduled run waiting for another routine of the same agent to finish. {{name}}: that routine's name. */
+      queuedBehind: "Queued: waits for the {{name}} routine to finish",
       running: "Working now",
       waiting: "Waiting for someone to answer",
       waitingApproval: "Waiting for your approval",
@@ -12284,7 +12352,7 @@ export const en = {
   code: {
     ranSummary_one: "Ran {{count}} line of {{language}} · output {{size}}",
     ranSummary_other: "Ran {{count}} lines of {{language}} · output {{size}}",
-    show: "See {{name}}'s code",
+    see: "See code",
     hide: "Hide code",
     running: "{{name}} is running",
     source: "Code ({{language}})",
@@ -13161,11 +13229,15 @@ export const en = {
       tool_offOne: "{{program}} is turned off on {{computer}}.",
       not_installed: "{{program}} isn't installed on {{computer}}.",
       cant_start: "{{program}} is on {{computer}}, but it won't start.",
+      /** Its version is too old for agentes.chat, or one with a known problem: updating it there is the way out. */
+      cli_outdated: "{{program}} on {{computer}} needs an update before agents can use it.",
+      /** The same, with the command that updates it (`claude update`, `opencode upgrade`). */
+      cli_outdatedRun: "{{program}} on {{computer}} needs an update before agents can use it. Run {{command}} there.",
       /** System mode: the CLI is only in root's `~/.local/bin`. */
       home_only: "{{program}} is installed only for root on {{computer}}, where the agents can't reach it.",
       /** Its runner hasn't said which CLIs it has yet: nobody knows whether this one is there. */
       not_reported: "{{computer}} is still checking which programs it has. This changes by itself when it's done.",
-      /** The runner doesn't run this program on that computer's system (Cursor on Windows, for one). */
+      /** Its vendor makes no build of this program for that computer's system. */
       system: "{{program}} doesn't run on {{computer}}'s system yet.",
       /** Codex on a Windows computer where neither MXC nor Codex's own sandbox could start. */
       windows_sandbox:
@@ -16424,6 +16496,7 @@ export const en = {
         "This address is on a private network. Use a public address, or on a self-hosted server allow it with `OUTBOUND_ALLOW_CIDRS`.",
       tooLong: "That's too long. Shorten it and try again.",
       updateComputerApp: "The computer's app is too old for this. Update it and try again.",
+      cliNotFetched: "This computer doesn't get that program by itself.",
       computerUpdatesItself: "The workspace's computer updates itself for this. Try again in a little while.",
       notInvited: "You're not invited to this event.",
       offHere: "This is turned off here.",
@@ -19507,6 +19580,12 @@ export const en = {
       someAnswered: "{{done}} of {{total}} answered",
       /** Its tip when several were asked: "Theo's talks with Atlas, Rio and Iris". */
       labelMany: "{{from}}'s talks with {{to}}",
+      /** Between the two names on another agent's request in this agent's DM: "Atlas asked Ada · subject". */
+      askedHere: "asked",
+      /** After the second name on that row: the person it was for ("Atlas asked Ada for you"). */
+      forYou: "for you",
+      /** That row's place: where the person asked ("in #eng"). */
+      askedIn: "in {{channel}}",
     },
     /** A question opened in the panel over the conversation ("Theo ⇄ Iris"): what the two agents said, read only. */
     consultPanel: {
@@ -19524,6 +19603,8 @@ export const en = {
       /** On a card the consulted agent posted where the person asked. */
       helping: "helping {{name}}",
       see: "See conversation",
+      /** The quote of another agent's answer at the top of the message that passes it on; opens the conversation. */
+      relay: "{{name}}'s answer: {{excerpt}}. See the conversation",
     },
     unshown: "This message couldn't be shown",
     unshownPart: "Part of this message couldn't be shown",
@@ -19535,8 +19616,17 @@ export const en = {
       consultReplyAnon: "Another agent answered",
       agentNote: "Note from {{from}}",
       agentNoteAnon: "Note from another agent",
+      /** Another agent asked this agent something for you, in its private conversation with it. */
+      handOff: "{{from}} asked {{to}}",
       waitResult: "What {{name}} was waiting for came in",
       other: "Notice for {{name}}",
+      /** Who joined the channel (`who`: their names as one list), and who added them. */
+      joined_one: "{{who}} joined the channel",
+      joined_other: "{{who}} joined the channel",
+      joinedBy_one: "{{who}} joined the channel · added by {{by}}",
+      joinedBy_other: "{{who}} joined the channel · added by {{by}}",
+      /** Who left the channel, or was taken out of it. */
+      left: "{{who}} left the channel",
       wakeSkipped: "{{name}}'s mention didn't reach {{agents}}",
       /** The same, on an older line that didn't keep whom. */
       wakeSkippedAnon: "{{name}}'s mention didn't reach another agent",
@@ -19715,6 +19805,7 @@ export const en = {
         usingScreen: "Used the screen",
         cloningRepo: "Cloned a repository",
         listingRepos: "Listed the repositories",
+        preparingCli: "Prepared {{app}}",
         openingPullRequest: "Opened a pull request",
         handingOff: "Delivered a report",
         recordingFindings: "Noted the findings",
@@ -19839,6 +19930,8 @@ export const en = {
       usingScreen: "using the screen",
       cloningRepo: "cloning a repository",
       listingRepos: "listing the repositories",
+      preparingCli: "preparing {{app}} on {{computer}}",
+      preparingCliPct: "preparing {{app}} on {{computer}} ({{percent}}%)",
       openingPullRequest: "opening a pull request",
       handingOff: "delivering a report",
       recordingFindings: "noting the findings",
@@ -20348,7 +20441,8 @@ export const en = {
     },
     offer_connect_app: {
       label: "Offer to connect an app or MCP",
-      description: "Posts a card whose button opens the dialog to connect an app or an MCP server by its address.",
+      description:
+        "Posts a card whose button opens the dialog to connect an app or an MCP server: from the catalog by name, any other by its address.",
     },
     offer_invites: {
       label: "Offer to invite people",
@@ -21133,6 +21227,13 @@ export const en = {
     failed: "Couldn't open it now. Try again in a moment.",
     adminsOnly: "Only the workspace's owners and admins manage its agentes.chat plan.",
     seeOptions: "See options",
+    /**
+     * The plan card's first row, once this tab came back from buying it: `plan` its label, the others its value.
+     * `{{plan}}`: the plan's name, as the billing service's plan list writes it ("Team").
+     */
+    plan: "Plan",
+    planMonth: "{{plan}}, monthly",
+    planYear: "{{plan}}, yearly",
     people: "People",
     files: "Files",
     usedOf: "{{used}} of {{limit}}",
@@ -22791,6 +22892,55 @@ export const en = {
     approvals: "What goes out to customers waits for your approval. You can let it go later, once you trust them.",
     approvalsPersonal:
       "Anything sent, paid or booked in your name waits for your approval. You can let it go later, once you trust them.",
+  },
+  /**
+   * Right after a paid Checkout (ADR 0079): the plan on, the team awake on its sky, and one way on. Only what is true
+   * now: never "up and running" while the computer still gets ready.
+   */
+  paidMoment: {
+    /**
+     * The plan in force, as the moment's title. `on`: its name isn't known. `{{plan}}`: the plan's name, as the
+     * billing service writes it ("Team"); `onMonth` and `onYear` say how it is paid.
+     */
+    on: "Your plan is on",
+    onPlan: "You're on {{plan}}",
+    onMonth: "You're on {{plan}}, monthly",
+    onYear: "You're on {{plan}}, yearly",
+    /**
+     * What the plan gives, from its limits: the people it has seats for (`{{people}}`, a number written as the
+     * language writes it; `count` picks the form) and its room for files (`{{files}}`: a size, "50 GB").
+     */
+    room: {
+      both_one: "Room for {{people}} person and {{files}} of files.",
+      both_other: "Room for {{people}} people and {{files}} of files.",
+      people_one: "Room for {{people}} person, with no limit on files.",
+      people_other: "Room for {{people}} people, with no limit on files.",
+      files: "Room for {{files}} of files, with no limit on people.",
+      none: "No limit on people or files.",
+    },
+    /** The workspace's own computer as it is now. `startingTold`: to its owners, who are told when it is on. */
+    computer: {
+      on: "Your computer is on.",
+      starting: "Your computer is getting ready.",
+      startingTold: "Your computer is getting ready. We'll tell you when it's on.",
+    },
+    /** Said by the agents on the sky to the person who paid, by their first name. `hi`: their name isn't known. */
+    hello: "Hi, {{first}}",
+    hi: "Hi there",
+    /**
+     * The right hand's line beside the onboarding, once the plan is on: `sayOn` with the computer on, `sayStarting`
+     * while it gets ready, `say` where the workspace has no computer of its own.
+     */
+    say: "We're all here. Let's get to work.",
+    sayOn: "We're all here, and the computer is on. Let's get to work.",
+    sayStarting: "We're all here. We'll tell you when the computer is on.",
+    /** The one way on: the step that comes next, or the first conversation. */
+    next: {
+      ai: "Connect an AI",
+      people: "Invite people",
+      open: "Go to the workspace",
+      talk: "Talk to {{name}}",
+    },
   },
   /** Right after the onboarding (ADR 0160): the beta notice, then Connect an AI with the team beside it. */
   arrival: {

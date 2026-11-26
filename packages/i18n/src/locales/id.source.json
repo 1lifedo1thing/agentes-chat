@@ -1493,6 +1493,12 @@
   "auth.confirm.change": {
     "value": "Change address"
   },
+  "auth.confirm.undelivered.suppressed": {
+    "value": "The email wasn't delivered: the mail provider blocked {{email}} after an earlier bounce. Check the address is right and ask for a new link."
+  },
+  "auth.confirm.undelivered.rejected": {
+    "value": "The email wasn't delivered: {{email}} was refused. Check the address is right, or change it."
+  },
   "auth.unconfirmed": {
     "value": "This email already has an account with a password that isn't confirmed yet. Sign in with the password, or create a new one by email."
   },
@@ -3581,6 +3587,12 @@
       "other": "{{who}} use {{label}}."
     }
   },
+  "onboarding.import.need.path": {
+    "value": {
+      "one": "{{who}} points to {{label}} in its instructions, but it didn't come in the import, so the agent can't open it. Add those files to the Drive, or take that path out of the instructions.",
+      "other": "{{who}} point to {{label}} in their instructions, but it didn't come in the import, so the agents can't open it. Add those files to the Drive, or take that path out of the instructions."
+    }
+  },
   "onboarding.import.need.webhook": {
     "value": {
       "one": "The routine {{label}}, of {{who}}, gets a new address here: change it in the site or app that called the old one.",
@@ -3858,6 +3870,9 @@
     "value": "Pick a model"
   },
   "onboarding.import.needDo.file": {
+    "value": "Open the Drive"
+  },
+  "onboarding.import.needDo.path": {
     "value": "Open the Drive"
   },
   "onboarding.import.needDo.webhook": {
@@ -6040,6 +6055,15 @@
   },
   "appsDownload.googlePlay": {
     "value": "Google Play"
+  },
+  "lodiCursor.skip": {
+    "value": "Skip"
+  },
+  "lodiCursor.inMenu": {
+    "value": {
+      "one": "{{count}} new in the menu",
+      "other": "{{count}} new in the menu"
+    }
   },
   "openOnPhone.qr": {
     "value": "QR code to sign in to the agentes app"
@@ -8704,6 +8728,27 @@
   "connectAi.title.api_key": {
     "value": "Add an API key"
   },
+  "connectAi.cliFetch.preparing": {
+    "value": "Preparing {{program}} on {{computer}}…"
+  },
+  "connectAi.cliFetch.preparingPct": {
+    "value": "Preparing {{program}} on {{computer}}… {{percent}}%"
+  },
+  "connectAi.cliFetch.failed.offline": {
+    "value": "Couldn't prepare {{program}} on {{computer}}: the computer can't reach the download."
+  },
+  "connectAi.cliFetch.failed.hash_mismatch": {
+    "value": "Couldn't prepare {{program}} on {{computer}}: the download wasn't the original file, so it wasn't used."
+  },
+  "connectAi.cliFetch.failed.no_build": {
+    "value": "{{program}} has no version for {{computer}}'s system."
+  },
+  "connectAi.cliFetch.failed.disk_full": {
+    "value": "Couldn't prepare {{program}} on {{computer}}: its disk is full."
+  },
+  "connectAi.cliFetch.failed.failed": {
+    "value": "Couldn't prepare {{program}} on {{computer}}: the download didn't finish."
+  },
   "connectAi.cli.missing": {
     "value": "{{program}} isn't on {{computer}} yet."
   },
@@ -8712,6 +8757,9 @@
   },
   "connectAi.cli.install": {
     "value": "Install {{program}} for me"
+  },
+  "connectAi.cli.update": {
+    "value": "Update {{program}} for me"
   },
   "connectAi.cli.check": {
     "value": "I installed it, check again"
@@ -9369,7 +9417,7 @@
     "value": "For every agent in the workspace"
   },
   "approvalsLevel.follows": {
-    "value": "Follows the workspace"
+    "value": "{{level}} · from the workspace"
   },
   "approvalsLevel.edit": {
     "value": "Change"
@@ -14512,6 +14560,9 @@
   "agentPage.work.brain.efforts.high": {
     "value": "High"
   },
+  "agentPage.work.brain.efforts.xhigh": {
+    "value": "Extra high"
+  },
   "agentPage.work.brain.efforts.max": {
     "value": "Maximum"
   },
@@ -14526,6 +14577,9 @@
   },
   "agentPage.work.brain.effortsLower.high": {
     "value": "high"
+  },
+  "agentPage.work.brain.effortsLower.xhigh": {
+    "value": "extra high"
   },
   "agentPage.work.brain.effortsLower.max": {
     "value": "maximum"
@@ -14547,6 +14601,9 @@
   },
   "agentPage.work.brain.effortText.high": {
     "value": "Thinks more on hard tasks. Slower and costs more."
+  },
+  "agentPage.work.brain.effortText.xhigh": {
+    "value": "Thinks longer than high on the hardest tasks. Slower and costs more again."
   },
   "agentPage.work.brain.effortText.max": {
     "value": "Thinks as much as possible. Much slower and pricier."
@@ -15000,6 +15057,12 @@
   },
   "agentPage.work.brain.v2.fullWait": {
     "value": "On this account {{name}} waits until the plan renews."
+  },
+  "agentPage.work.brain.v2.switchTo": {
+    "value": "Switch to {{label}}"
+  },
+  "agentPage.work.brain.v2.seeUsage": {
+    "value": "See usage"
   },
   "agentPage.work.brain.v2.modelTitle": {
     "value": "{{name}}'s model"
@@ -16034,6 +16097,9 @@
   },
   "agentPage.activity.errors.cli_closed": {
     "value": "The {{brain}} program closed unexpectedly."
+  },
+  "agentPage.activity.errors.cli_empty": {
+    "value": "The {{brain}} program ended its turn without an answer. Ask again. If it keeps happening, update {{brain}} on the computer or choose another AI in the agent's settings."
   },
   "agentPage.activity.errors.cli_sandbox": {
     "value": "The {{brain}} program can't start its sandbox on this computer. Choose another AI in the agent's settings."
@@ -18814,6 +18880,12 @@
   "members.invitations.resentState": {
     "value": "Sent again · works until {{date}}"
   },
+  "members.invitations.undelivered.suppressed": {
+    "value": "Not delivered: the mail provider blocked this address after an earlier bounce. Check it's right and resend, or copy the link."
+  },
+  "members.invitations.undelivered.rejected": {
+    "value": "Not delivered: the address was refused. Check it's right, or copy the link and send it another way."
+  },
   "members.invitations.copied": {
     "value": "Link to {{email}}'s invitation copied. It's the same as in the email."
   },
@@ -21002,6 +21074,21 @@
   "routines.webhookCopied": {
     "value": "Webhook URL copied."
   },
+  "routines.runCalls.show": {
+    "value": "Calls ({{n}})"
+  },
+  "routines.runCalls.hide": {
+    "value": "Hide calls"
+  },
+  "routines.runCalls.cut": {
+    "value": "Shortened"
+  },
+  "routines.runCalls.binary": {
+    "value": "Not text, not kept"
+  },
+  "routines.runCalls.copied": {
+    "value": "Call copied."
+  },
   "routines.webhook.when": {
     "value": "When its webhook is called"
   },
@@ -21075,10 +21162,19 @@
     "value": "On: only calls signed with the secret get through."
   },
   "routines.webhook.signedHelp": {
-    "value": "Send the HMAC-SHA256 of the body (of a GET call: its query string, without the ?) in X-Agentes-Signature (sha256=…). GitHub's X-Hub-Signature-256 works too."
+    "value": "Send the HMAC-SHA256 of the body (of a GET call: its query string, without the ?) in X-Agentes-Signature (sha256=…). GitHub's X-Hub-Signature-256 works too. For Linear, paste the signing secret Linear shows: its Linear-Signature is checked, and calls over a minute old are refused."
   },
   "routines.webhook.addSecret": {
     "value": "Require a signature"
+  },
+  "routines.webhook.pasteSecret": {
+    "value": "Use the service's secret"
+  },
+  "routines.webhook.pasteLabel": {
+    "value": "The service's signing secret"
+  },
+  "routines.webhook.secretPasted": {
+    "value": "Secret saved. Only calls signed with it get through."
   },
   "routines.webhook.newSecret": {
     "value": "New secret"
@@ -22265,6 +22361,9 @@
   },
   "routines.outcome.queued": {
     "value": "Queued"
+  },
+  "routines.outcome.queuedBehind": {
+    "value": "Queued: waits for the {{name}} routine to finish"
   },
   "routines.outcome.running": {
     "value": "Working now"
@@ -28524,8 +28623,8 @@
       "other": "Ran {{count}} lines of {{language}} · output {{size}}"
     }
   },
-  "code.show": {
-    "value": "See {{name}}'s code"
+  "code.see": {
+    "value": "See code"
   },
   "code.hide": {
     "value": "Hide code"
@@ -30851,6 +30950,12 @@
   },
   "brain.reasons.cant_start": {
     "value": "{{program}} is on {{computer}}, but it won't start."
+  },
+  "brain.reasons.cli_outdated": {
+    "value": "{{program}} on {{computer}} needs an update before agents can use it."
+  },
+  "brain.reasons.cli_outdatedRun": {
+    "value": "{{program}} on {{computer}} needs an update before agents can use it. Run {{command}} there."
   },
   "brain.reasons.home_only": {
     "value": "{{program}} is installed only for root on {{computer}}, where the agents can't reach it."
@@ -39265,6 +39370,9 @@
   "errors.said.updateComputerApp": {
     "value": "The computer's app is too old for this. Update it and try again."
   },
+  "errors.said.cliNotFetched": {
+    "value": "This computer doesn't get that program by itself."
+  },
   "errors.said.computerUpdatesItself": {
     "value": "The workspace's computer updates itself for this. Try again in a little while."
   },
@@ -46263,6 +46371,15 @@
   "chat.consultPair.labelMany": {
     "value": "{{from}}'s talks with {{to}}"
   },
+  "chat.consultPair.askedHere": {
+    "value": "asked"
+  },
+  "chat.consultPair.forYou": {
+    "value": "for you"
+  },
+  "chat.consultPair.askedIn": {
+    "value": "in {{channel}}"
+  },
   "chat.consultPanel.label": {
     "value": "Conversation between {{from}} and {{to}}"
   },
@@ -46299,6 +46416,9 @@
   "chat.consultPanel.see": {
     "value": "See conversation"
   },
+  "chat.consultPanel.relay": {
+    "value": "{{name}}'s answer: {{excerpt}}. See the conversation"
+  },
   "chat.unshown": {
     "value": "This message couldn't be shown"
   },
@@ -46323,11 +46443,29 @@
   "chat.notice.agentNoteAnon": {
     "value": "Note from another agent"
   },
+  "chat.notice.handOff": {
+    "value": "{{from}} asked {{to}}"
+  },
   "chat.notice.waitResult": {
     "value": "What {{name}} was waiting for came in"
   },
   "chat.notice.other": {
     "value": "Notice for {{name}}"
+  },
+  "chat.notice.joined": {
+    "value": {
+      "one": "{{who}} joined the channel",
+      "other": "{{who}} joined the channel"
+    }
+  },
+  "chat.notice.joinedBy": {
+    "value": {
+      "one": "{{who}} joined the channel · added by {{by}}",
+      "other": "{{who}} joined the channel · added by {{by}}"
+    }
+  },
+  "chat.notice.left": {
+    "value": "{{who}} left the channel"
   },
   "chat.notice.wakeSkipped": {
     "value": "{{name}}'s mention didn't reach {{agents}}"
@@ -46760,6 +46898,9 @@
   "chat.work.step.listingRepos": {
     "value": "Listed the repositories"
   },
+  "chat.work.step.preparingCli": {
+    "value": "Prepared {{app}}"
+  },
   "chat.work.step.openingPullRequest": {
     "value": "Opened a pull request"
   },
@@ -47119,6 +47260,12 @@
   },
   "chat.activity.listingRepos": {
     "value": "listing the repositories"
+  },
+  "chat.activity.preparingCli": {
+    "value": "preparing {{app}} on {{computer}}"
+  },
+  "chat.activity.preparingCliPct": {
+    "value": "preparing {{app}} on {{computer}} ({{percent}}%)"
   },
   "chat.activity.openingPullRequest": {
     "value": "opening a pull request"
@@ -48102,7 +48249,7 @@
     "value": "Offer to connect an app or MCP"
   },
   "builtinTools.offer_connect_app.description": {
-    "value": "Posts a card whose button opens the dialog to connect an app or an MCP server by its address."
+    "value": "Posts a card whose button opens the dialog to connect an app or an MCP server: from the catalog by name, any other by its address."
   },
   "builtinTools.offer_invites.label": {
     "value": "Offer to invite people"
@@ -49742,6 +49889,15 @@
   },
   "billing.seeOptions": {
     "value": "See options"
+  },
+  "billing.plan": {
+    "value": "Plan"
+  },
+  "billing.planMonth": {
+    "value": "{{plan}}, monthly"
+  },
+  "billing.planYear": {
+    "value": "{{plan}}, yearly"
   },
   "billing.people": {
     "value": "People"
@@ -53301,6 +53457,72 @@
   },
   "teamTemplates.approvalsPersonal": {
     "value": "Anything sent, paid or booked in your name waits for your approval. You can let it go later, once you trust them."
+  },
+  "paidMoment.on": {
+    "value": "Your plan is on"
+  },
+  "paidMoment.onPlan": {
+    "value": "You're on {{plan}}"
+  },
+  "paidMoment.onMonth": {
+    "value": "You're on {{plan}}, monthly"
+  },
+  "paidMoment.onYear": {
+    "value": "You're on {{plan}}, yearly"
+  },
+  "paidMoment.room.both": {
+    "value": {
+      "one": "Room for {{people}} person and {{files}} of files.",
+      "other": "Room for {{people}} people and {{files}} of files."
+    }
+  },
+  "paidMoment.room.people": {
+    "value": {
+      "one": "Room for {{people}} person, with no limit on files.",
+      "other": "Room for {{people}} people, with no limit on files."
+    }
+  },
+  "paidMoment.room.files": {
+    "value": "Room for {{files}} of files, with no limit on people."
+  },
+  "paidMoment.room.none": {
+    "value": "No limit on people or files."
+  },
+  "paidMoment.computer.on": {
+    "value": "Your computer is on."
+  },
+  "paidMoment.computer.starting": {
+    "value": "Your computer is getting ready."
+  },
+  "paidMoment.computer.startingTold": {
+    "value": "Your computer is getting ready. We'll tell you when it's on."
+  },
+  "paidMoment.hello": {
+    "value": "Hi, {{first}}"
+  },
+  "paidMoment.hi": {
+    "value": "Hi there"
+  },
+  "paidMoment.say": {
+    "value": "We're all here. Let's get to work."
+  },
+  "paidMoment.sayOn": {
+    "value": "We're all here, and the computer is on. Let's get to work."
+  },
+  "paidMoment.sayStarting": {
+    "value": "We're all here. We'll tell you when the computer is on."
+  },
+  "paidMoment.next.ai": {
+    "value": "Connect an AI"
+  },
+  "paidMoment.next.people": {
+    "value": "Invite people"
+  },
+  "paidMoment.next.open": {
+    "value": "Go to the workspace"
+  },
+  "paidMoment.next.talk": {
+    "value": "Talk to {{name}}"
   },
   "arrival.beta.word": {
     "value": "BETA"

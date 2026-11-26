@@ -644,7 +644,8 @@
       "codeTerminal.label",
       "codeSessions.tabs.terminalN",
       "live.type.trackings.normal",
-      "live.type.glyph"
+      "live.type.glyph",
+      "billing.plan"
     ],
     "fr": [
       "agentPage.facts.budget",
@@ -1182,6 +1183,7 @@
     ],
     "de": [
       "agentPage.facts.budget",
+      "chat.consultPair.askedIn",
       "aiHub.detail.limits",
       "live.sheet.args.k",
       "live.sheet.args.x",
@@ -1691,6 +1693,7 @@
     ],
     "it": [
       "agentPage.facts.budget",
+      "chat.consultPair.askedIn",
       "surface.nudge.hours",
       "live.sheet.args.a1",
       "live.sheet.args.k",
@@ -2100,6 +2103,7 @@
     ],
     "nl": [
       "agentPage.facts.budget",
+      "chat.consultPair.askedIn",
       "aiHub.accounts",
       "usage.kinds.routines",
       "calendar.moreRuns",
@@ -3877,7 +3881,8 @@
       "codeTerminal.label",
       "codeSessions.tabs.terminalN",
       "live.type.trackings.normal",
-      "live.type.glyph"
+      "live.type.glyph",
+      "billing.plan"
     ],
     "pl": [
       "drive.folder",
@@ -4219,7 +4224,8 @@
       "connectors.store.agents",
       "live.type.gradient",
       "live.type.gradients.ocean",
-      "live.type.glyph"
+      "live.type.glyph",
+      "billing.plan"
     ],
     "ru": [
       "live.canvas.sizes.short.s",

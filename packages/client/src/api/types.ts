@@ -456,6 +456,11 @@ export interface User {
   canCreateWorkspace?: boolean;
   /** They deleted this account: the apps show only its waiting screen. `dueAt` is null once the date passed. */
   deletion?: { dueAt: string | null; requestedAt: string | null };
+  /**
+   * The last confirmation or reset email to their address could never be delivered (`EmailUndelivered`); null or
+   * absent: nothing says so.
+   */
+  emailUndelivered?: EmailUndelivered | null;
   /** The app's language for emails, pushes and every device (ADR 0122); null before any app said one. */
   locale?: string | null;
   /** The language follows each device's own (Automático) until the person picks one. */
@@ -486,7 +491,7 @@ export interface OrgSummary {
   permissions?: string[];
   /** Their highest role's position (0 the top), null with none: they manage the roles and people below it. */
   rank?: number | null;
-  /** The workspace logo (`/api/app/org-logos/…`); null or absent = the agent mark. */
+  /** The workspace logo (`/api/app/org-logos/…`, `#ink=light` after a light-ink one); null or absent = the agent mark. */
   logo?: string | null;
   /** The workspace's accent "#rrggbb" (ADR 0193): the apps paint the agent colors from it. Null or absent: the default. */
   accent?: string | null;
@@ -3121,6 +3126,12 @@ export interface CanceledReturn {
   canceledBy: { kind: "person"; userId: string; name: string } | { kind: "agent"; agentId: string } | null;
 }
 
+/**
+ * Why an email could never reach its address: `suppressed`, the mail provider stopped mailing it after an earlier
+ * bounce; `rejected`, the address itself was refused.
+ */
+export type EmailUndelivered = "suppressed" | "rejected";
+
 export interface InvitationWithStatus {
   id: string;
   email: string;
@@ -3131,6 +3142,11 @@ export interface InvitationWithStatus {
   /** Agents they start with (ADR 0184). */
   agentIds?: string[];
   status: "pending" | "expired";
+  /**
+   * Its last email could never be delivered: `suppressed`, the mail provider stopped mailing the address after an
+   * earlier bounce (sending it again asks the provider to mail it again); `rejected`, the address was refused.
+   */
+  undelivered?: EmailUndelivered | null;
   expiresAt: string;
   createdAt: string;
   /** Who sent it (their name). */
@@ -4872,7 +4888,26 @@ export interface RoutineRun {
   link: { channelId: string; threadId: string | null; messageId: string } | null;
   /** Waiting for this approval ("Esperando sua aprovação"). */
   approvalId?: string | null;
+  /** A webhook routine's run: how many calls it carried (`routines.runCalls` reads them, for who manages it). */
+  calls?: number;
   finishedAt: string | null;
+}
+
+/** One call a webhook routine's run carried, as it was kept. */
+export interface RoutineRunCall {
+  /** Its number in the run, as its model read it ("call 2 of 5"). */
+  n: number;
+  at: string;
+  method: string;
+  /** The headers kept: its type, sender and event or delivery ids, never a signature. */
+  headers: Record<string, string>;
+  bytes: number;
+  /** Up to 16,000 characters: a longer JSON body has its longest strings shortened, any other is cut (`cut`). */
+  body: string;
+  cut: boolean;
+  /** Not text: nothing of its body was kept. */
+  binary: boolean;
+  test: boolean;
 }
 
 export interface RoutineInput {
@@ -5456,6 +5491,13 @@ export interface Machine {
    */
   cliErrors?: Partial<Record<string, string>> | null;
   /**
+   * ADR 0228 §6: the coding CLIs its runner fetches by itself there (`claude`, `codex`, `cursor`, `opencode`, `grok`,
+   * `antigravity`), so one not installed or too old is no reason to refuse it; absent or empty from an older runner.
+   */
+  cliFetchable?: string[];
+  /** Where each fetch of a coding CLI stands there (`CliFetch`), by CLI; live as `machine.updated` with `cliFetch`. */
+  cliFetch?: Partial<Record<string, CliFetch>> | null;
+  /**
    * Windows: what holds Codex's commands there: `mxc`, `unelevated` (Codex's own sandbox where MXC is missing: writes
    * held to the agent's folders, the internet only partly blocked) or `none` (nothing could). Null or absent elsewhere,
    * until its runner knows, or from an older server.
@@ -5824,6 +5866,19 @@ export interface PlanDropped {
   provider: string | null;
 }
 
+/**
+ * A runner's fetch of a coding CLI's pinned build (ADR 0228 §6): `fetching` (`done` bytes of `total`, null while
+ * unknown), `ready`, or `failed` with why: `offline`, `hash_mismatch` (not the vendor's build, so never used),
+ * `no_build` (none for that system), `disk_full`, or `failed`.
+ */
+export interface CliFetch {
+  state: "fetching" | "ready" | "failed";
+  version: string;
+  done?: number;
+  total?: number | null;
+  reason?: "offline" | "hash_mismatch" | "no_build" | "disk_full" | "failed";
+}
+
 /** Org events about connected computers. */
 export type MachineEvent =
   | { type: "machine.status"; machineId: string; online: boolean }
@@ -5839,6 +5894,8 @@ export type MachineEvent =
       accounts?: true;
       /** `true`: the coding CLIs it found changed (protocol 41); refetch the agents' brain settings. */
       executors?: true;
+      /** ADR 0228 §6: a fetch of a coding CLI moved on, ended or failed there (by CLI), patched in place. */
+      cliFetch?: Partial<Record<string, CliFetch>>;
     }
   /** ADR 0036: a new pause state or access reported by the machine (also accepted inside `machine.updated`). */
   | { type: "machine.state"; machineId: string; paused?: MachinePause | null }
@@ -6049,8 +6106,11 @@ export interface BundleNote {
 }
 
 export interface BundleTodo {
-  /** `webhook`: a routine that now has an address of its own here, to give the app that called the old one. */
-  kind: "connection" | "app" | "secret" | "model" | "file" | "webhook";
+  /**
+   * `webhook`: a routine that now has an address of its own here, to give the app that called the old one. `path`: a
+   * file or folder an agent's instructions point at that the import didn't bring.
+   */
+  kind: "connection" | "app" | "secret" | "model" | "file" | "path" | "webhook";
   label: string;
   url?: string;
   /** Keys of the agents it matters to. */
@@ -6600,6 +6660,8 @@ export type BrainUnavailable =
   | "system"
   /** It is there and can't start: the computer's row has its error (`Machine.cliErrors`). */
   | "cant_start"
+  /** It is there at a version agentes.chat holds back: too old, or a blocked one (`BrainOption.outdated`). */
+  | "cli_outdated"
   /** Codex on a Windows computer where no sandbox could hold its commands. */
   | "windows_sandbox";
 
@@ -6634,6 +6696,8 @@ export interface BrainOption {
    * account there has a plan that includes it (`plan`).
    */
   missing?: { modelId: string; label: string; why: "app_old" | "cli_old" | "plan" };
+  /** With `cli_outdated`: the version reported, the oldest one that runs (absent: blocked), and the command that updates it. */
+  outdated?: { version: string; min?: string; command?: string };
 }
 
 /** A computer the caller may give an agent, with what it offers. */

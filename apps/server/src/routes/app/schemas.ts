@@ -241,11 +241,10 @@ export const Organization = z
       .string()
       .optional()
       .openapi({ description: "What the agents know of it: only for who may `configure`." }),
-    logo: z
-      .string()
-      .nullable()
-      .optional()
-      .openapi({ description: "The workspace logo (`/api/app/org-logos/…`); null = the agent mark." }),
+    logo: z.string().nullable().optional().openapi({
+      description:
+        "The workspace logo (`/api/app/org-logos/…`), ending with `#ink=light` when its ink is light; null = the agent mark.",
+    }),
     accent: AccentColor.nullable()
       .optional()
       .openapi({ description: "The workspace's accent color (ADR 0193); null = the default." }),
@@ -1109,6 +1108,7 @@ export const BrainUnavailable = z.enum([
   "not_reported",
   "system",
   "cant_start",
+  "cli_outdated",
   "windows_sandbox",
 ]);
 
@@ -1153,6 +1153,13 @@ export const BrainOption = z
       .openapi({
         description:
           "Antigravity: the newest Gemini isn't among its models because the computer's agentes.chat is too old to bring a CLI that runs it (`app_old`), its CLI predates it where the computer's setup installs it (`cli_old`), or no account there has a plan with it (`plan`).",
+      }),
+    outdated: z
+      .object({ version: z.string(), min: z.string().optional(), command: z.string().optional() })
+      .optional()
+      .openapi({
+        description:
+          "With `cli_outdated`: the version its computer reported, the oldest one agentes.chat runs (absent: that version is blocked), and the command that updates it where its own updater is the way.",
       }),
   })
   .openapi("BrainOption");
