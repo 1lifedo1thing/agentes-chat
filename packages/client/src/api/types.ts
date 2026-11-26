@@ -3697,6 +3697,8 @@ export const WORKSPACE_ACTION_IDS = [
   "update_workspace",
   "set_action_check",
   "set_computer_help",
+  "set_approvals_level",
+  "set_agent_approvals_level",
   "invite_people",
   "remove_ai_key",
 ] as const;
