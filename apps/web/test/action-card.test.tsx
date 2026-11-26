@@ -703,7 +703,11 @@ describe("an agent's card to install or update a skill", () => {
       { fileId: "f-kit", list: true },
     ]);
     expect(sessionStorage.getItem("agentes.skills.installFor")).toBeNull();
-    expect(within(install).getByRole("checkbox", { name: /deploy/ }).getAttribute("aria-checked")).toBe("true");
+    expect(
+      within(install)
+        .getByRole("checkbox", { name: /deploy/ })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
     expect(within(install).getByRole("checkbox", { name: "Fica ligada para Atlas" }).getAttribute("aria-checked")).toBe(
       "true",
     );
