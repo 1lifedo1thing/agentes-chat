@@ -1,9 +1,10 @@
 import { noAnswer } from "@agenteschat/client/lib/errors";
-import { AgentSticker, Avatar, Button, PixelSpinner } from "@agenteschat/ui";
+import { AgentSticker, Button, PixelSpinner } from "@agenteschat/ui";
 import { type ErrorComponentProps, Link } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { useBrowserOffline } from "@/chat/offline";
+import { AgentAvatar } from "@/components/AgentAvatar";
 import { AuthFrame } from "@/components/AuthLayout";
 import { DesktopDragStrip } from "@/components/DesktopDragStrip";
 import { BootSplash } from "@/components/Sky";
@@ -141,7 +142,7 @@ function NoticeFace({ face }: { face: Face }) {
       {face === "crash" || face === "notFound" ? (
         <AgentSticker mood={face === "crash" ? "dizzy" : "thinking"} size={112} seed="notice" />
       ) : (
-        <Avatar kind="agent" name="" size="xl" state={face === "unreachable" ? "sleeping" : "thinking"} />
+        <AgentAvatar name="" size="xl" state={face === "unreachable" ? "sleeping" : "thinking"} />
       )}
     </span>
   );
