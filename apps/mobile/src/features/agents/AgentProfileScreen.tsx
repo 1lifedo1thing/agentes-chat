@@ -1495,16 +1495,16 @@ function AudienceGroup({ agent }: { agent: Agent }) {
     <>
       <GroupedHeader>{t("audience.section")}</GroupedHeader>
       <GroupedList>
-        {picked.length > 0
-          ? picked
-          : [
+        {picked.length === 0
+          ? [
               <GroupedRow
                 key="summary"
                 icon="members"
                 label={audienceSummary(t, agent, nameOf, roleName, org ?? undefined)}
                 labelLines={2}
               />,
-            ]}
+            ]
+          : picked}
       </GroupedList>
       {always ? <GroupedFooter>{always}</GroupedFooter> : null}
     </>
