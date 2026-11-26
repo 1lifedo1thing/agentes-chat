@@ -8592,12 +8592,15 @@ export const ptBR = {
     noOrgBack: "Voltar aos seus workspaces",
     crashTitle: "Algo deu errado",
     crashText: "Recarregue a página para continuar.",
-    crashCode: "Se pedir ajuda, informe o código {{id}}.",
+    /** The report's short code goes after it, on a line of its own with a copy button (ErrorScreen). */
+    supportCode: "Código para o suporte",
     /** A request that got no answer, or only the proxy's: the page opens again by itself (ErrorScreen). */
     unreachableTitle: "Sem conexão com o agentes.chat",
     unreachableText: "Ele pode estar reiniciando. Esta página abre sozinha assim que ele voltar.",
     offlineTitle: "Você está sem internet",
     offlineText: "Esta página abre sozinha quando a internet voltar.",
+    /** Under the way out of the two screens that open again by themselves. */
+    waitingConnection: "Esperando a conexão voltar",
     unknownHostTitle: "Este endereço ainda não está configurado",
     unknownHostText: "Se ele acabou de ser conectado, tente de novo em alguns minutos.",
     unknownHostTab: "Endereço não configurado · agentes.chat",

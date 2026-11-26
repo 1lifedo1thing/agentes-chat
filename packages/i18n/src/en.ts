@@ -8643,11 +8643,14 @@ export const en = {
     noOrgBack: "Back to your workspaces",
     crashTitle: "Something went wrong",
     crashText: "Reload the page to carry on.",
-    crashCode: "If you ask for help, give the code {{id}}.",
+    /** The report's short code goes after it, on a line of its own with a copy button (ErrorScreen). */
+    supportCode: "Code for support",
     unreachableTitle: "Can't reach agentes.chat",
     unreachableText: "It may be restarting. This page opens by itself as soon as it's back.",
     offlineTitle: "You're offline",
     offlineText: "This page opens by itself when you're back online.",
+    /** Under the way out of the two screens that open again by themselves. */
+    waitingConnection: "Waiting for the connection to come back",
     /** The page on a hostname that reaches the server but isn't set up there. */
     unknownHostTitle: "This address isn't set up yet",
     unknownHostText: "If it was just connected, try again in a few minutes.",

@@ -7719,11 +7719,12 @@
     "noOrgBack": "自分のワークスペースに戻る",
     "crashTitle": "問題が発生しました",
     "crashText": "続けるにはページを再読み込みしてください。",
-    "crashCode": "助けを求めるときは、コード{{id}}を伝えてください。",
+    "supportCode": "サポート用コード",
     "unreachableTitle": "agentes.chatに接続できません",
     "unreachableText": "再起動中かもしれません。復旧しだい、このページは自動で開きます。",
     "offlineTitle": "オフラインです",
     "offlineText": "オンラインに戻ると、このページは自動で開きます。",
+    "waitingConnection": "接続が戻るのを待っています",
     "unknownHostTitle": "このアドレスはまだ設定されていません",
     "unknownHostText": "接続したばかりなら、数分後にもう一度お試しください。",
     "unknownHostTab": "未設定のアドレス · agentes.chat"
