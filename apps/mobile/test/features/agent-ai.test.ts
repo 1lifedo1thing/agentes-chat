@@ -239,7 +239,9 @@ describe("the agent's AI", () => {
       read("agents/NewAgentScreen.tsx"),
     ]);
     // Over the first page only: the steps after it keep the screen for their own fields.
-    expect(sheet).toContain('{view.page === "home" && !done ? <ConnectScene /> : null}');
+    expect(sheet).toContain('const home = view.page === "home" && !done;');
+    expect(sheet.indexOf("<ConnectScene ")).toBeGreaterThan(sheet.indexOf("  if (home)\n"));
+    expect(sheet.match(/<ConnectScene /g)).toHaveLength(1);
     // Decoration, as every sky is: asleep until an AI is there, hidden from screen readers.
     expect(scene).toContain('accessibilityElementsHidden importantForAccessibility="no-hide-descendants"');
     expect(scene).toContain('mode="sleep"');

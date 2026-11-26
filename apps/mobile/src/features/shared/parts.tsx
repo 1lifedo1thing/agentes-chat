@@ -181,7 +181,8 @@ const ActionRow = memo(function ActionRow({ item: it }: { item: ActionItem; lead
         <View style={tall ? [styles.onLine, { minHeight: line.height }] : null}>{it.trailing}</View>
       ) : null}
       {it.checked === undefined ? null : (
-        <View style={onLine(28)}>
+        // Taller than the label's line: its middle on the line's, as `GroupedRow`'s switch.
+        <View style={tall ? { marginTop: line.middle - 14, marginBottom: line.height - line.middle - 14 } : null}>
           <ToggleSwitch value={it.checked} />
         </View>
       )}
