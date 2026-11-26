@@ -52,6 +52,7 @@ import { useTranslation } from "react-i18next";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   type SharedValue,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -59,6 +60,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { scheduleOnRN } from "react-native-worklets";
 import { useOrg } from "@/providers/org";
 import {
   AgentAvatar,
@@ -236,6 +238,17 @@ function Profile({ id, view }: { id: string; view?: ProfileView | undefined }) {
   // The cover's sky lags behind the scroll and stretches on pull; the agent fades as it nears the bar.
   const { y, onScroll } = useCoverScroll();
   const underBar = AVATAR_TOP - (insets.top + BAR_HEIGHT);
+  // The bar's title is the system's own words: none while the cover shows the name, the name once it has gone under
+  // the bar (a view of our own there sat in a glass capsule of its own on iOS 26, the page showing through it). Set
+  // when the scroll crosses that line, never per frame.
+  const [named, setNamed] = useState(false);
+  useAnimatedReaction(
+    () => y.value > underBar + NAME_UNDER_BAR,
+    (now, before) => {
+      if (now !== before) scheduleOnRN(setNamed, now);
+    },
+    [underBar],
+  );
   const agent = dir.agentById.get(id);
   const models = useModels();
   // Someone it doesn't answer (not its owner, not an admin) sees only its public card: no tools, memory or month.
@@ -1048,7 +1061,7 @@ function Profile({ id, view }: { id: string; view?: ProfileView | undefined }) {
           as the web's Configurações). The right hand's settings open for everyone: each person has their own there. */}
       <PushedHeader
         // The bar has no title while the cover shows: the face and the name fade in as the cover's leave under it.
-        title={<BarName look={look} name={name} y={y} from={underBar - 30} to={underBar + 70} />}
+        title={named ? name : ""}
         plate
         solid={false}
         {...(rightHand
@@ -1122,37 +1135,6 @@ function CoverFace({
           </WithPresence>
         </Animated.View>
       </Pressable>
-    </Animated.View>
-  );
-}
-
-/** In the bar once the cover has scrolled under it: the agent's small face and its name, fading in with the scroll. */
-function BarName({
-  look,
-  name,
-  y,
-  from,
-  to,
-}: {
-  look: AgentLookInput;
-  name: string;
-  y: SharedValue<number>;
-  from: number;
-  to: number;
-}) {
-  const fade = useScrollFade(y, from, to, true);
-  return (
-    <Animated.View
-      style={[styles.barName, fade]}
-      pointerEvents="none"
-      // The name is the page's heading under the cover: said once, there.
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
-      <AgentAvatar agent={look} size={BAR_FACE} framed={false} live={false} />
-      <Text variant="body" numberOfLines={1} style={[styles.bold, styles.shrink]}>
-        {name}
-      </Text>
     </Animated.View>
   );
 }
@@ -1588,7 +1570,8 @@ const COVER_FOOT = 14;
 const AVATAR_TOP = COVER_HEIGHT - COVER_FOOT - FACE;
 const BAR_HEIGHT = 44;
 /** The face beside the name in the bar. */
-const BAR_FACE = 24;
+/** How far the name scrolls past the bar's foot before the bar takes it as its title. */
+const NAME_UNDER_BAR = 70;
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
@@ -1624,7 +1607,6 @@ const styles = StyleSheet.create({
   pixels: { marginBottom: 12 },
   apart: { marginTop: 24 },
   src: { flexDirection: "row", alignItems: "center", gap: 6 },
-  barName: { flexDirection: "row", alignItems: "center", gap: 8 },
   shrink: { flexShrink: 1 },
   // A grouped header's room (20 above its 18 line, 8 under), the bar in the line's middle.
   boneHead: { height: 46, paddingTop: 24, paddingHorizontal: GROUPED_ROW.padX },

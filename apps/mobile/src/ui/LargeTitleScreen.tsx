@@ -253,7 +253,15 @@ function DrawnTitleScreen({
     () => (collapsed ? title : <FadingHeaderTitle y={y} from={BAR_TITLE_FROM} to={BAR_TITLE_TO} text={title} />),
     [collapsed, title, y],
   );
-  usePaneHeader({ title: paneTitle, left, leftActions, actions, over: true });
+  usePaneHeader({
+    title: paneTitle,
+    left,
+    leftActions,
+    actions,
+    over: true,
+    // Its material comes in as its title does, as the system's bar outside a pane.
+    scroll: { y, from: BAR_TITLE_FROM, to: BAR_TITLE_TO },
+  });
   return (
     <View style={[styles.screen, { backgroundColor: grouped ? colors.grouped : colors.bg }]}>
       {pane ? null : <Stack.Screen options={options} />}

@@ -13,6 +13,20 @@ export const LIST_MIN = 300;
 export const LIST_MAX = 380;
 /** The list's share of the width between those two. */
 export const LIST_SHARE = 0.4;
+/**
+ * How narrow and how wide a person may drag the list by its divider (`TwoPane`), as the system's split views let a
+ * sidebar be resized, and its share of the window at most, so the detail always keeps room.
+ */
+export const LIST_DRAG_MIN = 260;
+export const LIST_DRAG_MAX = 560;
+export const LIST_DRAG_SHARE = 0.6;
+
+/** A list width a person dragged to, kept inside what a window this wide allows (also run on the UI thread). */
+export function clampList(list: number, total: number): number {
+  "worklet";
+  const max = Math.max(LIST_DRAG_MIN, Math.min(LIST_DRAG_MAX, Math.round(total * LIST_DRAG_SHARE)));
+  return Math.round(Math.min(max, Math.max(LIST_DRAG_MIN, list)));
+}
 
 /** The width between the panes when no fold divides them: the hairline divider. */
 const DIVIDER = 1;
@@ -54,16 +68,24 @@ export function foldInside(width: number, fold: Fold | null): fold is Fold {
 /**
  * Where the list, the space between and the detail go in a container this wide. With a fold inside it, the list ends
  * where the fold starts and the detail starts where it ends, so nothing sits in the curve. Otherwise the list takes
- * its share of the width (between `LIST_MIN` and `LIST_MAX`, never wider than the container), then the hairline
- * divider, then the detail the rest. No width is ever negative.
+ * the width a person dragged it to (`chosen`, kept inside `clampList`), or its share of the width (between `LIST_MIN`
+ * and `LIST_MAX`), never wider than the container; then the hairline divider, then the detail the rest. No width is
+ * ever negative.
  */
-export function paneFrames(width: number, fold: Fold | null): { list: Pane; detail: Pane; gap: number } {
+export function paneFrames(
+  width: number,
+  fold: Fold | null,
+  chosen: number | null = null,
+): { list: Pane; detail: Pane; gap: number } {
   const total = Math.max(0, width);
   if (foldInside(total, fold)) {
     const detailX = fold.x + fold.width;
     return { list: { x: 0, width: fold.x }, gap: fold.width, detail: { x: detailX, width: total - detailX } };
   }
-  const list = Math.min(total, LIST_MAX, Math.max(LIST_MIN, Math.round(total * LIST_SHARE)));
+  const list =
+    chosen !== null
+      ? Math.min(total, clampList(chosen, total))
+      : Math.min(total, LIST_MAX, Math.max(LIST_MIN, Math.round(total * LIST_SHARE)));
   const detailX = list + DIVIDER;
   return { list: { x: 0, width: list }, gap: DIVIDER, detail: { x: detailX, width: Math.max(0, total - detailX) } };
 }
