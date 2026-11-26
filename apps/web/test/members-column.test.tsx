@@ -153,7 +153,7 @@ describe("the members column", () => {
     expect(ada.getAttribute("aria-label")).toBe("Perfil de Ada");
     // What it does here: its face wears the orbit, labelled, and the row's title; the row keeps its height.
     expect(ada.querySelector(".ac-orbit > .ac-avatar")).not.toBeNull();
-    expect(ada.querySelector(".ac-orbit")?.getAttribute("aria-label")).toBe("pensando");
+    expect(ada.querySelector(".members-side__text .ac-visually-hidden")?.textContent).toBe("pensando");
     expect(ada.querySelector(".ac-pixspin")).toBeNull();
     expect(document.getElementById(ada.getAttribute("aria-describedby") ?? "")?.getAttribute("title")).toContain(
       "pensando",

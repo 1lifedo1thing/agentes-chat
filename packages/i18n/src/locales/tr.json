@@ -18640,9 +18640,9 @@
   },
   "work": {
     "handed": {
-      "lead": "Devredildi: <0/>{{name}}",
-      "working": "üzerinde çalışıyor",
-      "done": "{{duration}} içinde bitti",
+      "lead": "Devredildi: <0>{{name}}</0>",
+      "working": "çalışıyor",
+      "ready": "bitti",
       "waitingYou": "yanıtını bekliyor",
       "waiting": "bir yanıt bekliyor",
       "waitingApprovalYou": "onayını bekliyor",
@@ -18784,6 +18784,7 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}} onayınızı bekliyor",
       "yourAnswer": "{{name}} yanıtınızı bekliyor",
+      "helping": "{{to}}, {{from}} ajanına yardım ediyor",
       "done": "{{to}} bitirdi. {{from}} yazıyor",
       "notDone": "{{to}} bitiremedi. {{from}} yazıyor",
       "handedOff": "{{to}}, {{from}} ajanının devrettiği iş üzerinde çalışıyor"

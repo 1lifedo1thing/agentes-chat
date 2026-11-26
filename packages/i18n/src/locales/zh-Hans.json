@@ -18144,9 +18144,9 @@
   },
   "work": {
     "handed": {
-      "lead": "已移交给 <0/>{{name}}",
-      "working": "进行中",
-      "done": "用时 {{duration}} 完成",
+      "lead": "已移交给 <0>{{name}}</0>",
+      "working": "工作中",
+      "ready": "已完成",
       "waitingYou": "等待你的回答",
       "waiting": "等待回答",
       "waitingApprovalYou": "等待你的批准",
@@ -18284,6 +18284,8 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}} 正在等你批准",
       "yourAnswer": "{{name}} 正在等你回答",
+      "helping": "{{to}} 正在协助 {{from}}",
+      "helping_female": "{{to}} 正在协助 {{from}}",
       "done": "{{to}} 已完成。{{from}} 正在撰写",
       "notDone": "{{to}} 没有完成。{{from}} 正在撰写",
       "handedOff": "{{to}} 正在处理 {{from}} 交给它的工作"

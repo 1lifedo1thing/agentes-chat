@@ -18074,9 +18074,9 @@
   },
   "work": {
     "handed": {
-      "lead": "<0/>{{name}}에게 넘김",
+      "lead": "<0>{{name}}</0>에게 넘김",
       "working": "작업 중",
-      "done": "{{duration}} 만에 끝남",
+      "ready": "끝남",
       "waitingYou": "내 답변 대기 중",
       "waiting": "답변 대기 중",
       "waitingApprovalYou": "내 승인 대기 중",
@@ -18214,6 +18214,7 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}}이(가) 내 승인을 기다려요",
       "yourAnswer": "{{name}}이(가) 내 답변을 기다려요",
+      "helping": "{{to}}이(가) {{from}} 돕는 중",
       "done": "{{to}}이(가) 끝냈어요. {{from}}이(가) 작성 중",
       "notDone": "{{to}}이(가) 끝내지 못했어요. {{from}}이(가) 작성 중",
       "handedOff": "{{to}}이(가) {{from}}이(가) 넘긴 일을 하는 중"

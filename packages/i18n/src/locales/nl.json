@@ -18777,9 +18777,9 @@
   },
   "work": {
     "handed": {
-      "lead": "Overgedragen aan <0/>{{name}}",
+      "lead": "Overgedragen aan <0>{{name}}</0>",
       "working": "bezig",
-      "done": "klaar in {{duration}}",
+      "ready": "klaar",
       "waitingYou": "wacht op jouw antwoord",
       "waiting": "wacht op een antwoord",
       "waitingApprovalYou": "wacht op jouw goedkeuring",
@@ -18921,6 +18921,8 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}} wacht op je goedkeuring",
       "yourAnswer": "{{name}} wacht op je antwoord",
+      "helping": "{{to}} helpt {{from}}",
+      "helping_female": "{{to}} helpt {{from}}",
       "done": "{{to}} is klaar. {{from}} schrijft",
       "notDone": "{{to}} is niet klaar gekomen. {{from}} schrijft",
       "handedOff": "{{to}} werkt aan wat {{from}} heeft doorgegeven"

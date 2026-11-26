@@ -19847,9 +19847,9 @@
   },
   "work": {
     "handed": {
-      "lead": "Передано: <0/>{{name}}",
-      "working": "в работе",
-      "done": "готово за {{duration}}",
+      "lead": "Передано: <0>{{name}}</0>",
+      "working": "работает",
+      "ready": "готово",
       "waitingYou": "ждёт твоего ответа",
       "waiting": "ждёт ответа",
       "waitingApprovalYou": "ждёт твоего одобрения",
@@ -20000,6 +20000,7 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}} ждёт вашего одобрения",
       "yourAnswer": "{{name}} ждёт вашего ответа",
+      "helping": "{{to}} помогает {{from}}",
       "done": "{{to}} закончил. {{from}} пишет",
       "notDone": "{{to}} не закончил. {{from}} пишет",
       "handedOff": "{{to}} работает над тем, что передал {{from}}"

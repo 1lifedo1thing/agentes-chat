@@ -1756,7 +1756,7 @@ function AgentRow({
   const names = locked ? audienceNames(a, (id) => dir.memberById.get(id)?.name, dir.roleName) : [];
   // Working: its face wears the orbit (what it is on is in the row's title), so the row never changes height; the
   // orbit says it, so the face's "working" badge steps aside.
-  const working = busy || shown?.line?.kind === "work";
+  const working = busy || shown?.line?.kind === "work" || shown?.presence === "working";
   const now = busy
     ? here
       ? t("sidebarAgents.workingIn", { channel: here })
@@ -1826,15 +1826,13 @@ function AgentRow({
       >
         {busy && <AgentTrail color={color} />}
         {busy && <AgentGlow color={color} />}
-        {working ? (
-          <OrbitGlyph appearance={lookOf(a)} role="img" aria-label={state === "idle" && doingTitle ? doingTitle : now}>
-            {face}
-          </OrbitGlyph>
-        ) : (
-          face
-        )}
+        {working ? <OrbitGlyph appearance={lookOf(a)}>{face}</OrbitGlyph> : face}
         <span className="sidebar__item-text">
           <span className={doing || under ? "sidebar__item-label ac-captop" : "sidebar__item-label"}>{a.name}</span>
+          {/* What it is on, for screen readers, after its name (the orbit before it says it to the eye). */}
+          {working && (state === "idle" && doingTitle ? doingTitle : now) && (
+            <span className="ac-visually-hidden">{state === "idle" && doingTitle ? doingTitle : now}</span>
+          )}
           {doing ? (
             <AgentWorkLine line={doing} tone={agentGradient(color)[1]} className="sidebar__item-role" />
           ) : (

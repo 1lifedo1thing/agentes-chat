@@ -18082,9 +18082,9 @@
   },
   "work": {
     "handed": {
-      "lead": "<0/>{{name}}に引き継ぎ",
+      "lead": "<0>{{name}}</0>に引き継ぎ",
       "working": "作業中",
-      "done": "{{duration}}で完了",
+      "ready": "完了",
       "waitingYou": "あなたの回答待ち",
       "waiting": "回答待ち",
       "waitingApprovalYou": "あなたの承認待ち",
@@ -18222,6 +18222,7 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}}があなたの承認を待っています",
       "yourAnswer": "{{name}}があなたの回答を待っています",
+      "helping": "{{to}}が{{from}}を手伝っています",
       "done": "{{to}}が完了しました。{{from}}が書いています",
       "notDone": "{{to}}は完了できませんでした。{{from}}が書いています",
       "handedOff": "{{to}}は{{from}}から任された作業をしています"

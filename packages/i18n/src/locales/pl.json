@@ -19903,9 +19903,9 @@
   },
   "work": {
     "handed": {
-      "lead": "Przekazane: <0/>{{name}}",
-      "working": "w toku",
-      "done": "gotowe w {{duration}}",
+      "lead": "Przekazane: <0>{{name}}</0>",
+      "working": "pracuje",
+      "ready": "gotowe",
       "waitingYou": "czeka na twoją odpowiedź",
       "waiting": "czeka na odpowiedź",
       "waitingApprovalYou": "czeka na twoją zgodę",
@@ -20056,6 +20056,8 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}} czeka na twoje zatwierdzenie",
       "yourAnswer": "{{name}} czeka na twoją odpowiedź",
+      "helping": "{{to}} pomaga agentowi {{from}}",
+      "helping_female": "{{to}} pomaga agentce {{from}}",
       "done": "{{to}} skończył. {{from}} pisze",
       "notDone": "{{to}} nie skończył. {{from}} pisze",
       "handedOff": "{{to}} pracuje nad tym, co przekazał {{from}}"

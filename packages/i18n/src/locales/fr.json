@@ -19304,9 +19304,9 @@
   },
   "work": {
     "handed": {
-      "lead": "Confié à <0/>{{name}}",
-      "working": "en cours",
-      "done": "terminé en {{duration}}",
+      "lead": "Confié à <0>{{name}}</0>",
+      "working": "au travail",
+      "ready": "terminé",
       "waitingYou": "attend ta réponse",
       "waiting": "attend une réponse",
       "waitingApprovalYou": "attend ton approbation",
@@ -19452,6 +19452,8 @@
       "doing": "{{name}} {{doing}}",
       "yourApproval": "{{name}} attend votre approbation",
       "yourAnswer": "{{name}} attend votre réponse",
+      "helping": "{{to}} aide {{from}}",
+      "helping_female": "{{to}} aide {{from}}",
       "done": "{{to}} a terminé. {{from}} écrit",
       "notDone": "{{to}} n'a pas terminé. {{from}} écrit",
       "handedOff": "{{to}} travaille sur ce que {{from}} lui a confié"

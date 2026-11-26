@@ -405,13 +405,14 @@ function AgentRow({
         : null;
   // Under the name, one line of one height: `agentMemberLine`, else its role (the agent's fixed label) as a tag, else its
   // presence. Working, its face wears the orbit, so the row never jumps; the orbit says it, so its "working" badge goes.
+  const atWork = doing !== null || shown?.presence === "working";
   const face = (
     <AgentAvatar
       agentId={agent.id}
       channelId={channelId}
       size="sm"
       name={agent.name}
-      presence={doing && shown?.presence === "working" ? null : (shown?.presence ?? null)}
+      presence={atWork && shown?.presence === "working" ? null : (shown?.presence ?? null)}
       presenceLabel={word ?? undefined}
       asleep={isOutOfOffice(shown?.line)}
     />
@@ -435,17 +436,13 @@ function AgentRow({
         title={[doing ?? workWords ?? full ?? word, agent.role].filter(Boolean).join(" · ") || undefined}
       >
         {busy && <AgentTrail color={colorOf(agent)} />}
-        {doing ? (
-          <OrbitGlyph appearance={lookOf(agent)} role="img" aria-label={doing}>
-            {face}
-          </OrbitGlyph>
-        ) : (
-          face
-        )}
+        {atWork ? <OrbitGlyph appearance={lookOf(agent)}>{face}</OrbitGlyph> : face}
         <span className="members-side__text">
           <span className="members-side__name">
             <span className="members-side__label">{agent.name}</span>
           </span>
+          {/* What it does, for screen readers, after its name (the orbit before it says it to the eye). */}
+          {atWork && (doing ?? word) && <span className="ac-visually-hidden">{doing ?? word}</span>}
           {under?.work ? (
             <AgentWorkLine line={under.work} tone={agentGradient(colorOf(agent))[1]} className="members-side__line" />
           ) : under?.line ? (
