@@ -12527,8 +12527,9 @@ html:not([data-pointer]) .ac-msg__note:focus-visible {
   margin: -6px;
 }
 /* A face there (a personal workspace's, ADR 0159) is the slot's size, as a workspace's mark is: a larger one would
-   reach into the gap before the name. */
-.ac-mo__leading > .ac-avatar {
+   reach into the gap before the name. Also when a wrapper holds it (the desktop app's list by server dims an offline
+   server's rows in one). */
+.ac-mo__leading .ac-avatar {
   width: 32px;
   height: 32px;
 }
