@@ -58,7 +58,7 @@ export const GroupFace = memo(function GroupFace({
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
-        <Icon name="members" size={Math.round(size * 0.5)} color={c.faint} />
+        <Icon name="members" size={Math.round(size * 0.4)} color={c.faint} />
       </View>
     );
   const cells = shown.length + (more > 0 ? 1 : 0);
