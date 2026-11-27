@@ -2554,44 +2554,32 @@ export const en = {
     /** After deleteText when the department holds channels (ADR 0240). */
     deleteChannels: "Its channels go back to Channels.",
     dropHere: "Drag agents here",
-    /** The sidebar's empty department: agents and channels both drop there (ADR 0240). */
-    dropHereAll: "Drag agents or channels here",
     moved: "{{name}} moved to {{group}}",
     movedOut: "{{name}} left {{group}}",
     undo: "Undo",
   },
-  /** The sidebar's AGENTES part: the agents that talk to me, by group (ADR 0083). */
+  /** The agents in the sidebar's lists (ADR 0083, ADR 0260). */
   sidebarAgents: {
-    options: "Agents options",
-    add: "New agent or department",
-    order: "Order",
-    sort: { workspace: "Workspace's order", mine: "Mine first", working: "Working first" },
     showAll: "Show agents that don't talk to me",
-    collapseAll: "Collapse all",
-    expandAll: "Expand all",
-    organize: "Organize departments in Team",
     /** Under the agents, only when some aren't listed (they don't talk to me): it opens Team, where all are. */
     more_one: "1 more agent in Team",
     more_other: "{{count}} more agents in Team",
     /** The row under a personal workspace's agents (ADR 0159): opens "What should your new agent do?". */
     newAgent: "New agent",
-    working_one: "{{count}} working",
-    working_other: "{{count}} working",
     count_one: "{{count}} agent",
     count_other: "{{count}} agents",
     workingIn: "working in #{{channel}}",
     talksOnly: "only talks to {{name}}",
     talksOnlyMore_one: "only talks to {{name}} and {{count}} more",
     talksOnlyMore_other: "only talks to {{name}} and {{count}} more",
-    changeGroup: "Move to department",
-    newGroupWith: "New department with {{name}}",
-    dmsEmpty: "Your conversations with people show up here.",
   },
   /** Favoritos (ADR 0260): people, agents and channels the person keeps on top of the sidebar, by name. */
   sidebarFavorites: {
     title: "Favorites",
     add: "Add to favorites",
     remove: "Remove from favorites",
+    /** A row in Favoritos, as a screen reader hears it. */
+    marked: "Favorite",
     full: "Favorites already holds 50. Remove one to add this one.",
   },
   /** Each person's own channel sections (ADR 0260): made by dragging a channel onto another, or from a channel's menu. */
@@ -2641,17 +2629,6 @@ export const en = {
     emptyTitle: "All caught up",
     emptyText: "New messages and what waits for you show up here.",
     markedAll: "Everything marked as read",
-  },
-  /** "Pin to top": a row kept on top of its own sidebar section, above a thin line. */
-  sidebarPins: {
-    pin: "Pin to top",
-    unpin: "Unpin",
-    pinned: "Pinned",
-    full: {
-      agents: "You already pinned 5 agents. Unpin one to pin this one.",
-      channels: "You already pinned 5 channels. Unpin one to pin this one.",
-      people: "You already pinned 5 people. Unpin one to pin this one.",
-    },
   },
   /** Settings › agentes.chat apps (`AppsDownload.tsx`): the desktop app for this computer and the phone apps. */
   appsDownload: {
@@ -17106,6 +17083,8 @@ export const en = {
       shareOwnerOnly:
         "Only the person who connected this computer can let agents use its internet. You can turn it off.",
       shareConnectedOnly: "Only a computer someone connected can share its internet with the agents.",
+      /** "Use only this computer's internet" asked while the computer doesn't lend it (ADR 0237). */
+      shareOff: "Turn on “Agents use this computer's internet” first, then choose to use only its internet.",
       tasksOwnerOnly: "Only the person who connected this computer can change how many tasks it runs at once.",
       tasksCloud: "The Cloud sizes this computer's room for tasks itself.",
       notHome: "Agents live on the workspace computer and use this one when they name it.",
@@ -17297,6 +17276,8 @@ export const en = {
       /** The workspace's computer opens websites through a person's computer's internet (ADR 0237). */
       via: "Agents use the internet of {{name}}",
       viaHint: "Websites see that computer’s location. Its owner can turn it off on its page.",
+      /** Its agents use only a person's computer's internet, and that computer is offline (ADR 0237). */
+      offline: "Agents have no internet: {{name}} is offline",
     },
     /**
      * What we do to the workspace's own computer (ADR 0257), said instead of "offline": a move, a restart, an update,
@@ -17724,10 +17705,14 @@ export const en = {
     /** A person's computer lends its internet to the workspace's own computer (ADR 0237). */
     shareInternet: "Agents use this computer's internet",
     shareInternetHint:
-      "The agents' connections go out through this computer's internet, so sites and servers see your location: websites, git, SSH, databases and other TCP connections. Never anything on your own network, nor email on port 25. Name lookups, calls and other UDP traffic use the usual connection, and so does everything while this computer is offline.",
+      "The agents' connections go out through this computer's internet, so sites and servers see your location: websites, git, SSH, databases and other TCP connections. Never anything on your own network, nor email on port 25. The agents' AI, name lookups, calls and other UDP traffic use the usual connection, and so does everything while this computer is offline.",
     /** The same on a self-hosted server, where agents reach it through proxy settings (ADR 0237). */
     shareInternetHintProxy:
-      "The agents' browsers and the programs that follow proxy settings (git over HTTPS, curl, most command-line tools) go out through this computer's internet, so sites see your location. SSH, database clients and other programs that ignore proxy settings use the usual connection, and so do name lookups and UDP traffic. Never anything on your own network, nor email on port 25. While this computer is offline, everything uses the usual connection.",
+      "The agents' browsers and the programs that follow proxy settings (git over HTTPS, curl, most command-line tools) go out through this computer's internet, so sites see your location. SSH, database clients and other programs that ignore proxy settings use the usual connection, and so do the agents' AI, name lookups and UDP traffic. Never anything on your own network, nor email on port 25. While this computer is offline, everything uses the usual connection.",
+    /** Nested under `shareInternet` while it is on (ADR 0237, amendment 2026-11-27 c). */
+    shareInternetOnly: "Use only this computer's internet",
+    shareInternetOnlyHint:
+      "Agents use only this computer's internet, their AI included, and never the usual connection. While it's offline, they have no internet until it's back.",
     shareInternetInUse: "In use now",
     shareInternetOther: "Agents use {{name}} now",
     shareInternetPick: "Use this one",
@@ -20544,6 +20529,9 @@ export const en = {
       /** The computer is online, but Claude's sign-in for all agents can't run there (its switch off, its self-check failing). */
       brain_unavailable_shared_login:
         "My computer can't run Claude's sign-in for all agents right now. I'll answer once it can. If it keeps failing, connect Claude again in AI accounts.",
+      /** Its agents use only a person's computer's internet, and that computer is offline (ADR 0237). */
+      brain_unavailable_lent_offline:
+        "I have no internet right now: {{computer}} is offline, and this workspace's agents use only its internet. I'll answer when it's back, or once “Use only this computer's internet” is off on its page.",
       provider_unavailable: "My AI provider isn't answering right now. I'll answer as soon as it's back.",
       provider_wait_rate_limit:
         "{{provider}} is limiting requests on this key right now. I'll answer as soon as it lets me.",
@@ -20558,7 +20546,10 @@ export const en = {
       provider_back: "My AI is back.",
       confidential_removed: "Removed: confidential text is kept for {{days}} days.",
       brain_queued: "Still in line. I'll answer as soon as my turn comes.",
-      brain_interrupted: "{{brain}} stopped before finishing. Already done, not repeated: {{tools}}.",
+      brain_interrupted: "{{brain}} stopped before finishing. Ask again to continue.",
+      brain_interrupted_timeout:
+        "{{brain}} ran past its time limit and stopped before finishing. Ask again to continue.",
+      brain_interrupted_computer: "The computer stopped {{brain}} before it finished. Ask again to continue.",
       plan_limit_cut: "I stopped at the {{plan}} plan's limit. I'll pick up where I left off {{when}}, when it resets.",
       plan_limit_cut_unknown:
         "I stopped at the {{plan}} plan's limit. I'll pick up where I left off as soon as it resets.",

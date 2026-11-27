@@ -136,12 +136,109 @@ test("a lent connection: the workspace's computer asks, the lending computer dia
   const computer = (await listMachines(f.db, f.owner.id, f.org.id)).find((m) => m.id === managed.machineId);
   expect(computer?.egressVia).toMatchObject({ machineId: laptop, name: "Ana's laptop", userName: "ana" });
   const lent = (await listDevices(f.db, f.org.id, ana.id)).devices.find((d) => d.id === laptop);
-  expect(lent?.shareInternet).toEqual({ on: true, inUse: true });
+  expect(lent?.shareInternet).toEqual({ on: true, inUse: true, only: false });
 
   held.side?.closed();
   expect(cloud.closed).toMatchObject({ code: STREAM_CLOSE.normal });
   expect(device.closed).toMatchObject({ code: STREAM_CLOSE.normal });
 });
+
+/**
+ * A network link: what is sent leaves at `mbps` (waiting meanwhile, `queued()` as a socket's backlog) and arrives
+ * `oneWayMs` later, in order.
+ */
+function wanLink(oneWayMs: number, mbps: number, arrive: (data: string | Uint8Array) => void) {
+  const bytesPerMs = (mbps * 1e6) / 8 / 1000;
+  let freeAt = 0;
+  let queued = 0;
+  return {
+    send(data: string | Uint8Array) {
+      const n = typeof data === "string" ? 0 : data.byteLength;
+      freeAt = Math.max(performance.now(), freeAt) + n / bytesPerMs;
+      queued += n;
+      const leaves = () => {
+        queued -= n;
+        setTimeout(() => arrive(data), oneWayMs);
+      };
+      setTimeout(leaves, Math.max(0, freeAt - performance.now()));
+    },
+    queued: () => queued,
+  };
+}
+
+test("an agent's upload through a slower lent link: its computer is paused, the connection isn't cut, the link stays full", async () => {
+  f = await setup();
+  const laptop = await pair(f.owner.id, "Laptop");
+  const managed = await issueManagedMachine({ db: f.db }, f.org.id);
+  if (!managed) throw new Error("no managed computer");
+  const TOTAL = 48 * 1024 * 1024;
+  const CHUNK = 64 * 1024;
+  const LENT_MBPS = 200;
+  let received = 0;
+  const closed: (number | undefined)[] = [];
+  // The person's computer: 75 ms away at 200 Mbit/s.
+  const toLender = wanLink(75, LENT_MBPS, (data) => {
+    if (typeof data !== "string") received += data.byteLength;
+  });
+  const lenderSocket = { send: toLender.send, close: (code?: number) => closed.push(code), buffered: toLender.queued };
+  let lenderSide: ClaimedStream | null = null;
+  const relay = createEgressRelay({
+    db: f.db,
+    hub: {
+      status: async () => ({ online: true }) as never,
+      async call(_machineId, request: MachineRequest) {
+        if (request.op !== "egress.dial") throw new Error(`unexpected ${request.op}`);
+        lenderSide = relay.claim(hello(request.streamId), laptop, lenderSocket);
+        return { connected: true } as never;
+      },
+    },
+  });
+
+  // The workspace's computer, 2 ms away at 2 Gbit/s: it sends while its own socket is under 1 MiB behind, and stops
+  // from the server's `pause` to its `resume`, as its runner does.
+  let ready = false;
+  let paused = false;
+  let sent = 0;
+  const up = wanLink(2, 2000, (data) => cloudSide?.data(data));
+  const pump = () => {
+    while (ready && !paused && sent < TOTAL && up.queued() <= 1024 * 1024) {
+      up.send(new Uint8Array(CHUNK));
+      sent += CHUNK;
+    }
+  };
+  const down = wanLink(2, 2000, (data) => {
+    if (typeof data !== "string") return;
+    const type = (JSON.parse(data) as { type: string }).type;
+    if (type === "stream.ready") ready = true;
+    if (type === "pause" || type === "resume") paused = type === "pause";
+    pump();
+  });
+  const pumping = setInterval(pump, 1);
+  const cloudSide = relay.claim(hello("p".repeat(43), { host: "upload.example", port: 443 }), managed.machineId, {
+    send: down.send,
+    close: (code) => closed.push(code),
+    buffered: down.queued,
+  });
+  const started = performance.now();
+  try {
+    while (received < TOTAL && closed.length === 0 && performance.now() - started < 20_000) await Bun.sleep(10);
+  } finally {
+    clearInterval(pumping);
+  }
+  const mbps = (received * 8) / ((performance.now() - started) * 1000);
+
+  expect(closed).toEqual([]);
+  expect(received).toBe(TOTAL);
+  // 48 MiB take about 2 s at 200 Mbit/s: the pauses keep the slow link busy.
+  expect(mbps).toBeGreaterThan(LENT_MBPS * 0.6);
+
+  // The person's computer can't write to the site as fast: its own `pause` stops the workspace's computer too.
+  (lenderSide as ClaimedStream | null)?.data(JSON.stringify({ type: "pause" }));
+  await until(() => paused, "pause");
+  (lenderSide as ClaimedStream | null)?.data(JSON.stringify({ type: "resume" }));
+  await until(() => !paused, "resume");
+  cloudSide?.closed();
+}, 30_000);
 
 test("nothing lent, a refused destination or a computer that isn't the workspace's: the socket closes with why", async () => {
   f = await setup();
@@ -388,7 +485,7 @@ describe("on a self-hosted server (ADR 0237): people's computers lend to this se
     expect(computer?.egressVia).toMatchObject({ machineId: laptop, name: "Ana's laptop", userName: "ana" });
     const list = await listDevices(f.db, f.org.id, ana.id);
     expect(list.lendsInternet).toBe(true);
-    expect(list.devices.find((d) => d.id === laptop)?.shareInternet).toEqual({ on: true, inUse: true });
+    expect(list.devices.find((d) => d.id === laptop)?.shareInternet).toEqual({ on: true, inUse: true, only: false });
   });
 
   test("a computer marked the workspace's borrows with its switch off; on, it lends and is refused as a borrower", async () => {
@@ -443,8 +540,10 @@ describe("on a self-hosted server (ADR 0237): people's computers lend to this se
     expect(await createEgressFetch(lendingRelay(laptop).relay).lentFetch(f.org.id)).toBeNull();
     await f.db.update(schema.machines).set({ egressShare: true }).where(eq(schema.machines.id, laptop));
     const { relay, device, held } = lendingRelay(laptop);
-    const open = await createEgressFetch(relay).lentFetch(f.org.id);
-    if (!open) throw new Error("no lent fetch");
+    const lent = await createEgressFetch(relay).lentFetch(f.org.id);
+    if (!lent) throw new Error("no lent fetch");
+    expect(lent.only).toBe(false);
+    const open = lent.fetch;
 
     // Bun's fetch tunnels through the proxy: the lending computer's side gets the TLS handshake.
     const real = globalThis.fetch;
