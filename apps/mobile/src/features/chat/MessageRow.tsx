@@ -46,6 +46,7 @@ import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { issueWorkOf } from "@agenteschat/client/lib/issues";
 import { workAnchorBody, workContinuable, workIsOver } from "@agenteschat/client/lib/long-work";
 import { brainUnavailableOf, messageToolOff } from "@agenteschat/client/lib/machine-outages";
+import { hasWideBlock } from "@agenteschat/client/lib/markdown";
 import { isMediaAfterReply, messageMediaOf } from "@agenteschat/client/lib/media";
 import { memberRoleColor } from "@agenteschat/client/lib/member-groups";
 import { serverBody } from "@agenteschat/client/lib/message-body";
@@ -146,6 +147,7 @@ import {
   approvalIdOf,
   artifactsOf,
   BUBBLES_EDGE,
+  BUBBLES_END,
   CHAT_TEXT_MAX_SCALE,
   chatNameOf,
   chatTimeOf,
@@ -660,6 +662,9 @@ function RowBody({
   const bubbleCap = useBubbleCap();
   // A compact row runs to the screen's edge: its face and words slide over with the pull, for its time.
   const slide = useSwipeSlide(compact);
+  // A table or code in someone else's bubble takes the conversation's width, out to the screen's margin: at a bubble's
+  // own width a table showed two of its columns on a phone (the web's bubble widens the same way).
+  const wide = useMemo(() => bubbled && Boolean(body) && hasWideBlock(body ?? ""), [bubbled, body]);
 
   if (onRight) {
     // In bubbles the time and what became of the message are never in it (a mark coming in or swapping changed the
@@ -1074,6 +1079,7 @@ function RowBody({
                       }}
                       style={[
                         lookRows.bubble,
+                        wide && styles.wideBubble,
                         OTHER_RUN[run],
                         { backgroundColor: otherBubble },
                         bubbleEdge,
@@ -1693,6 +1699,8 @@ const styles = StyleSheet.create({
   replied: { marginTop: 0, paddingTop: QUOTE_GAP },
   // Bubbles only: the other looks' cards cast shadows past the row.
   ownBox: { overflow: "hidden" },
+  // To the screen's margin past the room a bubble leaves at its end (`BUBBLES_END`), as far in as mine stands.
+  wideBubble: { alignSelf: "stretch", marginRight: -(BUBBLES_END - BUBBLES_EDGE) },
   aboutAbove: { paddingRight: 16 },
   // A quote of the agents' talk with no words to sit in: on the words' column, as wide as a bubble's.
   avslot: { width: MSG_AVATAR, alignItems: "center", paddingTop: 2 },

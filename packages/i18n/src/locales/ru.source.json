@@ -107,6 +107,21 @@
   "common.table": {
     "value": "Table"
   },
+  "common.tableRows": {
+    "value": {
+      "one": "Table · {{count}} row",
+      "other": "Table · {{count}} rows"
+    }
+  },
+  "common.tableSeeAll": {
+    "value": "See all {{count}} rows"
+  },
+  "common.tableRowCount": {
+    "value": {
+      "one": "{{count}} row",
+      "other": "{{count}} rows"
+    }
+  },
   "common.chartItem": {
     "value": "Item"
   },
