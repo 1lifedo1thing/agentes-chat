@@ -52,10 +52,21 @@ export function TableCard({
   const { t } = useTranslation();
   // From every row, the hidden ones too: the card and its full screen lay the columns out the same way.
   const kinds = useMemo(
-    () => tableColumnKinds(rows.map((r) => r.map(tableCellRead)), header.length),
+    () =>
+      tableColumnKinds(
+        rows.map((r) => r.map(tableCellRead)),
+        header.length,
+      ),
     [rows, header.length],
   );
-  const tsv = useMemo(() => tableTsv(header.map(copiedCell), rows.map((r) => r.map(copiedCell))), [header, rows]);
+  const tsv = useMemo(
+    () =>
+      tableTsv(
+        header.map(copiedCell),
+        rows.map((r) => r.map(copiedCell)),
+      ),
+    [header, rows],
+  );
   const cut = preview && tablePreviewed(rows.length);
   const [open, setOpen] = useState(false);
   const card = useRef<HTMLDivElement>(null);
