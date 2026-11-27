@@ -51,6 +51,14 @@ export const en = {
     /** A formatted block (JSON) shown as it was written. */
     raw: "Raw",
     table: "Table",
+    /** A Markdown table's card in a message or a document: its top line, beside Copy and Full screen. */
+    tableRows_one: "Table · {{count}} row",
+    tableRows_other: "Table · {{count}} rows",
+    /** Under a long table in a message, which shows only its first rows: opens the whole table in full screen. */
+    tableSeeAll: "See all {{count}} rows",
+    /** Under the title of a table in full screen. */
+    tableRowCount_one: "{{count}} row",
+    tableRowCount_other: "{{count}} rows",
     chartItem: "Item",
     chartShare: "Share",
     you: "you",

@@ -52,6 +52,14 @@ export const ptBR = {
     /** A formatted block (JSON) shown as it was written. */
     raw: "Original",
     table: "Tabela",
+    /** A Markdown table's card in a message or a document: its top line, beside Copy and Full screen. */
+    tableRows_one: "Tabela · {{count}} linha",
+    tableRows_other: "Tabela · {{count}} linhas",
+    /** Under a long table in a message, which shows only its first rows: opens the whole table in full screen. */
+    tableSeeAll: "Ver as {{count}} linhas",
+    /** Under the title of a table in full screen. */
+    tableRowCount_one: "{{count}} linha",
+    tableRowCount_other: "{{count}} linhas",
     chartItem: "Item",
     chartShare: "Parte",
     you: "você",
