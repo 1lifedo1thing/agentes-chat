@@ -27,7 +27,7 @@ import { managesAgent } from "@agenteschat/client/lib/audience";
 import { channelRefsOf } from "@agenteschat/client/lib/channel-refs";
 import { type RunPosition, runAround } from "@agenteschat/client/lib/chat";
 import { mineOnRight } from "@agenteschat/client/lib/chat-look";
-import { choiceReplyLine } from "@agenteschat/client/lib/choices";
+import { choiceReplyLine, choiceReplyRows } from "@agenteschat/client/lib/choices";
 import type { RelayedAnswer } from "@agenteschat/client/lib/consult-group";
 import { spilledText } from "@agenteschat/client/lib/devices";
 import { agentsByAnyHandle } from "@agenteschat/client/lib/directory";
@@ -353,8 +353,8 @@ function RowBody({
   // The right hand's stand-in line is its pill's sentence (`NoAiCard`): no text above it too.
   const body = isStandInLine(meta) ? "" : m.longWork ? workAnchorBody(t, said, meta, m.longWork) : said;
   const workOver = Boolean(m.longWork && workIsOver(m.longWork));
-  // The person's pick on a choice card (ADR 0124): one compact line, not a bubble.
-  const choiceReply = meta?.choiceReply && body ? <ChoiceReply text={choiceReplyLine(body)} /> : null;
+  // The person's picks on a choice card (ADR 0124): compact lines, not a bubble.
+  const choiceReply = meta?.choiceReply && body ? <ChoiceReply body={body} meta={meta} /> : null;
   const consulted = isAgent && m.author.id ? consultationsOf(meta) : [];
   // A long message from one agent to another (ADR 0034): its first paragraph and "Ver mais", which opens the rest in
   // place. On its thread's screen, and where it is read only, it stays whole.
@@ -1425,14 +1425,33 @@ function StoppedLine({
 }
 
 /** The person's pick sent from a choice card (ADR 0124): a check and what they picked. */
-function ChoiceReply({ text }: { text: string }) {
+/**
+ * The person's picks on a choice card, as the web draws them: the check on the first line, then a line per question,
+ * the question quiet and the answer standing out. A reply that doesn't carry them apart is one line.
+ */
+function ChoiceReply({ body, meta }: { body: string; meta: Record<string, unknown> | undefined }) {
   const c = useColors();
+  const rows = choiceReplyRows(body, meta);
   return (
     <View style={styles.choiceReply}>
       <LineIcon name="check" size={13} color={c.muted} variant="footnote" />
-      <Text variant="footnote" tone="ink" style={[styles.medium, styles.shrink]}>
-        {text}
-      </Text>
+      {rows ? (
+        <View style={styles.choiceRows}>
+          {rows.map((r, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: the card's questions in their order, never reordered
+            <Text key={i} variant="footnote" tone="muted">
+              {r.question}{" "}
+              <Text variant="footnote" tone="ink" style={styles.medium}>
+                {r.answer}
+              </Text>
+            </Text>
+          ))}
+        </View>
+      ) : (
+        <Text variant="footnote" tone="ink" style={[styles.medium, styles.shrink]}>
+          {choiceReplyLine(body)}
+        </Text>
+      )}
     </View>
   );
 }
@@ -1707,6 +1726,7 @@ const styles = StyleSheet.create({
   body: { flex: 1, minWidth: 0 },
   // A long pick wraps: the check stays on its first line.
   choiceReply: { flexDirection: "row", alignItems: "flex-start", gap: 6, paddingVertical: 2 },
+  choiceRows: { flexShrink: 1, gap: 2 },
   // Wraps on a narrow phone: a routine's tag and "Ver relatório" go to the next line instead of off the edge.
   who: { flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", columnGap: 8, rowGap: 4, marginBottom: 4 },
   // A person's name line keeps room at its end for the receipt's mark, with or without one, so a mark that comes

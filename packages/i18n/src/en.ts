@@ -11059,7 +11059,6 @@ export const en = {
     filter: {
       person: "People",
       agent: "Agents",
-      routine: "Routines",
       reminder: "Reminders",
       deadline: "Task due dates",
     },
@@ -11093,12 +11092,6 @@ export const en = {
         declined: "You're not going.",
       },
     },
-    every: { hour: "every hour", hours: "every {{count}} h", minutes: "every {{count}} min" },
-    perDay: "{{count}}× a day",
-    runs_one: "{{count}} run in these days.",
-    runs_other: "{{count}} runs in these days.",
-    /** Under a run's title in its details; the agent's name and face are the line above. */
-    routineDetail: "Routine · delivers to {{target}}",
     deadlineDetail: "The task is due.",
     reminderBy: "Set by {{name}}",
     /** Under a reminder's title in its details; the agent that posts it is the line above. */
@@ -11106,21 +11099,11 @@ export const en = {
     cancelReminder: "Cancel reminder",
     reminderCancelled: "Reminder cancelled",
     openIssue: "Open task",
-    openRoutines: "See in Routines",
-    openRoutine: "Open routine",
-    runAria: "Routine {{name}}, {{time}}",
     /** An item's hover: its name, whose it is, when. */
     runHint: "{{name}} · {{agent}} · {{time}}",
-    runsAt: "Routines at {{time}}",
-    /** Under a stack of routine runs in the week: the runs it doesn't show, which it opens. */
-    moreRuns_one: "+{{count}} routine",
-    moreRuns_other: "+{{count}} routines",
-    runTimes: "×{{count}}",
-    result: { ok: "replied", silent: "nothing new", failed: "failed", skipped: "didn't run" },
-    lastResult: "last: {{result}}",
     upcomingMeta: "{{day}} · {{time}}",
     emptyHint: "Nothing scheduled. Drag to create or press N",
-    agendaEmpty: "Events and routines in the next 30 days show up here.",
+    agendaEmpty: "Events and reminders in the next 30 days show up here.",
     agendaEmptyTitle: "A clear calendar for the next 30 days",
     noResults: "Nothing with this filter.",
     more: "+{{count}} more",

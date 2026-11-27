@@ -11328,7 +11328,6 @@
     "filter": {
       "person": "Osoby",
       "agent": "Agenci",
-      "routine": "Rutyny",
       "reminder": "Przypomnienia",
       "deadline": "Terminy zadań"
     },
@@ -11361,43 +11360,16 @@
         "declined": "Nie będziesz."
       }
     },
-    "every": {
-      "hour": "co godzinę",
-      "hours": "co {{count}} h",
-      "minutes": "co {{count}} min"
-    },
-    "perDay": "{{count}}× dziennie",
-    "runs_one": "{{count}} uruchomienie w tych dniach.",
-    "runs_few": "{{count}} uruchomienia w tych dniach.",
-    "runs_many": "{{count}} uruchomień w tych dniach.",
-    "runs_other": "{{count}} uruchomienia w tych dniach.",
-    "routineDetail": "Rutyna · dostarcza do: {{target}}",
     "deadlineDetail": "Termin zadania.",
     "reminderBy": "Ustawione przez: {{name}}",
     "reminderPosted": "Przypomnienie · trafi do: {{target}}",
     "cancelReminder": "Anuluj przypomnienie",
     "reminderCancelled": "Przypomnienie anulowane",
     "openIssue": "Otwórz zadanie",
-    "openRoutines": "Zobacz w Rutynach",
-    "openRoutine": "Otwórz rutynę",
-    "runAria": "Rutyna {{name}}, {{time}}",
     "runHint": "{{name}} · {{agent}} · {{time}}",
-    "runsAt": "Rutyny o {{time}}",
-    "moreRuns_one": "+{{count}} rutyna",
-    "moreRuns_few": "+{{count}} rutyny",
-    "moreRuns_many": "+{{count}} rutyn",
-    "moreRuns_other": "+{{count}} rutyny",
-    "runTimes": "×{{count}}",
-    "result": {
-      "ok": "odpowiedziała",
-      "silent": "nic nowego",
-      "failed": "nie powiodła się",
-      "skipped": "nie uruchomiła się"
-    },
-    "lastResult": "ostatnio: {{result}}",
     "upcomingMeta": "{{day}} · {{time}}",
     "emptyHint": "Nic nie zaplanowano. Przeciągnij, żeby utworzyć, albo naciśnij N",
-    "agendaEmpty": "Tu pojawią się wydarzenia i rutyny z najbliższych 30 dni.",
+    "agendaEmpty": "Tu pojawią się wydarzenia i przypomnienia z najbliższych 30 dni.",
     "agendaEmptyTitle": "Wolny kalendarz na najbliższe 30 dni",
     "noResults": "Nic dla tego filtra.",
     "more": "+{{count}} więcej",
