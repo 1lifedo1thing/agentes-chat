@@ -11287,7 +11287,6 @@
     "filter": {
       "person": "Люди",
       "agent": "Агенты",
-      "routine": "Регулярные задачи",
       "reminder": "Напоминания",
       "deadline": "Сроки задач"
     },
@@ -11320,43 +11319,16 @@
         "declined": "Вы не придёте."
       }
     },
-    "every": {
-      "hour": "каждый час",
-      "hours": "каждые {{count}} ч",
-      "minutes": "каждые {{count}} мин"
-    },
-    "perDay": "{{count}}× в день",
-    "runs_one": "{{count}} запуск за эти дни.",
-    "runs_few": "{{count}} запуска за эти дни.",
-    "runs_many": "{{count}} запусков за эти дни.",
-    "runs_other": "{{count}} запуска за эти дни.",
-    "routineDetail": "Регулярная задача · результат в {{target}}",
     "deadlineDetail": "Срок задачи.",
     "reminderBy": "Создал(а): {{name}}",
     "reminderPosted": "Напоминание · публикуется в {{target}}",
     "cancelReminder": "Отменить напоминание",
     "reminderCancelled": "Напоминание отменено",
     "openIssue": "Открыть задачу",
-    "openRoutines": "Смотреть в регулярных задачах",
-    "openRoutine": "Открыть регулярную задачу",
-    "runAria": "Регулярная задача {{name}}, {{time}}",
     "runHint": "{{name}} · {{agent}} · {{time}}",
-    "runsAt": "Регулярные задачи в {{time}}",
-    "moreRuns_one": "+{{count}} регулярная задача",
-    "moreRuns_few": "+{{count}} регулярные задачи",
-    "moreRuns_many": "+{{count}} регулярных задач",
-    "moreRuns_other": "+{{count}} регулярной задачи",
-    "runTimes": "×{{count}}",
-    "result": {
-      "ok": "ответил",
-      "silent": "ничего нового",
-      "failed": "ошибка",
-      "skipped": "не запускалась"
-    },
-    "lastResult": "последний раз: {{result}}",
     "upcomingMeta": "{{day}} · {{time}}",
     "emptyHint": "Ничего не запланировано. Потяните, чтобы создать, или нажмите N",
-    "agendaEmpty": "Здесь появятся события и регулярные задачи на ближайшие 30 дней.",
+    "agendaEmpty": "Здесь появятся события и напоминания на ближайшие 30 дней.",
     "agendaEmptyTitle": "Календарь свободен на ближайшие 30 дней",
     "noResults": "С этим фильтром ничего нет.",
     "more": "ещё {{count}}",

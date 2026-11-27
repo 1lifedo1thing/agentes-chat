@@ -10146,7 +10146,6 @@
     "filter": {
       "person": "成员",
       "agent": "智能体",
-      "routine": "例行工作",
       "reminder": "提醒",
       "deadline": "任务截止日期"
     },
@@ -10179,37 +10178,16 @@
         "declined": "你不参加。"
       }
     },
-    "every": {
-      "hour": "每小时",
-      "hours": "每 {{count}} 小时",
-      "minutes": "每 {{count}} 分钟"
-    },
-    "perDay": "每天 {{count}} 次",
-    "runs_other": "这几天共运行 {{count}} 次。",
-    "routineDetail": "例行工作 · 发送到 {{target}}",
     "deadlineDetail": "任务到期了。",
     "reminderBy": "由 {{name}} 设置",
     "reminderPosted": "提醒 · 发布在 {{target}}",
     "cancelReminder": "取消提醒",
     "reminderCancelled": "提醒已取消",
     "openIssue": "打开任务",
-    "openRoutines": "在“例行工作”中查看",
-    "openRoutine": "打开例行工作",
-    "runAria": "例行工作 {{name}}，{{time}}",
     "runHint": "{{name}} · {{agent}} · {{time}}",
-    "runsAt": "{{time}} 的例行工作",
-    "moreRuns_other": "还有 {{count}} 项例行工作",
-    "runTimes": "×{{count}}",
-    "result": {
-      "ok": "已回复",
-      "silent": "没有新内容",
-      "failed": "失败",
-      "skipped": "未运行"
-    },
-    "lastResult": "上次：{{result}}",
     "upcomingMeta": "{{day}} · {{time}}",
     "emptyHint": "没有安排。拖动即可创建，或按 N",
-    "agendaEmpty": "接下来 30 天的日程和例行工作会显示在这里。",
+    "agendaEmpty": "接下来 30 天的日程和提醒会显示在这里。",
     "agendaEmptyTitle": "未来 30 天日程空闲",
     "noResults": "此筛选下没有内容。",
     "more": "还有 {{count}} 项",

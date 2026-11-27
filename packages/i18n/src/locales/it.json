@@ -10963,7 +10963,6 @@
     "filter": {
       "person": "Persone",
       "agent": "Agenti",
-      "routine": "Routine",
       "reminder": "Promemoria",
       "deadline": "Scadenze delle attività"
     },
@@ -10996,41 +10995,16 @@
         "declined": "Non ci sarai."
       }
     },
-    "every": {
-      "hour": "ogni ora",
-      "hours": "ogni {{count}} h",
-      "minutes": "ogni {{count}} min"
-    },
-    "perDay": "{{count}} volte al giorno",
-    "runs_one": "{{count}} esecuzione in questi giorni.",
-    "runs_many": "{{count}} esecuzioni in questi giorni.",
-    "runs_other": "{{count}} esecuzioni in questi giorni.",
-    "routineDetail": "Routine · consegna a {{target}}",
     "deadlineDetail": "L'attività è in scadenza.",
     "reminderBy": "Creato da {{name}}",
     "reminderPosted": "Promemoria · pubblicato in {{target}}",
     "cancelReminder": "Annulla promemoria",
     "reminderCancelled": "Promemoria annullato",
     "openIssue": "Apri attività",
-    "openRoutines": "Vedi in Routine",
-    "openRoutine": "Apri routine",
-    "runAria": "Routine {{name}}, {{time}}",
     "runHint": "{{name}} · {{agent}} · {{time}}",
-    "runsAt": "Routine alle {{time}}",
-    "moreRuns_one": "+{{count}} routine",
-    "moreRuns_many": "+{{count}} routine",
-    "moreRuns_other": "+{{count}} routine",
-    "runTimes": "×{{count}}",
-    "result": {
-      "ok": "ha risposto",
-      "silent": "niente di nuovo",
-      "failed": "non riuscita",
-      "skipped": "non eseguita"
-    },
-    "lastResult": "ultima: {{result}}",
     "upcomingMeta": "{{day}} · {{time}}",
     "emptyHint": "Niente in programma. Trascina per creare o premi N",
-    "agendaEmpty": "Eventi e routine dei prossimi 30 giorni compaiono qui.",
+    "agendaEmpty": "Eventi e promemoria dei prossimi 30 giorni compaiono qui.",
     "agendaEmptyTitle": "Agenda libera per i prossimi 30 giorni",
     "noResults": "Niente con questo filtro.",
     "more": "+{{count}} altri",

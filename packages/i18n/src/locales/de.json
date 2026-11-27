@@ -10540,7 +10540,6 @@
     "filter": {
       "person": "Personen",
       "agent": "Agenten",
-      "routine": "Routinen",
       "reminder": "Erinnerungen",
       "deadline": "Fälligkeiten von Aufgaben"
     },
@@ -10573,39 +10572,16 @@
         "declined": "Du kommst nicht."
       }
     },
-    "every": {
-      "hour": "stündlich",
-      "hours": "alle {{count}} Std.",
-      "minutes": "alle {{count}} Min."
-    },
-    "perDay": "{{count}}× am Tag",
-    "runs_one": "{{count}} Ausführung in diesen Tagen.",
-    "runs_other": "{{count}} Ausführungen in diesen Tagen.",
-    "routineDetail": "Routine · liefert an {{target}}",
     "deadlineDetail": "Die Aufgabe ist fällig.",
     "reminderBy": "Erstellt von {{name}}",
     "reminderPosted": "Erinnerung · erscheint in {{target}}",
     "cancelReminder": "Erinnerung abbrechen",
     "reminderCancelled": "Erinnerung abgebrochen",
     "openIssue": "Aufgabe öffnen",
-    "openRoutines": "In Routinen ansehen",
-    "openRoutine": "Routine öffnen",
-    "runAria": "Routine {{name}}, {{time}}",
     "runHint": "{{name}} · {{agent}} · {{time}}",
-    "runsAt": "Routinen um {{time}}",
-    "moreRuns_one": "+{{count}} Routine",
-    "moreRuns_other": "+{{count}} Routinen",
-    "runTimes": "×{{count}}",
-    "result": {
-      "ok": "hat geantwortet",
-      "silent": "nichts Neues",
-      "failed": "fehlgeschlagen",
-      "skipped": "nicht ausgeführt"
-    },
-    "lastResult": "zuletzt: {{result}}",
     "upcomingMeta": "{{day}} · {{time}}",
     "emptyHint": "Nichts geplant. Zum Erstellen ziehen oder N drücken",
-    "agendaEmpty": "Termine und Routinen der nächsten 30 Tage erscheinen hier.",
+    "agendaEmpty": "Termine und Erinnerungen der nächsten 30 Tage erscheinen hier.",
     "agendaEmptyTitle": "Kalender frei für die nächsten 30 Tage",
     "noResults": "Nichts mit diesem Filter.",
     "more": "+{{count}} weitere",

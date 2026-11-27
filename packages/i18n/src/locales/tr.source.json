@@ -25542,9 +25542,6 @@
   "calendar.filter.agent": {
     "value": "Agents"
   },
-  "calendar.filter.routine": {
-    "value": "Routines"
-  },
   "calendar.filter.reminder": {
     "value": "Reminders"
   },
@@ -25626,27 +25623,6 @@
   "calendar.rsvp.mine.declined": {
     "value": "You're not going."
   },
-  "calendar.every.hour": {
-    "value": "every hour"
-  },
-  "calendar.every.hours": {
-    "value": "every {{count}} h"
-  },
-  "calendar.every.minutes": {
-    "value": "every {{count}} min"
-  },
-  "calendar.perDay": {
-    "value": "{{count}}× a day"
-  },
-  "calendar.runs": {
-    "value": {
-      "one": "{{count}} run in these days.",
-      "other": "{{count}} runs in these days."
-    }
-  },
-  "calendar.routineDetail": {
-    "value": "Routine · delivers to {{target}}"
-  },
   "calendar.deadlineDetail": {
     "value": "The task is due."
   },
@@ -25665,44 +25641,8 @@
   "calendar.openIssue": {
     "value": "Open task"
   },
-  "calendar.openRoutines": {
-    "value": "See in Routines"
-  },
-  "calendar.openRoutine": {
-    "value": "Open routine"
-  },
-  "calendar.runAria": {
-    "value": "Routine {{name}}, {{time}}"
-  },
   "calendar.runHint": {
     "value": "{{name}} · {{agent}} · {{time}}"
-  },
-  "calendar.runsAt": {
-    "value": "Routines at {{time}}"
-  },
-  "calendar.moreRuns": {
-    "value": {
-      "one": "+{{count}} routine",
-      "other": "+{{count}} routines"
-    }
-  },
-  "calendar.runTimes": {
-    "value": "×{{count}}"
-  },
-  "calendar.result.ok": {
-    "value": "replied"
-  },
-  "calendar.result.silent": {
-    "value": "nothing new"
-  },
-  "calendar.result.failed": {
-    "value": "failed"
-  },
-  "calendar.result.skipped": {
-    "value": "didn't run"
-  },
-  "calendar.lastResult": {
-    "value": "last: {{result}}"
   },
   "calendar.upcomingMeta": {
     "value": "{{day}} · {{time}}"
@@ -25711,7 +25651,7 @@
     "value": "Nothing scheduled. Drag to create or press N"
   },
   "calendar.agendaEmpty": {
-    "value": "Events and routines in the next 30 days show up here."
+    "value": "Events and reminders in the next 30 days show up here."
   },
   "calendar.agendaEmptyTitle": {
     "value": "A clear calendar for the next 30 days"

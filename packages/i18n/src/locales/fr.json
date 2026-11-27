@@ -10934,7 +10934,6 @@
     "filter": {
       "person": "Personnes",
       "agent": "Agents",
-      "routine": "Routines",
       "reminder": "Rappels",
       "deadline": "Échéances des tâches"
     },
@@ -10967,41 +10966,16 @@
         "declined": "Vous n'y allez pas."
       }
     },
-    "every": {
-      "hour": "toutes les heures",
-      "hours": "toutes les {{count}} h",
-      "minutes": "toutes les {{count}} min"
-    },
-    "perDay": "{{count}}× par jour",
-    "runs_one": "{{count}} exécution sur ces jours.",
-    "runs_many": "{{count}} exécutions sur ces jours.",
-    "runs_other": "{{count}} exécutions sur ces jours.",
-    "routineDetail": "Routine · livre dans {{target}}",
     "deadlineDetail": "La tâche arrive à échéance.",
     "reminderBy": "Créé par {{name}}",
     "reminderPosted": "Rappel · publié dans {{target}}",
     "cancelReminder": "Annuler le rappel",
     "reminderCancelled": "Rappel annulé",
     "openIssue": "Ouvrir la tâche",
-    "openRoutines": "Voir dans Routines",
-    "openRoutine": "Ouvrir la routine",
-    "runAria": "Routine {{name}}, {{time}}",
     "runHint": "{{name}} · {{agent}} · {{time}}",
-    "runsAt": "Routines à {{time}}",
-    "moreRuns_one": "+{{count}} routine",
-    "moreRuns_many": "+{{count}} routines",
-    "moreRuns_other": "+{{count}} routines",
-    "runTimes": "×{{count}}",
-    "result": {
-      "ok": "a répondu",
-      "silent": "rien de nouveau",
-      "failed": "échec",
-      "skipped": "ne s'est pas exécutée"
-    },
-    "lastResult": "dernière : {{result}}",
     "upcomingMeta": "{{day}} · {{time}}",
     "emptyHint": "Rien de prévu. Faites glisser pour créer ou appuyez sur N",
-    "agendaEmpty": "Les événements et routines des 30 prochains jours apparaissent ici.",
+    "agendaEmpty": "Les événements et rappels des 30 prochains jours apparaissent ici.",
     "agendaEmptyTitle": "Agenda libre pour les 30 prochains jours",
     "noResults": "Rien avec ce filtre.",
     "more": "+{{count}} de plus",

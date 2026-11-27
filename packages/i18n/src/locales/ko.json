@@ -10097,7 +10097,6 @@
     "filter": {
       "person": "사람",
       "agent": "에이전트",
-      "routine": "루틴",
       "reminder": "리마인더",
       "deadline": "작업 마감일"
     },
@@ -10130,37 +10129,16 @@
         "declined": "참석하지 않아요."
       }
     },
-    "every": {
-      "hour": "매시간",
-      "hours": "{{count}}시간마다",
-      "minutes": "{{count}}분마다"
-    },
-    "perDay": "하루 {{count}}회",
-    "runs_other": "이 기간에 실행 {{count}}회.",
-    "routineDetail": "루틴 · {{target}}에 전달",
     "deadlineDetail": "작업 마감일이에요.",
     "reminderBy": "{{name}} 님이 설정",
     "reminderPosted": "리마인더 · {{target}}에 게시",
     "cancelReminder": "리마인더 취소",
     "reminderCancelled": "리마인더를 취소했습니다",
     "openIssue": "작업 열기",
-    "openRoutines": "루틴에서 보기",
-    "openRoutine": "루틴 열기",
-    "runAria": "루틴 {{name}}, {{time}}",
     "runHint": "{{name}} · {{agent}} · {{time}}",
-    "runsAt": "{{time}}의 루틴",
-    "moreRuns_other": "+{{count}}개 루틴",
-    "runTimes": "×{{count}}",
-    "result": {
-      "ok": "답함",
-      "silent": "새 소식 없음",
-      "failed": "실패",
-      "skipped": "실행 안 됨"
-    },
-    "lastResult": "최근: {{result}}",
     "upcomingMeta": "{{day}} · {{time}}",
     "emptyHint": "예약된 일정이 없어요. 드래그하거나 N을 눌러 만드세요",
-    "agendaEmpty": "앞으로 30일의 일정과 루틴이 여기에 표시돼요.",
+    "agendaEmpty": "앞으로 30일의 일정과 리마인더가 여기에 표시돼요.",
     "agendaEmptyTitle": "앞으로 30일은 일정이 비어 있어요",
     "noResults": "이 필터에 해당하는 항목이 없어요.",
     "more": "+{{count}}개 더",

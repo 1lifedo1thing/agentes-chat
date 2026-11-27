@@ -10477,7 +10477,6 @@
     "filter": {
       "person": "Kişiler",
       "agent": "Ajanlar",
-      "routine": "Rutinler",
       "reminder": "Hatırlatıcılar",
       "deadline": "Görev bitiş tarihleri"
     },
@@ -10510,39 +10509,16 @@
         "declined": "Katılmayacaksınız."
       }
     },
-    "every": {
-      "hour": "her saat",
-      "hours": "{{count}} saatte bir",
-      "minutes": "{{count}} dakikada bir"
-    },
-    "perDay": "günde {{count}} kez",
-    "runs_one": "Bu günlerde {{count}} çalıştırma.",
-    "runs_other": "Bu günlerde {{count}} çalıştırma.",
-    "routineDetail": "Rutin · {{target}} hedefine teslim eder",
     "deadlineDetail": "Görevin bitiş tarihi.",
     "reminderBy": "Oluşturan: {{name}}",
     "reminderPosted": "Hatırlatıcı · {{target}} içinde paylaşılır",
     "cancelReminder": "Hatırlatıcıyı iptal et",
     "reminderCancelled": "Hatırlatıcı iptal edildi",
     "openIssue": "Görevi aç",
-    "openRoutines": "Rutinlerde gör",
-    "openRoutine": "Rutini aç",
-    "runAria": "{{name}} rutini, {{time}}",
     "runHint": "{{name}} · {{agent}} · {{time}}",
-    "runsAt": "{{time}} rutinleri",
-    "moreRuns_one": "+{{count}} rutin",
-    "moreRuns_other": "+{{count}} rutin",
-    "runTimes": "×{{count}}",
-    "result": {
-      "ok": "yanıt verdi",
-      "silent": "yeni bir şey yok",
-      "failed": "başarısız",
-      "skipped": "çalışmadı"
-    },
-    "lastResult": "son: {{result}}",
     "upcomingMeta": "{{day}} · {{time}}",
     "emptyHint": "Planlanmış bir şey yok. Oluşturmak için sürükleyin veya N'ye basın",
-    "agendaEmpty": "Önümüzdeki 30 günün etkinlikleri ve rutinleri burada görünür.",
+    "agendaEmpty": "Önümüzdeki 30 günün etkinlikleri ve hatırlatıcıları burada görünür.",
     "agendaEmptyTitle": "Önümüzdeki 30 gün takvim boş",
     "noResults": "Bu filtreyle bir şey yok.",
     "more": "+{{count}} daha",
