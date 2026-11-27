@@ -11995,6 +11995,7 @@
     "silent": "Non si è sentito nulla. Non è stato inviato niente.",
     "notSent": "Impossibile inviare l'audio.",
     "limit": "Il limite di audio di oggi è esaurito. Scrivi qui, o riprova domani.",
+    "plan": "I messaggi vocali sono inclusi in un piano agentes.chat. Puoi comunque scrivere qui.",
     "micBlocked": "Il microfono è bloccato",
     "micBlockedHint": "Consenti il microfono nelle impostazioni del dispositivo per registrare.",
     "openSettings": "Apri impostazioni",

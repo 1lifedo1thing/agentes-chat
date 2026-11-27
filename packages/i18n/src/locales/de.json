@@ -11514,6 +11514,7 @@
     "silent": "Nichts gehört. Es wurde nichts gesendet.",
     "notSent": "Das Audio konnte nicht gesendet werden.",
     "limit": "Das Audio-Limit für heute ist aufgebraucht. Schreib hier oder versuch es morgen noch mal.",
+    "plan": "Sprachnachrichten gibt es mit einem agentes.chat-Tarif. Schreiben kannst du hier weiterhin.",
     "micBlocked": "Das Mikrofon ist blockiert",
     "micBlockedHint": "Erlaube das Mikrofon in den Einstellungen deines Geräts, um aufzunehmen.",
     "openSettings": "Einstellungen öffnen",

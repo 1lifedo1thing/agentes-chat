@@ -27943,6 +27943,9 @@
   "voice.limit": {
     "value": "Today's audio limit is used up. Write here, or try again tomorrow."
   },
+  "voice.plan": {
+    "value": "Voice messages come with an agentes.chat plan. You can still write here."
+  },
   "voice.micBlocked": {
     "value": "The microphone is blocked"
   },

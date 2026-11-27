@@ -11584,6 +11584,7 @@
     "silent": "Niets gehoord. Er is niets verstuurd.",
     "notSent": "Kon de audio niet versturen.",
     "limit": "De audiolimiet van vandaag is op. Typ hier, of probeer het morgen opnieuw.",
+    "plan": "Spraakberichten horen bij een agentes.chat-abonnement. Typen kan hier gewoon.",
     "micBlocked": "De microfoon is geblokkeerd",
     "micBlockedHint": "Sta de microfoon toe in de instellingen van je apparaat om op te nemen.",
     "openSettings": "Instellingen openen",

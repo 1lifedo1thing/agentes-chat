@@ -11893,6 +11893,7 @@
     "silent": "No se escuchó nada. No se envió nada.",
     "notSent": "No se pudo enviar el audio.",
     "limit": "Se acabó el límite de audios de hoy. Escribe aquí o vuelve a intentarlo mañana.",
+    "plan": "Los mensajes de voz vienen con un plan de agentes.chat. Puedes seguir escribiendo aquí.",
     "micBlocked": "El micrófono está bloqueado",
     "micBlockedHint": "Permite el micrófono en la configuración de tu dispositivo para grabar.",
     "openSettings": "Abrir configuración",

@@ -12383,6 +12383,7 @@
     "silent": "Nic nie było słychać. Nic nie zostało wysłane.",
     "notSent": "Nie udało się wysłać nagrania.",
     "limit": "Dzisiejszy limit nagrań się wyczerpał. Napisz tutaj albo spróbuj ponownie jutro.",
+    "plan": "Wiadomości głosowe są dostępne w planie agentes.chat. Pisać tutaj możesz dalej.",
     "micBlocked": "Mikrofon jest zablokowany",
     "micBlockedHint": "Zezwól na mikrofon w ustawieniach urządzenia, aby nagrywać.",
     "openSettings": "Otwórz ustawienia",

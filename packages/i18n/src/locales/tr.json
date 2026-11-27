@@ -11449,6 +11449,7 @@
     "silent": "Hiçbir şey duyulmadı. Hiçbir şey gönderilmedi.",
     "notSent": "Ses gönderilemedi.",
     "limit": "Bugünkü ses sınırı doldu. Buraya yazın ya da yarın tekrar deneyin.",
+    "plan": "Sesli mesajlar bir agentes.chat planıyla gelir. Buraya yazmaya devam edebilirsiniz.",
     "micBlocked": "Mikrofon engellendi",
     "micBlockedHint": "Kayıt yapmak için cihaz ayarlarınızdan mikrofona izin verin.",
     "openSettings": "Ayarları aç",

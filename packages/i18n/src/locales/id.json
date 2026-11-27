@@ -11100,6 +11100,7 @@
     "silent": "Tidak terdengar apa pun. Tidak ada yang dikirim.",
     "notSent": "Audio tidak bisa dikirim.",
     "limit": "Batas audio hari ini sudah habis. Tulis di sini, atau coba lagi besok.",
+    "plan": "Pesan suara tersedia dengan paket agentes.chat. Kamu tetap bisa menulis di sini.",
     "micBlocked": "Mikrofon diblokir",
     "micBlockedHint": "Izinkan mikrofon di pengaturan perangkatmu untuk merekam.",
     "openSettings": "Buka pengaturan",

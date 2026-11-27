@@ -287,6 +287,7 @@ import { objectUrls } from "@/components/artifacts/FileView";
 import { ImageMaking } from "@/components/artifacts/ImageMaking";
 import { ImageSet } from "@/components/artifacts/viewer-context";
 import { HandedWorkLine, MessageWorkLine } from "@/components/BackgroundWork";
+import { usePlanToast } from "@/components/BillingLinkButton";
 import { HeldBrowserCard, RunBrowserCard, useHeldTakeover } from "@/components/browser/BrowserCard";
 import { BrowserHandoffCard } from "@/components/browser/BrowserHandoffCard";
 import { BrowserTrailCard } from "@/components/browser/BrowserTrailCard";
@@ -1274,6 +1275,7 @@ function ChannelView({
       .map((a) => a.id);
 
   const toast = useToast();
+  const planToast = usePlanToast();
   const qc = useQueryClient();
   const post = usePostMessage(org.id, channel.id, {
     me: { id: me.user.id },
@@ -1317,8 +1319,11 @@ function ChannelView({
   const { send, retry } = sendHelpers(post);
   const sendVoice = useSendVoice(org.id, channel.id, {
     me: { id: me.user.id },
-    onRefused: (error) =>
-      toast.show(errorCode(error) === "voice_limit" ? t("voice.limit") : errorText(t, error), "error"),
+    onRefused: (error) => {
+      const code = errorCode(error);
+      if (code === "voice.plan") planToast(t("voice.plan"));
+      else toast.show(code === "voice_limit" ? t("voice.limit") : errorText(t, error), "error");
+    },
   });
 
   const api = useApi();
@@ -2414,9 +2419,12 @@ function ChannelView({
           allowed: async () => {
             const asked = await voiceSetup.ask();
             if (!asked) return false;
-            const { allowed } = await api.voice.allowed(org.id).catch(() => ({ allowed: true }));
-            if (!allowed) toast.show(t("voice.limit"));
-            return allowed && asked;
+            const { allowed, reason } = await api.voice
+              .allowed(org.id)
+              .catch(() => ({ allowed: true, reason: undefined }));
+            if (reason === "plan") planToast(t("voice.plan"));
+            else if (!allowed) toast.show(t("voice.limit"));
+            return allowed;
           },
           // "gravando áudio…" for the others while it records and while it uploads (then the server keeps it until the
           // message comes); the throttle makes it one frame every 3 s, and holds the upload's while they write.

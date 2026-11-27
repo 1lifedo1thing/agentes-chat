@@ -11965,6 +11965,7 @@
     "silent": "Rien entendu. Rien n'a été envoyé.",
     "notSent": "Impossible d'envoyer l'audio.",
     "limit": "La limite d'audio du jour est atteinte. Écrivez ici, ou réessayez demain.",
+    "plan": "Les messages vocaux sont inclus avec un abonnement agentes.chat. Vous pouvez toujours écrire ici.",
     "micBlocked": "Le microphone est bloqué",
     "micBlockedHint": "Autorisez le microphone dans les réglages de votre appareil pour enregistrer.",
     "openSettings": "Ouvrir les réglages",

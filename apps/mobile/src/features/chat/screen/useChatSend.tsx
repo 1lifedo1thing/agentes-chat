@@ -51,7 +51,8 @@ import type { useDirectory } from "../../shared/hooks";
 import { agentLook } from "../../shared/logic";
 import type { useSheet } from "../../shared/SheetHost";
 import { vaultHref } from "../../vault/logic";
-import { retryVoice, type VoiceRefusal } from "../../voice/outbox";
+import { retryVoice } from "../../voice/outbox";
+import { useSayVoiceRefusal } from "../../voice/useVoiceTake";
 import { VoiceSetupSheet } from "../../voice/VoiceSetupSheet";
 import { AttachmentStrip, MAX_PENDING, type PendingFile } from "../AttachmentStrip";
 import { ChannelPicker } from "../ChannelPicker";
@@ -206,10 +207,7 @@ export function useChatSend({
     return { ...localMeta(quote, dir.nameOf(quote.author), files), ...liveRef };
   };
   const qc = useQueryClient();
-  const voiceRefused = useCallback(
-    (reason: VoiceRefusal) => toast({ title: t(reason === "limit" ? "voice.limit" : "voice.notSent"), icon: "x" }),
-    [t, toast],
-  );
+  const voiceRefused = useSayVoiceRefusal();
   // Rows keep the same callback (so a streaming reply doesn't re-render every message).
   const retryRef = useRef(retry);
   retryRef.current = retry;
