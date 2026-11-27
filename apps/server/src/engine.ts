@@ -75,6 +75,7 @@ import {
   createNativeConnectorToolSource,
   createPassToolSource,
   createPermissionToolSource,
+  createPersonAppsToolSource,
   createReactToolSource,
   createReleaseAsksToolSource,
   createSandboxToolSource,
@@ -622,6 +623,8 @@ export function buildEngine(o: EngineOptions) {
         vision,
         publicUrl: config.PUBLIC_URL,
       }),
+      // The person's own apps on their connected computer (ADR 0258): with Run code, when its runner serves them.
+      createPersonAppsToolSource({ machines: { hub: machineHub } }),
       // Git through our proxy (ADR 0024): connected machines clone and push through the runner's `git.sync`
       // (only our credential reaches the machine; nothing global changes there).
       createGitToolSource({
