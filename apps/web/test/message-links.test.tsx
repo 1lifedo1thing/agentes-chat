@@ -244,17 +244,22 @@ describe("a message of the conversation asked for inside one of its threads", ()
     return state;
   }
 
-  // The thread's link opens its conversation with the thread in the panel beside it (`?thread=`), the message asked
-  // for in that panel (`?tm=`); the panel, which holds all of its thread, takes the conversation to one outside it.
+  // A thread's link opens its conversation with the thread in the panel beside it (`?tm=` the panel's message).
   test("it opens in the conversation, at it, never a toast saying it's gone", async () => {
     const { router } = await renderApp(`/org/${ORG_ID}/threads/${TARGET}?m=${OUTSIDE}`, {
       api: createFakeApi(withReport()),
     });
+    await waitFor(() => expect(router.state.location.search).toEqual({ m: OUTSIDE }));
+    expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/c/${ENG_ID}`);
     await waitFor(() =>
       expect(document.querySelector(`[data-message-id="${OUTSIDE}"]`)?.classList.contains("ac-msg--focus")).toBe(true),
     );
-    expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/c/${ENG_ID}`);
-    expect(router.state.location.search).toEqual({ m: OUTSIDE });
+    await settle(6);
+    // The root the conversation opened at is lit no more: one plate, on the report.
+    expect([...document.querySelectorAll(".ac-msg--focus")].map((e) => e.getAttribute("data-message-id"))).toEqual([
+      OUTSIDE,
+    ]);
+    expect(screen().queryByRole("complementary", { name: "Thread" })).toBeNull();
     expect(document.body.textContent).not.toContain(missing);
   });
 
@@ -265,6 +270,6 @@ describe("a message of the conversation asked for inside one of its threads", ()
     await waitFor(() => expect(document.body.textContent).toContain(missing));
     expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/c/${ENG_ID}`);
     expect(router.state.location.search).toMatchObject({ thread: TARGET });
-    expect(screen().getByRole("complementary", { name: "Thread" })).not.toBeNull();
+    screen().getByRole("complementary", { name: "Thread" });
   });
 });
